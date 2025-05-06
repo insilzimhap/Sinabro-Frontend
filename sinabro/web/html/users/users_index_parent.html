@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <title>회원 상세 정보 - 시나브로</title>
+  <link rel="stylesheet" href="../../css/header.css">
+  <link rel="stylesheet" href="../../css/index.css">
+
+  <style>
+    body {
+      font-family: 'Arial', sans-serif;
+      background-color: #f9f9f9;
+      margin: 0;
+      padding: 0;
+    }
+
+    .container {
+      max-width: 800px;
+      margin: 50px auto;
+      padding: 30px;
+      background-color: white;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+    }
+
+    h2 {
+      margin-bottom: 20px;
+    }
+
+    .info-group {
+      margin-bottom: 20px;
+    }
+
+    .info-group strong {
+      display: inline-block;
+      width: 100px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    table, th, td {
+      border: 1px solid #ddd;
+    }
+
+    th, td {
+      padding: 10px;
+      text-align: left;
+    }
+
+    .child-button {
+      background-color: #007bff;
+      color: white;
+      border: none;
+      padding: 6px 12px;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    .child-button:hover {
+      background-color: #0056b3;
+    }
+
+    .actions {
+      margin-top: 20px;
+      text-align: right;
+    }
+
+    .actions button {
+      background-color: #e60000;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 4px;
+      cursor: pointer;
+      margin-left: 10px;
+    }
+
+    .actions button:hover {
+      background-color: #c40000;
+    }
+  </style>
+</head>
+<body>
+  <nav class="header">
+    <div>
+      <img src="../../image/inLogo.jpg" id="logo">
+      <div>
+        <ul>
+          <li><a href="../users/users_index.html">회원 관리</a></li>
+          <li><a href="../contents/contents_index.html">컨텐츠 관리</a></li>
+          <li><a href="../notification/users_index.html">알림 관리</a></li>
+          <li><a href="../board/board_notice.html">게시판</a></li>
+        </ul>
+        <a href="../login/login.html">
+          <button type="button">로그인</button>
+        </a>
+      </div>
+    </div>
+  </nav>
+
+  <div class="container">
+    <h2>김와와 님</h2>
+
+    <div class="info-group">
+      <strong>아이디</strong> mwa2day<br>
+      <strong>이메일</strong> mwa2day@gmail.com<br>
+      <strong>비밀번호</strong> asdf12345!@
+    </div>
+
+    <h3>김와와 님의 자식</h3>
+    <table>
+      <tr>
+        <th>이름</th>
+        <th>아이디</th>
+        <th>나이</th>
+        <th>액션</th>
+      </tr>
+      <tr>
+        <td>문짜짜</td>
+        <td>jjajjamoon</td>
+        <td>5세</td>
+        <td><button onclick="location.href='users_index_child.html'" class="child-button">상세</button></td>
+      </tr>
+      <tr>
+        <td>심짜짜</td>
+        <td>jjajjajsim</td>
+        <td>4세</td>
+        <td><button class="child-button">상세</button></td>
+      </tr>
+    </table>
+
+    <div class="actions">
+      <button>수정하기</button>
+      <button>강퇴하기</button>
+    </div>
+  </div>
+</body>
+</html>

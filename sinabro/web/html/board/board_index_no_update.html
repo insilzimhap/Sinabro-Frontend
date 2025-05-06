@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <title>공지사항 관리 - 시나브로</title>
+  <link rel="stylesheet" href="../../css/header.css" />
+  <style>
+    body {
+      font-family: 'Arial', sans-serif;
+      background-color: #f0f4f8;
+      margin: 0;
+      padding: 0;
+    }
+
+    main {
+      padding: 50px;
+      display: flex;
+      justify-content: center;
+    }
+
+    .container {
+      background: white;
+      padding: 30px;
+      border-radius: 10px;
+      box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+      width: 600px;
+    }
+
+    .container h2 {
+      margin-bottom: 20px;
+      text-align: center;
+    }
+
+    .form-group {
+      margin-bottom: 15px;
+    }
+
+    .form-group label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: bold;
+    }
+
+    .form-group input,
+    .form-group textarea {
+      width: 100%;
+      padding: 8px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+
+    .form-group input[readonly] {
+      background-color: #eee;
+    }
+
+    .button-row {
+      text-align: center;
+      margin-top: 20px;
+    }
+
+    .button-row button {
+      padding: 8px 16px;
+      border: none;
+      border-radius: 4px;
+      margin: 0 5px;
+      cursor: pointer;
+    }
+
+    .update-btn {
+      background-color: #4caf50;
+      color: white;
+    }
+
+    .delete-btn {
+      background-color: #f44336;
+      color: white;
+    }
+
+    .cancel-btn {
+      background-color: #777;
+      color: white;
+    }
+  </style>
+</head>
+<body>
+    <nav class="header">
+        <div>
+          <img src="../../image/inLogo.jpg" id="logo">
+          <div>
+            <ul>
+              <li><a href="../users/users_index.html">회원 관리</a></li>
+              <li><a href="../contents/contents_index.html">컨텐츠 관리</a></li>
+              <li><a href="../notification/users_index.html">알림 관리</a></li>
+              <li><a href="../board/board_notice.html">게시판</a></li>
+            </ul>
+            <a href="../login/login.html">
+              <button type="button">로그인</button>
+            </a>
+          </div>
+        </div>
+      </nav>
+
+  <main>
+    <div class="container">
+      <h2>공지사항</h2>
+
+      <div class="form-group">
+        <label>제목</label>
+        <input type="text" value="시스템 점검 안내" />
+      </div>
+
+      <div class="form-group">
+        <label>내용</label>
+        <textarea rows="4">금일 22:00 시스템 점검이 예정되어 있습니다.</textarea>
+      </div>
+
+      <div class="form-group">
+        <label>작성일</label>
+        <input type="text" value="2025-04-11" readonly />
+      </div>
+
+      <div class="form-group">
+        <label>작성자</label>
+        <input type="text" value="관리자" readonly />
+      </div>
+
+      <div class="button-row">
+        <button class="update-btn">수정하기</button>
+        <button class="delete-btn">삭제하기</button>
+        <button class="cancel-btn" onclick="location.href='board_notice.html'">취소하기</button>
+      </div>
+    </div>
+  </main>
+</body>
+</html>

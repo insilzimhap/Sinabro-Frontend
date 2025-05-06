@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <title>문의사항 관리 - 시나브로</title>
+  <link rel="stylesheet" href="../../css/header.css" />
+  <link rel="stylesheet" href="../../css/index.css" />
+  <style>
+    body {
+      font-family: 'Arial', sans-serif;
+      background-color: #f0f4f8;
+      margin: 0;
+      padding: 0;
+    }
+
+    main {
+      padding: 30px;
+      max-width: 800px;
+      margin: auto;
+      background: white;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    }
+
+    h2 {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    .info {
+      margin-bottom: 20px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      padding: 20px;
+      background-color: #fafafa;
+    }
+
+    .info p {
+      margin: 8px 0;
+      line-height: 1.6;
+    }
+
+    label {
+      font-weight: bold;
+      margin-bottom: 5px;
+      display: block;
+    }
+
+    textarea {
+      width: 100%;
+      height: 150px;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      resize: vertical;
+    }
+
+    .button-group {
+      margin-top: 20px;
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+    }
+
+    button {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 4px;
+      color: white;
+      cursor: pointer;
+    }
+
+    .save-btn {
+      background-color: #4caf50;
+    }
+
+    .cancel-btn {
+      background-color: #f44336;
+    }
+
+    .scroll-box {
+  max-height: 150px;
+  overflow-y: auto;
+  border: 1px solid #ccc;
+  padding: 0;
+  background-color: #fff;
+  white-space: pre-wrap;
+  line-height: 1.4;
+  margin: 0;
+  border-radius: 4px;
+  overflow-wrap: break-word;
+    }
+
+  </style>
+</head>
+<body>
+  <nav class="header">
+    <div>
+      <img src="../../image/inLogo.jpg" id="logo" />
+      <div>
+        <ul>
+          <li><a href="../users/users_index.html">회원 관리</a></li>
+          <li><a href="../contents/contents_index.html">컨텐츠 관리</a></li>
+          <li><a href="../notification/noti_index.html">알림 관리</a></li>
+          <li><a href="../board/board_index.html">게시판</a></li>
+        </ul>
+        <a href="../login/login.html">
+          <button type="button">로그인</button>
+        </a>
+      </div>
+    </div>
+  </nav>
+
+  <main>
+    <h2>문의사항 관리</h2>
+    <div class="info">
+        <p><strong>제목:</strong> 사용법 관련 문의</p>
+        <p><strong>작성자:</strong> 심정화</p>
+        <p><strong>작성일:</strong> 2025-04-11</p>
+        <p><strong>문의 내용:</strong></p>
+        <div class="scroll-box">
+          안녕하세요, 시스템 사용법에 대해 문의드립니다. 어떻게 이용하나요?냐냐냐냐냐ㅑ냔
+          이 기능을 사용하려면 메뉴에서 설정을 눌러주세요!냐냐냔냐냐냐냐냐냐
+          자세한 사용 방법은 아래 설명을 참고하세요. 
+          (길게 써서 스크롤 테스트!)
+          냐냐냐냐냐냐
+          냐냐냐ㅐ냐냔
+          냐냐냐냐냔
+          ㅐㄴ내내내내내
+        </div>
+      </div>
+
+    <label for="reply">답변 작성</label>
+    <textarea id="reply" placeholder="답변 내용을 입력하세요."></textarea>
+
+    <div class="button-group">
+      <button class="save-btn" onclick="saveReply()">저장하기</button>
+      <button class="cancel-btn" onclick="location.href='board_qna.html'">취소하기</button>
+    </div>
+  </main>
+
+  <script>
+    function saveReply() {
+      const replyText = document.getElementById('reply').value.trim();
+      if (replyText) {
+        alert('답변이 저장되었습니다!');
+        // 실제 저장 로직 추가 가능 (서버로 전송 등)
+        window.history.back();
+      } else {
+        alert('답변을 입력해주세요!');
+      }
+    }
+  </script>
+</body>
+</html>

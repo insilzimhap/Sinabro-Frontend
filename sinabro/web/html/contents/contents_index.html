@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <title>콘텐츠 관리 - 시나브로</title>
+  <link rel="stylesheet" href="../../css/header.css">
+  <link rel="stylesheet" href="../../css/index.css">
+  <style>
+    body {
+      font-family: 'Arial', sans-serif;
+      background-color: #f0f4f8;
+      margin: 0;
+      padding: 0;
+    }
+
+    main {
+      padding: 50px;
+      display: flex;
+      justify-content: center;
+    }
+
+    .container {
+      background: white;
+      padding: 30px;
+      border-radius: 10px;
+      box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+      width: 800px;
+    }
+
+    .container h2 {
+      margin-bottom: 20px;
+    }
+
+    .search-bar {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    .search-bar select,
+    .search-bar input {
+      padding: 8px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      flex: 1;
+    }
+
+    .search-bar button {
+      padding: 8px 16px;
+      border: none;
+      background-color: #4caf50;
+      color: white;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    table, th, td {
+      border: 1px solid #ccc;
+    }
+
+    th, td {
+      padding: 12px;
+      text-align: center;
+    }
+
+    th {
+      background-color: #f2f2f2;
+    }
+
+    .action-btn {
+      background-color: #2196f3;
+      color: white;
+      padding: 5px 10px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+  </style>
+</head>
+<body>
+    <nav class="header">
+        <div>
+          <img src="../../image/inLogo.jpg" id="logo">
+          <div>
+            <ul>
+              <li><a href="../users/users_index.html">회원 관리</a></li>
+              <li><a href="../contents/contents_index.html">컨텐츠 관리</a></li>
+              <li><a href="../notification/noti_index.html">알림 관리</a></li>
+              <li><a href="../board/board_notice.html">게시판</a></li>
+            </ul>
+            <a href="../login/login.html">
+              <button type="button">로그인</button>
+            </a>
+          </div>
+        </div>
+      </nav>
+
+  <main>
+    <div class="container">
+      <h2>콘텐츠 관리</h2>
+      <div class="search-bar">
+        <select>
+          <option value="all">전체</option>
+          <option value="listen">듣기 학습</option>
+          <option value="write">쓰기 학습</option>
+          <option value="game">게임</option>
+        </select>
+        <input type="text" placeholder="검색어를 입력하세요">
+        <button>검색</button>
+      </div>
+
+      <table>
+        <thead>
+          <tr>
+            <th>No</th>
+            <th>분류</th>
+            <th>난이도</th>
+            <th>세부사항</th>
+            <th>액션</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>1</td>
+            <td>듣기 학습</td>
+            <td></td>
+            <td>의성어/의태어</td>
+            <td><button onclick="location.href='contents_index_control.html'" class="action-btn">관리</button></td>
+          </tr>
+          <tr>
+            <td>2</td>
+            <td>쓰기 학습</td>
+            <td>상</td>
+            <td>따라쓰기</td>
+            <td><button class="action-btn">관리</button></td>
+          </tr>
+          <tr>
+            <td>3</td>
+            <td>쓰기 학습</td>
+            <td>하</td>
+            <td>따라쓰기</td>
+            <td><button class="action-btn">관리</button></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </main>
+</body>
+</html>

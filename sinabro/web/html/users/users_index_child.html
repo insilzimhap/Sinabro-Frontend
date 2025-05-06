@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <title>문짜짜 자녀 상세 페이지</title>
+  <link rel="stylesheet" href="../../css/header.css">
+  <link rel="stylesheet" href="../../css/index.css">
+
+  <style>
+    body {
+      font-family: 'Arial', sans-serif;
+      margin: 0;
+      padding: 0;
+    }
+
+    .container {
+      max-width: 800px;
+      margin: 40px auto;
+      padding: 20px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+    }
+
+    h2 {
+      display: flex;
+      align-items: center;
+      font-size: 24px;
+      margin-bottom: 20px;
+    }
+
+    .info-row {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 10px;
+    }
+
+    .info-row div {
+      flex: 1;
+      margin-right: 20px;
+    }
+
+    .info-row div:last-child {
+      margin-right: 0;
+    }
+
+    .label {
+      font-weight: bold;
+      margin-bottom: 5px;
+    }
+
+    .level {
+      margin-left: 15px;
+      font-size: 14px;
+      color: #555;
+    }
+  </style>
+</head>
+
+<body>
+  <!-- Header -->
+  <nav class="header">
+    <div>
+      <img src="../../image/inLogo.jpg" id="logo">
+      <div>
+        <ul>
+          <li><a href="../users/users_index.html">회원 관리</a></li>
+          <li><a href="../contents/contents_index.html">컨텐츠 관리</a></li>
+          <li><a href="../notification/users_index.html">알림 관리</a></li>
+          <li><a href="../board/board_notice.html">게시판</a></li>
+        </ul>
+        <a href="../login/login.html">
+          <button type="button">로그인</button>
+        </a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Main content -->
+  <div class="container">
+    <h2>문짜짜 님 <span class="level">현재 레벨: 초급 3</span></h2>
+    <div class="info-row">
+      <div>
+        <div class="label">아이디</div>
+        <div>munjajja</div>
+      </div>
+      <div>
+        <div class="label">이메일</div>
+        <div>mjjajja@gmail.com</div>
+      </div>
+      <div>
+        <div class="label">비밀번호</div>
+        <div>asdf12345!@</div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

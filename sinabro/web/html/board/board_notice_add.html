@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <title>공지사항 추가 - 시나브로</title>
+  <link rel="stylesheet" href="../../css/header.css">
+  <link rel="stylesheet" href="../../css/index.css">
+  <style>
+    body {
+      font-family: 'Arial', sans-serif;
+      background-color: #f0f4f8;
+      margin: 0;
+      padding: 0;
+    }
+
+    nav {
+      margin-bottom: 10px;
+    }
+
+    main {
+      padding: 30px;
+      max-width: 600px;
+      margin: auto;
+      background: white;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+
+    h2 {
+      margin-bottom: 20px;
+      text-align: center;
+    }
+
+    form {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+    }
+
+    label {
+      font-weight: bold;
+      margin-bottom: 5px;
+    }
+
+    input[type="text"],
+    textarea,
+    select {
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      width: 100%;
+    }
+
+    textarea {
+      resize: vertical;
+      height: 150px;
+    }
+
+    .button-group {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      margin-top: 20px;
+    }
+
+/* ✅ header 전용 버튼 */
+.header button {
+  background: none;
+  border: 1px solid #ccc;
+  padding: 5px 10px;
+  cursor: pointer;
+  font-size: 14px;
+  color: #333; /* 텍스트 색상 */
+}
+
+.header button:hover {
+  background-color: #eee;
+}
+
+/* ✅ 폼 안에 있는 버튼 그룹 전용 */
+.button-group button {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  color: white;
+  font-size: 14px;
+}
+
+/* 저장하기 전용 색상 */
+.button-group .save-btn {
+  background-color: #4caf50;
+}
+
+/* 취소하기 전용 색상 */
+.button-group .cancel-btn {
+  background-color: #f44336;
+}
+
+
+
+  </style>
+</head>
+<body>
+  <nav class="header">
+    <div>
+      <img src="../../image/inLogo.jpg" id="logo">
+      <div>
+        <ul>
+          <li><a href="../users/users_index.html">회원 관리</a></li>
+          <li><a href="../contents/contents_index.html">컨텐츠 관리</a></li>
+          <li><a href="../notification/noti_index.html">알림 관리</a></li>
+          <li><a href="../board/board_notice.html">게시판</a></li>
+        </ul>
+        <a href="../login/login.html">
+          <button type="button">로그인</button>
+        </a>
+      </div>
+    </div>
+  </nav>
+
+  <main>
+    <h2>공지사항 추가</h2>
+    <form>
+      <div>
+        <label for="title">제목</label>
+        <input type="text" id="title" placeholder="제목을 입력하세요" required />
+      </div>
+      <div>
+        <label for="content">내용</label>
+        <textarea id="content" placeholder="내용을 입력하세요" required></textarea>
+      </div>
+      <div>
+        <label for="author">작성자</label>
+        <select id="author">
+          <option value="관리자">관리자</option>
+        </select>
+      </div>
+      <div class="button-group">
+        <button type="submit" class="save-btn">저장하기</button>
+        <button type="button" class="cancel-btn"onclick=" location.href='board_index.html'">취소하기</button>
+      </div>
+    </form>
+  </main>
+</body>
+</html>

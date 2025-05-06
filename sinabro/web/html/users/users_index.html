@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <title> 시나브로 </title>
+  <link rel="stylesheet" href="../../css/header.css">
+  <link rel="stylesheet" href="../../css/index.css">
+
+  <style>
+    /* 회원 검색 영역 */
+    .member-search-container {
+      margin: 20px auto;
+      border: 1px solid #ccc;
+      padding: 20px;
+      border-radius: 8px;
+      background-color: #f9f9f9;
+      width: 100%;
+      max-width: 700px;
+    }
+
+    .member-search-container h3 {
+      margin-bottom: 15px;
+    }
+
+    .search-bar {
+      display: flex;
+      gap: 10px;
+    }
+
+    .search-bar select,
+    .search-bar input {
+      padding: 8px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      flex: 1;
+    }
+
+    .search-bar button {
+      padding: 8px 16px;
+      border: none;
+      background-color: #4caf50;
+      color: white;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    .search-bar button:hover {
+      background-color: #45a049;
+    }
+
+    /* 회원 리스트 영역 */
+    .member-list {
+      margin-top: 20px;
+    }
+
+    .member-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px;
+      border-bottom: 1px solid #eee;
+    }
+
+    .member-info {
+      display: flex;
+      gap: 20px;
+    }
+
+    .member-item button {
+      padding: 4px 10px;
+      background-color: #555;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    .member-item button:hover {
+      background-color: #333;
+    }
+  </style>
+</head>
+<body>
+  <nav class="header">
+    <div>
+      <img src="../../image/inLogo.jpg" id="logo">
+      <div>
+        <ul>
+          <li><a href="../users/users_index.html">회원 관리</a></li>
+          <li><a href="../contents/contents_index.html">컨텐츠 관리</a></li>
+          <li><a href="../notification/users_index.html">알림 관리</a></li>
+          <li><a href="../board/board_notice.html">게시판</a></li>
+        </ul>
+        <a href="../login/login.html">
+          <button type="button">로그인</button>
+        </a>
+      </div>
+    </div>
+  </nav>
+
+  <main>
+    <div class="member-search-container">
+      <h3>회원 검색</h3>
+      <div class="search-bar">
+        <select>
+          <option value="all">부모 이름</option>
+          <option value="name">자식 이름</option>
+          <option value="email">이메일</option>
+        </select>
+        <input type="text" placeholder="검색어를 입력하세요">
+        <button onclick="searchMembers()">검색</button>
+      </div>
+
+      <div class="member-list">
+        <div class="member-item">
+          <div class="member-info">
+            <strong>김와와</strong> (mwa2day) mwa2day@gmail.com
+          </div>
+          <button onclick="location.href='users_index_parent.html'">상세</button>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    function searchMembers() {
+      alert('검색 기능은 백엔드 연결 후 사용할 수 있습니다!');
+    }
+  </script>
+</body>
+</html>
