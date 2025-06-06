@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../layout/parent_layout.dart';
-import '../../../user_select/user_select_screen.dart';
+import '../../user_select_screen.dart'; // 경로에 맞게 수정!
 import 'add_child.dart';
 
 class SelectParentsPage extends StatelessWidget {
@@ -9,6 +9,12 @@ class SelectParentsPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(
+        title: const Text('자녀 선택'),
+        centerTitle: true,
+        backgroundColor: const Color(0xFFF5F5F5), // 사이드바 색과 통일
+        elevation: 0,
+      ),
       body: Row(
         children: [
           // ✅ 공통 사이드바
@@ -16,79 +22,63 @@ class SelectParentsPage extends StatelessWidget {
 
           // ✅ 오른쪽 콘텐츠
           Expanded(
-            child: Stack(
-              children: [
-                Center(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Container(
-                        width: 120,
-                        height: 120,
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFEDEDED),
+            child: Container(
+              color: const Color(0xFFE4F1FA), // 연파랑 배경
+              child: Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // ✅ 이미지 삽입
+                    Container(
+                      width: 120,
+                      height: 120,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFEDEDED),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(12),
+                        child: Image.asset(
+                          'assets/img/sorry.png', // ✅ 수정된 경로
+                          fit: BoxFit.cover,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    const Text(
+                      '아이를 추가하지 않으셨어요',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    ElevatedButton(
+                      onPressed: () {
+                        Navigator.pushReplacement(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const AddChildPage(),
+                          ),
+                        );
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFFE9DAB7),
+                        foregroundColor: Colors.brown,
+                        shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        child: const Center(
-                          child: Text(
-                            'sorry...\n이미지',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(color: Colors.grey, fontSize: 16),
-                          ),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 30,
+                          vertical: 12,
                         ),
+                        elevation: 6,
                       ),
-                      const SizedBox(height: 20),
-                      const Text(
-                        '아이를 추가하지 않으셨어요',
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 20),
-                      ElevatedButton(
-                        onPressed: () {
-                          Navigator.pushReplacement(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const AddChildPage(),
-                            ),
-                          );
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFFE9DAB7),
-                          foregroundColor: Colors.brown,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 30,
-                            vertical: 12,
-                          ),
-                        ),
-                        child: const Text('아이 추가하기'),
-                      ),
-                    ],
-                  ),
+                      child: const Text('아이 추가하기'),
+                    ),
+                  ],
                 ),
-
-                // ✅ 뒤로가기 화살표 버튼
-                Positioned(
-                  top: 20,
-                  right: 20,
-                  child: IconButton(
-                    icon: const Icon(Icons.arrow_back_ios_new),
-                    onPressed: () {
-                      Navigator.pushReplacement(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const UserSelectScreen(),
-                        ),
-                      );
-                    },
-                  ),
-                ),
-              ],
+              ),
             ),
           ),
         ],
