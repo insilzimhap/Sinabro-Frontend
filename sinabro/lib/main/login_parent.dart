@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'lobby_parent.dart';
+import '/login/signup_page.dart';   // 부모 회원가입 페이지
+import '/login/login_page.dart';   // 부모 로그인 페이지
 
 class LoginParentScreen extends StatelessWidget {
   const LoginParentScreen({super.key});
@@ -7,18 +8,35 @@ class LoginParentScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('부모 로그인')),
+      appBar: AppBar(title: const Text('부모 메뉴'), centerTitle: true),
       body: Center(
-        child: ElevatedButton(
-          onPressed: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => const LobbyParentScreen(),
-              ),
-            );
-          },
-          child: const Text('부모로 로그인'),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            ElevatedButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => LoginPage(role: 'parent'),
+                  ),
+                );
+              },
+              child: const Text('로그인하기'),
+            ),
+            const SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => SignUpPage(role: 'parent'),
+                  ),
+                );
+              },
+              child: const Text('회원가입하기'),
+            ),
+          ],
         ),
       ),
     );
