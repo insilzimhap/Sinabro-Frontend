@@ -29,6 +29,7 @@ android {
         versionCode = flutter.versionCode
         versionName = flutter.versionName
         ndkVersion = "29.0.13113456"
+                manifestPlaceholders["kakaoAppKey"] = "7d584165d52fea2885bde5d79c37d5fd"
     }
 
     buildTypes {
