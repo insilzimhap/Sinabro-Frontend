@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'main/home_screen.dart';
+import 'package:sinabro/main/mainView/page/home_screen.dart';
 
 void main() {
   runApp(MyApp());

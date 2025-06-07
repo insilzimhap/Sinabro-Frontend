@@ -22,5 +22,19 @@ flutter:
   uses-material-design: true
 
   assets:
-    - assets/icon/main/
-    - assets/img/
+    - assets/img/auth/
+    - assets/img/character/
+    - assets/img/contents/gameListen/
+    - assets/img/contents/gameWrite/
+    - assets/img/contents/studyListen/
+    - assets/img/contents/studyWrite/
+    - assets/img/icon/
+    - assets/img/pageMain/
+    - assets/img/pageSetting/
+
+    - assets/audio/bgm/
+    - assets/audio/effect/
+    - assets/audio/tts/gameListen/
+    - assets/audio/tts/gameWrite/
+    - assets/audio/tts/studyListen/
+    - assets/audio/tts/studyWrite/

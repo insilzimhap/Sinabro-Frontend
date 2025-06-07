@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'select_character.dart';
+
+import 'package:sinabro/main/childView/page/select_character.dart';
 
 class LoginChildScreen extends StatelessWidget {
   const LoginChildScreen({super.key});
@@ -13,7 +14,9 @@ class LoginChildScreen extends StatelessWidget {
           onPressed: () {
             Navigator.push(
               context,
-              MaterialPageRoute(builder: (context) => const SelectCharacterPage()),
+              MaterialPageRoute(
+                builder: (context) => const SelectCharacterPage(),
+              ),
             );
           },
           child: const Text('로그인하고 시작하기'),
@@ -21,7 +24,10 @@ class LoginChildScreen extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
             backgroundColor: Colors.orange[200],
             foregroundColor: Colors.brown,
-            textStyle: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            textStyle: const TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+            ),
           ),
         ),
       ),
