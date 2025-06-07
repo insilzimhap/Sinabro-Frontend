@@ -145,7 +145,7 @@ class LoginParentScreen extends StatelessWidget {
                       child: OutlinedButton.icon(
                         onPressed: () {},
                         icon: Image.asset(
-                          'assets/img/google_logo.jpg',
+                          'assets/img/auth/google_logo.jpg',
                           width: 20,
                         ),
                         label: const Text('구글로 로그인'),

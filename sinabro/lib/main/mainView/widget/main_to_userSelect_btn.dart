@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import '/main/user_select_screen.dart';
+
+import 'package:sinabro/main/mainView/page/user_select_screen.dart';
 
 class MainToUserSelectBtn extends StatelessWidget {
   const MainToUserSelectBtn({super.key});

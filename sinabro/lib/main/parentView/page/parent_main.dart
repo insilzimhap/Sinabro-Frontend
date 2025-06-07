@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import '../../../user_select/user_select_screen.dart';
-import '../layout/parent_layout.dart';
-import '../widget/child_tag.dart';
+import 'package:sinabro/main/mainView/page/user_select_screen.dart';
+import 'package:sinabro/main/parentView/layout/parent_layout.dart';
+import 'package:sinabro/main/parentView/widget/child_tag.dart'; //현재는 사용하지 않는 darT(나중에 아이 이름 넣을 것으로 보입니다)
 
 class ParentMainScreen extends StatelessWidget {
   const ParentMainScreen({super.key});

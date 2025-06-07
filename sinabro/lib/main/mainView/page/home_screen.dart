@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-import 'widgets/moving_cloud.dart';
-import '../main/widgets/main_to_userSelect_btn.dart';
+
+import 'package:sinabro/main/mainView/widget/moving_cloud.dart';
+import 'package:sinabro/main/mainView/widget/main_to_userSelect_btn.dart';
 
 class CloudAnimationScreen extends StatefulWidget {
   @override
@@ -52,7 +53,7 @@ class _CloudAnimationScreenState extends State<CloudAnimationScreen>
           // ✅ 배경
           Positioned.fill(
             child: Image.asset(
-              'assets/img/background/main_background.jpg',
+              'assets/img/pageMain/main_background.jpg',
               fit: BoxFit.cover,
             ),
           ),
@@ -62,7 +63,7 @@ class _CloudAnimationScreenState extends State<CloudAnimationScreen>
             animation: _animation1,
             topPosition: 0,
             screenWidth: screenWidth,
-            imagePath: 'assets/icon/main/cloud1.png',
+            imagePath: 'assets/img/pageMain/cloud1.png',
             width: 1000,
           ),
 
@@ -71,7 +72,7 @@ class _CloudAnimationScreenState extends State<CloudAnimationScreen>
             animation: _animation2,
             topPosition: 200,
             screenWidth: screenWidth,
-            imagePath: 'assets/icon/main/cloud2.png',
+            imagePath: 'assets/img/pageMain/cloud2.png',
             width: 1000,
           ),
 

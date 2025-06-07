@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
-import '../layout/parent_layout.dart';
-import '../../user_select_screen.dart'; // 경로에 맞게 수정!
-import 'add_child.dart';
+
+import 'package:sinabro/main/parentView/layout/parent_layout.dart';
+import 'package:sinabro/main/mainView/page/user_select_screen.dart';
+import 'package:sinabro/main/parentView/page/add_child.dart';
 
 class SelectParentsPage extends StatelessWidget {
   const SelectParentsPage({super.key});
@@ -39,7 +40,7 @@ class SelectParentsPage extends StatelessWidget {
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(12),
                         child: Image.asset(
-                          'assets/img/sorry.png', // ✅ 수정된 경로
+                          'assets/img/icon/sorry.png', // ✅ 수정된 경로
                           fit: BoxFit.cover,
                         ),
                       ),

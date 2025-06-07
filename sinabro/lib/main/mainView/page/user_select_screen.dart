@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'login_child.dart';
-import '../main/parentView/page/login_parent.dart'; // ✅ 상대 경로로 수정
-import '../main/parentView/page/no_child_parent.dart'; // 경로 확인 OK!
+
+import 'package:sinabro/main/auth/authChild/login_child.dart';
+import 'package:sinabro/main/auth/authParent/login_parent.dart';
+
+import 'package:sinabro/main/parentView/page/no_child_parent.dart';
 
 class UserSelectScreen extends StatelessWidget {
   const UserSelectScreen({super.key});

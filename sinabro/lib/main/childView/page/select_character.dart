@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'lobby_child.dart'; // lobby_child.dart의 경로에 맞게 수정하세요
+
+import 'package:sinabro/main/childView/page/lobby_child.dart'; // lobby_child.dart의 경로에 맞게 수정하세요
 
 class SelectCharacterPage extends StatefulWidget {
   const SelectCharacterPage({super.key});
@@ -77,7 +78,7 @@ class _SelectCharacterPageState extends State<SelectCharacterPage> {
                     },
                   ),
                 ],
-              )
+              ),
             ],
           ),
         );
@@ -118,7 +119,9 @@ class _SelectCharacterPageState extends State<SelectCharacterPage> {
                     child: AnimatedContainer(
                       duration: const Duration(milliseconds: 300),
                       margin: EdgeInsets.symmetric(
-                          horizontal: 10, vertical: isSelected ? 20 : 40),
+                        horizontal: 10,
+                        vertical: isSelected ? 20 : 40,
+                      ),
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(20),
