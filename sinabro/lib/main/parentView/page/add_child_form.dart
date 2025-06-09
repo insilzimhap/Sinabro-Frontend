@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../layout/parent_layout.dart';
+import 'package:sinabro/main/parentView/layout/parent_layout.dart';
 
 class AddChildFormPage extends StatefulWidget {
   const AddChildFormPage({super.key});

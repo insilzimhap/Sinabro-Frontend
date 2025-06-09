@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import '../layout/parent_layout.dart';
-import 'no_child_parent.dart'; // ← 돌아갈 페이지
-import 'add_child_form.dart'; // ✅ 추가: 폼 페이지 import
+import 'package:sinabro/main/parentView/layout/parent_layout.dart';
+import 'package:sinabro/main/parentView/page/no_child_parent.dart';
+import 'package:sinabro/main/parentView/page/add_child_form.dart';
 
 class AddChildPage extends StatelessWidget {
   const AddChildPage({super.key});
