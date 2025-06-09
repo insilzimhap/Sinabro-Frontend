@@ -13,6 +13,7 @@ dependencies:
   cupertino_icons: ^1.0.8
   shared_preferences: ^2.1.1
   audioplayers: ^5.2.0
+  provider: ^6.1.1
 
 
 dev_dependencies:
@@ -39,6 +40,9 @@ flutter:
     - assets/audio/tts/gameListen/
     - assets/audio/tts/gameWrite/
     - assets/audio/tts/studyListen/
-    - assets/audio/tts/studyListen/test/
+    - assets/audio/tts/studyListen/dailyConversation/
+    - assets/audio/tts/studyListen/dailyConversation/test/
+    - assets/audio/tts/studyListen/soundWords/
+    - assets/audio/tts/studyListen/soundWords/test/  
     - assets/audio/tts/studyWrite/
     - assets/audio/tts/studyWrite/test/
