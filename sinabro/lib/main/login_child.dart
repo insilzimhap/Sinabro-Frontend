@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import '/login/login_page.dart'; // 아이 로그인 페이지로 이동
+import '/login/child_login_page.dart'; // 아이 로그인 페이지로 이동
+
 
 class LoginChildScreen extends StatelessWidget {
   const LoginChildScreen({super.key});
@@ -14,7 +15,7 @@ class LoginChildScreen extends StatelessWidget {
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (context) => const LoginPage(role: 'child'),
+                builder: (context) => const LoginChildPage(),
               ),
             );
           },

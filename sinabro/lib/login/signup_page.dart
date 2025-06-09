@@ -62,7 +62,7 @@ class _SignUpPageState extends State<SignUpPage> {
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(
-              builder: (context) => const LobbyParentScreen(),
+              builder: (context) => LobbyParentScreen(parentUserId: _usernameController.text.trim()),
             ),
           );
         }

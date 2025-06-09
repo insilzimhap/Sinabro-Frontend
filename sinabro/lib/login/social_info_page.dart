@@ -25,7 +25,6 @@ class SocialExtraInfoPage extends StatefulWidget {
 
 class _SocialExtraInfoPageState extends State<SocialExtraInfoPage> {
   final _phoneController = TextEditingController();
-  String? _selectedRole; // 'parent' or 'child'
   String _message = '';
   bool _isLoading = false;
 
@@ -47,17 +46,16 @@ class _SocialExtraInfoPageState extends State<SocialExtraInfoPage> {
           'userPw': widget.socialId, // 소셜 ID를 임시 비밀번호로 저장
           'userName': widget.userName,
           'userPhoneNum': _phoneController.text.trim(),
-          'role': _selectedRole,
+          'role': 'parent', // 자동으로 부모로 고정!
           'socialType': widget.socialType,
           'socialId': widget.socialId,
         }),
       );
 
       if (response.statusCode == 200) {
-        //if (!mounted) return;
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => const LobbyParentScreen()),
+          MaterialPageRoute(builder: (context) => const LobbyParentScreen(parentUserId: "")), // parentUserId 전달 필요시 수정
         );  
       } else {
         setState(() {
@@ -73,12 +71,6 @@ class _SocialExtraInfoPageState extends State<SocialExtraInfoPage> {
         _isLoading = false;
       });
     }
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    _selectedRole = null; // 초기에는 선택 안됨
   }
 
   @override
@@ -104,31 +96,19 @@ class _SocialExtraInfoPageState extends State<SocialExtraInfoPage> {
               decoration: const InputDecoration(labelText: '휴대폰 번호'),
             ),
             const SizedBox(height: 16),
+            // 역할 선택 대신 "부모"로 고정 표시
             Row(
-              children: [
-                const Text('역할 선택: '),
-                Expanded(
-                  child: RadioListTile<String>(
-                    title: const Text('부모'),
-                    value: 'parent',
-                    groupValue: _selectedRole,
-                    onChanged: (value) {
-                      setState(() {
-                        _selectedRole = value;
-                      });
-                    },
-                  ),
+              children: const [
+                Text(
+                  '역할: ',
+                  style: TextStyle(fontSize: 16),
                 ),
-                Expanded(
-                  child: RadioListTile<String>(
-                    title: const Text('아이'),
-                    value: 'child',
-                    groupValue: _selectedRole,
-                    onChanged: (value) {
-                      setState(() {
-                        _selectedRole = value;
-                      });
-                    },
+                Text(
+                  '부모',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.brown,
                   ),
                 ),
               ],
@@ -137,7 +117,7 @@ class _SocialExtraInfoPageState extends State<SocialExtraInfoPage> {
             _isLoading
                 ? const CircularProgressIndicator()
                 : ElevatedButton(
-                    onPressed: _selectedRole != null && _phoneController.text.trim().isNotEmpty ? _submit : null,
+                    onPressed: _phoneController.text.trim().isNotEmpty ? _submit : null,
                     child: const Text('회원가입 완료'),
                   ),
             const SizedBox(height: 20),

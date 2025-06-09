@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
-import 'lobby_child.dart'; // lobby_child.dart의 경로에 맞게 수정하세요
+import 'lobby_child.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
 class SelectCharacterPage extends StatefulWidget {
-  const SelectCharacterPage({super.key});
+  final String childId; // 반드시 로그인 시 받아와서 넘겨줘야 함!
+  const SelectCharacterPage({super.key, required this.childId});
 
   @override
   State<SelectCharacterPage> createState() => _SelectCharacterPageState();
@@ -11,6 +14,62 @@ class SelectCharacterPage extends StatefulWidget {
 class _SelectCharacterPageState extends State<SelectCharacterPage> {
   final List<String> characters = ['토끔', '멍지', '곰재', '고냥', '오쟁'];
   int selectedIndex = 0;
+  bool _isLoading = false;
+  String _message = '';
+
+  Future<void> _saveCharacterSelection(String characterName) async {
+    setState(() {
+      _isLoading = true;
+      _message = '';
+    });
+
+    // characterName → characterId로 변환 (예: '토끔' → 'C001')
+    final characterIdMap = {
+      '토끔': 'C001',
+      '멍지': 'C002',
+      '곰재': 'C003',
+      '고냥': 'C004',
+      '오쟁': 'C005',
+    };
+    final characterId = characterIdMap[characterName];
+
+    final url = 'http://10.0.2.2:8090/api/character/selection';
+
+    try {
+      final response = await http.post(
+        Uri.parse(url),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'childId': widget.childId,
+          'characterId': characterId,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        if (!mounted) return;
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const LobbyChildScreen()),
+        );
+      } else if (response.statusCode == 409) {
+        setState(() {
+          _message = '이미 캐릭터를 선택하셨습니다!';
+        });
+      } else {
+        setState(() {
+          _message = '오류: ${response.statusCode}';
+        });
+      }
+    } catch (e) {
+      setState(() {
+        _message = '네트워크 오류: $e';
+      });
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
 
   void _showConfirmDialog(String characterName) {
     showDialog(
@@ -55,13 +114,8 @@ class _SelectCharacterPageState extends State<SelectCharacterPage> {
                     ),
                     child: const Text('예'),
                     onPressed: () {
-                      Navigator.of(context).pop(); // 팝업 닫고
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const LobbyChildScreen(),
-                        ),
-                      );
+                      Navigator.of(context).pop(); // 팝업 닫기
+                      _saveCharacterSelection(characterName);
                     },
                   ),
                   ElevatedButton(
@@ -77,7 +131,16 @@ class _SelectCharacterPageState extends State<SelectCharacterPage> {
                     },
                   ),
                 ],
-              )
+              ),
+              if (_isLoading) const Padding(
+                padding: EdgeInsets.only(top: 20),
+                child: CircularProgressIndicator(),
+              ),
+              if (_message.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(top: 12),
+                  child: Text(_message, style: const TextStyle(color: Colors.red)),
+                ),
             ],
           ),
         );
@@ -146,6 +209,11 @@ class _SelectCharacterPageState extends State<SelectCharacterPage> {
                 },
               ),
             ),
+            if (_message.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                child: Text(_message, style: const TextStyle(color: Colors.red)),
+              ),
             const SizedBox(height: 40),
           ],
         ),

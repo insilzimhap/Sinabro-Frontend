@@ -42,6 +42,9 @@ class _LoginPageState extends State<LoginPage> {
       );
 
       if (response.statusCode == 200) {
+        final user = json.decode(response.body);
+        final parentUserId = user['userId']; // 서버에서 받은 userId
+
         if (!mounted) return;
         if (widget.role == 'child') {
           Navigator.pushReplacement(
@@ -54,11 +57,12 @@ class _LoginPageState extends State<LoginPage> {
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(
-              builder: (context) => const LobbyParentScreen(),
+              builder: (context) => LobbyParentScreen(parentUserId: parentUserId),
             ),
           );
         }
       }
+
       else {
         setState(() {
           _message = '로그인 실패: 아이디 또는 비밀번호를 확인하세요.';

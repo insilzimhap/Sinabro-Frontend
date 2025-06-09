@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
-import '/login/signup_page.dart';
+import '/login/child_signup_page.dart';
 
 class LobbyParentScreen extends StatelessWidget {
-  const LobbyParentScreen({super.key});
+  final String parentUserId; // 부모의 userId
+
+  const LobbyParentScreen({super.key, required this.parentUserId});
 
   @override
   Widget build(BuildContext context) {
@@ -35,8 +37,8 @@ class LobbyParentScreen extends StatelessWidget {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => const SignUpPage(role: 'child'),
-                    ),
+                      builder: (context) => ChildSignUpPage(parentUserId: parentUserId),
+                    ),  
                   );
                 },
                 style: ElevatedButton.styleFrom(
