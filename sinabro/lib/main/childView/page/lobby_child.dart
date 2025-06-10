@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'dart:math';
 
+// ✅ 학습 페이지 import
+import 'package:sinabro/main/studyView/writeStudy/page/write_study_page.dart';
+import 'package:sinabro/main/studyView/listenStudy/page/listen_study_page.dart';
+
 class LobbyChildScreen extends StatefulWidget {
   const LobbyChildScreen({super.key});
 
@@ -60,7 +64,8 @@ class _LobbyChildScreenState extends State<LobbyChildScreen> {
                     child: Text(
                       characterName,
                       style: const TextStyle(
-                        fontSize: 16, fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
                       ),
                     ),
                   ),
@@ -115,17 +120,35 @@ class _LobbyChildScreenState extends State<LobbyChildScreen> {
                           children: [
                             Row(
                               children: [
-                                _buildActionButton('쓰기 학습'),
+                                _buildActionButton('쓰기 학습', () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => const WriteStudyPage(),
+                                    ),
+                                  );
+                                }),
                                 const SizedBox(width: 10),
-                                _buildActionButton('듣기 학습'),
+                                _buildActionButton('듣기 학습', () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => const ListenStudyPage(),
+                                    ),
+                                  );
+                                }),
                               ],
                             ),
                             const SizedBox(height: 10),
                             Row(
                               children: [
-                                _buildActionButton('쓰기 게임'),
+                                _buildActionButton('쓰기 게임', () {
+                                  // TODO: 추후 연결
+                                }),
                                 const SizedBox(width: 10),
-                                _buildActionButton('듣기 게임'),
+                                _buildActionButton('듣기 게임', () {
+                                  // TODO: 추후 연결
+                                }),
                               ],
                             ),
                           ],
@@ -139,10 +162,7 @@ class _LobbyChildScreenState extends State<LobbyChildScreen> {
                   // 닉네임
                   Text(
                     '$nickname님',
-                    style: const TextStyle(
-                      fontSize: 16,
-                      color: Colors.brown,
-                    ),
+                    style: const TextStyle(fontSize: 16, color: Colors.brown),
                   ),
                 ],
               ),
@@ -165,20 +185,24 @@ class _LobbyChildScreenState extends State<LobbyChildScreen> {
     );
   }
 
-  Widget _buildActionButton(String text) {
+  // ✅ onTap 추가됨
+  Widget _buildActionButton(String text, VoidCallback onTap) {
     return Expanded(
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 14),
-        decoration: BoxDecoration(
-          color: const Color(0xFFFFF2B3),
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Center(
-          child: Text(
-            text,
-            style: const TextStyle(
-              color: Colors.brown,
-              fontWeight: FontWeight.bold,
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 14),
+          decoration: BoxDecoration(
+            color: const Color(0xFFFFF2B3),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Center(
+            child: Text(
+              text,
+              style: const TextStyle(
+                color: Colors.brown,
+                fontWeight: FontWeight.bold,
+              ),
             ),
           ),
         ),
