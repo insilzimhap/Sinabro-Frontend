@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import '/main/lobby_child.dart';
-import '/main/lobby_parent.dart';
+import '/main/childView/page/lobby_child.dart';
+import '/main/parentView/page/lobby_parent.dart';
 import 'signup_page.dart';
 import 'kakao_login_api.dart';
 import 'social_info_page.dart';

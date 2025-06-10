@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import '/main/lobby_child.dart';
-import '/main/select_character.dart';
+import '/main/childView/page/lobby_child.dart';
+import '/main/childView/page/select_character.dart';
 
 class LoginChildPage extends StatefulWidget {
   const LoginChildPage({super.key});

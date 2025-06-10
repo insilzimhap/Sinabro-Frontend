@@ -1,9 +1,64 @@
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
 import 'package:sinabro/main/childView/page/select_character.dart';
 
-class LoginChildScreen extends StatelessWidget {
+class LoginChildScreen extends StatefulWidget {
   const LoginChildScreen({super.key});
+
+  @override
+  State<LoginChildScreen> createState() => _LoginChildScreenState();
+}
+
+class _LoginChildScreenState extends State<LoginChildScreen> {
+  final TextEditingController _idController = TextEditingController();
+  final TextEditingController _pwController = TextEditingController();
+  String _message = '';
+  bool _isLoading = false;
+
+  Future<void> _login() async {
+    setState(() {
+      _isLoading = true;
+      _message = '';
+    });
+
+    const url = 'http://10.0.2.2:8090/api/child/login';
+
+    try {
+      final response = await http.post(
+        Uri.parse(url),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'childId': _idController.text.trim(),
+          'childPw': _pwController.text.trim(),
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        if (!mounted) return;
+        final childId = _idController.text.trim();
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => SelectCharacterPage(childId: childId),
+          ),
+        );
+      } else {
+        setState(() {
+          _message = '로그인 실패: 아이디 또는 비밀번호를 확인하세요.';
+        });
+      }
+    } catch (e) {
+      setState(() {
+        _message = '에러 발생: $e';
+      });
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -49,8 +104,9 @@ class LoginChildScreen extends StatelessWidget {
                     const SizedBox(height: 20),
                     const Text('아이디', style: TextStyle(fontSize: 14)),
                     const SizedBox(height: 5),
-                    const TextField(
-                      decoration: InputDecoration(
+                    TextField(
+                      controller: _idController,
+                      decoration: const InputDecoration(
                         filled: true,
                         fillColor: Color(0xFFF8F7F6),
                         border: OutlineInputBorder(),
@@ -60,9 +116,10 @@ class LoginChildScreen extends StatelessWidget {
                     const SizedBox(height: 16),
                     const Text('비밀번호', style: TextStyle(fontSize: 14)),
                     const SizedBox(height: 5),
-                    const TextField(
+                    TextField(
+                      controller: _pwController,
                       obscureText: true,
-                      decoration: InputDecoration(
+                      decoration: const InputDecoration(
                         filled: true,
                         fillColor: Color(0xFFF8F7F6),
                         border: OutlineInputBorder(),
@@ -70,19 +127,21 @@ class LoginChildScreen extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 16),
+                    if (_isLoading)
+                      const Center(child: CircularProgressIndicator()),
+                    if (_message.isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 8.0, bottom: 8.0),
+                        child: Text(
+                          _message,
+                          style: const TextStyle(color: Colors.red),
+                        ),
+                      ),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.end,
                       children: [
                         ElevatedButton(
-                          onPressed: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder:
-                                    (context) => const SelectCharacterPage(),
-                              ),
-                            );
-                          },
+                          onPressed: _isLoading ? null : _login,
                           style: ElevatedButton.styleFrom(
                             backgroundColor: const Color(0xFFFFF0BB),
                             shape: RoundedRectangleBorder(

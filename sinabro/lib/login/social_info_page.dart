@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import '/main/lobby_parent.dart';
+import '/main/parentView/page/lobby_parent.dart';
 
 class SocialExtraInfoPage extends StatefulWidget {
   final String userId;

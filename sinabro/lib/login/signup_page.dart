@@ -3,8 +3,8 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'kakao_login_api.dart'; // 카카오 로그인 로직 분리된 파일
 import 'package:google_sign_in/google_sign_in.dart';
-import '/main/lobby_parent.dart';
-import '/main/lobby_child.dart';
+import '/main/parentView/page/lobby_parent.dart';
+import '/main/childView/page/lobby_child.dart';
 import 'social_info_page.dart';
 
 class SignUpPage extends StatefulWidget {
