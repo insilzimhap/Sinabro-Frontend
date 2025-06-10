@@ -8,7 +8,8 @@ import 'package:sinabro/main/studyView/listenStudy/widget/sound_button.dart';
 import 'package:sinabro/main/childView/page/lobby_child.dart';
 
 class ListenStudyPage extends StatefulWidget {
-  const ListenStudyPage({super.key});
+  final String childId;
+  const ListenStudyPage({super.key, required this.childId});
 
   @override
   State<ListenStudyPage> createState() => _ListenStudyPageState();
@@ -78,7 +79,7 @@ class _ListenStudyPageState extends State<ListenStudyPage> {
                                             MaterialPageRoute(
                                               builder:
                                                   (_) =>
-                                                      const LobbyChildScreen(),
+                                                      LobbyChildScreen(childId: widget.childId),
                                             ),
                                           );
                                         },

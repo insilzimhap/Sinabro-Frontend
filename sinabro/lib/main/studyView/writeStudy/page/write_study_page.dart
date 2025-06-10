@@ -6,23 +6,24 @@ import 'package:sinabro/main/studyView/writeStudy/controller/write_study_control
 import 'package:sinabro/main/studyView/writeStudy/widget/write_study_widget.dart';
 import 'package:sinabro/main/studyView/writeStudy/widget/writing_canvas.dart';
 import 'package:sinabro/main/studyView/writeStudy/widget/feedback_dialog.dart';
-
 import 'package:sinabro/main/childView/page/lobby_child.dart'; // ✅ 로비 페이지
 
 class WriteStudyPage extends StatelessWidget {
-  const WriteStudyPage({super.key});
+  final String childId;
+  const WriteStudyPage({super.key, required this.childId});
 
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
       create: (_) => WriteStudyController(),
-      child: const _WriteStudyView(),
+      child: _WriteStudyView(childId: childId),
     );
   }
 }
 
 class _WriteStudyView extends StatefulWidget {
-  const _WriteStudyView({super.key});
+  final String childId;
+  const _WriteStudyView({super.key, required this.childId});
 
   @override
   State<_WriteStudyView> createState() => _WriteStudyViewState();
@@ -85,7 +86,9 @@ class _WriteStudyViewState extends State<_WriteStudyView> {
           if (isLast) {
             Navigator.pushReplacement(
               context,
-              MaterialPageRoute(builder: (_) => const LobbyChildScreen()),
+              MaterialPageRoute(
+                builder: (_) => LobbyChildScreen(childId: widget.childId),
+              ),
             );
           } else {
             controller.nextStepOrRetry();
@@ -104,13 +107,13 @@ class _WriteStudyViewState extends State<_WriteStudyView> {
             showDialog(
               context: context,
               barrierDismissible: false,
-              builder:
-                  (_) =>
-                      const FeedbackDialog(isCorrect: false, isLastStep: true),
+              builder: (_) => const FeedbackDialog(isCorrect: false, isLastStep: true),
             ).then((_) {
               Navigator.pushReplacement(
                 context,
-                MaterialPageRoute(builder: (_) => const LobbyChildScreen()),
+                MaterialPageRoute(
+                  builder: (_) => LobbyChildScreen(childId: widget.childId),
+                ),
               );
             });
           } else {
@@ -147,7 +150,7 @@ class _WriteStudyViewState extends State<_WriteStudyView> {
       body: Stack(
         alignment: Alignment.center,
         children: [
-          const WriteStudyWidget(),
+          WriteStudyWidget(childId: widget.childId), // ✅ childId 넘기기!
           WritingCanvas(
             onRecognize: (String text) {
               controller.updateRecognizedText(text);

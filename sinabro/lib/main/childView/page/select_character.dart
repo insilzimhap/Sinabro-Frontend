@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'lobby_child.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:sinabro/main/childView/page/lobby_child.dart'; // lobby_child.dart의 경로에 맞게 수정하세요
@@ -50,7 +49,9 @@ class _SelectCharacterPageState extends State<SelectCharacterPage> {
         if (!mounted) return;
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => const LobbyChildScreen()),
+          MaterialPageRoute(
+            builder: (context) => LobbyChildScreen(childId: widget.childId),
+          ),
         );
       } else if (response.statusCode == 409) {
         setState(() {

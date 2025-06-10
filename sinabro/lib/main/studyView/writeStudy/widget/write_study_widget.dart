@@ -6,7 +6,8 @@ import 'package:sinabro/main/studyView/writeStudy/controller/write_study_control
 import 'package:sinabro/main/childView/page/lobby_child.dart';
 
 class WriteStudyWidget extends StatefulWidget {
-  const WriteStudyWidget({super.key});
+  final String childId; // ✅ 추가
+  const WriteStudyWidget({super.key, required this.childId}); // ✅ required 추가
 
   @override
   State<WriteStudyWidget> createState() => _WriteStudyWidgetState();
@@ -113,7 +114,7 @@ class _WriteStudyWidgetState extends State<WriteStudyWidget> {
         if (mounted) {
           Navigator.pushReplacement(
             context,
-            MaterialPageRoute(builder: (_) => const LobbyChildScreen()),
+            MaterialPageRoute(builder: (_) =>LobbyChildScreen(childId: widget.childId)),
           );
         }
       });

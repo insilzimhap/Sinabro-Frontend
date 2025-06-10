@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '/login/signup_page.dart';   // 부모 회원가입 페이지
-import '/login/login_page.dart';   // 부모 로그인 페이지
 
 class LoginParentScreen extends StatelessWidget {
   const LoginParentScreen({super.key});
@@ -18,7 +17,7 @@ class LoginParentScreen extends StatelessWidget {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => LoginPage(role: 'parent'),
+                    builder: (context) => LoginParentScreen(),
                   ),
                 );
               },

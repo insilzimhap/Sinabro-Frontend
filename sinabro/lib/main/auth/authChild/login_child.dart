@@ -3,6 +3,7 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 
 import 'package:sinabro/main/childView/page/select_character.dart';
+import 'package:sinabro/main/childView/page/lobby_child.dart';
 
 class LoginChildScreen extends StatefulWidget {
   const LoginChildScreen({super.key});
@@ -16,6 +17,19 @@ class _LoginChildScreenState extends State<LoginChildScreen> {
   final TextEditingController _pwController = TextEditingController();
   String _message = '';
   bool _isLoading = false;
+
+  // 캐릭터 선택 여부 체크 함수
+  Future<bool> isCharacterSelected(String childId) async {
+    final url = 'http://10.0.2.2:8090/api/character/selection/check?childId=$childId';
+    final response = await http.get(Uri.parse(url));
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      print('서버 응답: $data');
+      return data['selected'] == true;
+    } else {
+      return false;
+    }
+  }
 
   Future<void> _login() async {
     setState(() {
@@ -38,12 +52,24 @@ class _LoginChildScreenState extends State<LoginChildScreen> {
       if (response.statusCode == 200) {
         if (!mounted) return;
         final childId = _idController.text.trim();
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (context) => SelectCharacterPage(childId: childId),
-          ),
-        );
+        final selected = await isCharacterSelected(childId);
+        print('isCharacterSelected: $selected');
+
+        if (selected) {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (context) => LobbyChildScreen(childId: childId),
+            ),
+          );
+        } else {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (context) => SelectCharacterPage(childId: childId),
+            ),
+          );
+        }
       } else {
         setState(() {
           _message = '로그인 실패: 아이디 또는 비밀번호를 확인하세요.';

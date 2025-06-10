@@ -6,7 +6,8 @@ import 'package:sinabro/main/studyView/writeStudy/page/write_study_page.dart';
 import 'package:sinabro/main/studyView/listenStudy/page/listen_study_page.dart';
 
 class LobbyChildScreen extends StatefulWidget {
-  const LobbyChildScreen({super.key});
+  final String childId;
+  const LobbyChildScreen({super.key, required this.childId});
 
   @override
   State<LobbyChildScreen> createState() => _LobbyChildScreenState();
@@ -124,7 +125,7 @@ class _LobbyChildScreenState extends State<LobbyChildScreen> {
                                   Navigator.push(
                                     context,
                                     MaterialPageRoute(
-                                      builder: (_) => const WriteStudyPage(),
+                                      builder: (_) => WriteStudyPage(childId: widget.childId),
                                     ),
                                   );
                                 }),
@@ -133,7 +134,7 @@ class _LobbyChildScreenState extends State<LobbyChildScreen> {
                                   Navigator.push(
                                     context,
                                     MaterialPageRoute(
-                                      builder: (_) => const ListenStudyPage(),
+                                      builder: (_) =>ListenStudyPage(childId: widget.childId),
                                     ),
                                   );
                                 }),

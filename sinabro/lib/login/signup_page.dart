@@ -51,11 +51,14 @@ class _SignUpPageState extends State<SignUpPage> {
 
       if (response.statusCode == 200) {
         if (!mounted) return;
+        final resBody = json.decode(response.body);
+        final childId = resBody['childId'] ?? _usernameController.text.trim();
+
         if (widget.role == 'child') {
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(
-              builder: (context) => const LobbyChildScreen(),
+              builder: (context) => LobbyChildScreen(childId: childId),
             ),
           );
         } else {
