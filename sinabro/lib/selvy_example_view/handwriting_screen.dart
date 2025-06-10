@@ -1,4 +1,4 @@
-/** 
+/*
  * @file lib/selvy_example_view/handwriting_screen.dart
  * @author 문채영
  * 
@@ -10,11 +10,9 @@
  * - Flutter ↔ Android MethodChannel 통신으로 인식 요청
  * - 인식 결과 화면 출력
  */
-///
 
 import 'package:flutter/material.dart';
 import 'package:sinabro/selvy_example_view//selvy_recognizer.dart';
-
 
 /// 하나의 획을 구성하는 좌표(x, y)와 타임스탬프(t)
 /// t는 현재 시간(ms)으로, 필요 시 시간 흐름 추적용으로 사용 가능
@@ -23,15 +21,11 @@ class _StrokePoint {
   _StrokePoint({required this.x, required this.y, required this.t});
 }
 
-
-
 /// 여러 개의 점으로 구성된 획
 class _Stroke {
   final List<_StrokePoint> points;
   _Stroke({required this.points});
 }
-
-
 
 /// 필기 입력 화면 (WritingView 역할)
 /// GestureDetector로 입력 이벤트를 처리하고, CustomPaint로 획을 그린다.
@@ -42,15 +36,11 @@ class HandwritingScreen extends StatefulWidget {
   State<HandwritingScreen> createState() => _HandwritingScreenState();
 }
 
-
-
 class _HandwritingScreenState extends State<HandwritingScreen> {
-  final List<Offset> _currentPoints = [];      // 현재 그리는 획
-  final List<_Stroke> _finishedStrokes = [];   // 이전 획들 저장
-  String _recognizedText = '';                 // 인식 결과
-  bool _isRecognizing = false;                 // 인식 중 여부
-
-
+  final List<Offset> _currentPoints = []; // 현재 그리는 획
+  final List<_Stroke> _finishedStrokes = []; // 이전 획들 저장
+  String _recognizedText = ''; // 인식 결과
+  bool _isRecognizing = false; // 인식 중 여부
 
   /// 새 획 시작
   /// 1. 현재 점 목록 초기화
@@ -88,13 +78,14 @@ class _HandwritingScreenState extends State<HandwritingScreen> {
   void _onPanEnd(DragEndDetails details) {
     final time = DateTime.now().millisecondsSinceEpoch;
     final stroke = _Stroke(
-      points: _currentPoints.map((offset) {
-        return _StrokePoint(
-          x: offset.dx.toInt(),
-          y: offset.dy.toInt(),
-          t: time,
-        );
-      }).toList(),
+      points:
+          _currentPoints.map((offset) {
+            return _StrokePoint(
+              x: offset.dx.toInt(),
+              y: offset.dy.toInt(),
+              t: time,
+            );
+          }).toList(),
     );
 
     setState(() {
@@ -110,7 +101,6 @@ class _HandwritingScreenState extends State<HandwritingScreen> {
   /// - SelvyRecognizer.recognize() 호출하여 결과 수신
   /// - 결과를 화면에 출력
   Future<void> _onRecognizePressed() async {
-
     print('🔍 [Flutter] 인식 버튼 눌림');
 
     if (_finishedStrokes.isEmpty) {
@@ -127,7 +117,7 @@ class _HandwritingScreenState extends State<HandwritingScreen> {
     try {
       final result = await SelvyRecognizer.recognize();
 
-      print('🎯 [Flutter] 네이티브에서 받은 결과: $result'); 
+      print('🎯 [Flutter] 네이티브에서 받은 결과: $result');
 
       setState(() {
         _recognizedText = result;
@@ -220,7 +210,6 @@ class _HandwritingScreenState extends State<HandwritingScreen> {
   }
 }
 
-
 /// 캔버스에 획을 그림 (CustomPainter)
 /// 완료된 획 + 현재 입력 중인 획을 동시에 그림
 class _HandwritingPainter extends CustomPainter {
@@ -234,16 +223,23 @@ class _HandwritingPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = Colors.black
-      ..strokeWidth = 4.0
-      ..strokeCap = StrokeCap.round;
+    final paint =
+        Paint()
+          ..color = Colors.black
+          ..strokeWidth = 4.0
+          ..strokeCap = StrokeCap.round;
 
     // 완료된 획
     for (final stroke in strokes) {
       for (int i = 0; i < stroke.points.length - 1; i++) {
-        final p1 = Offset(stroke.points[i].x.toDouble(), stroke.points[i].y.toDouble());
-        final p2 = Offset(stroke.points[i + 1].x.toDouble(), stroke.points[i + 1].y.toDouble());
+        final p1 = Offset(
+          stroke.points[i].x.toDouble(),
+          stroke.points[i].y.toDouble(),
+        );
+        final p2 = Offset(
+          stroke.points[i + 1].x.toDouble(),
+          stroke.points[i + 1].y.toDouble(),
+        );
         canvas.drawLine(p1, p2, paint);
       }
     }

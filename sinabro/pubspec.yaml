@@ -34,6 +34,7 @@ flutter:
     - assets/img/contents/gameWrite/
     - assets/img/contents/studyListen/
     - assets/img/contents/studyWrite/
+    - assets/img/contents/studyWrite/test/
     - assets/img/icon/
     - assets/img/pageMain/
     - assets/img/pageSetting/
