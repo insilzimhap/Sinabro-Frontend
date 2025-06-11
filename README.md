@@ -7,6 +7,17 @@
 
 ---
 
+## 🎬 시연 영상
+
+<p align="center">
+  <a href="https://youtu.be/KzE0-ie4p6A?si=d79fc-_oeu9bHrUl" target="_blank">
+    <img src="https://img.youtube.com/vi/KzE0-ie4p6A/0.jpg" alt="시나브로 시연 영상 썸네일" width="70%"/><br>
+    <b>👉 유튜브에서 시연 영상 보기</b>
+  </a>
+</p>
+
+---
+
 ## 📝 프로젝트 소개
 
 **시나브로**는 아이들이 자연스럽고 즐겁게 한글을 익힐 수 있도록,  
@@ -71,6 +82,7 @@ AI와 함께 학습, 게임, 그리고 따뜻한 상호작용을 담은 한국�
 ---
 
 ## 📂 폴더 구조
+
 ```
 📦 lib/
  ┣ 📂main/
@@ -84,14 +96,24 @@ AI와 함께 학습, 게임, 그리고 따뜻한 상호작용을 담은 한국�
  ```
 ---
 
-## 🗂️ ERD 구조
-
-> ERD(데이터베이스 구조) 이미지.  
+## 📎 프로젝트 설계도
 
 <p align="center">
-  <img src="ERD_IMAGE_URL" alt="Sinabro ERD" width="600"/>
+  <img src="sinabro/assets/img/icon/project.png" alt="시나브로 프로젝트 설계도" width="80%"/>
 </p>
 
+---
+## 🗂️ ERD 구조
+
+<p align="center">
+  <img src="sinabro/assets/img/icon/erd1.png" alt="Sinabro ERD 1" width="32%"/>
+  <img src="sinabro/assets/img/icon/erd2.png" alt="Sinabro ERD 2" width="32%"/>
+  <img src="sinabro/assets/img/icon/erd3.png" alt="Sinabro ERD 3" width="32%"/>
+</p>
+
+<p align="center">
+  <sub>ERD 구조도: Sinabro의 데이터베이스 설계</sub>
+</p>
 
 ---
 
