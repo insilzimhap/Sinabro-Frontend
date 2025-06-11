@@ -6,7 +6,7 @@
 <p align="center"><i>“모르는 사이에 조금씩, 조금씩”</i></p>
 
 ---
-[PPT 발표 자료 보기](./1조_인실짐합_시나브로_-복사본.pdf)
+[인실짐합 팀 PPT 보기!](https://github.com/insilzimhap/Sinabro-Frontend/1조_인실짐합_시나브로_-복사본.pdf)
 ---
 
 ## 🎬 시연 영상
