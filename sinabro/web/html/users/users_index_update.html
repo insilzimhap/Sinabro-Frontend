@@ -4,7 +4,6 @@
   <meta charset="UTF-8" />
   <title>수정하기 - 시나브로</title>
   <link rel="stylesheet" href="../../css/header.css">
-  <link rel="stylesheet" href="../../css/index.css">
   <style>
     body {
       font-family: 'Arial', sans-serif;
@@ -12,8 +11,6 @@
       margin: 0;
       padding: 0;
     }
-
-    
 
     .edit-container {
       background: white;
@@ -65,22 +62,8 @@
   </style>
 </head>
 <body>
-    <nav class="header">
-        <div>
-          <img src="../../image/inLogo.jpg" id="logo">
-          <div>
-            <ul>
-              <li><a href="../users/users_index.html">회원 관리</a></li>
-              <li><a href="../contents/contents_index.html">컨텐츠 관리</a></li>
-              <li><a href="../notification/users_index.html">알림 관리</a></li>
-              <li><a href="../board/board_notice.html">게시판</a></li>
-            </ul>
-            <a href="../login/login.html">
-              <button type="button">로그인</button>
-            </a>
-          </div>
-        </div>
-      </nav>
+  <!-- 공통 헤더 삽입 -->
+  <div id="header-container"></div>
 
   <div class="edit-container">
     <h2>회원 정보 수정</h2>
@@ -104,18 +87,22 @@
     </table>
     <div class="button-row">
       <button onclick="saveChanges()">저장하기</button>
-      <button onclick="location.href='users_index_parent.html'" class="cancel" >취소하기</button>
+      <button onclick="location.href='users_index_parent.html'" class="cancel">취소하기</button>
     </div>
   </div>
 
   <script>
+    // 공통 헤더 불러오기
+    fetch("../../header.html")
+      .then(res => res.text())
+      .then(data => {
+        document.getElementById("header-container").innerHTML = data;
+      });
+
+    // 저장 시 페이지 이동
     function saveChanges() {
       alert('변경사항이 저장되었습니다!');
-      // 저장 로직 추가 예정
-    }
-
-    function cancelEdit() {
-      window.history.back();
+      location.href = 'users_index_parent.html';
     }
   </script>
 </body>

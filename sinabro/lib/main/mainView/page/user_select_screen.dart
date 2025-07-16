@@ -6,6 +6,9 @@ import 'package:sinabro/main/auth/authParent/login_parent.dart';
 
 import 'package:sinabro/main/parentView/page/no_child_parent.dart';
 
+import 'package:sinabro/main/login_parent.dart';
+import 'package:sinabro/main/login_child.dart';
+
 class UserSelectScreen extends StatelessWidget {
   const UserSelectScreen({super.key});
 

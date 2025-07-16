@@ -4,7 +4,6 @@
   <meta charset="UTF-8" />
   <title>회원 상세 정보 - 시나브로</title>
   <link rel="stylesheet" href="../../css/header.css">
-  <link rel="stylesheet" href="../../css/index.css">
 
   <style>
     body {
@@ -78,28 +77,17 @@
       margin-left: 10px;
     }
 
+    .actions button.edit {
+      background-color: #4caf50;
+    }
+
     .actions button:hover {
-      background-color: #c40000;
+      opacity: 0.9;
     }
   </style>
 </head>
 <body>
-  <nav class="header">
-    <div>
-      <img src="../../image/inLogo.jpg" id="logo">
-      <div>
-        <ul>
-          <li><a href="../users/users_index.html">회원 관리</a></li>
-          <li><a href="../contents/contents_index.html">컨텐츠 관리</a></li>
-          <li><a href="../notification/users_index.html">알림 관리</a></li>
-          <li><a href="../board/board_notice.html">게시판</a></li>
-        </ul>
-        <a href="../login/login.html">
-          <button type="button">로그인</button>
-        </a>
-      </div>
-    </div>
-  </nav>
+  <div id="header-container"></div>
 
   <div class="container">
     <h2>김와와 님</h2>
@@ -133,9 +121,17 @@
     </table>
 
     <div class="actions">
-      <button>수정하기</button>
+      <button class="edit" onclick="location.href='users_index_update.html'">수정하기</button>
       <button>강퇴하기</button>
     </div>
   </div>
+
+  <script>
+    fetch("../../header.html")
+      .then(res => res.text())
+      .then(data => {
+        document.getElementById("header-container").innerHTML = data;
+      });
+  </script>
 </body>
 </html>
