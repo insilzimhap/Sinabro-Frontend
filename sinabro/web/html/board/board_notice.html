@@ -105,29 +105,15 @@
   </style>
 </head>
 <body>
-    <nav class="header">
-        <div>
-          <img src="../../image/inLogo.jpg" id="logo">
-          <div>
-            <ul>
-              <li><a href="../users/users_index.html">회원 관리</a></li>
-              <li><a href="../contents/contents_index.html">컨텐츠 관리</a></li>
-              <li><a href="../notification/users_index.html">알림 관리</a></li>
-              <li><a href="../board/board_notice.html">게시판</a></li>
-            </ul>
-            <a href="../login/login.html">
-              <button type="button">로그인</button>
-            </a>
-          </div>
-        </div>
-      </nav>
+    <div id="header-container"></div>
 
   <main>
     <!-- 서브 헤더 -->
     <div class="sub-nav">
-      <a href="./board_notice.html">공지사항 게시판</a>
-      <a href="./board_qna.html">문의사항 게시판</a>
-    </div>
+  <a href="./board_notice.html" class="active">공지사항 게시판</a>
+  <a href="./board_qna.html">문의사항 게시판</a>
+</div>
+
 
     <!-- 검색 -->
     <div class="search-bar">
@@ -166,5 +152,23 @@
       </tbody>
     </table>
   </main>
+  <script>
+    // 공통 헤더 삽입
+    fetch("../../header.html")
+      .then(res => res.text())
+      .then(data => {
+        document.getElementById("header-container").innerHTML = data;
+      });
+
+    function saveReply() {
+      const replyText = document.getElementById('reply').value.trim();
+      if (replyText) {
+        alert('답변이 저장되었습니다!');
+        window.location.href = 'board_qna.html';
+      } else {
+        alert('답변을 입력해주세요!');
+      }
+    }
+  </script>
 </body>
 </html>

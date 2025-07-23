@@ -4,7 +4,6 @@
   <meta charset="UTF-8" />
   <title>콘텐츠 관리 - 시나브로</title>
   <link rel="stylesheet" href="../../css/header.css">
-  <link rel="stylesheet" href="../../css/index.css">
   <style>
     body {
       font-family: 'Arial', sans-serif;
@@ -80,30 +79,17 @@
       border-radius: 4px;
       cursor: pointer;
     }
-
   </style>
 </head>
 <body>
-    <nav class="header">
-        <div>
-          <img src="../../image/inLogo.jpg" id="logo">
-          <div>
-            <ul>
-              <li><a href="../users/users_index.html">회원 관리</a></li>
-              <li><a href="../contents/contents_index.html">컨텐츠 관리</a></li>
-              <li><a href="../notification/noti_index.html">알림 관리</a></li>
-              <li><a href="../board/board_notice.html">게시판</a></li>
-            </ul>
-            <a href="../login/login.html">
-              <button type="button">로그인</button>
-            </a>
-          </div>
-        </div>
-      </nav>
+
+  <!-- 공통 헤더 삽입 -->
+  <div id="header-container"></div>
 
   <main>
     <div class="container">
       <h2>콘텐츠 관리</h2>
+
       <div class="search-bar">
         <select>
           <option value="all">전체</option>
@@ -151,5 +137,15 @@
       </table>
     </div>
   </main>
+
+  <script>
+    // 공통 헤더 로딩
+    fetch("../../header.html")
+      .then(res => res.text())
+      .then(data => {
+        document.getElementById("header-container").innerHTML = data;
+      });
+  </script>
+
 </body>
 </html>

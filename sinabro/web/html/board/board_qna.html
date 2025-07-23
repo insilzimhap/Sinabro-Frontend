@@ -4,17 +4,12 @@
   <meta charset="UTF-8" />
   <title>공지사항 관리 - 시나브로</title>
   <link rel="stylesheet" href="../../css/header.css">
-  <link rel="stylesheet" href="../../css/index.css">
   <style>
     body {
       font-family: 'Arial', sans-serif;
       background-color: #f0f4f8;
       margin: 0;
       padding: 0;
-    }
-
-    nav {
-      margin-bottom: 10px;
     }
 
     main {
@@ -26,7 +21,6 @@
       box-shadow: 0 0 10px rgba(0,0,0,0.1);
     }
 
-    /* 서브 네비 */
     .sub-nav {
       display: flex;
       gap: 20px;
@@ -48,12 +42,10 @@
       border-color: #4caf50;
     }
 
-
     .sub-nav a:hover {
       background-color: #eee;
     }
 
-    /* 검색 */
     .search-bar {
       display: flex;
       gap: 10px;
@@ -76,7 +68,6 @@
       cursor: pointer;
     }
 
-    /* 표 스타일 */
     table {
       width: 100%;
       border-collapse: collapse;
@@ -92,7 +83,6 @@
       background-color: #f2f2f2;
     }
 
-    /* 관리 버튼 */
     .manage-btn {
       background-color: #2196f3;
       color: white;
@@ -101,42 +91,27 @@
       border-radius: 4px;
       cursor: pointer;
     }
-
   </style>
 </head>
 <body>
-    <nav class="header">
-        <div>
-          <img src="../../image/inLogo.jpg" id="logo">
-          <div>
-            <ul>
-              <li><a href="../users/users_index.html">회원 관리</a></li>
-              <li><a href="../contents/contents_index.html">컨텐츠 관리</a></li>
-              <li><a href="../notification/users_index.html">알림 관리</a></li>
-              <li><a href="../board/board_notice.html">게시판</a></li>
-            </ul>
-            <a href="../login/login.html">
-              <button type="button">로그인</button>
-            </a>
-          </div>
-        </div>
-      </nav>
+
+  <!-- 공통 헤더 -->
+  <div id="header-container"></div>
 
   <main>
-    <!-- 서브 헤더 -->
+    <!-- 서브 네비게이션 -->
     <div class="sub-nav">
-      <a href="./board_notice.html">공지사항 게시판</a>
+      <a href="./board_notice.html" class="active">공지사항 게시판</a>
       <a href="./board_qna.html">문의사항 게시판</a>
     </div>
 
-    <!-- 검색 -->
+    <!-- 검색 영역 -->
     <div class="search-bar">
       <input type="text" placeholder="검색어를 입력하세요">
       <button>검색</button>
     </div>
-    <div style="text-align: right; margin-bottom: 10px;">
-      </div>
-    <!-- 공지사항 표 -->
+
+    <!-- 공지사항 목록 테이블 -->
     <table>
       <thead>
         <tr>
@@ -165,5 +140,14 @@
       </tbody>
     </table>
   </main>
+
+  <script>
+    // 공통 헤더 불러오기
+    fetch("../../header.html")
+      .then(res => res.text())
+      .then(data => {
+        document.getElementById("header-container").innerHTML = data;
+      });
+  </script>
 </body>
 </html>

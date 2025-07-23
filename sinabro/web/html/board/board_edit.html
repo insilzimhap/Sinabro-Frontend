@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <title>공지사항 수정 - 시나브로</title>
+  <link rel="stylesheet" href="../../css/header.css" />
+  <style>
+    body {
+      font-family: 'Arial', sans-serif;
+      background-color: #f0f4f8;
+      margin: 0;
+      padding: 0;
+    }
+
+    main {
+      padding: 50px;
+      display: flex;
+      justify-content: center;
+    }
+
+    .container {
+      background: white;
+      padding: 30px;
+      border-radius: 10px;
+      box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+      width: 500px;
+    }
+
+    h2 {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      margin-bottom: 20px;
+    }
+
+    .form-group label {
+      font-weight: bold;
+      margin-bottom: 6px;
+    }
+
+    .form-group input,
+    .form-group textarea {
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      font-size: 14px;
+      width: 100%;
+    }
+
+    textarea {
+      resize: vertical;
+      min-height: 100px;
+    }
+
+    .form-group input[readonly] {
+      background-color: #eee;
+    }
+
+    .button-row {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+    }
+
+    .button-row button {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 4px;
+      font-size: 14px;
+      cursor: pointer;
+      color: white;
+    }
+
+    .save-btn {
+      background-color: #4caf50;
+    }
+
+    .cancel-btn {
+      background-color: #777;
+    }
+    form {
+  display: block !important;
+  flex-direction: column !important;
+}
+
+  </style>
+</head>
+<body>
+  <div id="header-container"></div>
+
+  <main>
+    <div class="container">
+      <h2>공지사항 수정</h2>
+      <form id="editForm">
+        <div class="form-group">
+          <label for="title">제목</label>
+          <input type="text" id="title" value="시스템 점검 안내" required />
+        </div>
+
+        <div class="form-group">
+          <label for="content">내용</label>
+          <textarea id="content" required>금일 22:00 시스템 점검이 예정되어 있습니다.</textarea>
+        </div>
+
+        <div class="form-group">
+          <label for="date">작성일</label>
+          <input type="text" id="date" value="2025-04-11" readonly />
+        </div>
+
+        <div class="form-group">
+          <label for="author">작성자</label>
+          <input type="text" id="author" value="관리자" readonly />
+        </div>
+
+        <div class="button-row">
+          <button type="submit" class="save-btn">저장하기</button>
+          <button type="button" class="cancel-btn" onclick="location.href='board_notice.html'">취소하기</button>
+        </div>
+      </form>
+    </div>
+  </main>
+
+  <script>
+    document.getElementById('editForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      alert("공지사항이 수정되었습니다.");
+      window.location.href = 'board_notice.html';
+    });
+  </script>
+  <script>
+    // 공통 헤더 삽입
+    fetch("../../header.html")
+      .then(res => res.text())
+      .then(data => {
+        document.getElementById("header-container").innerHTML = data;
+      });
+
+    function saveReply() {
+      const replyText = document.getElementById('reply').value.trim();
+      if (replyText) {
+        alert('답변이 저장되었습니다!');
+        window.location.href = 'board_qna.html';
+      } else {
+        alert('답변을 입력해주세요!');
+      }
+    }
+  </script>
+</body>
+</html>

@@ -4,29 +4,70 @@
   <meta charset="UTF-8" />
   <title>로그인</title>
   <link rel="stylesheet" href="../../css/header.css">
-  <link rel="stylesheet" href="../../css/index.css">
+  <style>
+    body {
+      background-color: #f2f2f2;
+      font-family: 'Arial', sans-serif;
+    }
+
+    .login-container {
+      background: white;
+      max-width: 400px;
+      margin: 100px auto;
+      padding: 40px 30px;
+      border-radius: 12px;
+      box-shadow: 0 0 15px rgba(0,0,0,0.1);
+      text-align: center;
+    }
+
+    .login-container h2 {
+      margin-bottom: 30px;
+    }
+
+    form {
+      display: block !important; /* header.css의 flex 무력화 */
+      text-align: left;
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    label {
+      display: block;
+      font-weight: bold;
+      margin-bottom: 8px;
+    }
+
+    input {
+      width: 100%;
+      padding: 10px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+      font-size: 14px;
+    }
+
+    button[type="submit"] {
+      width: 100%;
+      padding: 12px;
+      background-color: #4CAF50;
+      color: white;
+      font-size: 16px;
+      font-weight: bold;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    button[type="submit"]:hover {
+      background-color: #45a049;
+    }
+  </style>
 </head>
 <body>
-    <nav class="header">
-        <div>
-          <img src="../../image/inLogo.jpg" id="logo">
-          <div>
-            <ul>
-              <li><a href="../users/users_index.html">회원 관리</a></li>
-              <li><a href="../contents/contents_index.html">컨텐츠 관리</a></li>
-              <li><a href="../notification/users_index.html">알림 관리</a></li>
-              <li><a href="../board/board_notice.html">게시판</a></li>
-            </ul>
+  <!-- 공통 헤더 -->
+  <div id="header-container"></div>
 
-
-            
-            <!-- <form>
-              <input type="search" placeholder="Search">
-              <button type="submit">Search</button>
-            </form> -->
-          </div>
-        </div>
-      </nav>
   <div class="login-container">
     <h2>로그인</h2>
     <form action="#" method="post">
@@ -41,5 +82,13 @@
       <button type="submit">로그인</button>
     </form>
   </div>
+
+  <script>
+    fetch("../../header.html")
+      .then(res => res.text())
+      .then(data => {
+        document.getElementById("header-container").innerHTML = data;
+      });
+  </script>
 </body>
 </html>

@@ -4,7 +4,6 @@
   <meta charset="UTF-8" />
   <title>문짜짜 자녀 상세 페이지</title>
   <link rel="stylesheet" href="../../css/header.css">
-  <link rel="stylesheet" href="../../css/index.css">
 
   <style>
     body {
@@ -57,23 +56,8 @@
 </head>
 
 <body>
-  <!-- Header -->
-  <nav class="header">
-    <div>
-      <img src="../../image/inLogo.jpg" id="logo">
-      <div>
-        <ul>
-          <li><a href="../users/users_index.html">회원 관리</a></li>
-          <li><a href="../contents/contents_index.html">컨텐츠 관리</a></li>
-          <li><a href="../notification/users_index.html">알림 관리</a></li>
-          <li><a href="../board/board_notice.html">게시판</a></li>
-        </ul>
-        <a href="../login/login.html">
-          <button type="button">로그인</button>
-        </a>
-      </div>
-    </div>
-  </nav>
+  <!-- 공통 헤더 삽입 위치 -->
+  <div id="header-container"></div>
 
   <!-- Main content -->
   <div class="container">
@@ -93,5 +77,14 @@
       </div>
     </div>
   </div>
+
+  <script>
+    // 공통 헤더 불러오기
+    fetch("../../header.html")
+      .then(res => res.text())
+      .then(data => {
+        document.getElementById("header-container").innerHTML = data;
+      });
+  </script>
 </body>
 </html>
