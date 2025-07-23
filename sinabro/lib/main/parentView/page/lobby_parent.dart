@@ -1,61 +1,88 @@
 import 'package:flutter/material.dart';
-import '/login/child_signup_page.dart';
 
-class LobbyParentScreen extends StatelessWidget {
-  final String parentUserId; // 부모의 userId
+import 'package:sinabro/main/parentView/layout/parent_layout.dart';
+import 'package:sinabro/main/parentView/page/add_child_form.dart';
 
-  const LobbyParentScreen({super.key, required this.parentUserId});
+class SelectParentsPage extends StatelessWidget {
+  final String parentUserId;
+  const SelectParentsPage({super.key, required this.parentUserId});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFFDF5E6), // 아이 스타일과 동일한 배경색
       appBar: AppBar(
-        title: const Text('부모 메인 로비'),
-        backgroundColor: Colors.orange[200],
-        foregroundColor: Colors.brown,
+        title: const Text('자녀 선택'),
+        centerTitle: true,
+        backgroundColor: const Color(0xFFF5F5F5),
         elevation: 0,
       ),
-      body: SafeArea(
-        child: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(Icons.family_restroom, size: 80, color: Colors.brown),
-              const SizedBox(height: 24),
-              const Text(
-                '환영합니다, 부모님!',
-                style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.brown,
+      body: Row(
+        children: [
+          // ✅ 공통 사이드바
+          const ParentSidebar(activeMenu: '마이페이지'),
+
+          // ✅ 오른쪽 콘텐츠
+          Expanded(
+            child: Container(
+              color: const Color(0xFFE4F1FA),
+              child: Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // ✅ 이미지 삽입
+                    Container(
+                      width: 120,
+                      height: 120,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFEDEDED),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(12),
+                        child: Image.asset(
+                          'assets/img/icon/sorry.png',
+                          fit: BoxFit.cover,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    const Text(
+                      '아이를 추가하지 않으셨어요',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    ElevatedButton(
+                      onPressed: () {
+                        Navigator.pushReplacement(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => AddChildFormPage(parentUserId: parentUserId),
+                          ),
+                        );
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFFE9DAB7),
+                        foregroundColor: Colors.brown,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 30,
+                          vertical: 12,
+                        ),
+                        elevation: 6,
+                      ),
+                      child: const Text('아이 추가하기'),
+                    ),
+                  ],
                 ),
               ),
-              const SizedBox(height: 40),
-              ElevatedButton(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => ChildSignUpPage(parentUserId: parentUserId),
-                    ),  
-                  );
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.orangeAccent,
-                  foregroundColor: Colors.brown,
-                  padding: const EdgeInsets.symmetric(horizontal: 36, vertical: 18),
-                  textStyle: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  elevation: 4,
-                ),
-                child: const Text('우리 아이 회원가입'),
-              ),
-            ],
+            ),
           ),
-        ),
+        ],
       ),
     );
   }

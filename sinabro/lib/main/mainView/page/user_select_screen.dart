@@ -4,8 +4,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sinabro/main/auth/authChild/login_child.dart';
 import 'package:sinabro/main/auth/authParent/login_parent.dart';
 
-import 'package:sinabro/main/parentView/page/no_child_parent.dart';
-
 class UserSelectScreen extends StatelessWidget {
   const UserSelectScreen({super.key});
 
@@ -16,22 +14,20 @@ class UserSelectScreen extends StatelessWidget {
     if (userType == '아이') {
       Navigator.push(
         context,
-        MaterialPageRoute(builder: (context) => const LoginChildScreen()),
+        MaterialPageRoute(
+          builder: (context) => const LoginChildScreen(),
+        ),
       );
     } else {
       Navigator.push(
         context,
-        MaterialPageRoute(builder: (context) => const LoginParentScreen()),
+        MaterialPageRoute(
+          builder: (context) => LoginParentScreen(role: 'parent'),
+        ),
       );
     }
   }
 
-  void _goToNoChildParent(BuildContext context) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => const SelectParentsPage()),
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -39,10 +35,10 @@ class UserSelectScreen extends StatelessWidget {
       appBar: AppBar(
         title: const Text('사용자 선택'),
         centerTitle: true,
-        backgroundColor: const Color(0xFFE8F4FD), // AppBar 배경도 통일
+        backgroundColor: const Color(0xFFE8F4FD),
         elevation: 0,
       ),
-      backgroundColor: const Color(0xFFE8F4FD), // ✅ 연파랑 배경 적용
+      backgroundColor: const Color(0xFFE8F4FD),
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -55,28 +51,16 @@ class UserSelectScreen extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Column(
-                  children: [
-                    _buildUserButton(context, '부모'),
-                    const SizedBox(height: 8),
-                    TextButton(
-                      onPressed: () => _goToNoChildParent(context),
-                      child: const Text(
-                        '부모 아이X',
-                        style: TextStyle(fontSize: 12, color: Colors.grey),
-                      ),
-                    ),
-                  ],
-                ),
+                _buildUserButton(context, '부모'),
                 const SizedBox(width: 20),
                 _buildUserButton(context, '아이'),
               ],
             ),
-          ],
-        ),
-      ),
-    );
-  }
+                      ],
+                    ),
+                  ),
+                );
+              }
 
   Widget _buildUserButton(BuildContext context, String label) {
     return ElevatedButton(

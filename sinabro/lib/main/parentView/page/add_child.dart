@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:sinabro/main/parentView/layout/parent_layout.dart';
-import 'package:sinabro/main/parentView/page/no_child_parent.dart';
+import 'package:sinabro/main/parentView/page/lobby_parent.dart';
 import 'package:sinabro/main/parentView/page/add_child_form.dart';
 
 class AddChildPage extends StatelessWidget {
-  const AddChildPage({super.key});
+  final String parentUserId;
+  const AddChildPage({super.key, required this.parentUserId});
+
 
   @override
   Widget build(BuildContext context) {
@@ -61,7 +63,7 @@ class AddChildPage extends StatelessWidget {
                                     MaterialPageRoute(
                                       builder:
                                           (context) =>
-                                              const SelectParentsPage(),
+                                              SelectParentsPage(parentUserId: parentUserId),
                                     ),
                                   );
                                 },
@@ -78,7 +80,7 @@ class AddChildPage extends StatelessWidget {
                                 MaterialPageRoute(
                                   builder:
                                       (context) =>
-                                          const AddChildFormPage(), // ✅ 폼 화면으로 이동
+                                          AddChildFormPage(parentUserId: parentUserId,), // ✅ 폼 화면으로 이동
                                 ),
                               );
                             },

@@ -1,13 +1,19 @@
+// 📄 수정된 WriteStudyWidget (write_study_widget.dart)
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:audioplayers/audioplayers.dart';
 
 import 'package:sinabro/main/studyView/writeStudy/controller/write_study_controller.dart';
+import 'package:sinabro/main/studyView/writeStudy/widget/writing_canvas.dart';
+
 import 'package:sinabro/main/childView/page/lobby_child.dart';
 
+/// 각 학습 단계에 따라 이미지를 구성하고 피드백을 보여주는 위젯
 class WriteStudyWidget extends StatefulWidget {
-  final String childId; // ✅ 추가
-  const WriteStudyWidget({super.key, required this.childId}); // ✅ required 추가
+  final GlobalKey<WritingCanvasState> canvasKey;
+  final String childId; 
+
+  const WriteStudyWidget({super.key, required this.canvasKey, this.childId = ""});
 
   @override
   State<WriteStudyWidget> createState() => _WriteStudyWidgetState();
@@ -54,6 +60,7 @@ class _WriteStudyWidgetState extends State<WriteStudyWidget> {
     }
   }
 
+  /// 1단계: 자모음 UI
   Widget buildConsonantStage(WriteStudyController controller) {
     final step = controller.currentStep;
     return Row(
@@ -72,12 +79,24 @@ class _WriteStudyWidgetState extends State<WriteStudyWidget> {
                 'assets/img/contents/studyWrite/correct.png',
                 width: 400,
               ),
+            SizedBox(
+              width: 250,
+              height: 250,
+              child: WritingCanvas(
+                key: widget.canvasKey,
+                onRecognize: (String text) {
+                  controller.updateRecognizedText(text);
+                },
+                childId: widget.childId,
+              ),
+            ),
           ],
         ),
       ],
     );
   }
 
+  /// 2단계: 단어 쓰기 UI
   Widget buildWordStage(WriteStudyController controller) {
     final step = controller.currentStep;
     return Center(
@@ -86,18 +105,29 @@ class _WriteStudyWidgetState extends State<WriteStudyWidget> {
         children: [
           GestureDetector(
             onTap: () => _playSound(ttsPaths[step]),
-            child: Image.asset(mainImagePaths[step], width: 300),
+            child: Image.asset(mainImagePaths[step], width: 280),
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 12),
           Stack(
             alignment: Alignment.center,
             children: [
-              Image.asset(strokeImagePaths[step], width: 420),
+              Image.asset(strokeImagePaths[step], width: 280),
               if (controller.isCorrect)
                 Image.asset(
                   'assets/img/contents/studyWrite/correct.png',
-                  width: 350,
+                  width: 200,
                 ),
+              SizedBox(
+                width: 280,
+                height: 200,
+                child: WritingCanvas(
+                  key: widget.canvasKey,
+                  onRecognize: (String text) {
+                    controller.updateRecognizedText(text);
+                  },
+                  childId: widget.childId,
+                ),
+              ),
             ],
           ),
         ],
@@ -105,16 +135,16 @@ class _WriteStudyWidgetState extends State<WriteStudyWidget> {
     );
   }
 
+  /// 3단계: 문장 쓰기 UI + 자동 로비 이동
   Widget buildSentenceStage(WriteStudyController controller) {
     final step = controller.currentStep;
 
     if (controller.isCorrect) {
-      // 정답이고 마지막 단계이면 2초 후 로비로 이동
       Future.delayed(const Duration(seconds: 2), () {
         if (mounted) {
           Navigator.pushReplacement(
             context,
-            MaterialPageRoute(builder: (_) =>LobbyChildScreen(childId: widget.childId)),
+            MaterialPageRoute(builder: (_) => LobbyChildScreen(childId: widget.childId)),
           );
         }
       });
@@ -126,18 +156,31 @@ class _WriteStudyWidgetState extends State<WriteStudyWidget> {
         children: [
           GestureDetector(
             onTap: () => _playSound(ttsPaths[step]),
-            child: Image.asset(mainImagePaths[step], width: 300),
+            child: Image.asset(mainImagePaths[step], width: 250),
           ),
-          const SizedBox(height: 32),
+          const SizedBox(height: 12),
           Stack(
             alignment: Alignment.center,
             children: [
-              Image.asset(strokeImagePaths[step], width: 700),
+              Image.asset(strokeImagePaths[step], width: 600, height: 200),
               if (controller.isCorrect)
                 Image.asset(
                   'assets/img/contents/studyWrite/correct.png',
-                  width: 380,
+                  width: 200,
                 ),
+              SizedBox(
+                width: 600,
+                height: 200,
+                child: Container(
+                  child: WritingCanvas(
+                    key: widget.canvasKey,
+                    onRecognize: (String text) {
+                      controller.updateRecognizedText(text);
+                    },
+                    childId: widget.childId,
+                  ),
+                ),
+              ),
             ],
           ),
         ],

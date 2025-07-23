@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 import 'package:sinabro/main/parentView/layout/parent_layout.dart';
 
 class AddChildFormPage extends StatefulWidget {
-  const AddChildFormPage({super.key});
+  final String parentUserId;
+  const AddChildFormPage({super.key, required this.parentUserId});
 
   @override
   State<AddChildFormPage> createState() => _AddChildFormPageState();
@@ -11,31 +14,23 @@ class AddChildFormPage extends StatefulWidget {
 class _AddChildFormPageState extends State<AddChildFormPage> {
   final TextEditingController idController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
-  final TextEditingController confirmPasswordController =
-      TextEditingController();
   final TextEditingController nameController = TextEditingController();
+  final TextEditingController nicknameController = TextEditingController();
 
-  // ✅ 생년월일 Dropdown 값
+  String _message = '';
+  bool _isLoading = false;
+
+  // 생년월일 Dropdown 값
   String? selectedYear;
   String? selectedMonth;
   String? selectedDay;
 
-  // ✅ 제한시간
+  // 제한시간
   String? selectedLimitTime;
 
-  final List<String> yearList = List.generate(
-    20,
-    (index) => (2010 + index).toString(),
-  ); // 2010~2029
-  final List<String> monthList = List.generate(
-    12,
-    (index) => (index + 1).toString().padLeft(2, '0'),
-  );
-  final List<String> dayList = List.generate(
-    31,
-    (index) => (index + 1).toString().padLeft(2, '0'),
-  );
-
+  final List<String> yearList = List.generate(20, (index) => (2010 + index).toString());
+  final List<String> monthList = List.generate(12, (index) => (index + 1).toString().padLeft(2, '0'));
+  final List<String> dayList = List.generate(31, (index) => (index + 1).toString().padLeft(2, '0'));
   final List<String> limitTimes = ['30분', '45분', '1시간', '1시간 30분', '제한없음'];
 
   @override
@@ -45,6 +40,92 @@ class _AddChildFormPageState extends State<AddChildFormPage> {
     selectedMonth = monthList.first;
     selectedDay = dayList.first;
     selectedLimitTime = limitTimes.first;
+  }
+
+  Future<void> _registerChild() async {
+    setState(() {
+      _isLoading = true;
+      _message = '';
+    });
+
+    //const url = 'http://10.0.2.2:8090/api/child/register';
+    const url = 'http://172.30.1.64:8090/api/child/register';
+
+    // 생년월일 조합
+    final childBirth = '${selectedYear!}-${selectedMonth!}-${selectedDay!}';
+
+    // 제한시간 숫자 변환 (예시: '30분' → 30, '제한없음' → null)
+    int? timeLimitMinutes;
+    if (selectedLimitTime == '30분') timeLimitMinutes = 30;
+    else if (selectedLimitTime == '45분') timeLimitMinutes = 45;
+    else if (selectedLimitTime == '1시간') timeLimitMinutes = 60;
+    else if (selectedLimitTime == '1시간 30분') timeLimitMinutes = 90;
+    else timeLimitMinutes = null;
+
+    try {
+      final response = await http.post(
+        Uri.parse(url),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({
+          'childId': idController.text.trim(),
+          'childPw': passwordController.text.trim(),
+          'childName': nameController.text.trim(),
+          'childNickName': nicknameController.text.trim(),
+          'childBirth': childBirth,
+          'childAge': _calcAge(selectedYear!, selectedMonth!, selectedDay!),
+          'childLevel': '', // 필요시 추가
+          'role': 'child',
+          'userId': widget.parentUserId,
+          'timeLimitMinutes': timeLimitMinutes,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        if (!mounted) return;
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('등록 성공'),
+            content: const Text('자녀 계정이 성공적으로 추가되었습니다!'),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(context); // 다이얼로그 닫기
+                  Navigator.pop(context); // 폼 페이지 닫기
+                },
+                child: const Text('확인'),
+              ),
+            ],
+          ),
+        );
+      } else if (response.statusCode == 409) {
+        setState(() {
+          _message = '이미 존재하는 아이디입니다.';
+        });
+      } else {
+        setState(() {
+          _message = '등록 실패: ${response.statusCode}\n${response.body}';
+        });
+      }
+    } catch (e) {
+      setState(() {
+        _message = '에러 발생: $e';
+      });
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
+  int _calcAge(String year, String month, String day) {
+    final now = DateTime.now();
+    final birth = DateTime(int.parse(year), int.parse(month), int.parse(day));
+    int age = now.year - birth.year;
+    if (now.month < birth.month || (now.month == birth.month && now.day < birth.day)) {
+      age--;
+    }
+    return age;
   }
 
   @override
@@ -81,33 +162,29 @@ class _AddChildFormPageState extends State<AddChildFormPage> {
                         ),
                       ),
                       const SizedBox(height: 24),
-
                       _buildTextField('아이디', idController),
                       const SizedBox(height: 16),
-                      _buildTextField(
-                        '비밀번호',
-                        passwordController,
-                        isObscure: true,
-                      ),
-                      const SizedBox(height: 16),
-                      _buildTextField(
-                        '재입력',
-                        confirmPasswordController,
-                        isObscure: true,
-                      ),
+                      _buildTextField('비밀번호', passwordController, isObscure: true),
                       const SizedBox(height: 16),
                       _buildTextField('이름', nameController),
+                      const SizedBox(height: 16),
+                      _buildTextField('닉네임', nicknameController),
                       const SizedBox(height: 16),
                       _buildBirthSelector(),
                       const SizedBox(height: 16),
                       _buildLimitTimeDropdown(),
                       const SizedBox(height: 24),
-                      ElevatedButton(
-                        onPressed: () {
-                          // TODO: 제출 처리
-                        },
-                        child: const Text('저장하기'),
-                      ),
+                      _isLoading
+                          ? const CircularProgressIndicator()
+                          : ElevatedButton(
+                              onPressed: _registerChild,
+                              child: const Text('저장하기'),
+                            ),
+                      if (_message.isNotEmpty)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 16.0),
+                          child: Text(_message, style: const TextStyle(color: Colors.red)),
+                        ),
                     ],
                   ),
                 ),
@@ -165,34 +242,25 @@ class _AddChildFormPageState extends State<AddChildFormPage> {
         const SizedBox(width: 16),
         DropdownButton<String>(
           value: selectedYear,
-          items:
-              yearList
-                  .map(
-                    (val) => DropdownMenuItem(value: val, child: Text('$val년')),
-                  )
-                  .toList(),
+          items: yearList
+              .map((val) => DropdownMenuItem(value: val, child: Text('$val년')))
+              .toList(),
           onChanged: (val) => setState(() => selectedYear = val),
         ),
         const SizedBox(width: 8),
         DropdownButton<String>(
           value: selectedMonth,
-          items:
-              monthList
-                  .map(
-                    (val) => DropdownMenuItem(value: val, child: Text('$val월')),
-                  )
-                  .toList(),
+          items: monthList
+              .map((val) => DropdownMenuItem(value: val, child: Text('$val월')))
+              .toList(),
           onChanged: (val) => setState(() => selectedMonth = val),
         ),
         const SizedBox(width: 8),
         DropdownButton<String>(
           value: selectedDay,
-          items:
-              dayList
-                  .map(
-                    (val) => DropdownMenuItem(value: val, child: Text('$val일')),
-                  )
-                  .toList(),
+          items: dayList
+              .map((val) => DropdownMenuItem(value: val, child: Text('$val일')))
+              .toList(),
           onChanged: (val) => setState(() => selectedDay = val),
         ),
       ],
@@ -209,10 +277,9 @@ class _AddChildFormPageState extends State<AddChildFormPage> {
         const SizedBox(width: 16),
         DropdownButton<String>(
           value: selectedLimitTime,
-          items:
-              limitTimes
-                  .map((val) => DropdownMenuItem(value: val, child: Text(val)))
-                  .toList(),
+          items: limitTimes
+              .map((val) => DropdownMenuItem(value: val, child: Text(val)))
+              .toList(),
           onChanged: (val) => setState(() => selectedLimitTime = val),
         ),
       ],

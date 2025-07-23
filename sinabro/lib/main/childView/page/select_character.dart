@@ -33,7 +33,8 @@ class _SelectCharacterPageState extends State<SelectCharacterPage> {
     };
     final characterId = characterIdMap[characterName];
 
-    final url = 'http://10.0.2.2:8090/api/character/selection';
+    //final url = 'http://10.0.2.2:8090/api/character/selection';
+    const url = 'http://172.30.1.64:8090/api/character/selection';
 
     try {
       final response = await http.post(

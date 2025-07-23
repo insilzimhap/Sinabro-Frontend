@@ -28,7 +28,8 @@ class _ChildSignUpPageState extends State<ChildSignUpPage> {
       _message = '';
     });
 
-    const url = 'http://10.0.2.2:8090/api/child/register';
+    //const url = 'http://10.0.2.2:8090/api/child/register';
+    const url = 'http://172.30.1.64:8090/api/child/register';
 
     try {
       final response = await http.post(

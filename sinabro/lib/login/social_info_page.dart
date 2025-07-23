@@ -34,7 +34,8 @@ class _SocialExtraInfoPageState extends State<SocialExtraInfoPage> {
       _message = '';
     });
 
-    const url = 'http://10.0.2.2:8090/api/users/social-register';
+    //const url = 'http://10.0.2.2:8090/api/users/social-register';
+    const url = 'http://172.30.1.64:8090/api/users/social-register';
 
     try {
       final response = await http.post(
@@ -53,10 +54,16 @@ class _SocialExtraInfoPageState extends State<SocialExtraInfoPage> {
       );
 
       if (response.statusCode == 200) {
+        // 서버에서 userId 반환하는 경우
+        final userInfo = json.decode(response.body);
+        final parentUserId = userInfo['userId'] ?? widget.userId;
+
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => const LobbyParentScreen(parentUserId: "")), // parentUserId 전달 필요시 수정
-        );  
+          MaterialPageRoute(
+            builder: (context) => SelectParentsPage(parentUserId: parentUserId),
+          ),
+        );
       } else {
         setState(() {
           _message = '회원가입 실패: ${response.statusCode}\n${response.body}';
@@ -96,7 +103,6 @@ class _SocialExtraInfoPageState extends State<SocialExtraInfoPage> {
               decoration: const InputDecoration(labelText: '휴대폰 번호'),
             ),
             const SizedBox(height: 16),
-            // 역할 선택 대신 "부모"로 고정 표시
             Row(
               children: const [
                 Text(
@@ -115,11 +121,12 @@ class _SocialExtraInfoPageState extends State<SocialExtraInfoPage> {
             ),
             const SizedBox(height: 20),
             _isLoading
-                ? const CircularProgressIndicator()
-                : ElevatedButton(
-                    onPressed: _phoneController.text.trim().isNotEmpty ? _submit : null,
-                    child: const Text('회원가입 완료'),
-                  ),
+              ? const CircularProgressIndicator()
+              : ElevatedButton(
+                  onPressed: _submit, // 항상 활성화
+                  child: const Text('회원가입 완료'),
+                ),
+
             const SizedBox(height: 20),
             Text(
               _message,
