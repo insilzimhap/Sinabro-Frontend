@@ -3,88 +3,9 @@
 <head>
   <meta charset="UTF-8" />
   <title>회원 상세 정보 - 시나브로</title>
-  <link rel="stylesheet" href="../../css/header.css">
-
-  <style>
-    body {
-      font-family: 'Arial', sans-serif;
-      background-color: #f9f9f9;
-      margin: 0;
-      padding: 0;
-    }
-
-    .container {
-      max-width: 800px;
-      margin: 50px auto;
-      padding: 30px;
-      background-color: white;
-      border: 1px solid #ccc;
-      border-radius: 8px;
-    }
-
-    h2 {
-      margin-bottom: 20px;
-    }
-
-    .info-group {
-      margin-bottom: 20px;
-    }
-
-    .info-group strong {
-      display: inline-block;
-      width: 100px;
-    }
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
-    }
-
-    table, th, td {
-      border: 1px solid #ddd;
-    }
-
-    th, td {
-      padding: 10px;
-      text-align: left;
-    }
-
-    .child-button {
-      background-color: #007bff;
-      color: white;
-      border: none;
-      padding: 6px 12px;
-      border-radius: 4px;
-      cursor: pointer;
-    }
-
-    .child-button:hover {
-      background-color: #0056b3;
-    }
-
-    .actions {
-      margin-top: 20px;
-      text-align: right;
-    }
-
-    .actions button {
-      background-color: #e60000;
-      color: white;
-      border: none;
-      padding: 10px 20px;
-      border-radius: 4px;
-      cursor: pointer;
-      margin-left: 10px;
-    }
-
-    .actions button.edit {
-      background-color: #4caf50;
-    }
-
-    .actions button:hover {
-      opacity: 0.9;
-    }
-  </style>
+ 
+  <link rel="stylesheet" href="/sinabro/web/css/header.css" />
+<link rel="stylesheet" href="/sinabro/web/css/users/users_index_parent.css" />
 </head>
 <body>
   <div id="header-container"></div>
@@ -122,7 +43,7 @@
 
     <div class="actions">
       <button class="edit" onclick="location.href='users_index_update.html'">수정하기</button>
-      <button>강퇴하기</button>
+      <button onclick="confirmDelete()">삭제하기</button>
     </div>
   </div>
 
@@ -132,6 +53,13 @@
       .then(data => {
         document.getElementById("header-container").innerHTML = data;
       });
+
+    function confirmDelete() {
+      const confirmed = confirm("정말 삭제하시겠습니까?");
+      if (confirmed) {
+        window.location.href = "users_index.html";
+      }
+    }
   </script>
 </body>
 </html>

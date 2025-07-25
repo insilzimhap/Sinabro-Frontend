@@ -4,8 +4,7 @@
   <meta charset="UTF-8" />
   <title>문의사항 관리 - 시나브로</title>
   <link rel="stylesheet" href="/sinabro/web/css/header.css" />
-<link rel="stylesheet" href="/sinabro/web/css/board/board_qna_answer.css" />
-  
+  <link rel="stylesheet" href="/sinabro/web/css/board/board_qna_answer.css" />
 </head>
 <body>
   <!-- 공통 헤더 -->
@@ -14,24 +13,18 @@
   <main>
     <h2>문의사항 관리</h2>
     <div class="info">
-      <p><strong>제목:</strong> 사용법 관련 문의</p>
-      <p><strong>작성자:</strong> 심정화</p>
-      <p><strong>작성일:</strong> 2025-04-11</p>
+      <p><strong>제목:</strong> 보상이 안왔어요.</p>
+      <p><strong>작성자:</strong> 박성민</p>
+      <p><strong>작성일:</strong> 2025-04-10</p>
       <p><strong>문의 내용:</strong></p>
       <div class="scroll-box">
-        안녕하세요, 시스템 사용법에 대해 문의드립니다. 어떻게 이용하나요?냐냐냐냐냐ㅑ냔
-        이 기능을 사용하려면 메뉴에서 설정을 눌러주세요!냐냐냔냐냐냐냐냐냐
-        자세한 사용 방법은 아래 설명을 참고하세요. 
-        (길게 써서 스크롤 테스트!)
-        냐냐냐냐냐냐
-        냐냐냐ㅐ냐냔
-        냐냐냐냐냔
-        ㅐㄴ내내내내내
+        이벤트 참여했는데 보상이 아직 안왔습니다. 확인 부탁드립니다.
       </div>
     </div>
 
-    <label for="reply">답변 작성</label>
-    <textarea id="reply" placeholder="답변 내용을 입력하세요."></textarea>
+    <label for="reply">답변 작성:</label>
+    <textarea id="reply">안녕하세요. 박성민님. 참여해주셔서 감사합니다.
+보상은 이벤트 종료 후 3일 이내 일괄 지급됩니다. 조금만 기다려 주세요.</textarea>
 
     <div class="button-group">
       <button class="save-btn" onclick="saveReply()">저장하기</button>
@@ -50,10 +43,10 @@
     function saveReply() {
       const replyText = document.getElementById('reply').value.trim();
       if (replyText) {
-        alert('답변이 저장되었습니다!');
+        alert('답변이 수정되었습니다!');
         window.location.href = 'board_qna.html';
       } else {
-        alert('답변을 입력해주세요!');
+        alert('답변 내용을 입력해주세요!');
       }
     }
   </script>
