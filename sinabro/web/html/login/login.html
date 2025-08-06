@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <title>로그인</title>
-<link rel="stylesheet" href="/web/css/header.css" />
-<link rel="stylesheet" href="/web/css/login/login.css" />
+  <link rel="stylesheet" href="/web/css/header.css" />
+  <link rel="stylesheet" href="/web/css/login/login.css" />
 </head>
 <body>
   <!-- 공통 헤더 -->
@@ -12,25 +12,68 @@
 
   <div class="login-container">
     <h2>로그인</h2>
-    <form action="#" method="post">
+    <form id="loginForm" method="post">
       <div class="form-group">
         <label for="username">아이디</label>
-        <input type="text" id="username" name="username" placeholder="아이디를 입력하세요">
+        <input type="text" id="username" name="username" placeholder="아이디를 입력하세요" required>
       </div>
       <div class="form-group">
         <label for="password">비밀번호</label>
-        <input type="password" id="password" name="password" placeholder="비밀번호를 입력하세요">
+        <input type="password" id="password" name="password" placeholder="비밀번호를 입력하세요" required>
       </div>
       <button type="submit">로그인</button>
     </form>
   </div>
 
   <script>
+    // 공통 헤더 삽입
     fetch("/web/header.html")
       .then(res => res.text())
       .then(data => {
         document.getElementById("header-container").innerHTML = data;
       });
+
+    // 로그인 처리 로직
+    document.addEventListener("DOMContentLoaded", function () {
+      const form = document.getElementById("loginForm");
+
+      form.addEventListener("submit", function (e) {
+        e.preventDefault(); // 기본 폼 제출 막기
+
+        const username = form.username.value.trim();
+        const password = form.password.value.trim();
+
+        if (!username || !password) {
+          alert("아이디와 비밀번호를 모두 입력해주세요.");
+          return;
+        }
+
+        // 서버에 로그인 요청
+        fetch("/api/login", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({ username, password })
+        })
+        .then(res => {
+          if (!res.ok) {
+            throw new Error("로그인 실패");
+          }
+          return res.json();
+        })
+        .then(data => {
+          // 예: JWT 토큰 받았다고 가정
+          localStorage.setItem("token", data.token); // 나중에 API 호출 시 사용 가능
+          // 로그인 성공 → 공지사항 페이지로 이동
+          window.location.href = "/web/html/board/board_notice.html";
+        })
+        .catch(err => {
+          alert("아이디 또는 비밀번호가 올바르지 않습니다.");
+          console.error("로그인 오류:", err);
+        });
+      });
+    });
   </script>
 </body>
 </html>

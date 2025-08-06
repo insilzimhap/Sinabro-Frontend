@@ -11,9 +11,9 @@
 
   <main>
     <div class="sub-nav">
-      <a href="/web/html/board/board_notice.html" class="active">공지사항 게시판</a>
-      <a href="/web/html/board/board_qna.html">문의사항 게시판</a>
-    </div>
+  <a href="board_notice.html" class="active">공지사항 게시판</a>
+  <a href="board_qna.html">문의사항 게시판</a>
+</div>
 
     <div class="search-bar">
       <input type="text" placeholder="검색어를 입력하세요">
@@ -54,7 +54,7 @@
   </main>
 
   <script>
-    fetch("/web/header.html")  // 절대 경로로 바꿔봣는데 안돼,
+    fetch("/web/header.html")
       .then(res => res.text())
       .then(data => {
         document.getElementById("header-container").innerHTML = data;
