@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <title>공지사항 수정 - 시나브로</title>
-<link rel="stylesheet" href="/sinabro/web/css/header.css" />
-<link rel="stylesheet" href="/sinabro/web/css/board/board_edit.css" />
+<link rel="stylesheet" href="/web/css/header.css" />
+<link rel="stylesheet" href="/web/css/board/board_edit.css" />
 
 </head>
 <body>
@@ -51,7 +51,7 @@
   </script>
   <script>
     // 공통 헤더 삽입
-    fetch("../../header.html")
+    fetch("/web/header.html")
       .then(res => res.text())
       .then(data => {
         document.getElementById("header-container").innerHTML = data;

@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <title>로그인</title>
-<link rel="stylesheet" href="/sinabro/web/css/header.css" />
-<link rel="stylesheet" href="/sinabro/web/css/login/login.css" />
+<link rel="stylesheet" href="/web/css/header.css" />
+<link rel="stylesheet" href="/web/css/login/login.css" />
 </head>
 <body>
   <!-- 공통 헤더 -->
@@ -26,7 +26,7 @@
   </div>
 
   <script>
-    fetch("../../header.html")
+    fetch("/web/header.html")
       .then(res => res.text())
       .then(data => {
         document.getElementById("header-container").innerHTML = data;
