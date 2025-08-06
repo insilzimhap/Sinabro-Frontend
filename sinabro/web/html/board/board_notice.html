@@ -3,17 +3,17 @@
 <head>
   <meta charset="UTF-8" />
   <title>공지사항 관리 - 시나브로</title>
-  <link rel="stylesheet" href="/sinabro/web/css/header.css" />
-<link rel="stylesheet" href="/sinabro/web/css/board/board_notice.css" />
+  <link rel="stylesheet" href="/web/css/header.css" />
+<link rel="stylesheet" href="/web/css/board/board_notice.css" />
 </head>
 <body>
   <div id="header-container"></div>
 
   <main>
     <div class="sub-nav">
-      <a href="/sinabro/web/css/board/board_notice.css" class="active">공지사항 게시판</a>
-      <a href="/sinabro/web/css/board/board_qna.css">문의사항 게시판</a>
-    </div>
+  <a href="board_notice.html" class="active">공지사항 게시판</a>
+  <a href="board_qna.html">문의사항 게시판</a>
+</div>
 
     <div class="search-bar">
       <input type="text" placeholder="검색어를 입력하세요">
@@ -54,7 +54,7 @@
   </main>
 
   <script>
-    fetch("../../header.html")
+    fetch("/web/header.html")
       .then(res => res.text())
       .then(data => {
         document.getElementById("header-container").innerHTML = data;

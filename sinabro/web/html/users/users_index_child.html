@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <title>문짜짜 자녀 상세 페이지</title>
-  <link rel="stylesheet" href="/sinabro/web/css/header.css" />
-<link rel="stylesheet" href="/sinabro/web/css/users/users_index_child.css" />
+  <link rel="stylesheet" href="/web/css/header.css" />
+<link rel="stylesheet" href="/web/css/users/users_index_child.css" />
 
 </head>
 
@@ -38,7 +38,7 @@
 
   <script>
     // 공통 헤더 불러오기
-    fetch("../../header.html")
+    fetch("/web/header.html")
       .then(res => res.text())
       .then(data => {
         document.getElementById("header-container").innerHTML = data;
