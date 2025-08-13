@@ -1,11 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:sinabro/main/mainView/page/home_screen.dart';
+import 'package:kakao_flutter_sdk_common/kakao_flutter_sdk_common.dart';
+
 //듣기학습
 //import 'package:sinabro/main/studyView/listenStudy/page/listen_study_page.dart';
 //import 'package:sinabro/main/studyView/writeStudy/page/write_study_page.dart';
 //import 'package:sinabro/selvy_example_view/handwriting_screen.dart';
 
 void main() {
+  
+  // ✅ 네이티브 앱 키로 초기화 (Kakao Developers 콘솔의 "네이티브 앱 키")
+  KakaoSdk.init(
+    nativeAppKey: 'ca5d66d22c4255e3dced6bc1a2d4fdcd', 
+  );
+
   runApp(MyApp());
 }
 

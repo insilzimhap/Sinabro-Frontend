@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import '/main/parentView/page/lobby_parent.dart';
+import 'package:sinabro/config.dart';
 
 class SocialExtraInfoPage extends StatefulWidget {
   final String userId;
@@ -24,9 +25,31 @@ class SocialExtraInfoPage extends StatefulWidget {
 }
 
 class _SocialExtraInfoPageState extends State<SocialExtraInfoPage> {
-  final _phoneController = TextEditingController();
+  late final TextEditingController _emailController;
+  late final TextEditingController _nameController;
+  final TextEditingController _phoneController = TextEditingController();
+
+  // 값이 이미 있으면 읽기 전용, 없으면 입력 가능
+  bool get _emailLocked => _emailController.text.trim().isNotEmpty;
+  bool get _nameLocked => _nameController.text.trim().isNotEmpty;
+
   String _message = '';
   bool _isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _emailController = TextEditingController(text: widget.userEmail);
+    _nameController  = TextEditingController(text: widget.userName);
+  }
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _nameController.dispose();
+    _phoneController.dispose();
+    super.dispose();
+  }
 
   Future<void> _submit() async {
     setState(() {
@@ -34,8 +57,7 @@ class _SocialExtraInfoPageState extends State<SocialExtraInfoPage> {
       _message = '';
     });
 
-    //const url = 'http://10.0.2.2:8090/api/users/social-register';
-    const url = 'http://172.30.1.64:8090/api/users/social-register';
+    final url = '$baseUrl/api/users/social-register';
 
     try {
       final response = await http.post(
@@ -43,21 +65,21 @@ class _SocialExtraInfoPageState extends State<SocialExtraInfoPage> {
         headers: {'Content-Type': 'application/json'},
         body: json.encode({
           'userId': widget.userId,
-          'userEmail': widget.userEmail,
-          'userPw': widget.socialId, // 소셜 ID를 임시 비밀번호로 저장
-          'userName': widget.userName,
+          'userEmail': _emailController.text.trim(),   // ← 컨트롤러 값 사용
+          'userPw': widget.socialId,                   // 소셜 ID를 임시 비밀번호로 저장
+          'userName': _nameController.text.trim(),     // ← 컨트롤러 값 사용
           'userPhoneNum': _phoneController.text.trim(),
-          'role': 'parent', // 자동으로 부모로 고정!
+          'role': 'parent',
           'socialType': widget.socialType,
           'socialId': widget.socialId,
         }),
       );
 
       if (response.statusCode == 200) {
-        // 서버에서 userId 반환하는 경우
         final userInfo = json.decode(response.body);
         final parentUserId = userInfo['userId'] ?? widget.userId;
 
+        if (!mounted) return;
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
@@ -88,27 +110,28 @@ class _SocialExtraInfoPageState extends State<SocialExtraInfoPage> {
         padding: const EdgeInsets.all(20),
         child: Column(
           children: [
+            // 이메일: 값 있으면 잠금, 없으면 입력 가능
             TextField(
-              enabled: false,
-              controller: TextEditingController(text: widget.userEmail),
+              controller: _emailController,
+              enabled: !_emailLocked,
+              keyboardType: TextInputType.emailAddress,
               decoration: const InputDecoration(labelText: '이메일'),
             ),
+            // 이름: 값 있으면 잠금, 없으면 입력 가능
             TextField(
-              enabled: false,
-              controller: TextEditingController(text: widget.userName),
+              controller: _nameController,
+              enabled: !_nameLocked,
               decoration: const InputDecoration(labelText: '이름'),
             ),
             TextField(
               controller: _phoneController,
+              keyboardType: TextInputType.phone,
               decoration: const InputDecoration(labelText: '휴대폰 번호'),
             ),
             const SizedBox(height: 16),
             Row(
               children: const [
-                Text(
-                  '역할: ',
-                  style: TextStyle(fontSize: 16),
-                ),
+                Text('역할: ', style: TextStyle(fontSize: 16)),
                 Text(
                   '부모',
                   style: TextStyle(
@@ -121,12 +144,11 @@ class _SocialExtraInfoPageState extends State<SocialExtraInfoPage> {
             ),
             const SizedBox(height: 20),
             _isLoading
-              ? const CircularProgressIndicator()
-              : ElevatedButton(
-                  onPressed: _submit, // 항상 활성화
-                  child: const Text('회원가입 완료'),
-                ),
-
+                ? const CircularProgressIndicator()
+                : ElevatedButton(
+                    onPressed: _submit,
+                    child: const Text('회원가입 완료'),
+                  ),
             const SizedBox(height: 20),
             Text(
               _message,
