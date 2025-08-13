@@ -3,9 +3,9 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'kakao_login_api.dart'; // 카카오 로그인 로직 분리된 파일
 import 'package:google_sign_in/google_sign_in.dart';
-import '/main/parentView/page/lobby_parent.dart';
-import '/main/childView/page/lobby_child.dart';
+import '/main/parentView/page/lobby_parent.dart'; // 부모용 페이지 import
 import 'social_info_page.dart';
+import 'package:sinabro/config.dart';
 
 class SignUpPage extends StatefulWidget {
   final String role;
@@ -25,14 +25,13 @@ class _SignUpPageState extends State<SignUpPage> {
   String _message = '';
   bool _isLoading = false;
 
-  // ✅ 일반 회원가입 요청
+  // ✅ 일반 회원가입 요청 (부모 전용)
   Future<void> _registerUser() async {
     setState(() {
       _isLoading = true;
       _message = '';
     });
-
-    const url = 'http://10.0.2.2:8090/api/users/register';
+    final url = '$baseUrl/api/users/register';
 
     try {
       final response = await http.post(
@@ -44,33 +43,22 @@ class _SignUpPageState extends State<SignUpPage> {
           'userEmail': _emailController.text.trim(),
           'userName': _nameController.text.trim(),
           'userPhoneNum': _phoneController.text.trim(),
-          'role': widget.role, // 추가!
-          // 서버에서 기본값 처리: userLanguage, role, socialType, socialId
+          'role': 'parent', // 부모 전용
         }),
       );
 
       if (response.statusCode == 200) {
         if (!mounted) return;
         final resBody = json.decode(response.body);
-        final childId = resBody['childId'] ?? _usernameController.text.trim();
+        final parentUserId = resBody['userId'] ?? _usernameController.text.trim();
 
-        if (widget.role == 'child') {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(
-              builder: (context) => LobbyChildScreen(childId: childId),
-            ),
-          );
-        } else {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(
-              builder: (context) => LobbyParentScreen(parentUserId: _usernameController.text.trim()),
-            ),
-          );
-        }
-      }
- else if (response.statusCode == 409) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => SelectParentsPage(parentUserId: parentUserId),
+          ),
+        );
+      } else if (response.statusCode == 409) {
         // 중복 아이디
         showDialog(
           context: context,
@@ -101,7 +89,7 @@ class _SignUpPageState extends State<SignUpPage> {
     }
   }
 
-  // ✅ 카카오 로그인 + 서버 전송 (이전 코드 그대로)
+  // ✅ 카카오 로그인 + 서버 전송
   Future<void> _loginWithKakao() async {
     final result = await KakaoLoginApi.kakaoLogin();
 
@@ -111,8 +99,7 @@ class _SignUpPageState extends State<SignUpPage> {
       });
       return;
     }
-
-    const url = 'http://10.0.2.2:8090/api/users/social-register';
+    final url = '$baseUrl/api/users/social-register';
 
     try {
       final response = await http.post(
@@ -123,6 +110,7 @@ class _SignUpPageState extends State<SignUpPage> {
           'userEmail': result['email'] ?? '',
           'userPw': result['accessToken'] ?? '',
           'userName': result['nickname'] ?? '',
+          'role': 'parent',
           'socialType': 'kakao',
           'socialId': result['id'] ?? '',
         }),
@@ -155,7 +143,7 @@ class _SignUpPageState extends State<SignUpPage> {
     }
   }
 
-  // ✅ 구글 로그인 + 서버 전송 (이전 코드 그대로)
+  // ✅ 구글 로그인 + 서버 전송
   Future<void> _loginWithGoogle() async {
     setState(() {
       _isLoading = true;
@@ -176,7 +164,8 @@ class _SignUpPageState extends State<SignUpPage> {
       final email = googleUser.email;
       final id = googleUser.id;
 
-      const url = 'http://10.0.2.2:8090/api/users/social-register';
+      final url = '$baseUrl/api/users/social-register';
+
 
       final response = await http.post(
         Uri.parse(url),
@@ -186,6 +175,7 @@ class _SignUpPageState extends State<SignUpPage> {
           'userEmail': email,
           'userPw': id,
           'userName': name,
+          'role': 'parent',
           'socialType': 'google',
           'socialId': id,
         }),
@@ -225,56 +215,141 @@ class _SignUpPageState extends State<SignUpPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('회원가입')),
-      body: Padding(
+      backgroundColor: const Color(0xFFFDFCF7), // 배경색 통일
+      appBar: AppBar(
+        title: const Text('회원가입'),
+        backgroundColor: Colors.orange[100], // AppBar 색 통일
+        elevation: 0,
+      ),
+      body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
         child: Column(
           children: [
             TextField(
               controller: _usernameController,
-              decoration: const InputDecoration(labelText: '아이디'),
+              decoration: InputDecoration(
+                labelText: '아이디',
+                filled: true,
+                fillColor: Colors.white,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
             ),
+            const SizedBox(height: 16),
             TextField(
               controller: _passwordController,
               obscureText: true,
-              decoration: const InputDecoration(labelText: '비밀번호'),
+              decoration: InputDecoration(
+                labelText: '비밀번호',
+                filled: true,
+                fillColor: Colors.white,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
             ),
+            const SizedBox(height: 16),
             TextField(
               controller: _emailController,
-              decoration: const InputDecoration(labelText: '이메일'),
+              decoration: InputDecoration(
+                labelText: '이메일',
+                filled: true,
+                fillColor: Colors.white,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
             ),
+            const SizedBox(height: 16),
             TextField(
               controller: _nameController,
-              decoration: const InputDecoration(labelText: '이름'),
+              decoration: InputDecoration(
+                labelText: '이름',
+                filled: true,
+                fillColor: Colors.white,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
             ),
+            const SizedBox(height: 16),
             TextField(
               controller: _phoneController,
-              decoration: const InputDecoration(labelText: '휴대폰 번호'),
+              decoration: InputDecoration(
+                labelText: '휴대폰 번호',
+                filled: true,
+                fillColor: Colors.white,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 24),
             _isLoading
                 ? const CircularProgressIndicator()
                 : Column(
                     children: [
-                      ElevatedButton(
-                        onPressed: _registerUser,
-                        child: const Text('회원가입'),
-                      ),
-                      const SizedBox(height: 12),
-                      ElevatedButton(
-                        onPressed: _loginWithKakao,
-                        style: ElevatedButton.styleFrom(backgroundColor: Colors.yellow),
-                        child: const Text(
-                          '카카오로 시작하기',
-                          style: TextStyle(color: Colors.black),
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          onPressed: _registerUser,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.orange[200],
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                          ),
+                          child: const Text(
+                            '회원가입',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: Colors.black,
+                            ),
+                          ),
                         ),
                       ),
-                      ElevatedButton(
-                        onPressed: _loginWithGoogle,
-                        style: ElevatedButton.styleFrom(backgroundColor: Colors.white),
-                        child: const Text(
-                          '구글 계정으로 시작하기', 
-                          style: TextStyle(color: Colors.black),
+                      const SizedBox(height: 12),
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          onPressed: _loginWithKakao,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.yellow,
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                          ),
+                          child: const Text(
+                            '카카오로 시작하기',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: Colors.black,
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          onPressed: _loginWithGoogle,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                          ),
+                          child: const Text(
+                            '구글 계정으로 시작하기',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: Colors.black,
+                            ),
+                          ),
                         ),
                       ),
                     ],
@@ -282,7 +357,7 @@ class _SignUpPageState extends State<SignUpPage> {
             const SizedBox(height: 20),
             Text(
               _message,
-              style: const TextStyle(color: Colors.red),
+              style: const TextStyle(color: Colors.red, fontSize: 14),
             ),
           ],
         ),

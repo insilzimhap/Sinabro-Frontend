@@ -49,7 +49,7 @@ class _AddChildFormPageState extends State<AddChildFormPage> {
       _message = '';
     });
 
-    final url = 'g/api/child/register'; // ✅ const → final
+    final url = '$baseUrl/api/child/register'; // ✅ const → final
 
     // 생년월일 조합
     final childBirth = '${selectedYear!}-${selectedMonth!}-${selectedDay!}';

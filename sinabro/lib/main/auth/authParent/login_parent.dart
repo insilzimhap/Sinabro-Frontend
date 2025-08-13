@@ -3,20 +3,21 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import '/main/childView/page/lobby_child.dart';
 import '/main/parentView/page/lobby_parent.dart';
-import '/login/signup_page.dart';
 import 'package:sinabro/login/kakao_login_api.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:sinabro/login/social_info_page.dart';
+import 'package:sinabro/login/signup_page.dart';
+import 'package:sinabro/config.dart';
 
-class LoginPage extends StatefulWidget {
+class LoginParentScreen extends StatefulWidget {
   final String role;
-  const LoginPage({super.key, required this.role});
+  const LoginParentScreen({super.key, required this.role});
 
   @override
-  State<LoginPage> createState() => _LoginPageState();
+  State<LoginParentScreen> createState() => _LoginPageState();
 }
 
-class _LoginPageState extends State<LoginPage> {
+class _LoginPageState extends State<LoginParentScreen> {
   final _userIdController = TextEditingController();
   final _passwordController = TextEditingController();
   String _message = '';
@@ -27,8 +28,7 @@ class _LoginPageState extends State<LoginPage> {
       _isLoading = true;
       _message = '';
     });
-
-    const url = 'http://10.0.2.2:8090/api/users/login';
+    final url = '$baseUrl/api/users/login';
 
     try {
       final response = await http.post(
@@ -58,7 +58,7 @@ class _LoginPageState extends State<LoginPage> {
             context,
             MaterialPageRoute(
               builder:
-                  (context) => LobbyParentScreen(parentUserId: parentUserId),
+                  (context) => SelectParentsPage(parentUserId: parentUserId),
             ),
           );
         }
@@ -99,7 +99,8 @@ class _LoginPageState extends State<LoginPage> {
       final email = user['email'] ?? '';
       final kakaoId = user['id'] ?? '';
 
-      const url = 'http://10.0.2.2:8090/api/users/social-register';
+      final url = '$baseUrl/api/users/social-register';
+ 
 
       final response = await http.post(
         Uri.parse(url),
@@ -167,8 +168,8 @@ class _LoginPageState extends State<LoginPage> {
       final email = googleUser.email;
       final id = googleUser.id;
 
-      const url = 'http://10.0.2.2:8090/api/users/social-register';
-
+      final url = '$baseUrl/api/users/social-register';
+      
       final response = await http.post(
         Uri.parse(url),
         headers: {'Content-Type': 'application/json'},
@@ -235,82 +236,98 @@ class _LoginPageState extends State<LoginPage> {
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              // 👤 아이디 로그인 박스
-              Container(
-                width: 340,
-                padding: const EdgeInsets.all(30),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(30),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      '아이디로 로그인',
-                      style: TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF5A4032),
-                        decoration: TextDecoration.underline,
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-                    const Text('아이디', style: TextStyle(fontSize: 14)),
-                    const SizedBox(height: 5),
-                    TextField(
-                      controller: _userIdController,
-                      decoration: const InputDecoration(
-                        filled: true,
-                        fillColor: Color(0xFFF8F7F6),
-                        border: OutlineInputBorder(),
-                        contentPadding: EdgeInsets.symmetric(horizontal: 12),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    const Text('비밀번호', style: TextStyle(fontSize: 14)),
-                    const SizedBox(height: 5),
-                    TextField(
-                      controller: _passwordController,
-                      obscureText: true,
-                      decoration: const InputDecoration(
-                        filled: true,
-                        fillColor: Color(0xFFF8F7F6),
-                        border: OutlineInputBorder(),
-                        contentPadding: EdgeInsets.symmetric(horizontal: 12),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    if (_isLoading)
-                      const Center(child: CircularProgressIndicator())
-                    else
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          const Text(
-                            '계정이 없으신가요?',
-                            style: TextStyle(fontSize: 12),
-                          ),
-                          ElevatedButton(
-                            onPressed: _login,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFFFFB9B9),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 20,
-                                vertical: 10,
-                              ),
-                            ),
-                            child: const Text('로그인'),
-                          ),
-                        ],
-                      ),
-                  ],
-                ),
+            // 👤 아이디 로그인 박스
+            Container(
+              width: 340,
+              padding: const EdgeInsets.all(30),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(30),
               ),
-              const SizedBox(width: 30),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    '아이디로 로그인',
+                    style: TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF5A4032),
+                      decoration: TextDecoration.underline,
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  const Text('아이디', style: TextStyle(fontSize: 14)),
+                  const SizedBox(height: 5),
+                  TextField(
+                    controller: _userIdController,
+                    decoration: const InputDecoration(
+                      filled: true,
+                      fillColor: Color(0xFFF8F7F6),
+                      border: OutlineInputBorder(),
+                      contentPadding: EdgeInsets.symmetric(horizontal: 12),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  const Text('비밀번호', style: TextStyle(fontSize: 14)),
+                  const SizedBox(height: 5),
+                  TextField(
+                    controller: _passwordController,
+                    obscureText: true,
+                    decoration: const InputDecoration(
+                      filled: true,
+                      fillColor: Color(0xFFF8F7F6),
+                      border: OutlineInputBorder(),
+                      contentPadding: EdgeInsets.symmetric(horizontal: 12),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  if (_isLoading)
+                    const Center(child: CircularProgressIndicator())
+                  else
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        // 👇 수정된 부분: GestureDetector로 감싸서 회원가입 페이지로 이동
+                        GestureDetector(
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => SignUpPage(role: 'parent'),
+                              ),
+                            );
+                          },
+                          child: const Text(
+                            '계정이 없으신가요?',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.blue,
+                              decoration: TextDecoration.underline,
+                            ),
+                          ),
+                        ),
+                        ElevatedButton(
+                          onPressed: _login,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFFFFB9B9),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 20,
+                              vertical: 10,
+                            ),
+                          ),
+                          child: const Text('로그인'),
+                        ),
+                      ],
+                    ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 30),
+
 
               // 🌐 SNS 로그인 박스
               Container(

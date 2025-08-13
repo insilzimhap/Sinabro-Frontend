@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:sinabro/main/childView/page/lobby_child.dart'; // lobby_child.dart의 경로에 맞게 수정하세요
+import 'package:sinabro/config.dart';
 
 class SelectCharacterPage extends StatefulWidget {
   final String childId; // 반드시 로그인 시 받아와서 넘겨줘야 함!
@@ -33,7 +34,8 @@ class _SelectCharacterPageState extends State<SelectCharacterPage> {
     };
     final characterId = characterIdMap[characterName];
 
-    final url = 'http://10.0.2.2:8090/api/character/selection';
+    final url = '$baseUrl/api/character/selection';
+
 
     try {
       final response = await http.post(

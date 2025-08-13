@@ -10,7 +10,7 @@ class NoticePage extends StatelessWidget {
       activeMenu: '마이페이지',
       content: Center(
         child: Text(
-          '공지 내용 없음',
+          '공자 내용 없음',
           style: TextStyle(fontSize: 18, color: Colors.grey),
         ),
       ),

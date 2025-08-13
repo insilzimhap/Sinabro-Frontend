@@ -5,12 +5,11 @@ import 'package:audioplayers/audioplayers.dart';
 import 'package:sinabro/main/studyView/writeStudy/controller/write_study_controller.dart';
 import 'package:sinabro/main/studyView/writeStudy/widget/write_study_widget.dart';
 import 'package:sinabro/main/studyView/writeStudy/widget/writing_canvas.dart';
-import 'package:sinabro/main/studyView/writeStudy/widget/feedback_dialog.dart';
-import 'package:sinabro/main/childView/page/lobby_child.dart'; // ✅ 로비 페이지
 
+/// 최상위 쓰기 학습 페이지
 class WriteStudyPage extends StatelessWidget {
   final String childId;
-  const WriteStudyPage({super.key, required this.childId});
+  const WriteStudyPage({super.key, this.childId = ""});
 
   @override
   Widget build(BuildContext context) {
@@ -21,9 +20,10 @@ class WriteStudyPage extends StatelessWidget {
   }
 }
 
+/// 내부 위젯: 학습 단계 관리, 채점 로직 포함
 class _WriteStudyView extends StatefulWidget {
   final String childId;
-  const _WriteStudyView({super.key, required this.childId});
+  const _WriteStudyView({super.key, this.childId = ""});
 
   @override
   State<_WriteStudyView> createState() => _WriteStudyViewState();
@@ -31,7 +31,7 @@ class _WriteStudyView extends StatefulWidget {
 
 class _WriteStudyViewState extends State<_WriteStudyView> {
   final AudioPlayer _audioPlayer = AudioPlayer();
-  int _lastPlayedStep = -1;
+  final GlobalKey<WritingCanvasState> canvasKey = GlobalKey(); // ✅ canvas 접근용
 
   final List<String> ttsPaths = [
     'audio/tts/studyWrite/test/leeul.mp3',
@@ -39,12 +39,15 @@ class _WriteStudyViewState extends State<_WriteStudyView> {
     'audio/tts/studyWrite/test/hello.mp3',
   ];
 
+  int _lastPlayedStep = -1;
+
   @override
   void dispose() {
     _audioPlayer.dispose();
     super.dispose();
   }
 
+  /// 🎧 현재 단계 TTS 재생
   Future<void> _playCurrentStepTTS(BuildContext context) async {
     final controller = Provider.of<WriteStudyController>(
       context,
@@ -62,75 +65,9 @@ class _WriteStudyViewState extends State<_WriteStudyView> {
     }
   }
 
-  Future<void> _checkAnswer(BuildContext context) async {
-    final controller = Provider.of<WriteStudyController>(
-      context,
-      listen: false,
-    );
-
-    try {
-      controller.updateRecognizedText(controller.currentAnswer);
-
-      if (controller.checkAnswer()) {
-        await _audioPlayer.play(
-          AssetSource('audio/tts/studyWrite/correct.mp3'),
-        );
-
-        final isLast = controller.currentStep == 2;
-
-        showDialog(
-          context: context,
-          barrierDismissible: false,
-          builder: (_) => FeedbackDialog(isCorrect: true, isLastStep: isLast),
-        ).then((_) {
-          if (isLast) {
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(
-                builder: (_) => LobbyChildScreen(childId: widget.childId),
-              ),
-            );
-          } else {
-            controller.nextStepOrRetry();
-          }
-        });
-      } else {
-        await _audioPlayer.play(
-          AssetSource('audio/tts/studyWrite/Incorrect.mp3'),
-        );
-
-        if (controller.attempt == 0) {
-          controller.nextStepOrRetry();
-        } else {
-          final isLast = controller.currentStep == 2;
-          if (isLast) {
-            showDialog(
-              context: context,
-              barrierDismissible: false,
-              builder: (_) => const FeedbackDialog(isCorrect: false, isLastStep: true),
-            ).then((_) {
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => LobbyChildScreen(childId: widget.childId),
-                ),
-              );
-            });
-          } else {
-            controller.nextStepOrRetry();
-          }
-        }
-      }
-    } catch (e) {
-      debugPrint('채점 오류: $e');
-    }
-  }
-
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-
-    // ✅ 위젯이 빌드된 후 단 한 번만 재생
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _playCurrentStepTTS(context);
     });
@@ -149,14 +86,7 @@ class _WriteStudyViewState extends State<_WriteStudyView> {
       ),
       body: Stack(
         alignment: Alignment.center,
-        children: [
-          WriteStudyWidget(childId: widget.childId), // ✅ childId 넘기기!
-          WritingCanvas(
-            onRecognize: (String text) {
-              controller.updateRecognizedText(text);
-            },
-          ),
-        ],
+        children: [WriteStudyWidget(canvasKey: canvasKey, childId: widget.childId,)],
       ),
       bottomNavigationBar: Padding(
         padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
@@ -164,8 +94,11 @@ class _WriteStudyViewState extends State<_WriteStudyView> {
           children: [
             Expanded(
               child: ElevatedButton(
-                onPressed: () => _checkAnswer(context),
-                child: const Text('인식하기'),
+                onPressed: () {
+                  canvasKey.currentState
+                      ?.recognizeAndCheckText(); // ✅ 리팩토링된 채점 호출
+                },
+                child: const Text('채점하기'),
               ),
             ),
             const SizedBox(width: 12),
@@ -173,6 +106,7 @@ class _WriteStudyViewState extends State<_WriteStudyView> {
               child: ElevatedButton(
                 onPressed: () {
                   controller.reset();
+                  canvasKey.currentState?.clearCanvas(); // ✅ 캔버스 초기화
                 },
                 child: const Text('지우기'),
               ),

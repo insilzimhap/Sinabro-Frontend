@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import '/main/childView/page/lobby_child.dart';
-import '/main/childView/page/select_character.dart';
+import 'package:sinabro/main/childView/page/lobby_child.dart';
+import 'package:sinabro/main/childView/page/level_test_page.dart';
+
+import 'package:sinabro/config.dart';
 
 class LoginChildPage extends StatefulWidget {
   const LoginChildPage({super.key});
@@ -18,8 +20,7 @@ class _LoginChildPageState extends State<LoginChildPage> {
   bool _isLoading = false;
 
   Future<bool> isCharacterSelected(String childId) async {
-    final url =
-        'http://10.0.2.2:8090/api/character/selection/check?childId=$childId';
+    final url = '$baseUrl/api/character/selection/check?childId=$childId';
     final response = await http.get(Uri.parse(url));
     if (response.statusCode == 200) {
       final data = json.decode(response.body);
@@ -36,7 +37,8 @@ class _LoginChildPageState extends State<LoginChildPage> {
       _message = '';
     });
 
-    const url = 'http://10.0.2.2:8090/api/child/login';
+    final url = '$baseUrl/api/child/login';
+
 
     try {
       final response = await http.post(
@@ -64,7 +66,7 @@ class _LoginChildPageState extends State<LoginChildPage> {
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(
-              builder: (context) => SelectCharacterPage(childId: childId),
+              builder: (context) => LevelTestPage(childId: childId),
             ),
           );
         }
