@@ -6,21 +6,25 @@ import 'package:sinabro/main/childView/page/level_test_page.dart';
 
 import 'package:sinabro/config.dart';
 
-class LoginChildPage extends StatefulWidget {
-  const LoginChildPage({super.key});
+
+class LoginChildScreen extends StatefulWidget {
+  const LoginChildScreen({super.key});
 
   @override
-  State<LoginChildPage> createState() => _LoginChildPageState();
+  State<LoginChildScreen> createState() => _LoginChildScreenState();
 }
 
-class _LoginChildPageState extends State<LoginChildPage> {
-  final _userIdController = TextEditingController();
-  final _passwordController = TextEditingController();
+class _LoginChildScreenState extends State<LoginChildScreen> {
+  final TextEditingController _idController = TextEditingController();
+  final TextEditingController _pwController = TextEditingController();
   String _message = '';
   bool _isLoading = false;
 
+  // 캐릭터 선택 여부 체크 함수
   Future<bool> isCharacterSelected(String childId) async {
     final url = '$baseUrl/api/character/selection/check?childId=$childId';
+    
+
     final response = await http.get(Uri.parse(url));
     if (response.statusCode == 200) {
       final data = json.decode(response.body);
@@ -45,15 +49,16 @@ class _LoginChildPageState extends State<LoginChildPage> {
         Uri.parse(url),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
-          'childId': _userIdController.text.trim(),
-          'childPw': _passwordController.text.trim(),
+          'childId': _idController.text.trim(),
+          'childPw': _pwController.text.trim(),
         }),
       );
 
       if (response.statusCode == 200) {
         if (!mounted) return;
-        final childId = _userIdController.text.trim();
+        final childId = _idController.text.trim();
         final selected = await isCharacterSelected(childId);
+        print('isCharacterSelected: $selected');
 
         if (selected) {
           Navigator.pushReplacement(
@@ -89,13 +94,8 @@ class _LoginChildPageState extends State<LoginChildPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(backgroundColor: const Color(0xFFFEF8E7), elevation: 0),
       backgroundColor: const Color(0xFFFEF8E7),
-      appBar: AppBar(
-        backgroundColor: const Color(0xFFFEF8E7),
-        elevation: 0,
-        title: const Text('아이 로그인', style: TextStyle(color: Colors.brown)),
-        foregroundColor: Colors.brown,
-      ),
       body: Column(
         children: [
           const SizedBox(height: 30),
@@ -111,7 +111,7 @@ class _LoginChildPageState extends State<LoginChildPage> {
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              // 👤 로그인 입력 박스
+              // 👤 아이디 로그인 박스
               Container(
                 width: 340,
                 padding: const EdgeInsets.all(30),
@@ -120,6 +120,7 @@ class _LoginChildPageState extends State<LoginChildPage> {
                   borderRadius: BorderRadius.circular(30),
                 ),
                 child: Column(
+                  mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const Text(
@@ -135,7 +136,7 @@ class _LoginChildPageState extends State<LoginChildPage> {
                     const Text('아이디', style: TextStyle(fontSize: 14)),
                     const SizedBox(height: 5),
                     TextField(
-                      controller: _userIdController,
+                      controller: _idController,
                       decoration: const InputDecoration(
                         filled: true,
                         fillColor: Color(0xFFF8F7F6),
@@ -147,7 +148,7 @@ class _LoginChildPageState extends State<LoginChildPage> {
                     const Text('비밀번호', style: TextStyle(fontSize: 14)),
                     const SizedBox(height: 5),
                     TextField(
-                      controller: _passwordController,
+                      controller: _pwController,
                       obscureText: true,
                       decoration: const InputDecoration(
                         filled: true,
@@ -161,7 +162,7 @@ class _LoginChildPageState extends State<LoginChildPage> {
                       const Center(child: CircularProgressIndicator()),
                     if (_message.isNotEmpty)
                       Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 8.0),
+                        padding: const EdgeInsets.only(top: 8.0, bottom: 8.0),
                         child: Text(
                           _message,
                           style: const TextStyle(color: Colors.red),
@@ -198,7 +199,7 @@ class _LoginChildPageState extends State<LoginChildPage> {
               ),
               const SizedBox(width: 30),
 
-              // 🖼 이미지 영역
+              // 🎨 오른쪽 영역 (이미지 박스)
               Container(
                 width: 300,
                 height: 300,
