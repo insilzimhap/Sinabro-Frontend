@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:sinabro/main/parentView/layout/parent_layout.dart';
-import 'package:sinabro/config.dart';
 
 class AddChildFormPage extends StatefulWidget {
   final String parentUserId;
@@ -49,38 +48,36 @@ class _AddChildFormPageState extends State<AddChildFormPage> {
       _message = '';
     });
 
-    final url = '$baseUrl/api/child/register'; // ✅ const → final
+    //const url = 'http://10.0.2.2:8090/api/child/register';
+    const url = 'http://172.30.1.64:8090/api/child/register';
 
     // 생년월일 조합
     final childBirth = '${selectedYear!}-${selectedMonth!}-${selectedDay!}';
 
-    // 제한시간 숫자 변환
+    // 제한시간 숫자 변환 (예시: '30분' → 30, '제한없음' → null)
     int? timeLimitMinutes;
     if (selectedLimitTime == '30분') timeLimitMinutes = 30;
     else if (selectedLimitTime == '45분') timeLimitMinutes = 45;
     else if (selectedLimitTime == '1시간') timeLimitMinutes = 60;
     else if (selectedLimitTime == '1시간 30분') timeLimitMinutes = 90;
-    else timeLimitMinutes = null; // 제한없음 → null (서버에서 0으로 기본값 처리)
+    else timeLimitMinutes = null;
 
     try {
-      // ✅ 서버 DTO 필드명/타입과 정확히 맞춤
-      final payload = {
-        'childId': idController.text.trim(),
-        'childPw': passwordController.text.trim(),
-        'childName': nameController.text.trim(),
-        'childNickname': nicknameController.text.trim(), // ✅ 키 수정 (NickName → Nickname)
-        'childBirth': childBirth,
-        'childAge': _calcAge(selectedYear!, selectedMonth!, selectedDay!),
-        // 'childLevel':  null,  // ✅ 초기 레벨 없으면 아예 보내지 말기 (주석)
-        'role': 'child',
-        'userId': widget.parentUserId,
-        'timeLimitMinutes': timeLimitMinutes, // null이면 서버에서 0으로 처리
-      };
-
       final response = await http.post(
         Uri.parse(url),
         headers: {'Content-Type': 'application/json'},
-        body: json.encode(payload),
+        body: json.encode({
+          'childId': idController.text.trim(),
+          'childPw': passwordController.text.trim(),
+          'childName': nameController.text.trim(),
+          'childNickName': nicknameController.text.trim(),
+          'childBirth': childBirth,
+          'childAge': _calcAge(selectedYear!, selectedMonth!, selectedDay!),
+          'childLevel': '', // 필요시 추가
+          'role': 'child',
+          'userId': widget.parentUserId,
+          'timeLimitMinutes': timeLimitMinutes,
+        }),
       );
 
       if (response.statusCode == 200) {
@@ -102,18 +99,26 @@ class _AddChildFormPageState extends State<AddChildFormPage> {
           ),
         );
       } else if (response.statusCode == 409) {
-        setState(() => _message = '이미 존재하는 아이디입니다.');
+        setState(() {
+          _message = '이미 존재하는 아이디입니다.';
+        });
       } else {
-        setState(() => _message = '등록 실패: ${response.statusCode}\n${response.body}');
+        setState(() {
+          _message = '등록 실패: ${response.statusCode}\n${response.body}';
+        });
       }
     } catch (e) {
-      setState(() => _message = '에러 발생: $e');
+      setState(() {
+        _message = '에러 발생: $e';
+      });
     } finally {
-      setState(() => _isLoading = false);
+      setState(() {
+        _isLoading = false;
+      });
     }
   }
 
-
+  // 만 나이 계산 방식
   int _calcAge(String year, String month, String day) {
     final now = DateTime.now();
     final birth = DateTime(int.parse(year), int.parse(month), int.parse(day));

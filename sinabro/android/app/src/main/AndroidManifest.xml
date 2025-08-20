@@ -1,6 +1,4 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-
-    <uses-permission android:name="android.permission.INTERNET" />
     <application
         android:label="sinabro"
         android:name="${applicationName}"
@@ -18,14 +16,6 @@
                  the Android process has started. This theme is visible to the user
                  while the Flutter UI initializes. After that, this theme continues
                  to determine the Window background behind the Flutter UI. -->
-                 <intent-filter>
-                    <action android:name="android.intent.action.VIEW" />
-                    <category android:name="android.intent.category.DEFAULT" />
-                    <category android:name="android.intent.category.BROWSABLE" />
-                    <!-- ✅ 네이티브 앱 키를 붙인 스킴을 반드시 정확히 기입 -->
-                    <data android:scheme="kakaoca5d66d22c4255e3dced6bc1a2d4fdcd" android:host="oauth" />
-                </intent-filter>
-
             <meta-data
               android:name="io.flutter.embedding.android.NormalTheme"
               android:resource="@style/NormalTheme"

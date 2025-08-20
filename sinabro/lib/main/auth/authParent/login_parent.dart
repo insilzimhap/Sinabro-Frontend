@@ -7,7 +7,6 @@ import 'package:sinabro/login/kakao_login_api.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:sinabro/login/social_info_page.dart';
 import 'package:sinabro/login/signup_page.dart';
-import 'package:sinabro/config.dart';
 
 class LoginParentScreen extends StatefulWidget {
   final String role;
@@ -28,7 +27,9 @@ class _LoginPageState extends State<LoginParentScreen> {
       _isLoading = true;
       _message = '';
     });
-    final url = '$baseUrl/api/users/login';
+
+    //const url = 'http://10.0.2.2:8090/api/users/login';
+    const url = 'http://172.30.1.64:8090/api/users/login';
 
     try {
       final response = await http.post(
@@ -99,8 +100,8 @@ class _LoginPageState extends State<LoginParentScreen> {
       final email = user['email'] ?? '';
       final kakaoId = user['id'] ?? '';
 
-      final url = '$baseUrl/api/users/social-register';
- 
+      //const url = 'http://10.0.2.2:8090/api/users/social-register';
+      const url = 'http://172.30.1.64:8090/api/users/social-register';
 
       final response = await http.post(
         Uri.parse(url),
@@ -168,7 +169,8 @@ class _LoginPageState extends State<LoginParentScreen> {
       final email = googleUser.email;
       final id = googleUser.id;
 
-      final url = '$baseUrl/api/users/social-register';
+      //const url = 'http://10.0.2.2:8090/api/users/social-register';
+      const url = 'http://172.30.1.64:8090/api/users/social-register';
       
       final response = await http.post(
         Uri.parse(url),

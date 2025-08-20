@@ -7,10 +7,6 @@ import 'dart:convert';
 import 'package:sinabro/main/studyView/writeStudy/page/write_study_page.dart';
 import 'package:sinabro/main/studyView/listenStudy/page/listen_study_page.dart';
 
-// ✅ 한 곳에서 서버 주소 관리 (추가)
-import 'package:sinabro/config.dart';
-
-
 class LobbyChildScreen extends StatefulWidget {
   final String childId;
   const LobbyChildScreen({super.key, required this.childId});
@@ -22,7 +18,6 @@ class LobbyChildScreen extends StatefulWidget {
 class _LobbyChildScreenState extends State<LobbyChildScreen> {
   String characterName = '';
   String nickname = '';
-  String level = '';
   bool _isLoading = true;
 
   final Map<String, String> characterNameMap = {
@@ -51,7 +46,8 @@ class _LobbyChildScreenState extends State<LobbyChildScreen> {
   }
 
   Future<void> _fetchChildInfo() async {
-    final url = '$baseUrl/api/child/info?childId=${widget.childId}';
+    //final url = 'http://10.0.2.2:8090/api/child/info?childId=${widget.childId}';
+    final url = 'http://172.30.1.64:8090/api/child/info?childId=${widget.childId}';
     
     try {
       final response = await http.get(Uri.parse(url));
@@ -61,14 +57,12 @@ class _LobbyChildScreenState extends State<LobbyChildScreen> {
           nickname = data['nickname'] ?? '';
           final characterId = data['characterId'];
           characterName = characterNameMap[characterId] ?? '';
-          level = (data['level'] ?? '').toString(); // ✅ 서버에서 추가한 level
           _isLoading = false;
         });
       } else {
         setState(() {
           nickname = '';
           characterName = '';
-          level = '';
           _isLoading = false;
         });
       }
@@ -76,7 +70,6 @@ class _LobbyChildScreenState extends State<LobbyChildScreen> {
       setState(() {
         nickname = '';
         characterName = '';
-        level = '';
         _isLoading = false;
       });
     }
@@ -215,23 +208,6 @@ class _LobbyChildScreenState extends State<LobbyChildScreen> {
                         Text(
                           nickname.isNotEmpty ? '$nickname님' : '',
                           style: const TextStyle(fontSize: 16, color: Colors.brown),
-                        ),
-
-                        const SizedBox(height: 6),
-
-                        // 아이디 + 레벨 (같은 줄)
-                        Row(
-                          children: [
-                            Text(
-                              'ID: ${widget.childId}',
-                              style: const TextStyle(fontSize: 14, color: Colors.brown),
-                            ),
-                            const SizedBox(width: 12),
-                            Text(
-                              '레벨: ${level.isNotEmpty ? level : "-"}',
-                              style: const TextStyle(fontSize: 14, color: Colors.brown),
-                            ),
-                          ],
                         ),
                       ],
                     ),

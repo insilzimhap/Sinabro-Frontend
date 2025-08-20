@@ -5,7 +5,6 @@ import 'kakao_login_api.dart'; // 카카오 로그인 로직 분리된 파일
 import 'package:google_sign_in/google_sign_in.dart';
 import '/main/parentView/page/lobby_parent.dart'; // 부모용 페이지 import
 import 'social_info_page.dart';
-import 'package:sinabro/config.dart';
 
 class SignUpPage extends StatefulWidget {
   final String role;
@@ -31,7 +30,9 @@ class _SignUpPageState extends State<SignUpPage> {
       _isLoading = true;
       _message = '';
     });
-    final url = '$baseUrl/api/users/register';
+
+    //const url = 'http://10.0.2.2:8090/api/users/register';
+    const url = 'http://172.30.1.64:8090/api/users/register';
 
     try {
       final response = await http.post(
@@ -99,8 +100,9 @@ class _SignUpPageState extends State<SignUpPage> {
       });
       return;
     }
-    final url = '$baseUrl/api/users/social-register';
 
+    //const url = 'http://10.0.2.2:8090/api/users/social-register';
+    const url = 'http://172.30.1.64:8090/api/users/social-register';
     try {
       final response = await http.post(
         Uri.parse(url),
@@ -164,8 +166,8 @@ class _SignUpPageState extends State<SignUpPage> {
       final email = googleUser.email;
       final id = googleUser.id;
 
-      final url = '$baseUrl/api/users/social-register';
-
+      //const url = 'http://10.0.2.2:8090/api/users/social-register';
+      const url = 'http://172.30.1.64:8090/api/users/social-register';
 
       final response = await http.post(
         Uri.parse(url),
