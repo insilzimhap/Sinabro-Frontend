@@ -118,6 +118,7 @@ class _AddChildFormPageState extends State<AddChildFormPage> {
     }
   }
 
+  // 만 나이 계산 방식
   int _calcAge(String year, String month, String day) {
     final now = DateTime.now();
     final birth = DateTime(int.parse(year), int.parse(month), int.parse(day));
