@@ -113,7 +113,6 @@ class _AddChildFormPageState extends State<AddChildFormPage> {
     }
   }
 
-
   int _calcAge(String year, String month, String day) {
     final now = DateTime.now();
     final birth = DateTime(int.parse(year), int.parse(month), int.parse(day));
@@ -135,7 +134,14 @@ class _AddChildFormPageState extends State<AddChildFormPage> {
       ),
       body: Row(
         children: [
-          const ParentSidebar(activeMenu: '마이페이지'),
+          const SizedBox.shrink(), // placeholder, 아래에서 동적 사이드바로 대체
+
+          // ✅ 동적 사이드바 (부모 이름/자녀 목록 표시)
+          ParentSidebar(
+            activeMenu: '마이페이지',
+            parentUserId: widget.parentUserId,
+          ),
+
           Expanded(
             child: Container(
               color: const Color(0xFFE4F1FA),
