@@ -3,7 +3,8 @@ class ParentQuestion {
   final String questionText;
   final List<ParentOption> options;
 
-  ParentQuestion({required this.id, required this.questionText, required this.options});
+  ParentQuestion(
+      {required this.id, required this.questionText, required this.options});
 
   factory ParentQuestion.fromJson(Map<String, dynamic> json) {
     return ParentQuestion(
@@ -93,6 +94,7 @@ class LevelTestResponse {
     );
   }
 }
+
 class ParentOption {
   final int id;
   final String optionText;
@@ -106,4 +108,3 @@ class ParentOption {
     );
   }
 }
-

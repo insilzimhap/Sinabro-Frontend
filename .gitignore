@@ -123,3 +123,8 @@ app.*.symbols
 !/dev/ci/**/Gemfile.lock
 sinabro/android/gradle.properties
 sinabro/android/gradle.properties
+sinabro/android/build.gradle
+sinabro/android/gradle/wrapper/gradle-wrapper.properties
+sinabro/android/settings.gradle
+sinabro/pubspec.yaml
+sinabro/android/gradle/wrapper/gradle-wrapper.properties
