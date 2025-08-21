@@ -46,8 +46,8 @@ class _LobbyChildScreenState extends State<LobbyChildScreen> {
   }
 
   Future<void> _fetchChildInfo() async {
-    //final url = 'http://10.0.2.2:8090/api/child/info?childId=${widget.childId}';
-    final url = 'http://172.30.1.64:8090/api/child/info?childId=${widget.childId}';
+    final url = 'http://10.0.2.2:8090/api/child/info?childId=${widget.childId}';
+    //final url = 'http://172.30.1.64:8090/api/child/info?childId=${widget.childId}';
     
     try {
       final response = await http.get(Uri.parse(url));

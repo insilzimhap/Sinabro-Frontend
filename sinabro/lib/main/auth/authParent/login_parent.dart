@@ -28,8 +28,8 @@ class _LoginPageState extends State<LoginParentScreen> {
       _message = '';
     });
 
-    //const url = 'http://10.0.2.2:8090/api/users/login';
-    const url = 'http://172.30.1.64:8090/api/users/login';
+    const url = 'http://10.0.2.2:8090/api/users/login';
+    //const url = 'http://172.30.1.64:8090/api/users/login';
 
     try {
       final response = await http.post(
@@ -100,8 +100,8 @@ class _LoginPageState extends State<LoginParentScreen> {
       final email = user['email'] ?? '';
       final kakaoId = user['id'] ?? '';
 
-      //const url = 'http://10.0.2.2:8090/api/users/social-register';
-      const url = 'http://172.30.1.64:8090/api/users/social-register';
+      const url = 'http://10.0.2.2:8090/api/users/social-register';
+      //const url = 'http://172.30.1.64:8090/api/users/social-register';
 
       final response = await http.post(
         Uri.parse(url),
@@ -169,8 +169,8 @@ class _LoginPageState extends State<LoginParentScreen> {
       final email = googleUser.email;
       final id = googleUser.id;
 
-      //const url = 'http://10.0.2.2:8090/api/users/social-register';
-      const url = 'http://172.30.1.64:8090/api/users/social-register';
+      const url = 'http://10.0.2.2:8090/api/users/social-register';
+      //const url = 'http://172.30.1.64:8090/api/users/social-register';
       
       final response = await http.post(
         Uri.parse(url),

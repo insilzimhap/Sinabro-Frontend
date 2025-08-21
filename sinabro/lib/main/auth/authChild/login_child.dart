@@ -20,8 +20,8 @@ class _LoginChildScreenState extends State<LoginChildScreen> {
 
   // 캐릭터 선택 여부 체크 함수
   Future<bool> isCharacterSelected(String childId) async {
-    //final url = 'http://10.0.2.2:8090/api/character/selection/check?childId=$childId';
-    final url = 'http://172.30.1.64:8090/api/character/selection/check?childId=$childId';
+    final url = 'http://10.0.2.2:8090/api/character/selection/check?childId=$childId';
+    //final url = 'http://172.30.1.64:8090/api/character/selection/check?childId=$childId';
 
     final response = await http.get(Uri.parse(url));
     if (response.statusCode == 200) {
@@ -39,8 +39,8 @@ class _LoginChildScreenState extends State<LoginChildScreen> {
       _message = '';
     });
 
-    //const url = 'http://10.0.2.2:8090/api/child/login';
-    const url = 'http://172.30.1.64:8090/api/child/login';
+    const url = 'http://10.0.2.2:8090/api/child/login';
+    //const url = 'http://172.30.1.64:8090/api/child/login';
 
     try {
       final response = await http.post(

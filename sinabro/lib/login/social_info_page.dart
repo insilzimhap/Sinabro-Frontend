@@ -34,8 +34,8 @@ class _SocialExtraInfoPageState extends State<SocialExtraInfoPage> {
       _message = '';
     });
 
-    //const url = 'http://10.0.2.2:8090/api/users/social-register';
-    const url = 'http://172.30.1.64:8090/api/users/social-register';
+    const url = 'http://10.0.2.2:8090/api/users/social-register';
+    //const url = 'http://172.30.1.64:8090/api/users/social-register';
 
     try {
       final response = await http.post(

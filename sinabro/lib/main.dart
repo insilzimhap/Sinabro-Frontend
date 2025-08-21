@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:sinabro/main/mainView/page/home_screen.dart';
+import 'package:sinabro/config.dart';  //추가
+
 //듣기학습
 //import 'package:sinabro/main/studyView/listenStudy/page/listen_study_page.dart';
 //import 'package:sinabro/main/studyView/writeStudy/page/write_study_page.dart';
