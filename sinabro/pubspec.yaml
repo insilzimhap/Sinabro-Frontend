@@ -45,6 +45,7 @@ flutter:
     - assets/img/icon/
     - assets/img/pageMain/
     - assets/img/pageSetting/
+    - assets/img/leveltest/
 
     - assets/audio/bgm/
     - assets/audio/effect/
