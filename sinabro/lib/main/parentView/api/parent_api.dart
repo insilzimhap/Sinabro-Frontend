@@ -7,6 +7,8 @@ class ParentApi {
   static Future<String> fetchParentName(String userId) async {
     final uri = Uri.parse('$baseUrl/api/users/profile?userId=$userId');
     final res = await http.get(uri);
+    print('📡 부모 정보 API 요청 주소: $uri');  //추가
+
     if (res.statusCode == 200) {
       final data = jsonDecode(res.body) as Map<String, dynamic>;
       return (data['userName'] as String?) ?? '';
