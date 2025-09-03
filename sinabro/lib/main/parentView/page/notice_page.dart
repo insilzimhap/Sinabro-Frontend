@@ -24,8 +24,7 @@ class NoticeItem {
 final List<NoticeItem> _demoNotices = [
   NoticeItem(
     title: '[긴급 공지] 현재 발생하고 있는 이슈에 대해 사과드립니다',
-    content:
-        '2025년 8월 16일 22시 57분경부터 접속이 불가능한 이슈가 파악되었습니다.\n'
+    content: '2025년 8월 16일 22시 57분경부터 접속이 불가능한 이슈가 파악되었습니다.\n'
         '신속하게 조치하여 2025년 8월 17일 00시 15분부터 접속이 가능합니다.\n\n'
         '기다려주셔서 감사합니다.\n앞으로 더욱 발전하는 시나브로 팀이 되겠습니다.\n\n'
         '아이들의 성장이 한 걸음씩! 시나브로~',
@@ -35,8 +34,7 @@ final List<NoticeItem> _demoNotices = [
   ),
   NoticeItem(
     title: '[이벤트 안내] 1주년 기념 학습 전체 무료화 (~25.9.1)',
-    content:
-        '1주년을 기념하여 전 학습 콘텐츠를 무료로 제공합니다.\n기간: ~ 2025년 9월 1일\n대상: 모든 회원\n'
+    content: '1주년을 기념하여 전 학습 콘텐츠를 무료로 제공합니다.\n기간: ~ 2025년 9월 1일\n대상: 모든 회원\n'
         '자세한 내용은 공지 본문 또는 고객센터를 확인해주세요.',
     author: '팀 시나브로',
     date: DateTime(2025, 8, 17),
@@ -195,16 +193,15 @@ class _NoticeTile extends StatelessWidget {
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(6),
             border: border,
-            boxShadow:
-                opened
-                    ? [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.04),
-                        blurRadius: 10,
-                        offset: const Offset(0, 4),
-                      ),
-                    ]
-                    : null,
+            boxShadow: opened
+                ? [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.04),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
+                  ]
+                : null,
           ),
           child: Column(
             children: [
@@ -286,10 +283,9 @@ class _NoticeTile extends StatelessWidget {
                       style: const TextStyle(fontSize: 14, height: 1.5),
                     ),
                   ),
-                  crossFadeState:
-                      opened
-                          ? CrossFadeState.showSecond
-                          : CrossFadeState.showFirst,
+                  crossFadeState: opened
+                      ? CrossFadeState.showSecond
+                      : CrossFadeState.showFirst,
                   duration: const Duration(milliseconds: 180),
                 ),
               ),

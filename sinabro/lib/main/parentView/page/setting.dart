@@ -85,90 +85,88 @@ class _SettingsPageState extends State<SettingsPage> {
     return showDialog<String?>(
       context: context,
       barrierDismissible: true,
-      builder:
-          (_) => Dialog(
-            insetPadding: const EdgeInsets.symmetric(
-              horizontal: 32,
-              vertical: 24,
-            ),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Container(
-              decoration: BoxDecoration(
-                color: const Color(0xFFE7F6E9),
-                border: Border.all(color: const Color(0xFF53A866), width: 3),
-                borderRadius: BorderRadius.circular(16),
+      builder: (_) => Dialog(
+        insetPadding: const EdgeInsets.symmetric(
+          horizontal: 32,
+          vertical: 24,
+        ),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Container(
+          decoration: BoxDecoration(
+            color: const Color(0xFFE7F6E9),
+            border: Border.all(color: const Color(0xFF53A866), width: 3),
+            borderRadius: BorderRadius.circular(16),
+          ),
+          padding: const EdgeInsets.fromLTRB(20, 18, 20, 24),
+          child: Stack(
+            children: [
+              Positioned(
+                right: 0,
+                top: 0,
+                child: IconButton(
+                  icon: const Icon(Icons.close, color: Color(0xFF2E7D32)),
+                  onPressed: () => Navigator.pop(context, null),
+                ),
               ),
-              padding: const EdgeInsets.fromLTRB(20, 18, 20, 24),
-              child: Stack(
+              Column(
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  Positioned(
-                    right: 0,
-                    top: 0,
-                    child: IconButton(
-                      icon: const Icon(Icons.close, color: Color(0xFF2E7D32)),
-                      onPressed: () => Navigator.pop(context, null),
+                  const SizedBox(height: 8),
+                  const Text(
+                    '현재 비밀번호를 입력해주십시오',
+                    style: TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.w800,
+                      color: Color(0xFF6B5A51),
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 16),
+                  SizedBox(
+                    width: 420,
+                    child: TextField(
+                      controller: controller,
+                      obscureText: true,
+                      decoration: const InputDecoration(
+                        isDense: true,
+                        filled: true,
+                        fillColor: Colors.white,
+                        contentPadding: EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 14,
+                        ),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.all(
+                            Radius.circular(10),
+                          ),
+                        ),
+                      ),
                     ),
                   ),
-                  Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const SizedBox(height: 8),
-                      const Text(
-                        '현재 비밀번호를 입력해주십시오',
-                        style: TextStyle(
-                          fontSize: 22,
-                          fontWeight: FontWeight.w800,
-                          color: Color(0xFF6B5A51),
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                      const SizedBox(height: 16),
-                      SizedBox(
-                        width: 420,
-                        child: TextField(
-                          controller: controller,
-                          obscureText: true,
-                          decoration: const InputDecoration(
-                            isDense: true,
-                            filled: true,
-                            fillColor: Colors.white,
-                            contentPadding: EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 14,
-                            ),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.all(
-                                Radius.circular(10),
-                              ),
-                            ),
-                          ),
+                  const SizedBox(height: 16),
+                  SizedBox(
+                    width: 160,
+                    height: 44,
+                    child: ElevatedButton(
+                      onPressed: () => Navigator.pop(context, controller.text),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF6DBF73),
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(22),
                         ),
                       ),
-                      const SizedBox(height: 16),
-                      SizedBox(
-                        width: 160,
-                        height: 44,
-                        child: ElevatedButton(
-                          onPressed:
-                              () => Navigator.pop(context, controller.text),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF6DBF73),
-                            foregroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(22),
-                            ),
-                          ),
-                          child: const Text('확인'),
-                        ),
-                      ),
-                    ],
+                      child: const Text('확인'),
+                    ),
                   ),
                 ],
               ),
-            ),
+            ],
           ),
+        ),
+      ),
     );
   }
 
@@ -180,73 +178,71 @@ class _SettingsPageState extends State<SettingsPage> {
     await showDialog<void>(
       context: context,
       barrierDismissible: true,
-      builder:
-          (_) => Dialog(
-            insetPadding: const EdgeInsets.symmetric(
-              horizontal: 32,
-              vertical: 24,
-            ),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Container(
-              decoration: BoxDecoration(
-                color: const Color(0xFFE7F6E9),
-                border: Border.all(color: const Color(0xFF53A866), width: 3),
-                borderRadius: BorderRadius.circular(16),
+      builder: (_) => Dialog(
+        insetPadding: const EdgeInsets.symmetric(
+          horizontal: 32,
+          vertical: 24,
+        ),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Container(
+          decoration: BoxDecoration(
+            color: const Color(0xFFE7F6E9),
+            border: Border.all(color: const Color(0xFF53A866), width: 3),
+            borderRadius: BorderRadius.circular(16),
+          ),
+          padding: const EdgeInsets.fromLTRB(20, 18, 20, 24),
+          child: Stack(
+            children: [
+              Positioned(
+                right: 0,
+                top: 0,
+                child: IconButton(
+                  icon: const Icon(Icons.close, color: Color(0xFF2E7D32)),
+                  onPressed: () => Navigator.pop(context),
+                ),
               ),
-              padding: const EdgeInsets.fromLTRB(20, 18, 20, 24),
-              child: Stack(
+              Column(
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  Positioned(
-                    right: 0,
-                    top: 0,
-                    child: IconButton(
-                      icon: const Icon(Icons.close, color: Color(0xFF2E7D32)),
-                      onPressed: () => Navigator.pop(context),
+                  const SizedBox(height: 6),
+                  Container(
+                    width: 240,
+                    height: 120,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFDDE6D6),
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    alignment: Alignment.center,
+                    child: (titleImage == null)
+                        ? const Text(
+                            '실패',
+                            style: TextStyle(
+                              fontSize: 24,
+                              fontWeight: FontWeight.w800,
+                              color: Color(0xFF6B5A51),
+                            ),
+                          )
+                        : Image.asset(titleImage, fit: BoxFit.contain),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    message,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w800,
+                      color: Color(0xFF6B5A51),
                     ),
                   ),
-                  Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const SizedBox(height: 6),
-                      Container(
-                        width: 240,
-                        height: 120,
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFDDE6D6),
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        alignment: Alignment.center,
-                        child:
-                            (titleImage == null)
-                                ? const Text(
-                                  '실패',
-                                  style: TextStyle(
-                                    fontSize: 24,
-                                    fontWeight: FontWeight.w800,
-                                    color: Color(0xFF6B5A51),
-                                  ),
-                                )
-                                : Image.asset(titleImage, fit: BoxFit.contain),
-                      ),
-                      const SizedBox(height: 16),
-                      Text(
-                        message,
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.w800,
-                          color: Color(0xFF6B5A51),
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                    ],
-                  ),
+                  const SizedBox(height: 8),
                 ],
               ),
-            ),
+            ],
           ),
+        ),
+      ),
     );
   }
 
@@ -260,109 +256,107 @@ class _SettingsPageState extends State<SettingsPage> {
     return showDialog<bool>(
       context: context,
       barrierDismissible: true,
-      builder:
-          (_) => Dialog(
-            insetPadding: const EdgeInsets.symmetric(
-              horizontal: 32,
-              vertical: 24,
-            ),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Container(
-              decoration: BoxDecoration(
-                color: const Color(0xFFE7F6E9),
-                border: Border.all(color: const Color(0xFF53A866), width: 3),
-                borderRadius: BorderRadius.circular(16),
+      builder: (_) => Dialog(
+        insetPadding: const EdgeInsets.symmetric(
+          horizontal: 32,
+          vertical: 24,
+        ),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Container(
+          decoration: BoxDecoration(
+            color: const Color(0xFFE7F6E9),
+            border: Border.all(color: const Color(0xFF53A866), width: 3),
+            borderRadius: BorderRadius.circular(16),
+          ),
+          padding: const EdgeInsets.fromLTRB(20, 18, 20, 24),
+          child: Stack(
+            children: [
+              Positioned(
+                right: 0,
+                top: 0,
+                child: IconButton(
+                  icon: const Icon(Icons.close, color: Color(0xFF2E7D32)),
+                  onPressed: () => Navigator.pop(context, false),
+                ),
               ),
-              padding: const EdgeInsets.fromLTRB(20, 18, 20, 24),
-              child: Stack(
+              Column(
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  Positioned(
-                    right: 0,
-                    top: 0,
-                    child: IconButton(
-                      icon: const Icon(Icons.close, color: Color(0xFF2E7D32)),
-                      onPressed: () => Navigator.pop(context, false),
+                  const SizedBox(height: 6),
+                  Container(
+                    width: 240,
+                    height: 120,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFDDE6D6),
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    alignment: Alignment.center,
+                    child: (titleImage == null)
+                        ? const Text(
+                            '주의',
+                            style: TextStyle(
+                              fontSize: 24,
+                              fontWeight: FontWeight.w800,
+                              color: Color(0xFF6B5A51),
+                            ),
+                          )
+                        : Image.asset(titleImage, fit: BoxFit.contain),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    message,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.w900,
+                      color: Color(0xFF6B5A51),
                     ),
                   ),
-                  Column(
-                    mainAxisSize: MainAxisSize.min,
+                  const SizedBox(height: 18),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const SizedBox(height: 6),
-                      Container(
-                        width: 240,
-                        height: 120,
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFDDE6D6),
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        alignment: Alignment.center,
-                        child:
-                            (titleImage == null)
-                                ? const Text(
-                                  '주의',
-                                  style: TextStyle(
-                                    fontSize: 24,
-                                    fontWeight: FontWeight.w800,
-                                    color: Color(0xFF6B5A51),
-                                  ),
-                                )
-                                : Image.asset(titleImage, fit: BoxFit.contain),
-                      ),
-                      const SizedBox(height: 16),
-                      Text(
-                        message,
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(
-                          fontSize: 22,
-                          fontWeight: FontWeight.w900,
-                          color: Color(0xFF6B5A51),
-                        ),
-                      ),
-                      const SizedBox(height: 18),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          SizedBox(
-                            width: 140,
-                            height: 44,
-                            child: ElevatedButton(
-                              onPressed: () => Navigator.pop(context, true),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFF6DBF73),
-                                foregroundColor: Colors.white,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(22),
-                                ),
-                              ),
-                              child: Text(yesText),
+                      SizedBox(
+                        width: 140,
+                        height: 44,
+                        child: ElevatedButton(
+                          onPressed: () => Navigator.pop(context, true),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF6DBF73),
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(22),
                             ),
                           ),
-                          const SizedBox(width: 16),
-                          SizedBox(
-                            width: 140,
-                            height: 44,
-                            child: ElevatedButton(
-                              onPressed: () => Navigator.pop(context, false),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFF6DBF73),
-                                foregroundColor: Colors.white,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(22),
-                                ),
-                              ),
-                              child: Text(noText),
+                          child: Text(yesText),
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      SizedBox(
+                        width: 140,
+                        height: 44,
+                        child: ElevatedButton(
+                          onPressed: () => Navigator.pop(context, false),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF6DBF73),
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(22),
                             ),
                           ),
-                        ],
+                          child: Text(noText),
+                        ),
                       ),
                     ],
                   ),
                 ],
               ),
-            ),
+            ],
           ),
+        ),
+      ),
     );
   }
 
@@ -371,52 +365,51 @@ class _SettingsPageState extends State<SettingsPage> {
     await showDialog<void>(
       context: context,
       barrierDismissible: true,
-      builder:
-          (_) => Dialog(
-            insetPadding: const EdgeInsets.symmetric(
-              horizontal: 32,
-              vertical: 24,
-            ),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Container(
-              decoration: BoxDecoration(
-                color: const Color(0xFFE7F6E9),
-                border: Border.all(color: const Color(0xFF53A866), width: 3),
-                borderRadius: BorderRadius.circular(16),
+      builder: (_) => Dialog(
+        insetPadding: const EdgeInsets.symmetric(
+          horizontal: 32,
+          vertical: 24,
+        ),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Container(
+          decoration: BoxDecoration(
+            color: const Color(0xFFE7F6E9),
+            border: Border.all(color: const Color(0xFF53A866), width: 3),
+            borderRadius: BorderRadius.circular(16),
+          ),
+          padding: const EdgeInsets.fromLTRB(20, 18, 20, 24),
+          child: Stack(
+            children: [
+              Positioned(
+                right: 0,
+                top: 0,
+                child: IconButton(
+                  icon: const Icon(Icons.close, color: Color(0xFF2E7D32)),
+                  onPressed: () => Navigator.pop(context),
+                ),
               ),
-              padding: const EdgeInsets.fromLTRB(20, 18, 20, 24),
-              child: Stack(
+              Column(
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  Positioned(
-                    right: 0,
-                    top: 0,
-                    child: IconButton(
-                      icon: const Icon(Icons.close, color: Color(0xFF2E7D32)),
-                      onPressed: () => Navigator.pop(context),
+                  const SizedBox(height: 6),
+                  Text(
+                    message,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.w800,
+                      color: Color(0xFF6B5A51),
                     ),
                   ),
-                  Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const SizedBox(height: 6),
-                      Text(
-                        message,
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(
-                          fontSize: 22,
-                          fontWeight: FontWeight.w800,
-                          color: Color(0xFF6B5A51),
-                        ),
-                      ),
-                      const SizedBox(height: 6),
-                    ],
-                  ),
+                  const SizedBox(height: 6),
                 ],
               ),
-            ),
+            ],
           ),
+        ),
+      ),
     );
   }
 
@@ -471,14 +464,14 @@ class _SettingsPageState extends State<SettingsPage> {
                           _checkRow(
                             label: '이메일 수신 동의',
                             value: agreeEmail,
-                            onChanged:
-                                (v) => setState(() => agreeEmail = v ?? false),
+                            onChanged: (v) =>
+                                setState(() => agreeEmail = v ?? false),
                           ),
                           _checkRow(
                             label: '알림 수신 동의',
                             value: agreePush,
-                            onChanged:
-                                (v) => setState(() => agreePush = v ?? false),
+                            onChanged: (v) =>
+                                setState(() => agreePush = v ?? false),
                           ),
                           const SizedBox(height: 22),
                           _sectionTitle('언어설정'),
@@ -597,10 +590,9 @@ class _SettingsPageState extends State<SettingsPage> {
       child: DropdownButtonHideUnderline(
         child: DropdownButton<String>(
           value: selectedLang,
-          items:
-              languages
-                  .map((e) => DropdownMenuItem(value: e, child: Text(e)))
-                  .toList(),
+          items: languages
+              .map((e) => DropdownMenuItem(value: e, child: Text(e)))
+              .toList(),
           onChanged: (v) => setState(() => selectedLang = v ?? selectedLang),
         ),
       ),

@@ -70,10 +70,9 @@ class _FaqPageState extends State<FaqPage> {
                           final created = await Navigator.push<bool>(
                             context,
                             MaterialPageRoute(
-                              builder:
-                                  (_) => FaqWritePage(
-                                    parentUserId: widget.parentUserId,
-                                  ),
+                              builder: (_) => FaqWritePage(
+                                parentUserId: widget.parentUserId,
+                              ),
                             ),
                           );
                           if (created == true && mounted) {
@@ -142,15 +141,14 @@ class _FaqPageState extends State<FaqPage> {
         elevation: 0,
         expandIconColor: Colors.grey[700],
         animationDuration: const Duration(milliseconds: 200),
-        children:
-            items.map((item) {
-              return ExpansionPanelRadio(
-                value: item.id,
-                canTapOnHeader: true,
-                headerBuilder: (context, isExpanded) => _rowHeader(item),
-                body: _rowBody(item),
-              );
-            }).toList(),
+        children: items.map((item) {
+          return ExpansionPanelRadio(
+            value: item.id,
+            canTapOnHeader: true,
+            headerBuilder: (context, isExpanded) => _rowHeader(item),
+            body: _rowBody(item),
+          );
+        }).toList(),
       ),
     );
   }
@@ -185,10 +183,9 @@ class _FaqPageState extends State<FaqPage> {
           ),
           Container(
             decoration: BoxDecoration(
-              color:
-                  isAnswered
-                      ? const Color(0xFFCFEFD3)
-                      : const Color(0xFFEDEDED),
+              color: isAnswered
+                  ? const Color(0xFFCFEFD3)
+                  : const Color(0xFFEDEDED),
               borderRadius: BorderRadius.circular(8),
             ),
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
