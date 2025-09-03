@@ -1,224 +1,292 @@
+// lib/main/parentView/layout/parent_layout.dart
 import 'package:flutter/material.dart';
-import 'package:sinabro/main/mainView/page/user_select_screen.dart'; // ✅ 뒤로가기용
 
-// ✅ 동적 사이드바용 API (parentUserId 전달 시에만 네트워크 호출)
-import 'package:sinabro/main/parentView/api/parent_api.dart';
+// 상단 앱바에서 "사용자 선택"으로 돌아갈 때 사용
+import 'package:sinabro/main/mainView/page/user_select_screen.dart';
 
-import '../widget/child_tag.dart';
-import '../page/mypage.dart';
-import '../page/study_report.dart';
-import '../page/notice_page.dart';
-import '../page/faq.dart';
-import '../page/setting.dart';
+// 메뉴 대상 페이지들
+import 'package:sinabro/main/parentView/page/notice_page.dart';
+import 'package:sinabro/main/parentView/page/mypage.dart';
+import 'package:sinabro/main/parentView/page/children_page.dart';
+import 'package:sinabro/main/parentView/page/faq.dart';
+import 'package:sinabro/main/parentView/page/setting.dart' as psettings;
 
-class ParentLayout extends StatelessWidget {
+/// 부모 공통 레이아웃
+/// - 좌측 사이드바(접기/펼치기)
+/// - 상단 AppBar(뒤로가기, 햄버거 토글)
+class ParentLayout extends StatefulWidget {
+  /// 현재 활성 메뉴 이름 (사이드바 하이라이트용)
+  /// '공지사항' | '마이페이지' | '자녀페이지' | '문의사항' | '설정'
   final String activeMenu;
+
+  /// 실제 본문 위젯
   final Widget content;
 
-  // ✅ 하위 호환: optional 로 추가. 안 넘기면 기존처럼 정적 사이드바 표시됨.
+  /// 서버 연동 시 사이드바에서 부모정보를 불러올 일이 있으면 넘겨 쓸 ID(선택)
   final String? parentUserId;
 
   const ParentLayout({
     super.key,
     required this.activeMenu,
     required this.content,
-    this.parentUserId, // ← 선택 파라미터 (기존 페이지들 오류 안 남)
+    this.parentUserId,
   });
 
   @override
+  State<ParentLayout> createState() => _ParentLayoutState();
+}
+
+class _ParentLayoutState extends State<ParentLayout> {
+  bool _collapsed = false; // 사이드바 접힘 상태
+
+  void _toggleSidebar() => setState(() => _collapsed = !_collapsed);
+
+  @override
   Widget build(BuildContext context) {
+    final green = Colors.green.shade200;
+
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Colors.green.shade200,
+        backgroundColor: green,
+        elevation: 0,
+        iconTheme: const IconThemeData(color: Colors.black),
         title: const Text(
           'SINABRO 부모용 페이지',
           style: TextStyle(color: Colors.black),
         ),
-        iconTheme: const IconThemeData(color: Colors.black),
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () {
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(
-                builder: (context) => const UserSelectScreen(),
-              ),
-            );
-          },
+        leading: Row(
+          children: [
+            // 뒤로가기: 사용자 선택 화면으로
+            IconButton(
+              icon: const Icon(Icons.arrow_back),
+              onPressed: () {
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(builder: (_) => const UserSelectScreen()),
+                );
+              },
+            ),
+            // 햄버거 (사이드바 토글)
+            IconButton(
+              icon: Icon(_collapsed ? Icons.menu_open : Icons.menu),
+              onPressed: _toggleSidebar,
+            ),
+          ],
         ),
+        leadingWidth: 104,
       ),
       body: Row(
         children: [
-          ParentSidebar(
-            activeMenu: activeMenu,
-            parentUserId: parentUserId, // ← null 이면 정적, 값 있으면 동적
+          _ParentSidebar(
+            activeMenu: widget.activeMenu,
+            collapsed: _collapsed,
+            parentUserId: widget.parentUserId,
           ),
-          Expanded(child: content),
+          // 본문
+          Expanded(child: widget.content),
         ],
       ),
     );
   }
 }
 
-class ParentSidebar extends StatelessWidget {
+/// 좌측 사이드바 (메뉴만 간결히 표시)
+class _ParentSidebar extends StatelessWidget {
   final String activeMenu;
-
-  // ✅ 하위 호환: optional 로 추가. null 이면 기존 정적 표시 유지.
+  final bool collapsed;
   final String? parentUserId;
 
-  const ParentSidebar({
-    super.key,
+  const _ParentSidebar({
     required this.activeMenu,
-    this.parentUserId, // ← 선택 파라미터
+    required this.collapsed,
+    required this.parentUserId,
   });
-
-  Future<_SidebarData> _load(String userId) async {
-    final name = await ParentApi.fetchParentName(userId);
-    final children = await ParentApi.fetchChildren(userId);
-    return _SidebarData(parentName: name, children: children);
-  }
 
   @override
   Widget build(BuildContext context) {
-    // ✅ parentUserId 가 null 이면 예전 정적 사이드바를 그대로 렌더링 (기존 페이지들 보호)
-    if (parentUserId == null) {
-      return Container(
-        width: 180,
-        color: const Color(0xFFF5F5F5),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const SizedBox(height: 40),
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 16.0),
-              child: Text(
-                '(부모)님의 자녀',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-              ),
-            ),
-            const SizedBox(height: 10),
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 16),
-              child: Wrap(
-                spacing: 8,
-                children: [
-                  // ✅ 기존 정적 태그 유지
-                  ChildTag(label: '성민콩', color: Color(0xFFB5E5B8)),
-                  ChildTag(label: '세로이', color: Color(0xFFD6D6D6)),
-                ],
-              ),
-            ),
-            const SizedBox(height: 30),
-            _buildMenuItem(context, '마이페이지', activeMenu == '마이페이지', const MyPage()),
-            _buildMenuItem(context, '학습리포트', activeMenu == '학습리포트', const StudyReportPage()),
-            _buildMenuItem(context, '공지사항', activeMenu == '공지사항', const NoticePage()),
-            _buildMenuItem(context, '문의하기', activeMenu == '문의하기', const FaqPage()),
-            _buildMenuItem(context, '설정', activeMenu == '설정', const SettingsPage()),
-          ],
-        ),
-      );
-    }
+    // 스타일
+    const sideBg = Color(0xFFF5F5F5);
+    const wCollapsed = 72.0;
+    const wExpanded = 220.0;
 
-    // ✅ parentUserId 가 있으면 동적 로딩 버전
-    return Container(
-      width: 180,
-      color: const Color(0xFFF5F5F5),
-      child: FutureBuilder<_SidebarData>(
-        future: _load(parentUserId!), // ← 안전하게 ! (위에서 null 분기 처리)
-        builder: (context, snap) {
-          if (snap.connectionState == ConnectionState.waiting) {
-            return const Center(
-              child: Padding(
-                padding: EdgeInsets.all(16.0),
-                child: CircularProgressIndicator(),
-              ),
-            );
-          }
-          if (snap.hasError) {
-            return Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Text('사이드바 로딩 실패\n${snap.error}', style: const TextStyle(fontSize: 12)),
-            );
-          }
-          final data = snap.data!;
-          final parentName = data.parentName.isEmpty ? '부모' : data.parentName;
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 220),
+      curve: Curves.easeOut,
+      width: collapsed ? wCollapsed : wExpanded,
+      color: sideBg,
+      child: Column(
+        crossAxisAlignment:
+            collapsed ? CrossAxisAlignment.center : CrossAxisAlignment.start,
+        children: [
+          const SizedBox(height: 12),
+          const Divider(height: 1, color: Color(0xFFE6E6E6)),
+          const SizedBox(height: 8),
 
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const SizedBox(height: 40),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                child: Text(
-                  '($parentName)님의 자녀',
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                ),
-              ),
-              const SizedBox(height: 10),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: (data.children.isEmpty)
-                    ? const Text('등록된 자녀가 없어요',
-                        style: TextStyle(fontSize: 12, color: Colors.grey))
-                    : Wrap(
-                        spacing: 8,
-                        runSpacing: 8,
-                        children: data.children
-                            .map((c) => ChildTag(
-                                  label: c.displayName, // ✅ 닉네임 우선, 없으면 이름
-                                  color: const Color(0xFFD6D6D6),
-                                ))
-                            .toList(),
-                      ),
-              ),
-              const SizedBox(height: 30),
-              _buildMenuItem(context, '마이페이지', activeMenu == '마이페이지', const MyPage()),
-              _buildMenuItem(
-                  context, '학습리포트', activeMenu == '학습리포트', const StudyReportPage()),
-              _buildMenuItem(context, '공지사항', activeMenu == '공지사항', const NoticePage()),
-              _buildMenuItem(context, '문의하기', activeMenu == '문의하기', const FaqPage()),
-              _buildMenuItem(context, '설정', activeMenu == '설정', const SettingsPage()),
-            ],
-          );
-        },
-      ),
-    );
-  }
-
-  static Widget _buildMenuItem(
-    BuildContext context,
-    String title,
-    bool isActive,
-    Widget destination,
-  ) {
-    return GestureDetector(
-      onTap: () {
-        if (!isActive) {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => destination),
-          );
-        }
-      },
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12),
-        child: Text(
-          title,
-          style: TextStyle(
-            fontSize: 15,
-            fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
-            color: isActive ? Colors.green : Colors.black,
+          // ✅ 메뉴 리스트 (공지사항/마이페이지/자녀페이지/문의사항/설정)
+          Expanded(
+            child: _MenuList(activeMenu: activeMenu, collapsed: collapsed),
           ),
-        ),
+        ],
       ),
     );
   }
 }
 
-class _SidebarData {
-  final String parentName;
-  final List<ChildSummary> children;
+/// 메뉴 리스트 (현재 페이지는 초록 하이라이트)
+class _MenuList extends StatelessWidget {
+  final String activeMenu;
+  final bool collapsed;
 
-  _SidebarData({required this.parentName, required this.children});
+  const _MenuList({required this.activeMenu, required this.collapsed});
+
+  @override
+  Widget build(BuildContext context) {
+    final items = <_MenuItem>[
+      _MenuItem(
+        title: '공지사항',
+        icon: Icons.campaign_outlined,
+        destination: NoticePage(),
+      ),
+      _MenuItem(
+        title: '마이페이지',
+        icon: Icons.account_circle_outlined,
+        destination: const MyPage(),
+      ),
+      _MenuItem(
+        title: '자녀페이지',
+        icon: Icons.family_restroom_outlined,
+        // ⚠️ ChildrenPage가 필수 파라미터를 요구하면 아래처럼 실제 값 전달해 주세요.
+        destination: ChildrenPage(
+          parentUserId: '', // TODO: 상위에서 실제 값 전달
+          parentDisplayName: '', // TODO: 상위에서 실제 값 전달
+        ),
+      ),
+      _MenuItem(
+        title: '문의사항',
+        icon: Icons.mail_outline,
+        destination: const FaqPage(),
+      ),
+      _MenuItem(
+        title: '설정',
+        icon: Icons.settings_outlined,
+        destination: psettings.SettingsPage(),
+      ),
+    ];
+
+    return ListView.builder(
+      padding: EdgeInsets.only(
+        left: collapsed ? 0 : 6,
+        right: collapsed ? 0 : 8,
+      ),
+      itemCount: items.length,
+      itemBuilder: (_, i) {
+        final it = items[i];
+        final isActive = it.title == activeMenu;
+        return _MenuTile(item: it, collapsed: collapsed, isActive: isActive);
+      },
+    );
+  }
+}
+
+class _MenuItem {
+  final String title;
+  final IconData icon;
+  final Widget destination;
+
+  const _MenuItem({
+    required this.title,
+    required this.icon,
+    required this.destination,
+  });
+}
+
+/// 단일 메뉴 타일
+class _MenuTile extends StatelessWidget {
+  final _MenuItem item;
+  final bool collapsed;
+  final bool isActive;
+
+  const _MenuTile({
+    required this.item,
+    required this.collapsed,
+    required this.isActive,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final activeColor = Colors.green.shade600;
+
+    final tile = InkWell(
+      borderRadius: BorderRadius.circular(10),
+      onTap: () {
+        if (!isActive) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => item.destination),
+          );
+        }
+      },
+      child: Padding(
+        padding: EdgeInsets.symmetric(
+          horizontal: collapsed ? 0 : 8,
+          vertical: 6,
+        ),
+        child: Row(
+          mainAxisAlignment:
+              collapsed ? MainAxisAlignment.center : MainAxisAlignment.start,
+          children: [
+            // 아이콘 + (활성 시) 초록 점
+            Stack(
+              alignment: Alignment.center,
+              children: [
+                Icon(
+                  item.icon,
+                  size: 22,
+                  color: isActive ? activeColor : Colors.black87,
+                ),
+                if (isActive)
+                  Positioned(
+                    right: -6,
+                    top: -6,
+                    child: Container(
+                      width: 8,
+                      height: 8,
+                      decoration: BoxDecoration(
+                        color: activeColor,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+            if (!collapsed) ...[
+              const SizedBox(width: 10),
+              Expanded(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 6,
+                    vertical: 8,
+                  ),
+                  decoration: BoxDecoration(
+                    color: isActive ? activeColor.withOpacity(0.08) : null,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    item.title,
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: isActive ? FontWeight.w700 : FontWeight.w400,
+                      color: isActive ? activeColor : Colors.black,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+
+    return collapsed ? Tooltip(message: item.title, child: tile) : tile;
+  }
 }

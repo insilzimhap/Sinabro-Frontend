@@ -1,11 +1,9 @@
+// lib/main/parentView/page/add_child_form.dart
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
 import 'package:sinabro/main/parentView/layout/parent_layout.dart';
-import 'package:sinabro/config.dart';
 
 class AddChildFormPage extends StatefulWidget {
-  final String parentUserId;
+  final String parentUserId; // (미사용) 서버 붙일 때 활용
   const AddChildFormPage({super.key, required this.parentUserId});
 
   @override
@@ -13,278 +11,444 @@ class AddChildFormPage extends StatefulWidget {
 }
 
 class _AddChildFormPageState extends State<AddChildFormPage> {
-  final TextEditingController idController = TextEditingController();
-  final TextEditingController passwordController = TextEditingController();
-  final TextEditingController nameController = TextEditingController();
-  final TextEditingController nicknameController = TextEditingController();
+  // --- Controllers ---
+  final _id = TextEditingController();
+  final _pw = TextEditingController();
+  final _pw2 = TextEditingController();
+  final _name = TextEditingController();
+  final _phone = TextEditingController();
 
-  String _message = '';
-  bool _isLoading = false;
+  // --- UI state ---
+  bool _agree = false; // 개인정보 동의
+  bool _idChecked = false; // 아이디 중복 확인(프론트 형식검사만)
+  bool _showPwMismatch = false; // 비밀번호 불일치 경고
+  bool _isSaving = false; // 저장 로딩(프론트)
 
-  // 생년월일 Dropdown 값
-  String? selectedYear;
-  String? selectedMonth;
-  String? selectedDay;
+  // 비밀번호 유효성
+  bool get _pwValidLength => _pw.text.length >= 8 && _pw.text.length <= 16;
+  bool get _pwMatch => _pw.text == _pw2.text && _pw2.text.isNotEmpty;
 
-  // 제한시간
-  String? selectedLimitTime;
-
-  final List<String> yearList = List.generate(20, (index) => (2010 + index).toString());
-  final List<String> monthList = List.generate(12, (index) => (index + 1).toString().padLeft(2, '0'));
-  final List<String> dayList = List.generate(31, (index) => (index + 1).toString().padLeft(2, '0'));
-  final List<String> limitTimes = ['30분', '45분', '1시간', '1시간 30분', '제한없음'];
+  // 버튼 활성화 조건
+  bool get _canSubmit =>
+      _idChecked &&
+      _pwValidLength &&
+      _pwMatch &&
+      _name.text.trim().isNotEmpty &&
+      _phone.text.trim().isNotEmpty &&
+      _agree &&
+      !_isSaving;
 
   @override
   void initState() {
     super.initState();
-    selectedYear = yearList.first;
-    selectedMonth = monthList.first;
-    selectedDay = dayList.first;
-    selectedLimitTime = limitTimes.first;
+    _pw.addListener(_onPwChange);
+    _pw2.addListener(_onPwChange);
   }
 
-  Future<void> _registerChild() async {
-    setState(() {
-      _isLoading = true;
-      _message = '';
-    });
-
-    final url = '$baseUrl/api/child/register'; // ✅ const → final
-
-    // 생년월일 조합
-    final childBirth = '${selectedYear!}-${selectedMonth!}-${selectedDay!}';
-
-    // 제한시간 숫자 변환
-    int? timeLimitMinutes;
-    if (selectedLimitTime == '30분') timeLimitMinutes = 30;
-    else if (selectedLimitTime == '45분') timeLimitMinutes = 45;
-    else if (selectedLimitTime == '1시간') timeLimitMinutes = 60;
-    else if (selectedLimitTime == '1시간 30분') timeLimitMinutes = 90;
-    else timeLimitMinutes = null; // 제한없음 → null (서버에서 0으로 기본값 처리)
-
-    try {
-      // ✅ 서버 DTO 필드명/타입과 정확히 맞춤
-      final payload = {
-        'childId': idController.text.trim(),
-        'childPw': passwordController.text.trim(),
-        'childName': nameController.text.trim(),
-        'childNickname': nicknameController.text.trim(), // ✅ 키 수정 (NickName → Nickname)
-        'childBirth': childBirth,
-        'childAge': _calcAge(selectedYear!, selectedMonth!, selectedDay!),
-        // 'childLevel':  null,  // ✅ 초기 레벨 없으면 아예 보내지 말기 (주석)
-        'role': 'child',
-        'userId': widget.parentUserId,
-        'timeLimitMinutes': timeLimitMinutes, // null이면 서버에서 0으로 처리
-      };
-
-      final response = await http.post(
-        Uri.parse(url),
-        headers: {'Content-Type': 'application/json'},
-        body: json.encode(payload),
-      );
-
-      if (response.statusCode == 200) {
-        if (!mounted) return;
-        showDialog(
-          context: context,
-          builder: (context) => AlertDialog(
-            title: const Text('등록 성공'),
-            content: const Text('자녀 계정이 성공적으로 추가되었습니다!'),
-            actions: [
-              TextButton(
-                onPressed: () {
-                  Navigator.pop(context); // 다이얼로그 닫기
-                  Navigator.pop(context); // 폼 페이지 닫기
-                },
-                child: const Text('확인'),
-              ),
-            ],
-          ),
-        );
-      } else if (response.statusCode == 409) {
-        setState(() => _message = '이미 존재하는 아이디입니다.');
-      } else {
-        setState(() => _message = '등록 실패: ${response.statusCode}\n${response.body}');
-      }
-    } catch (e) {
-      setState(() => _message = '에러 발생: $e');
-    } finally {
-      setState(() => _isLoading = false);
+  void _onPwChange() {
+    final mismatch = _pw2.text.isNotEmpty && _pw.text != _pw2.text;
+    if (mismatch != _showPwMismatch) {
+      setState(() => _showPwMismatch = mismatch);
+    } else {
+      setState(() {}); // 길이 상태 반영
     }
-  }
-
-  int _calcAge(String year, String month, String day) {
-    final now = DateTime.now();
-    final birth = DateTime(int.parse(year), int.parse(month), int.parse(day));
-    int age = now.year - birth.year;
-    if (now.month < birth.month || (now.month == birth.month && now.day < birth.day)) {
-      age--;
-    }
-    return age;
   }
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('자녀 정보 입력'),
-        centerTitle: true,
-        backgroundColor: const Color(0xFFF5F5F5),
-        elevation: 0,
-      ),
-      body: Row(
-        children: [
-          const SizedBox.shrink(), // placeholder, 아래에서 동적 사이드바로 대체
+  void dispose() {
+    _id.dispose();
+    _pw.dispose();
+    _pw2.dispose();
+    _name.dispose();
+    _phone.dispose();
+    super.dispose();
+  }
 
-          // ✅ 동적 사이드바 (부모 이름/자녀 목록 표시)
-          ParentSidebar(
-            activeMenu: '마이페이지',
-            parentUserId: widget.parentUserId,
-          ),
+  // ---------------- Actions ----------------
 
-          Expanded(
-            child: Container(
-              color: const Color(0xFFE4F1FA),
-              child: Center(
-                child: Container(
-                  width: 600,
-                  padding: const EdgeInsets.all(32),
-                  decoration: BoxDecoration(
-                    color: const Color.fromARGB(255, 237, 246, 225),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Text(
-                        '추가할 자녀의 정보를 입력해주세요',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 24),
-                      _buildTextField('아이디', idController),
-                      const SizedBox(height: 16),
-                      _buildTextField('비밀번호', passwordController, isObscure: true),
-                      const SizedBox(height: 16),
-                      _buildTextField('이름', nameController),
-                      const SizedBox(height: 16),
-                      _buildTextField('닉네임', nicknameController),
-                      const SizedBox(height: 16),
-                      _buildBirthSelector(),
-                      const SizedBox(height: 16),
-                      _buildLimitTimeDropdown(),
-                      const SizedBox(height: 24),
-                      _isLoading
-                          ? const CircularProgressIndicator()
-                          : ElevatedButton(
-                              onPressed: _registerChild,
-                              child: const Text('저장하기'),
-                            ),
-                      if (_message.isNotEmpty)
-                        Padding(
-                          padding: const EdgeInsets.only(top: 16.0),
-                          child: Text(_message, style: const TextStyle(color: Colors.red)),
-                        ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
+  // (프론트 전용) 아이디 중복확인: 길이/형식만 체크
+  void _checkDuplicate() {
+    final id = _id.text.trim();
+    if (id.length < 4) {
+      _idChecked = false;
+      _toast('아이디는 4자 이상 입력해주세요.');
+    } else {
+      _idChecked = true;
+      _toast('사용 가능한 아이디입니다.');
+    }
+    setState(() {});
+  }
+
+  // 개인정보 전문
+  void _showTerms() {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('개인정보 수집·이용 동의(예시)'),
+        content: const SingleChildScrollView(
+          child: Text('여기에 동의 전문/이미지가 들어갑니다. 실제 문구는 추후 교체하세요.'),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('닫기'),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildTextField(
-    String label,
-    TextEditingController controller, {
-    bool isObscure = false,
-  }) {
-    return Row(
-      children: [
-        SizedBox(
-          width: 80,
-          child: Text(
-            label,
-            style: const TextStyle(fontWeight: FontWeight.bold),
+  // 저장 (★ 서버 없이 팝업만)
+  Future<void> _submit() async {
+    if (!_canSubmit) return;
+    setState(() => _isSaving = true);
+
+    // 약간의 로딩 느낌
+    await Future.delayed(const Duration(milliseconds: 250));
+
+    if (!mounted) return;
+    await _showSuccessDialog(childName: _name.text.trim());
+
+    if (!mounted) return;
+    // 이전 화면(자녀 리스트)로 성공 신호 전달
+    Navigator.pop(context, true);
+
+    setState(() => _isSaving = false);
+  }
+
+  Future<void> _showSuccessDialog({required String childName}) {
+    return showDialog<void>(
+      context: context,
+      barrierDismissible: true,
+      builder: (_) => Dialog(
+        insetPadding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        child: Container(
+          decoration: BoxDecoration(
+            color: const Color(0xFFE7F6E9),
+            border: Border.all(color: const Color(0xFF53A866), width: 3),
+            borderRadius: BorderRadius.circular(16),
+          ),
+          padding: const EdgeInsets.fromLTRB(20, 18, 20, 24),
+          child: Stack(
+            children: [
+              Positioned(
+                right: 0,
+                top: 0,
+                child: IconButton(
+                  icon: const Icon(Icons.close, color: Color(0xFF2E7D32)),
+                  onPressed: () => Navigator.pop(context),
+                ),
+              ),
+              Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const SizedBox(height: 6),
+                  Container(
+                    width: 240,
+                    height: 120,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFDDE6D6),
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    alignment: Alignment.center,
+                    child: const Text(
+                      '추가 성공',
+                      style: TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.w800,
+                        color: Color(0xFF6B5A51),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    '자녀 $childName 님이 추가되었습니다!',
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w800,
+                      color: Color(0xFF6B5A51),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  const SizedBox(height: 8),
+                ],
+              ),
+            ],
           ),
         ),
-        const SizedBox(width: 16),
-        Expanded(
-          child: TextField(
-            controller: controller,
-            obscureText: isObscure,
-            decoration: const InputDecoration(
-              filled: true,
-              fillColor: Colors.white,
-              contentPadding: EdgeInsets.symmetric(
-                horizontal: 16,
-                vertical: 12,
+      ),
+    );
+  }
+
+  void _toast(String msg) =>
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+
+  // ---------------- UI ----------------
+
+  @override
+  Widget build(BuildContext context) {
+    return ParentLayout(
+      activeMenu: '자녀페이지', // 사이드바 하이라이트
+      parentUserId: widget.parentUserId,
+      content: Container(
+        color: const Color(0xFFFAFAF8),
+        child: ListView(
+          children: [
+            _titleBar(),
+            const SizedBox(height: 24),
+            Center(
+              child: Container(
+                width: 980,
+                padding: const EdgeInsets.fromLTRB(24, 20, 24, 28),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(18),
+                  border: Border.all(color: const Color(0xFFE5E5E5)),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const _SectionTitle('자녀 추가하기'),
+                    const SizedBox(height: 16),
+
+                    // 아이디 + 중복확인
+                    _rowField(
+                      label: '아이디',
+                      trailing: ElevatedButton(
+                        onPressed: _checkDuplicate,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF59B35A),
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 12,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                        child: const Text('중복 확인'),
+                      ),
+                      child: _input(_id, hint: '아이 아이디를 입력하세요'),
+                    ),
+
+                    // 비밀번호
+                    _rowField(
+                      label: '비밀번호',
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _input(
+                            _pw,
+                            obscure: true,
+                            hint: '8자 이상 16자 이하',
+                            onChanged: (_) => setState(() {}),
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            '8자 이상 16자 이하',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: _pwValidLength ? Colors.grey : Colors.red,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    // 재입력
+                    _rowField(
+                      label: '재입력',
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _input(_pw2, obscure: true, hint: '비밀번호를 다시 입력하세요'),
+                          if (_showPwMismatch) ...[
+                            const SizedBox(height: 6),
+                            const Text(
+                              '비밀번호가 달라요',
+                              style: TextStyle(color: Colors.red, fontSize: 12),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+
+                    // 이름
+                    _rowField(label: '이름', child: _input(_name, hint: '아이 이름')),
+
+                    // 전화번호
+                    _rowField(
+                      label: '전화번호',
+                      child: _input(_phone, hint: '010-0000-0000'),
+                    ),
+
+                    const SizedBox(height: 14),
+                    _agreeRow(),
+
+                    const SizedBox(height: 22),
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: SizedBox(
+                        width: 140,
+                        height: 46,
+                        child: ElevatedButton(
+                          onPressed: _canSubmit ? _submit : null,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF59B35A),
+                            disabledBackgroundColor: const Color(0xFFBFDDBF),
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                          ),
+                          child: _isSaving
+                              ? const SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: Colors.white,
+                                  ),
+                                )
+                              : const Text('등록하기'),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.all(Radius.circular(8)),
+            ),
+            const SizedBox(height: 40),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _titleBar() {
+    return Container(
+      color: const Color(0xFF64A86A),
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 18),
+      child: const Text(
+        '자녀 페이지',
+        style: TextStyle(
+          color: Colors.white,
+          fontSize: 24,
+          fontWeight: FontWeight.w800,
+        ),
+      ),
+    );
+  }
+
+  Widget _rowField({
+    required String label,
+    required Widget child,
+    Widget? trailing,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 10),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 120,
+            child: Text(
+              label,
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
+                color: Color(0xFF6B564C),
               ),
             ),
           ),
+          const SizedBox(width: 16),
+          Expanded(child: child),
+          if (trailing != null) ...[const SizedBox(width: 12), trailing],
+        ],
+      ),
+    );
+  }
+
+  Widget _input(
+    TextEditingController c, {
+    String? hint,
+    bool obscure = false,
+    void Function(String)? onChanged,
+  }) {
+    return TextField(
+      controller: c,
+      obscureText: obscure,
+      onChanged: onChanged,
+      decoration: InputDecoration(
+        hintText: hint,
+        filled: true,
+        fillColor: const Color(0xFFF7F7F7),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 14,
+          vertical: 14,
+        ),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: Color(0xFFE1E1E1)),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: Color(0xFFE1E1E1)),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: Color(0xFFB7CDB8)),
+        ),
+      ),
+      keyboardType:
+          (hint == '010-0000-0000') ? TextInputType.phone : TextInputType.text,
+    );
+  }
+
+  Widget _agreeRow() {
+    return Row(
+      children: [
+        Checkbox(
+          value: _agree,
+          onChanged: (v) => setState(() => _agree = v ?? false),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+        ),
+        const Text('개인정보 수집 동의', style: TextStyle(fontSize: 14)),
+        const SizedBox(width: 12),
+        TextButton(
+          onPressed: _showTerms,
+          style: TextButton.styleFrom(
+            backgroundColor: const Color(0xFFE6E6E6),
+            foregroundColor: Colors.black87,
+            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
+          ),
+          child: const Text('전문 읽기'),
         ),
       ],
     );
   }
+}
 
-  Widget _buildBirthSelector() {
-    return Row(
-      children: [
-        const SizedBox(
-          width: 80,
-          child: Text('생년월일', style: TextStyle(fontWeight: FontWeight.bold)),
-        ),
-        const SizedBox(width: 16),
-        DropdownButton<String>(
-          value: selectedYear,
-          items: yearList
-              .map((val) => DropdownMenuItem(value: val, child: Text('$val년')))
-              .toList(),
-          onChanged: (val) => setState(() => selectedYear = val),
-        ),
-        const SizedBox(width: 8),
-        DropdownButton<String>(
-          value: selectedMonth,
-          items: monthList
-              .map((val) => DropdownMenuItem(value: val, child: Text('$val월')))
-              .toList(),
-          onChanged: (val) => setState(() => selectedMonth = val),
-        ),
-        const SizedBox(width: 8),
-        DropdownButton<String>(
-          value: selectedDay,
-          items: dayList
-              .map((val) => DropdownMenuItem(value: val, child: Text('$val일')))
-              .toList(),
-          onChanged: (val) => setState(() => selectedDay = val),
-        ),
-      ],
-    );
-  }
+// 섹션 타이틀
+class _SectionTitle extends StatelessWidget {
+  final String text;
+  const _SectionTitle(this.text);
 
-  Widget _buildLimitTimeDropdown() {
-    return Row(
-      children: [
-        const SizedBox(
-          width: 80,
-          child: Text('제한시간', style: TextStyle(fontWeight: FontWeight.bold)),
-        ),
-        const SizedBox(width: 16),
-        DropdownButton<String>(
-          value: selectedLimitTime,
-          items: limitTimes
-              .map((val) => DropdownMenuItem(value: val, child: Text(val)))
-              .toList(),
-          onChanged: (val) => setState(() => selectedLimitTime = val),
-        ),
-      ],
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      text,
+      style: const TextStyle(
+        fontSize: 24,
+        fontWeight: FontWeight.w900,
+        color: Color(0xFF6B564C),
+      ),
     );
   }
 }

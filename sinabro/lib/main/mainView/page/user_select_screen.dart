@@ -11,34 +11,33 @@ class UserSelectScreen extends StatelessWidget {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('userType', userType);
 
+    // 선택 후 뒤로가기로 다시 이 화면 안 돌아오도록 pushReplacement 사용
     if (userType == '아이') {
-      Navigator.push(
+      Navigator.pushReplacement(
         context,
-        MaterialPageRoute(
-          builder: (context) => const LoginChildScreen(),
-        ),
+        MaterialPageRoute(builder: (context) => LoginChildScreen()),
       );
     } else {
-      Navigator.push(
+      // ✅ 부모 전용 Login 화면은 role 인자를 받지 않음
+      Navigator.pushReplacement(
         context,
-        MaterialPageRoute(
-          builder: (context) => LoginParentScreen(role: 'parent'),
-        ),
+        MaterialPageRoute(builder: (context) => LoginParentScreen()),
       );
     }
   }
 
-
   @override
   Widget build(BuildContext context) {
+    const bg = Color(0xFFE8F4FD);
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('사용자 선택'),
         centerTitle: true,
-        backgroundColor: const Color(0xFFE8F4FD),
+        backgroundColor: bg,
         elevation: 0,
       ),
-      backgroundColor: const Color(0xFFE8F4FD),
+      backgroundColor: bg,
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -56,22 +55,22 @@ class UserSelectScreen extends StatelessWidget {
                 _buildUserButton(context, '아이'),
               ],
             ),
-                      ],
-                    ),
-                  ),
-                );
-              }
+          ],
+        ),
+      ),
+    );
+  }
 
   Widget _buildUserButton(BuildContext context, String label) {
     return ElevatedButton(
       onPressed: () => _saveUserSelection(context, label),
-      child: Text(label, style: const TextStyle(fontSize: 18)),
       style: ElevatedButton.styleFrom(
         shape: const CircleBorder(),
         padding: const EdgeInsets.all(40),
         backgroundColor: Colors.grey[300],
         foregroundColor: Colors.black,
       ),
+      child: Text(label, style: const TextStyle(fontSize: 18)),
     );
   }
 }

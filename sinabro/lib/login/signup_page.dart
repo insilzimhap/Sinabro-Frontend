@@ -1,13 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import 'kakao_login_api.dart'; // 카카오 로그인 로직 분리된 파일
+
+import 'kakao_login_api.dart'; // 카카오 로그인 로직
 import 'package:google_sign_in/google_sign_in.dart';
-import '/main/parentView/page/lobby_parent.dart'; // 부모용 페이지 import
+
+// ✅ 부모용 공지사항 페이지로 이동
+import 'package:sinabro/main/parentView/page/notice_page.dart';
+
 import 'social_info_page.dart';
 import 'package:sinabro/config.dart';
 
 class SignUpPage extends StatefulWidget {
+  // role은 지금 안 쓰이지만 기존 호출부 호환 위해 유지
   final String role;
   const SignUpPage({super.key, required this.role});
 
@@ -16,11 +21,11 @@ class SignUpPage extends StatefulWidget {
 }
 
 class _SignUpPageState extends State<SignUpPage> {
-  final _usernameController = TextEditingController();   // 아이디
-  final _passwordController = TextEditingController();   // 비밀번호
-  final _emailController = TextEditingController();      // 이메일
-  final _nameController = TextEditingController();       // 이름
-  final _phoneController = TextEditingController();      // 휴대폰 번호
+  final _usernameController = TextEditingController(); // 아이디
+  final _passwordController = TextEditingController(); // 비밀번호
+  final _emailController = TextEditingController(); // 이메일
+  final _nameController = TextEditingController(); // 이름
+  final _phoneController = TextEditingController(); // 휴대폰 번호
 
   String _message = '';
   bool _isLoading = false;
@@ -31,6 +36,7 @@ class _SignUpPageState extends State<SignUpPage> {
       _isLoading = true;
       _message = '';
     });
+
     final url = '$baseUrl/api/users/register';
 
     try {
@@ -49,17 +55,14 @@ class _SignUpPageState extends State<SignUpPage> {
 
       if (response.statusCode == 200) {
         if (!mounted) return;
-        final resBody = json.decode(response.body);
-        final parentUserId = resBody['userId'] ?? _usernameController.text.trim();
-
+        // 최종 이동: 공지사항 페이지
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(
-            builder: (context) => SelectParentsPage(parentUserId: parentUserId),
-          ),
+          MaterialPageRoute(builder: (_) => const NoticePage()),
         );
       } else if (response.statusCode == 409) {
         // 중복 아이디
+        if (!mounted) return;
         showDialog(
           context: context,
           builder: (context) => AlertDialog(
@@ -83,25 +86,21 @@ class _SignUpPageState extends State<SignUpPage> {
         _message = '에러 발생: $e';
       });
     } finally {
-      setState(() {
-        _isLoading = false;
-      });
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
   // ✅ 카카오 로그인 + 서버 전송
   Future<void> _loginWithKakao() async {
-    final result = await KakaoLoginApi.kakaoLogin();
-
-    if (result == null) {
-      setState(() {
-        _message = '카카오 로그인 실패';
-      });
-      return;
-    }
-    final url = '$baseUrl/api/users/social-register';
-
     try {
+      final result = await KakaoLoginApi.kakaoLogin();
+
+      if (result == null) {
+        setState(() => _message = '카카오 로그인 실패');
+        return;
+      }
+
+      final url = '$baseUrl/api/users/social-register';
       final response = await http.post(
         Uri.parse(url),
         headers: {'Content-Type': 'application/json'},
@@ -119,6 +118,7 @@ class _SignUpPageState extends State<SignUpPage> {
       if (response.statusCode == 200) {
         final userInfo = json.decode(response.body);
         if (!mounted) return;
+        // 소셜은 추가 정보 입력 페이지로
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
@@ -154,9 +154,7 @@ class _SignUpPageState extends State<SignUpPage> {
       final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
 
       if (googleUser == null) {
-        setState(() {
-          _message = '구글 로그인 취소됨';
-        });
+        setState(() => _message = '구글 로그인 취소됨');
         return;
       }
 
@@ -165,8 +163,6 @@ class _SignUpPageState extends State<SignUpPage> {
       final id = googleUser.id;
 
       final url = '$baseUrl/api/users/social-register';
-
-
       final response = await http.post(
         Uri.parse(url),
         headers: {'Content-Type': 'application/json'},
@@ -206,9 +202,7 @@ class _SignUpPageState extends State<SignUpPage> {
         _message = '구글 로그인 에러: $e';
       });
     } finally {
-      setState(() {
-        _isLoading = false;
-      });
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
