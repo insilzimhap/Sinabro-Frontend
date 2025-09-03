@@ -1,3 +1,4 @@
+// 정화 수정 - add_child
 import 'package:flutter/material.dart';
 import 'package:sinabro/main/parentView/layout/parent_layout.dart';
 import 'package:sinabro/main/parentView/page/lobby_parent.dart';
@@ -6,7 +7,6 @@ import 'package:sinabro/main/parentView/page/add_child_form.dart';
 class AddChildPage extends StatelessWidget {
   final String parentUserId;
   const AddChildPage({super.key, required this.parentUserId});
-
 
   @override
   Widget build(BuildContext context) {
@@ -24,7 +24,11 @@ class AddChildPage extends StatelessWidget {
       ),
       body: Row(
         children: [
-          const ParentSidebar(activeMenu: '마이페이지'),
+          // ✅ 사이드바를 동적 모드로 사용하려면 parentUserId 전달 (const 제거)
+          ParentSidebar(
+            activeMenu: '마이페이지',
+            parentUserId: parentUserId,
+          ),
 
           Expanded(
             child: Container(
@@ -61,9 +65,8 @@ class AddChildPage extends StatelessWidget {
                                   Navigator.pushReplacement(
                                     context,
                                     MaterialPageRoute(
-                                      builder:
-                                          (context) =>
-                                              SelectParentsPage(parentUserId: parentUserId),
+                                      builder: (context) =>
+                                          SelectParentsPage(parentUserId: parentUserId),
                                     ),
                                   );
                                 },
@@ -78,9 +81,8 @@ class AddChildPage extends StatelessWidget {
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder:
-                                      (context) =>
-                                          AddChildFormPage(parentUserId: parentUserId,), // ✅ 폼 화면으로 이동
+                                  builder: (context) =>
+                                      AddChildFormPage(parentUserId: parentUserId), // ✅ 폼 화면으로 이동
                                 ),
                               );
                             },

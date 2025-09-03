@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import '/main/parentView/page/lobby_parent.dart';
+import 'package:sinabro/config.dart';
 
 class SocialExtraInfoPage extends StatefulWidget {
   final String userId;
@@ -34,30 +35,32 @@ class _SocialExtraInfoPageState extends State<SocialExtraInfoPage> {
       _message = '';
     });
 
-    //const url = 'http://10.0.2.2:8090/api/users/social-register';
-    const url = 'http://172.30.1.64:8090/api/users/social-register';
+    final url = '$baseUrl/api/users/social-register';
 
     try {
+      final payload = {
+        'userId': widget.userId,
+        'userEmail': widget.userEmail,
+        // 'userPw': null,  // ⬅️ 절대 보내지 않음
+        'userName': widget.userName,
+        'userPhoneNum': _phoneController.text.trim().isEmpty
+            ? null
+            : _phoneController.text.trim(),
+        'role': 'parent',
+        'socialType': widget.socialType, // kakao / google
+        'socialId': widget.socialId,
+      };
+
       final response = await http.post(
         Uri.parse(url),
         headers: {'Content-Type': 'application/json'},
-        body: json.encode({
-          'userId': widget.userId,
-          'userEmail': widget.userEmail,
-          'userPw': widget.socialId, // 소셜 ID를 임시 비밀번호로 저장
-          'userName': widget.userName,
-          'userPhoneNum': _phoneController.text.trim(),
-          'role': 'parent', // 자동으로 부모로 고정!
-          'socialType': widget.socialType,
-          'socialId': widget.socialId,
-        }),
+        body: json.encode(payload),
       );
 
       if (response.statusCode == 200) {
-        // 서버에서 userId 반환하는 경우
         final userInfo = json.decode(response.body);
         final parentUserId = userInfo['userId'] ?? widget.userId;
-
+        if (!mounted) return;
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
@@ -105,33 +108,23 @@ class _SocialExtraInfoPageState extends State<SocialExtraInfoPage> {
             const SizedBox(height: 16),
             Row(
               children: const [
-                Text(
-                  '역할: ',
-                  style: TextStyle(fontSize: 16),
-                ),
-                Text(
-                  '부모',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.brown,
-                  ),
-                ),
+                Text('역할: ', style: TextStyle(fontSize: 16)),
+                Text('부모',
+                    style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.brown)),
               ],
             ),
             const SizedBox(height: 20),
             _isLoading
-              ? const CircularProgressIndicator()
-              : ElevatedButton(
-                  onPressed: _submit, // 항상 활성화
-                  child: const Text('회원가입 완료'),
-                ),
-
+                ? const CircularProgressIndicator()
+                : ElevatedButton(
+                    onPressed: _submit,
+                    child: const Text('회원가입 완료'),
+                  ),
             const SizedBox(height: 20),
-            Text(
-              _message,
-              style: const TextStyle(color: Colors.red),
-            ),
+            Text(_message, style: const TextStyle(color: Colors.red)),
           ],
         ),
       ),
