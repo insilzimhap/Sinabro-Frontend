@@ -1,29 +1,35 @@
+// lib/login/login_parent.dart
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
-// 앱 내부 페이지 경로들
-import '/main/parentView/page/notice_page.dart'; // 공지사항 페이지
 import 'package:sinabro/login/kakao_login_api.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:sinabro/login/signup_page.dart';
 import 'package:sinabro/config.dart';
 
+// ✅ 세션
+import 'package:sinabro/main/parentView/page/children_state.dart';
+// ✅ 로그인 성공 시 바로 자녀 페이지로 이동
+import 'package:sinabro/main/parentView/page/children_page.dart';
+
+// (선택) 여전히 공지로 가는 버튼은 남겨두고 싶으면 유지
+import 'package:sinabro/main/parentView/page/notice_page.dart' show NoticePage;
+
 class LoginParentScreen extends StatefulWidget {
   const LoginParentScreen({super.key});
-
   @override
   State<LoginParentScreen> createState() => _LoginPageState();
 }
 
 class _LoginPageState extends State<LoginParentScreen> {
-  final TextEditingController _userIdController = TextEditingController();
-  final TextEditingController _passwordController = TextEditingController();
+  final _userIdController = TextEditingController();
+  final _passwordController = TextEditingController();
 
   String _message = '';
   bool _isLoading = false;
 
-  /// 일반 로그인
+  // ---------------- 일반 로그인 ----------------
   Future<void> _login() async {
     setState(() {
       _isLoading = true;
@@ -31,28 +37,48 @@ class _LoginPageState extends State<LoginParentScreen> {
     });
 
     try {
-      final url = '$baseUrl/api/users/login';
       final response = await http.post(
-        Uri.parse(url),
+        Uri.parse('$baseUrl/api/users/login'),
         headers: {'Content-Type': 'application/json'},
         body: json.encode({
           'userId': _userIdController.text.trim(),
-          'password': _passwordController.text.trim(),
-          'role': 'parent', // 부모 로그인 고정
+          'userPw': _passwordController.text.trim(),
+          'role': 'parent',
         }),
       );
 
+      if (!mounted) return;
+
       if (response.statusCode == 200) {
-        if (!mounted) return;
+        final body = _safeJson(response.body);
+        final parentUserId =
+            (body['userId'] ?? _userIdController.text.trim()).toString();
+        final parentUserName =
+            (body['userName'] ?? body['name'] ?? '').toString();
+
+        // 세션 저장
+        await ChildrenState.instance.setSession(
+          userId: parentUserId,
+          userName: parentUserName.isEmpty ? null : parentUserName,
+        );
+
+        // ✅ 공지 대신 자녀 페이지로 직행 (명시적으로 uid/name 전달)
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
-            builder: (_) => const NoticePage(),
-          ), // ✅ 부모는 무조건 공지사항
+            builder:
+                (_) => NoticePage(
+                  parentUserId: parentUserId,
+                  parentDisplayName: parentUserName,
+                ),
+          ),
         );
       } else {
+        final body = _safeJson(response.body);
         setState(() {
-          _message = '로그인 실패: 아이디 또는 비밀번호를 확인하세요.';
+          _message =
+              (body['message'] as String?) ??
+              '로그인 실패: 아이디 또는 비밀번호를 확인하세요. (${response.statusCode})';
         });
       }
     } catch (e) {
@@ -64,7 +90,7 @@ class _LoginPageState extends State<LoginParentScreen> {
     }
   }
 
-  /// 카카오 로그인
+  // ---------------- 카카오 로그인 ----------------
   Future<void> _loginWithKakao() async {
     setState(() {
       _isLoading = true;
@@ -82,27 +108,45 @@ class _LoginPageState extends State<LoginParentScreen> {
       final nickname = (user['properties']?['nickname'] ?? '').toString();
       final kakaoId = (user['id'] ?? '').toString();
 
-      final url = '$baseUrl/api/users/social-register';
       final response = await http.post(
-        Uri.parse(url),
+        Uri.parse('$baseUrl/api/users/social-register'),
         headers: {'Content-Type': 'application/json'},
         body: json.encode({
           'userEmail': email,
           'userName': nickname,
           'socialType': 'kakao',
           'socialId': kakaoId,
-          'role': 'parent', // ✅ 부모 고정
+          'role': 'parent',
         }),
       );
 
+      if (!mounted) return;
+
       if (response.statusCode == 200) {
-        if (!mounted) return;
+        final body = _safeJson(response.body);
+        final parentUserId = (body['userId'] ?? email).toString();
+        final parentUserName = (body['userName'] ?? nickname).toString();
+
+        await ChildrenState.instance.setSession(
+          userId: parentUserId,
+          userName: parentUserName.isEmpty ? null : parentUserName,
+        );
+
+        // ✅ 자녀 페이지로 직행
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (_) => const NoticePage()),
+          MaterialPageRoute(
+            builder:
+                (_) => ChildrenPage(
+                  parentUserId: parentUserId,
+                  parentDisplayName: parentUserName,
+                ),
+          ),
         );
       } else {
-        setState(() => _message = '서버 오류: ${response.statusCode}');
+        setState(
+          () => _message = '서버 오류: ${response.statusCode} ${response.body}',
+        );
       }
     } catch (e) {
       setState(() => _message = '카카오 로그인 에러: $e');
@@ -111,7 +155,7 @@ class _LoginPageState extends State<LoginParentScreen> {
     }
   }
 
-  /// 구글 로그인
+  // ---------------- 구글 로그인 ----------------
   Future<void> _loginWithGoogle() async {
     setState(() {
       _isLoading = true;
@@ -129,27 +173,45 @@ class _LoginPageState extends State<LoginParentScreen> {
       final name = googleUser.displayName;
       final id = googleUser.id;
 
-      final url = '$baseUrl/api/users/social-register';
       final response = await http.post(
-        Uri.parse(url),
+        Uri.parse('$baseUrl/api/users/social-register'),
         headers: {'Content-Type': 'application/json'},
         body: json.encode({
           'userEmail': email,
           'userName': name,
           'socialType': 'google',
           'socialId': id,
-          'role': 'parent', // ✅ 부모 고정
+          'role': 'parent',
         }),
       );
 
+      if (!mounted) return;
+
       if (response.statusCode == 200) {
-        if (!mounted) return;
+        final body = _safeJson(response.body);
+        final parentUserId = (body['userId'] ?? email).toString();
+        final parentUserName = (body['userName'] ?? name ?? '').toString();
+
+        await ChildrenState.instance.setSession(
+          userId: parentUserId,
+          userName: parentUserName.isEmpty ? null : parentUserName,
+        );
+
+        // ✅ 자녀 페이지로 직행
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (_) => const NoticePage()),
+          MaterialPageRoute(
+            builder:
+                (_) => ChildrenPage(
+                  parentUserId: parentUserId,
+                  parentDisplayName: parentUserName,
+                ),
+          ),
         );
       } else {
-        setState(() => _message = '구글 로그인 실패: ${response.statusCode}');
+        setState(
+          () => _message = '구글 로그인 실패: ${response.statusCode} ${response.body}',
+        );
       }
     } catch (e) {
       setState(() => _message = '구글 로그인 에러: $e');
@@ -158,6 +220,16 @@ class _LoginPageState extends State<LoginParentScreen> {
     }
   }
 
+  Map<String, dynamic> _safeJson(String s) {
+    try {
+      final v = json.decode(s);
+      return (v is Map<String, dynamic>) ? v : <String, dynamic>{};
+    } catch (_) {
+      return <String, dynamic>{};
+    }
+  }
+
+  // (선택) 하단 공지 버튼 유지
   void _goNotice() {
     Navigator.push(
       context,
@@ -165,63 +237,54 @@ class _LoginPageState extends State<LoginParentScreen> {
     );
   }
 
-  // ================== UI ==================
   @override
   Widget build(BuildContext context) {
     const bg = Color(0xFFFEEFEF);
     return Scaffold(
       backgroundColor: bg,
-      appBar: AppBar(
-        backgroundColor: bg,
-        elevation: 0,
-        toolbarHeight: 0, // 상단바 숨김
-      ),
+      appBar: AppBar(backgroundColor: bg, elevation: 0, toolbarHeight: 0),
       body: Stack(
         children: [
-          // -------- 본문(세로 정중앙) --------
           LayoutBuilder(
-            builder: (context, viewport) {
-              return SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 30,
-                ),
-                child: ConstrainedBox(
-                  constraints: BoxConstraints(
-                    minHeight: viewport.maxHeight - 60,
+            builder:
+                (context, viewport) => SingleChildScrollView(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 30,
                   ),
-                  child: Center(
-                    child: ConstrainedBox(
-                      constraints: const BoxConstraints(maxWidth: 1200),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Text(
-                            '로그인',
-                            style: TextStyle(
-                              fontSize: 36,
-                              fontWeight: FontWeight.w800,
-                              color: Color(0xFF5A4032),
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(
+                      minHeight: viewport.maxHeight - 60,
+                    ),
+                    child: Center(
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 1200),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Text(
+                              '로그인',
+                              style: TextStyle(
+                                fontSize: 36,
+                                fontWeight: FontWeight.w800,
+                                color: Color(0xFF5A4032),
+                              ),
                             ),
-                          ),
-                          const SizedBox(height: 28),
-                          _twoCardsRow(), // 카드 2개 (폼/SNS)
-                          const SizedBox(height: 16),
-                          if (_message.isNotEmpty)
-                            Text(
-                              _message,
-                              style: const TextStyle(color: Colors.red),
-                            ),
-                        ],
+                            const SizedBox(height: 28),
+                            _twoCardsRow(),
+                            const SizedBox(height: 16),
+                            if (_message.isNotEmpty)
+                              Text(
+                                _message,
+                                style: const TextStyle(color: Colors.red),
+                              ),
+                          ],
+                        ),
                       ),
                     ),
                   ),
                 ),
-              );
-            },
           ),
-
-          // -------- 왼쪽 하단 공지사항 이동 버튼 --------
           Positioned(
             left: 12,
             bottom: 12,
@@ -229,17 +292,6 @@ class _LoginPageState extends State<LoginParentScreen> {
               onPressed: _goNotice,
               icon: const Icon(Icons.campaign, size: 16),
               label: const Text('공지사항으로', style: TextStyle(fontSize: 12)),
-              style: TextButton.styleFrom(
-                foregroundColor: const Color(0xFF5A4032),
-                backgroundColor: Colors.white.withOpacity(0.9),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 6,
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
-              ),
             ),
           ),
         ],
@@ -247,20 +299,18 @@ class _LoginPageState extends State<LoginParentScreen> {
     );
   }
 
-  // 두 개 카드(아이디 로그인 / SNS 로그인)
   Widget _twoCardsRow() {
     return LayoutBuilder(
       builder: (context, c) {
         final isNarrow = c.maxWidth < 900;
         double cardW = isNarrow ? (c.maxWidth - 32) : (c.maxWidth * 0.42);
-        cardW = cardW.clamp(420.0, 620.0); // 카드 최대/최소 폭
+        cardW = cardW.clamp(420.0, 620.0);
 
         return Flex(
           direction: isNarrow ? Axis.vertical : Axis.horizontal,
           mainAxisAlignment: MainAxisAlignment.center,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // 아이디 로그인 카드
             _LoginCard(
               width: cardW,
               child: Column(
@@ -295,12 +345,14 @@ class _LoginPageState extends State<LoginParentScreen> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         GestureDetector(
-                          onTap: () => Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => const SignUpPage(role: 'parent'),
-                            ),
-                          ),
+                          onTap:
+                              () => Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder:
+                                      (_) => const SignUpPage(role: 'parent'),
+                                ),
+                              ),
                           child: const Text(
                             '계정이 없으신가요?',
                             style: TextStyle(
@@ -314,9 +366,6 @@ class _LoginPageState extends State<LoginParentScreen> {
                           style: ElevatedButton.styleFrom(
                             backgroundColor: const Color(0xFFFFB9B9),
                             foregroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
                           ),
                           child: const Text('로그인'),
                         ),
@@ -325,10 +374,7 @@ class _LoginPageState extends State<LoginParentScreen> {
                 ],
               ),
             ),
-
             SizedBox(width: isNarrow ? 0 : 40, height: isNarrow ? 20 : 0),
-
-            // SNS 로그인 카드 (버튼 가득)
             _LoginCard(
               width: cardW,
               child: Column(
@@ -336,32 +382,18 @@ class _LoginPageState extends State<LoginParentScreen> {
                 children: [
                   const _CardTitle('SNS 로그인'),
                   const SizedBox(height: 16),
-
-                  // 카카오 버튼
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton.icon(
                       onPressed: _loginWithKakao,
-                      icon: const Icon(
-                        Icons.chat_bubble_outline,
-                      ),
+                      icon: const Icon(Icons.chat_bubble_outline),
                       label: const Text(
                         '카카오로 로그인',
                         style: TextStyle(fontWeight: FontWeight.bold),
                       ),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFFFFEB00),
-                        elevation: 0,
-                        minimumSize: const Size.fromHeight(48),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                      ),
                     ),
                   ),
                   const SizedBox(height: 12),
-
-                  // 구글 버튼
                   SizedBox(
                     width: double.infinity,
                     child: OutlinedButton.icon(
@@ -372,13 +404,6 @@ class _LoginPageState extends State<LoginParentScreen> {
                         height: 18,
                       ),
                       label: const Text('구글로 로그인'),
-                      style: OutlinedButton.styleFrom(
-                        minimumSize: const Size.fromHeight(48),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        side: const BorderSide(color: Color(0xFFE1DDE0)),
-                      ),
                     ),
                   ),
                 ],
@@ -390,74 +415,63 @@ class _LoginPageState extends State<LoginParentScreen> {
     );
   }
 
-  // 공통 인풋 스타일
   static InputDecoration _inputDecoration() => const InputDecoration(
-        filled: true,
-        fillColor: Color(0xFFF8F7F6),
-        border: OutlineInputBorder(
-          borderSide: BorderSide(color: Color(0xFFE5E2E0)),
-          borderRadius: BorderRadius.all(Radius.circular(8)),
-        ),
-        isDense: true,
-        contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-      );
+    filled: true,
+    fillColor: Color(0xFFF8F7F6),
+    border: OutlineInputBorder(
+      borderSide: BorderSide(color: Color(0xFFE5E2E0)),
+      borderRadius: BorderRadius.all(Radius.circular(8)),
+    ),
+    isDense: true,
+    contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+  );
 }
 
-// ---- 작은 UI 위젯들 ----
 class _LoginCard extends StatelessWidget {
   final Widget child;
   final double? width;
   const _LoginCard({required this.child, this.width});
-
   @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: width ?? 360,
-      padding: const EdgeInsets.all(26),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(30),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.03),
-            blurRadius: 12,
-            offset: const Offset(0, 6),
-          ),
-        ],
-      ),
-      child: child,
-    );
-  }
+  Widget build(BuildContext context) => Container(
+    width: width ?? 360,
+    padding: const EdgeInsets.all(26),
+    decoration: BoxDecoration(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(30),
+      boxShadow: [
+        BoxShadow(
+          color: Colors.black.withOpacity(0.03),
+          blurRadius: 12,
+          offset: const Offset(0, 6),
+        ),
+      ],
+    ),
+    child: child,
+  );
 }
 
 class _CardTitle extends StatelessWidget {
   final String text;
   final bool underline;
   const _CardTitle(this.text, {this.underline = false});
-
   @override
-  Widget build(BuildContext context) {
-    return Text(
-      text,
-      style: TextStyle(
-        fontSize: 22,
-        fontWeight: FontWeight.w800,
-        color: const Color(0xFF5A4032),
-        decoration: underline ? TextDecoration.underline : TextDecoration.none,
-      ),
-    );
-  }
+  Widget build(BuildContext context) => Text(
+    text,
+    style: TextStyle(
+      fontSize: 22,
+      fontWeight: FontWeight.w800,
+      color: const Color(0xFF5A4032),
+      decoration: underline ? TextDecoration.underline : TextDecoration.none,
+    ),
+  );
 }
 
 class _FieldLabel extends StatelessWidget {
   final String text;
   const _FieldLabel(this.text);
-
   @override
-  Widget build(BuildContext context) {
-    return Text(
-      text,
-      style: const TextStyle(fontSize: 14, color: Color(0xFF5A4032)),
-    );
-  }
+  Widget build(BuildContext context) => Text(
+    text,
+    style: const TextStyle(fontSize: 14, color: Color(0xFF5A4032)),
+  );
 }

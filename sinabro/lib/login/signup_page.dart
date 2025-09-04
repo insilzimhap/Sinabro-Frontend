@@ -1,11 +1,14 @@
+// lib/login/signup_page.dart
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import '/main/parentView/page/lobby_parent.dart';
+
 import 'package:sinabro/config.dart';
+import 'package:sinabro/main/parentView/page/notice_page.dart';
+import 'package:sinabro/main/parentView/page/children_state.dart';
 
 class SignUpPage extends StatefulWidget {
-  final String role;
+  final String role; // 'parent' 등
   const SignUpPage({super.key, required this.role});
 
   @override
@@ -14,12 +17,12 @@ class SignUpPage extends StatefulWidget {
 
 class _SignUpPageState extends State<SignUpPage> {
   // Controllers
-  final _userIdController = TextEditingController();     // 아이디
-  final _emailController = TextEditingController();      // 이메일
-  final _pwController = TextEditingController();         // 비밀번호
-  final _pwConfirmController = TextEditingController();  // 비밀번호 재입력
-  final _nameController = TextEditingController();       // 이름
-  final _phoneController = TextEditingController();      // 전화번호
+  final _userIdController = TextEditingController(); // 아이디
+  final _emailController = TextEditingController(); // 이메일
+  final _pwController = TextEditingController(); // 비밀번호
+  final _pwConfirmController = TextEditingController(); // 비밀번호 재입력
+  final _nameController = TextEditingController(); // 이름
+  final _phoneController = TextEditingController(); // 전화번호
 
   // State
   bool _isLoading = false;
@@ -32,13 +35,11 @@ class _SignUpPageState extends State<SignUpPage> {
 
   // 동의/설정 (UI만)
   bool _agreePrivacy = false; // 개인정보 수집 동의
-  bool _agreeEmail = false;   // 이메일 수신
-  bool _agreePush = false;    // 알림 수신
+  bool _agreeEmail = false; // 이메일 수신
+  bool _agreePush = false; // 알림 수신
   String _lang = '한국어';
 
-  // ─────────────────────────────────────
-  // Helpers
-  // ─────────────────────────────────────
+  // ───────────────── helpers ─────────────────
   void _showSnack(String msg) {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
@@ -46,9 +47,16 @@ class _SignUpPageState extends State<SignUpPage> {
 
   bool _isPasswordValid(String pw) => pw.length >= 8 && pw.length <= 16;
 
-  // ─────────────────────────────────────
-  // 아이디 중복 확인
-  // ─────────────────────────────────────
+  Map<String, dynamic> _safeJson(String s) {
+    try {
+      final v = json.decode(s);
+      return (v is Map<String, dynamic>) ? v : <String, dynamic>{};
+    } catch (_) {
+      return <String, dynamic>{};
+    }
+  }
+
+  // ───────────────── 아이디 중복 확인 ─────────────────
   Future<void> _checkUserId() async {
     final id = _userIdController.text.trim();
     if (id.isEmpty) {
@@ -64,11 +72,14 @@ class _SignUpPageState extends State<SignUpPage> {
       _idCheckMsg = '';
     });
 
-    final uri = Uri.parse('$baseUrl/api/users/check-id').replace(queryParameters: {'userId': id});
+    final uri = Uri.parse(
+      '$baseUrl/api/users/check-id',
+    ).replace(queryParameters: {'userId': id});
+
     try {
       final res = await http.get(uri);
       if (res.statusCode == 200) {
-        final data = json.decode(res.body);
+        final data = _safeJson(res.body);
         final available = (data['available'] == true);
         setState(() {
           _idAvailable = available;
@@ -90,9 +101,7 @@ class _SignUpPageState extends State<SignUpPage> {
     }
   }
 
-  // ─────────────────────────────────────
-  // 회원가입
-  // ─────────────────────────────────────
+  // ───────────────── 회원가입 ─────────────────
   Future<void> _registerUser() async {
     final userId = _userIdController.text.trim();
     final userPw = _pwController.text;
@@ -121,38 +130,48 @@ class _SignUpPageState extends State<SignUpPage> {
       _message = '';
     });
 
-    final url = '$baseUrl/api/users/register';
     try {
       final res = await http.post(
-        Uri.parse(url),
+        Uri.parse('$baseUrl/api/users/register'),
         headers: {'Content-Type': 'application/json'},
         body: json.encode({
           'userId': userId,
           'userPw': userPw,
-          'confirmPw': confirmPw, // ⬅️ 서버에서도 일치 체크
+          'confirmPw': confirmPw,
           'userEmail': _emailController.text.trim(),
           'userName': _nameController.text.trim(),
           'userPhoneNum': _phoneController.text.trim(),
-          'role': 'parent',
-          // UI의 동의/언어는 전송하지 않음(요구사항: UI만)
+          'role': widget.role, // 보통 'parent'
         }),
       );
 
+      if (!mounted) return;
+
       if (res.statusCode == 200) {
-        final body = json.decode(res.body);
-        final parentUserId = body['userId'] ?? userId;
-        if (!mounted) return;
+        final body = _safeJson(res.body);
+        final parentUserId = (body['userId'] ?? userId).toString();
+        final parentUserName =
+            (body['userName'] ?? _nameController.text.trim()).toString();
+
+        // ✅ 세션 저장 (SharedPreferences 포함)
+        await ChildrenState.instance.setSession(
+          userId: parentUserId,
+          userName: parentUserName.isEmpty ? null : parentUserName,
+        );
+
+        // (선택) 즉시 목록 프리페치 하고 싶으면 주석 해제
+        // await ChildrenState.instance.setParent(parentUserId);
+        // await ChildrenState.instance.refresh();
+
+        // 공지사항으로 이동
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(
-            builder: (_) => SelectParentsPage(parentUserId: parentUserId),
-          ),
+          MaterialPageRoute(builder: (_) => const NoticePage()),
         );
       } else if (res.statusCode == 409) {
         _showSnack('이미 존재하는 아이디/이메일입니다.');
       } else if (res.statusCode == 400) {
-        // 서버에서 비밀번호 불일치 등
-        _showSnack(json.decode(res.body).toString());
+        _showSnack(_safeJson(res.body).toString());
       } else {
         setState(() {
           _message = '회원가입 실패: ${res.statusCode}\n${res.body}';
@@ -163,34 +182,30 @@ class _SignUpPageState extends State<SignUpPage> {
         _message = '요청 실패: $e';
       });
     } finally {
-      setState(() => _isLoading = false);
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
-  // ─────────────────────────────────────
-  // UI
-  // ─────────────────────────────────────
+  // ───────────────── UI ─────────────────
   InputDecoration _input(String label, {Widget? suffix}) {
     return InputDecoration(
       labelText: label,
       filled: true,
       fillColor: Colors.white,
       suffixIcon: suffix,
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
+      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    final bg = const Color(0xFFFFF1F1); // 연핑크 배경 느낌
+    const bg = Color(0xFFFFF1F1);
     final cardColor = Colors.white;
     final headerStyle = Theme.of(context).textTheme.headlineSmall?.copyWith(
-          color: const Color(0xFF7A4F3B),
-          fontWeight: FontWeight.w800,
-        );
+      color: const Color(0xFF7A4F3B),
+      fontWeight: FontWeight.w800,
+    );
 
     return Scaffold(
       backgroundColor: bg,
@@ -203,49 +218,48 @@ class _SignUpPageState extends State<SignUpPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // 헤더
                   Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 8,
+                    ),
                     child: Text('회원가입', style: headerStyle),
                   ),
                   const SizedBox(height: 12),
-
-                  // 메인 그리드
                   Expanded(
-                    child: isWide
-                        ? Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              // 좌측 폼
-                              Expanded(
-                                flex: 3,
-                                child: _leftFormCard(cardColor),
-                              ),
-                              const SizedBox(width: 20),
-                              // 우측 동의/언어 + 애니메이션 박스
-                              Expanded(
-                                flex: 2,
-                                child: Column(
-                                  children: [
-                                    _rightConsentCard(cardColor),
-                                    const SizedBox(height: 20),
-                                    _animationBox(cardColor),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          )
-                        : SingleChildScrollView(
-                            child: Column(
+                    child:
+                        isWide
+                            ? Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                _leftFormCard(cardColor),
-                                const SizedBox(height: 16),
-                                _rightConsentCard(cardColor),
-                                const SizedBox(height: 16),
-                                _animationBox(cardColor),
+                                Expanded(
+                                  flex: 3,
+                                  child: _leftFormCard(cardColor),
+                                ),
+                                const SizedBox(width: 20),
+                                Expanded(
+                                  flex: 2,
+                                  child: Column(
+                                    children: [
+                                      _rightConsentCard(cardColor),
+                                      const SizedBox(height: 20),
+                                      _animationBox(cardColor),
+                                    ],
+                                  ),
+                                ),
                               ],
+                            )
+                            : SingleChildScrollView(
+                              child: Column(
+                                children: [
+                                  _leftFormCard(cardColor),
+                                  const SizedBox(height: 16),
+                                  _rightConsentCard(cardColor),
+                                  const SizedBox(height: 16),
+                                  _animationBox(cardColor),
+                                ],
+                              ),
                             ),
-                          ),
                   ),
                 ],
               ),
@@ -259,9 +273,10 @@ class _SignUpPageState extends State<SignUpPage> {
 
   // 좌측: 입력 폼 카드
   Widget _leftFormCard(Color cardColor) {
-    final idHintColor = _idAvailable == null
-        ? Colors.grey
-        : _idAvailable == true
+    final idHintColor =
+        _idAvailable == null
+            ? Colors.grey
+            : _idAvailable == true
             ? Colors.green
             : Colors.red;
 
@@ -273,14 +288,13 @@ class _SignUpPageState extends State<SignUpPage> {
         padding: const EdgeInsets.all(20),
         child: Column(
           children: [
-            // 아이디 + 중복확인 버튼
+            // 아이디 + 중복확인
             Row(
               children: [
                 Expanded(
                   child: TextField(
                     controller: _userIdController,
                     onChanged: (_) {
-                      // 아이디가 바뀌면 다시 확인 필요
                       setState(() {
                         _idAvailable = null;
                         _idCheckMsg = '';
@@ -301,10 +315,14 @@ class _SignUpPageState extends State<SignUpPage> {
                         borderRadius: BorderRadius.circular(10),
                       ),
                     ),
-                    child: _idChecking
-                        ? const SizedBox(
-                            width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
-                        : const Text('중복 확인'),
+                    child:
+                        _idChecking
+                            ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                            : const Text('중복 확인'),
                   ),
                 ),
               ],
@@ -314,7 +332,10 @@ class _SignUpPageState extends State<SignUpPage> {
                 padding: const EdgeInsets.only(top: 6),
                 child: Align(
                   alignment: Alignment.centerLeft,
-                  child: Text(_idCheckMsg, style: TextStyle(color: idHintColor, fontSize: 12)),
+                  child: Text(
+                    _idCheckMsg,
+                    style: TextStyle(color: idHintColor, fontSize: 12),
+                  ),
                 ),
               ),
             const SizedBox(height: 16),
@@ -338,9 +359,12 @@ class _SignUpPageState extends State<SignUpPage> {
               child: Align(
                 alignment: Alignment.centerLeft,
                 child: Text(
-                  '8자 이상 16자 이상', // 디자인 문구 그대로
+                  '8자 이상 16자 이하',
                   style: TextStyle(
-                    color: _isPasswordValid(_pwController.text) ? Colors.green : Colors.grey,
+                    color:
+                        _isPasswordValid(_pwController.text)
+                            ? Colors.green
+                            : Colors.grey,
                     fontSize: 12,
                   ),
                 ),
@@ -365,7 +389,10 @@ class _SignUpPageState extends State<SignUpPage> {
                         ? '비밀번호가 일치합니다.'
                         : '비밀번호가 일치하지 않습니다.',
                     style: TextStyle(
-                      color: _pwConfirmController.text == _pwController.text ? Colors.green : Colors.red,
+                      color:
+                          _pwConfirmController.text == _pwController.text
+                              ? Colors.green
+                              : Colors.red,
                       fontSize: 12,
                     ),
                   ),
@@ -374,10 +401,7 @@ class _SignUpPageState extends State<SignUpPage> {
             const SizedBox(height: 16),
 
             // 이름
-            TextField(
-              controller: _nameController,
-              decoration: _input('이름'),
-            ),
+            TextField(controller: _nameController, decoration: _input('이름')),
             const SizedBox(height: 16),
 
             // 전화번호
@@ -394,7 +418,9 @@ class _SignUpPageState extends State<SignUpPage> {
                 Checkbox(
                   value: _agreePrivacy,
                   onChanged: (v) => setState(() => _agreePrivacy = v ?? false),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(4),
+                  ),
                 ),
                 const Text('개인정보 수집 동의'),
                 const SizedBox(width: 8),
@@ -422,12 +448,14 @@ class _SignUpPageState extends State<SignUpPage> {
           children: [
             Align(
               alignment: Alignment.centerLeft,
-              child: Text('수신동의 (선택)',
-                  style: TextStyle(
-                    fontWeight: FontWeight.w800,
-                    color: Colors.brown[700],
-                    fontSize: 18,
-                  )),
+              child: Text(
+                '수신동의 (선택)',
+                style: TextStyle(
+                  fontWeight: FontWeight.w800,
+                  color: Colors.brown[700],
+                  fontSize: 18,
+                ),
+              ),
             ),
             const SizedBox(height: 8),
             CheckboxListTile(
@@ -447,12 +475,14 @@ class _SignUpPageState extends State<SignUpPage> {
             const SizedBox(height: 8),
             Align(
               alignment: Alignment.centerLeft,
-              child: Text('언어설정',
-                  style: TextStyle(
-                    fontWeight: FontWeight.w800,
-                    color: Colors.brown[700],
-                    fontSize: 18,
-                  )),
+              child: Text(
+                '언어설정',
+                style: TextStyle(
+                  fontWeight: FontWeight.w800,
+                  color: Colors.brown[700],
+                  fontSize: 18,
+                ),
+              ),
             ),
             const SizedBox(height: 8),
             SizedBox(
@@ -462,8 +492,13 @@ class _SignUpPageState extends State<SignUpPage> {
                 decoration: InputDecoration(
                   filled: true,
                   fillColor: Colors.white,
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 12,
+                  ),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                 ),
                 items: const [
                   DropdownMenuItem(value: '한국어', child: Text('한국어')),
@@ -482,25 +517,34 @@ class _SignUpPageState extends State<SignUpPage> {
   // 하단: 가입하기 애니메이션 박스 (자리만)
   Widget _animationBox(Color cardColor) {
     return Card(
-      color: const Color(0xFFBDBDBD), // 회색 박스
+      color: const Color(0xFFBDBDBD),
       elevation: 1,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: SizedBox(
         height: 180,
         width: double.infinity,
         child: Center(
-          child: _isLoading
-              ? const CircularProgressIndicator()
-              : ElevatedButton(
-                  onPressed: _registerUser,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFFFC5C5),
-                    foregroundColor: Colors.brown[800],
-                    padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 14),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          child:
+              _isLoading
+                  ? const CircularProgressIndicator()
+                  : ElevatedButton(
+                    onPressed: _registerUser,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFFFFC5C5),
+                      foregroundColor: Colors.brown[800],
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 28,
+                        vertical: 14,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: const Text(
+                      '가입하기 애니메이션(자리)',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
                   ),
-                  child: const Text('가입하기 애니메이션(자리)', style: TextStyle(fontWeight: FontWeight.bold)),
-                ),
         ),
       ),
     );

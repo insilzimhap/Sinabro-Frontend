@@ -2,8 +2,13 @@
 import 'package:flutter/material.dart';
 import 'package:sinabro/main/parentView/layout/parent_layout.dart';
 
+// ▼ 서버 호출용
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+import 'package:sinabro/config.dart'; // baseUrl
+
 class AddChildFormPage extends StatefulWidget {
-  final String parentUserId; // (미사용) 서버 붙일 때 활용
+  final String parentUserId; // 서버 연동에 사용
   const AddChildFormPage({super.key, required this.parentUserId});
 
   @override
@@ -20,9 +25,9 @@ class _AddChildFormPageState extends State<AddChildFormPage> {
 
   // --- UI state ---
   bool _agree = false; // 개인정보 동의
-  bool _idChecked = false; // 아이디 중복 확인(프론트 형식검사만)
+  bool _idChecked = false; // 아이디 중복 확인 완료 여부
   bool _showPwMismatch = false; // 비밀번호 불일치 경고
-  bool _isSaving = false; // 저장 로딩(프론트)
+  bool _isSaving = false; // 저장 로딩
 
   // 비밀번호 유효성
   bool get _pwValidLength => _pw.text.length >= 8 && _pw.text.length <= 16;
@@ -64,121 +69,183 @@ class _AddChildFormPageState extends State<AddChildFormPage> {
     super.dispose();
   }
 
-  // ---------------- Actions ----------------
+  // ---------------- 서버 Actions ----------------
 
-  // (프론트 전용) 아이디 중복확인: 길이/형식만 체크
-  void _checkDuplicate() {
+  /// (서버) 아이디 중복확인
+  Future<void> _checkDuplicate() async {
     final id = _id.text.trim();
     if (id.length < 4) {
       _idChecked = false;
       _toast('아이디는 4자 이상 입력해주세요.');
-    } else {
-      _idChecked = true;
-      _toast('사용 가능한 아이디입니다.');
+      setState(() {});
+      return;
     }
+
+    try {
+      // TODO: 실제 API 경로/파라미터 확인
+      // 예시: GET /api/children/check-id?childId={id}
+      final uri = Uri.parse(
+        '$baseUrl/api/children/check-id',
+      ).replace(queryParameters: {'childId': id});
+      final res = await http.get(uri);
+
+      if (res.statusCode == 200) {
+        // 서버가 {"available": true} 형태로 응답한다고 가정
+        final body = json.decode(res.body) as Map<String, dynamic>;
+        final ok = (body['available'] == true);
+        _idChecked = ok;
+        _toast(ok ? '사용 가능한 아이디입니다.' : '이미 사용 중인 아이디입니다.');
+      } else {
+        _idChecked = false;
+        _toast('중복 확인 실패: ${res.statusCode}');
+      }
+    } catch (e) {
+      _idChecked = false;
+      _toast('중복 확인 에러: $e');
+    }
+
     setState(() {});
   }
+
+  /// (서버) 자녀 생성
+  Future<void> _submit() async {
+    if (!_canSubmit) return;
+    setState(() => _isSaving = true);
+
+    try {
+      // TODO: 실제 API 경로/Body 스펙 확인
+      // 예시: POST /api/parents/{parentUserId}/children
+      final uri = Uri.parse(
+        '$baseUrl/api/parents/${widget.parentUserId}/children',
+      );
+
+      final payload = {
+        'childId': _id.text.trim(),
+        'password': _pw.text.trim(),
+        'name': _name.text.trim(),
+        'phone': _phone.text.trim(),
+      };
+
+      final res = await http.post(
+        uri,
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode(payload),
+      );
+
+      if (res.statusCode == 200 || res.statusCode == 201) {
+        if (!mounted) return;
+        await _showSuccessDialog(childName: _name.text.trim());
+        if (!mounted) return;
+        // 이전 화면(자녀 리스트)로 성공 신호 전달 → FutureBuilder/새로고침 트리거
+        Navigator.pop(context, true);
+      } else {
+        // 서버가 에러 메시지를 내려주는 경우 파싱
+        String msg = '등록 실패: ${res.statusCode}';
+        try {
+          final body = json.decode(res.body);
+          if (body is Map && body['message'] is String) {
+            msg = body['message'] as String;
+          }
+        } catch (_) {}
+        _toast(msg);
+      }
+    } catch (e) {
+      _toast('등록 에러: $e');
+    } finally {
+      if (mounted) setState(() => _isSaving = false);
+    }
+  }
+
+  // ---------------- 기타 Actions ----------------
 
   // 개인정보 전문
   void _showTerms() {
     showDialog(
       context: context,
-      builder: (_) => AlertDialog(
-        title: const Text('개인정보 수집·이용 동의(예시)'),
-        content: const SingleChildScrollView(
-          child: Text('여기에 동의 전문/이미지가 들어갑니다. 실제 문구는 추후 교체하세요.'),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('닫기'),
+      builder:
+          (_) => AlertDialog(
+            title: const Text('개인정보 수집·이용 동의(예시)'),
+            content: const SingleChildScrollView(
+              child: Text('여기에 동의 전문/이미지가 들어갑니다. 실제 문구는 추후 교체하세요.'),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('닫기'),
+              ),
+            ],
           ),
-        ],
-      ),
     );
-  }
-
-  // 저장 (★ 서버 없이 팝업만)
-  Future<void> _submit() async {
-    if (!_canSubmit) return;
-    setState(() => _isSaving = true);
-
-    // 약간의 로딩 느낌
-    await Future.delayed(const Duration(milliseconds: 250));
-
-    if (!mounted) return;
-    await _showSuccessDialog(childName: _name.text.trim());
-
-    if (!mounted) return;
-    // 이전 화면(자녀 리스트)로 성공 신호 전달
-    Navigator.pop(context, true);
-
-    setState(() => _isSaving = false);
   }
 
   Future<void> _showSuccessDialog({required String childName}) {
     return showDialog<void>(
       context: context,
       barrierDismissible: true,
-      builder: (_) => Dialog(
-        insetPadding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        child: Container(
-          decoration: BoxDecoration(
-            color: const Color(0xFFE7F6E9),
-            border: Border.all(color: const Color(0xFF53A866), width: 3),
-            borderRadius: BorderRadius.circular(16),
-          ),
-          padding: const EdgeInsets.fromLTRB(20, 18, 20, 24),
-          child: Stack(
-            children: [
-              Positioned(
-                right: 0,
-                top: 0,
-                child: IconButton(
-                  icon: const Icon(Icons.close, color: Color(0xFF2E7D32)),
-                  onPressed: () => Navigator.pop(context),
-                ),
+      builder:
+          (_) => Dialog(
+            insetPadding: const EdgeInsets.symmetric(
+              horizontal: 32,
+              vertical: 24,
+            ),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Container(
+              decoration: BoxDecoration(
+                color: const Color(0xFFE7F6E9),
+                border: Border.all(color: const Color(0xFF53A866), width: 3),
+                borderRadius: BorderRadius.circular(16),
               ),
-              Column(
-                mainAxisSize: MainAxisSize.min,
+              padding: const EdgeInsets.fromLTRB(20, 18, 20, 24),
+              child: Stack(
                 children: [
-                  const SizedBox(height: 6),
-                  Container(
-                    width: 240,
-                    height: 120,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFDDE6D6),
-                      borderRadius: BorderRadius.circular(16),
+                  Positioned(
+                    right: 0,
+                    top: 0,
+                    child: IconButton(
+                      icon: const Icon(Icons.close, color: Color(0xFF2E7D32)),
+                      onPressed: () => Navigator.pop(context),
                     ),
-                    alignment: Alignment.center,
-                    child: const Text(
-                      '추가 성공',
-                      style: TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.w800,
-                        color: Color(0xFF6B5A51),
+                  ),
+                  Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const SizedBox(height: 6),
+                      Container(
+                        width: 240,
+                        height: 120,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFDDE6D6),
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        alignment: Alignment.center,
+                        child: const Text(
+                          '추가 성공',
+                          style: TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.w800,
+                            color: Color(0xFF6B5A51),
+                          ),
+                        ),
                       ),
-                    ),
+                      const SizedBox(height: 16),
+                      Text(
+                        '자녀 $childName 님이 추가되었습니다!',
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w800,
+                          color: Color(0xFF6B5A51),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                    ],
                   ),
-                  const SizedBox(height: 16),
-                  Text(
-                    '자녀 $childName 님이 추가되었습니다!',
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w800,
-                      color: Color(0xFF6B5A51),
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  const SizedBox(height: 8),
                 ],
               ),
-            ],
+            ),
           ),
-        ),
-      ),
     );
   }
 
@@ -304,16 +371,17 @@ class _AddChildFormPageState extends State<AddChildFormPage> {
                               borderRadius: BorderRadius.circular(10),
                             ),
                           ),
-                          child: _isSaving
-                              ? const SizedBox(
-                                  width: 20,
-                                  height: 20,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    color: Colors.white,
-                                  ),
-                                )
-                              : const Text('등록하기'),
+                          child:
+                              _isSaving
+                                  ? const SizedBox(
+                                    width: 20,
+                                    height: 20,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      color: Colors.white,
+                                    ),
+                                  )
+                                  : const Text('등록하기'),
                         ),
                       ),
                     ),

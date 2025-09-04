@@ -1,93 +1,112 @@
 // lib/main/parentView/page/children_state.dart
-import 'dart:convert';
-import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:sinabro/main/parentView/api/parent_api.dart';
 
-/// 자녀 1명 정보
-class ChildModel {
-  final String id; // childId
-  final String name; // childName
-  final String nickname; // childNickname
-  final int age; // childAge
-  final String? phone;
-
-  ChildModel({
-    required this.id,
-    required this.name,
-    required this.nickname,
-    required this.age,
-    this.phone,
-  });
-
-  factory ChildModel.fromJson(Map<String, dynamic> j) => ChildModel(
-        id: j['id'] as String,
-        name: j['name'] as String,
-        nickname: j['nickname'] as String,
-        age: j['age'] as int,
-        phone: j['phone'] as String?,
-      );
-
-  Map<String, dynamic> toJson() => {
-        'id': id,
-        'name': name,
-        'nickname': nickname,
-        'age': age,
-        'phone': phone,
-      };
-}
-
-/// 자녀 리스트 전역 상태(싱글턴)
+/// 앱 전역에서 부모 세션 + 자녀목록을 관리하는 경량 스토어
 class ChildrenState extends ChangeNotifier {
-  ChildrenState._internal();
-  static final ChildrenState instance = ChildrenState._internal();
+  ChildrenState._();
+  static final ChildrenState instance = ChildrenState._();
 
-  static const _storageKey = 'children_state_v1';
+  // ---------- 세션(로그인 정보) ----------
+  String? _sessionUserId;
+  String? _sessionUserName;
 
-  final List<ChildModel> _items = [];
-  List<ChildModel> get items => List.unmodifiable(_items);
+  String? get sessionUserId => _sessionUserId;
+  String? get sessionUserName => _sessionUserName;
 
-  bool _loaded = false;
+  /// 로그인 성공 시 반드시 호출
+  Future<void> setSession({required String userId, String? userName}) async {
+    _sessionUserId = userId;
+    _sessionUserName = userName;
 
-  /// 앱 시작 후 1회만 로드
-  Future<void> loadOnce() async {
-    if (_loaded) return;
-    final sp = await SharedPreferences.getInstance();
-    final raw = sp.getString(_storageKey);
-    if (raw != null && raw.isNotEmpty) {
-      final list = (jsonDecode(raw) as List)
-          .map((e) => ChildModel.fromJson(e as Map<String, dynamic>))
-          .toList();
-      _items
-        ..clear()
-        ..addAll(list);
-    }
-    _loaded = true;
-    notifyListeners();
-  }
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('parentUserId', userId);
+    if (userName != null) await prefs.setString('parentUserName', userName);
 
-  Future<void> _persist() async {
-    final sp = await SharedPreferences.getInstance();
-    await sp.setString(
-      _storageKey,
-      jsonEncode(_items.map((e) => e.toJson()).toList()),
+    // 디버그 로그
+    // ignore: avoid_print
+    print(
+      '[ChildrenState.setSession] userId=$userId, userName=${userName ?? ""}',
     );
-  }
-
-  Future<void> add(ChildModel c) async {
-    _items.add(c);
-    await _persist();
     notifyListeners();
   }
 
-  Future<void> removeById(String id) async {
-    _items.removeWhere((e) => e.id == id);
-    await _persist();
+  // ---------- 화면용 선택된 userId ----------
+  String? _activeUserId; // 현재 페이지가 사용 중인 부모 ID
+  String? get activeUserId => _activeUserId;
+
+  bool loading = false;
+  bool _loadedOnce = false;
+
+  // 서버에서 내려온 자녀 목록
+  List<ChildSummary> items = [];
+
+  /// 자녀페이지/공지페이지 등에서 부모ID를 정해준다.
+  /// null 또는 빈 문자열이면 세션에서 자동 복구
+  Future<void> setParent(String? incomingUserId) async {
+    final given = (incomingUserId ?? '').trim();
+    if (given.isNotEmpty) {
+      _activeUserId = given;
+    } else if (_activeUserId == null || _activeUserId!.isEmpty) {
+      // 세션 → 저장소 → 최종복구
+      if (_sessionUserId == null || _sessionUserId!.isEmpty) {
+        final prefs = await SharedPreferences.getInstance();
+        _sessionUserId = prefs.getString('parentUserId');
+        _sessionUserName = prefs.getString('parentUserName');
+      }
+      _activeUserId = _sessionUserId;
+    }
+
+    // ignore: avoid_print
+    print(
+      '[ChildrenState.setParent] incoming="$incomingUserId" -> resolved="${_activeUserId ?? ""}"',
+    );
     notifyListeners();
   }
 
-  Future<void> clearAll() async {
-    _items.clear();
-    await _persist();
+  /// 최초 1회 로드 (페이지 진입 시 호출)
+  Future<void> loadOnce(String? incomingUserId) async {
+    await setParent(incomingUserId);
+    if (_loadedOnce) return;
+    await refresh();
+    _loadedOnce = true;
+  }
+
+  /// 서버에서 자녀목록 새로고침
+  Future<void> refresh() async {
+    final uid = (_activeUserId ?? '').trim();
+    if (uid.isEmpty) {
+      // ignore: avoid_print
+      print('[ChildrenState.refresh] skip: userId is empty (check login)');
+      return;
+    }
+
+    try {
+      loading = true;
+      notifyListeners();
+
+      final list = await ParentApi.fetchChildren(uid); // List<ChildSummary>
+      items = list;
+    } catch (_) {
+      // 필요시 에러처리
+    } finally {
+      loading = false;
+      notifyListeners();
+    }
+  }
+
+  /// 로그아웃 등 세션 정리
+  Future<void> clear() async {
+    _sessionUserId = null;
+    _sessionUserName = null;
+    _activeUserId = null;
+    items = [];
+    _loadedOnce = false;
+
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('parentUserId');
+    await prefs.remove('parentUserName');
     notifyListeners();
   }
 }

@@ -1,9 +1,9 @@
+// lib/main/parentView/page/notice_page.dart
 import 'package:flutter/material.dart';
 import 'package:sinabro/main/parentView/layout/parent_layout.dart';
+import 'package:sinabro/main/parentView/api/parent_api.dart' as parent_api;
+import 'package:sinabro/main/parentView/page/children_state.dart';
 
-/// -------------------------------
-/// 모델
-/// -------------------------------
 class NoticeItem {
   final String title;
   final String content;
@@ -20,7 +20,6 @@ class NoticeItem {
   });
 }
 
-/// 데모 데이터 (서버 붙이기 전까지 사용)
 final List<NoticeItem> _demoNotices = [
   NoticeItem(
     title: '[긴급 공지] 현재 발생하고 있는 이슈에 대해 사과드립니다',
@@ -51,26 +50,98 @@ final List<NoticeItem> _demoNotices = [
   ),
 ];
 
-/// -------------------------------
-/// 페이지
-/// -------------------------------
 class NoticePage extends StatefulWidget {
-  const NoticePage({super.key});
+  final String? parentUserId; // 선택
+  final String? parentDisplayName; // 선택
+  const NoticePage({super.key, this.parentUserId, this.parentDisplayName});
 
   @override
   State<NoticePage> createState() => _NoticePageState();
 }
 
 class _NoticePageState extends State<NoticePage> {
-  // 현재 펼쳐진 인덱스 (없으면 -1)
-  int _openIndex = 0; // 첫 번째 항목 펼쳐놓고 시작하려면 0, 모두 접힘은 -1
+  final _store = ChildrenState.instance;
+
+  bool _ready = false;
+  String? _err;
+  String _uid = '';
+  String _parentName = '';
+  int _openIndex = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _ensureParentContext();
+  }
+
+  Future<void> _ensureParentContext() async {
+    setState(() {
+      _ready = false;
+      _err = null;
+    });
+
+    try {
+      // 1) userId 결정 (prop → active → session → prefs)
+      await _store.setParent(widget.parentUserId);
+      var uid = (_store.activeUserId ?? '').trim();
+      if (uid.isEmpty) {
+        throw 'parentUserId가 없습니다. 로그인/세션을 확인해주세요.';
+      }
+
+      // 2) 이름 결정 (prop → session → 서버)
+      var name = (widget.parentDisplayName ?? '').trim();
+      if (name.isEmpty) name = (_store.sessionUserName ?? '').trim();
+      if (name.isEmpty) {
+        name = await parent_api.ParentApi.fetchParentName(uid);
+        await _store.setSession(userId: uid, userName: name);
+      }
+
+      if (!mounted) return;
+      setState(() {
+        _uid = uid;
+        _parentName = name.isEmpty ? '부모' : name;
+        _ready = true;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _err = '서버 연결 실패: $e';
+        _ready = false;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    if (_err != null) {
+      return ParentLayout(
+        activeMenu: '공지사항',
+        parentUserId: _uid,
+        content: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(_err!, style: const TextStyle(color: Colors.red)),
+              const SizedBox(height: 12),
+              ElevatedButton(
+                onPressed: _ensureParentContext,
+                child: const Text('다시 시도'),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    if (!_ready) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+
     return ParentLayout(
-      activeMenu: '공지사항', // 👈 사이드바에 초록 불
+      activeMenu: '공지사항',
+      parentUserId: _uid,
       content: Container(
-        color: const Color(0xFFF9F2F5), // 본문 연분홍 배경(시안 톤 맞춤)
+        color: const Color(0xFFF9F2F5),
         child: Center(
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 900),
@@ -78,17 +149,16 @@ class _NoticePageState extends State<NoticePage> {
               padding: const EdgeInsets.fromLTRB(16, 20, 16, 16),
               child: Column(
                 children: [
-                  _NoticeHeader(),
+                  const _NoticeHeader(),
                   const SizedBox(height: 8),
                   Expanded(
                     child: _NoticeList(
                       notices: _demoNotices,
                       openIndex: _openIndex,
-                      onToggle: (i) {
-                        setState(() {
-                          _openIndex = (_openIndex == i) ? -1 : i;
-                        });
-                      },
+                      onToggle:
+                          (i) => setState(() {
+                            _openIndex = (_openIndex == i) ? -1 : i;
+                          }),
                     ),
                   ),
                 ],
@@ -101,16 +171,14 @@ class _NoticePageState extends State<NoticePage> {
   }
 }
 
-/// -------------------------------
-/// 상단 헤더 바 (초록색)
-/// -------------------------------
 class _NoticeHeader extends StatelessWidget {
+  const _NoticeHeader();
   @override
   Widget build(BuildContext context) {
     return Container(
       height: 56,
       decoration: BoxDecoration(
-        color: const Color(0xFF6DBF73), // 초록 헤더
+        color: const Color(0xFF6DBF73),
         borderRadius: BorderRadius.circular(6),
       ),
       child: Row(
@@ -132,14 +200,10 @@ class _NoticeHeader extends StatelessWidget {
   }
 }
 
-/// -------------------------------
-/// 공지 리스트 (단일 펼침 아코디언)
-/// -------------------------------
 class _NoticeList extends StatelessWidget {
   final List<NoticeItem> notices;
   final int openIndex;
   final ValueChanged<int> onToggle;
-
   const _NoticeList({
     required this.notices,
     required this.openIndex,
@@ -164,12 +228,10 @@ class _NoticeList extends StatelessWidget {
   }
 }
 
-/// 개별 공지 아이템
 class _NoticeTile extends StatelessWidget {
   final NoticeItem item;
   final bool opened;
   final VoidCallback onTap;
-
   const _NoticeTile({
     required this.item,
     required this.opened,
@@ -180,18 +242,18 @@ class _NoticeTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final border = Border.all(color: const Color(0xFFE6E6E6));
     final dateStr =
-        '${item.date.year.toString().padLeft(4, '0')}-${item.date.month.toString().padLeft(2, '0')}-${item.date.day.toString().padLeft(2, '0')}';
+        '${item.date.year.toString().padLeft(4, '0')}-'
+        '${item.date.month.toString().padLeft(2, '0')}-'
+        '${item.date.day.toString().padLeft(2, '0')}';
 
     return Material(
       color: Colors.white,
-      elevation: 0,
       borderRadius: BorderRadius.circular(6),
       child: InkWell(
         borderRadius: BorderRadius.circular(6),
         onTap: onTap,
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 180),
-          curve: Curves.easeOut,
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(6),
             border: border,
@@ -208,7 +270,6 @@ class _NoticeTile extends StatelessWidget {
           ),
           child: Column(
             children: [
-              // 제목 줄
               Padding(
                 padding: const EdgeInsets.symmetric(
                   horizontal: 12,
@@ -240,7 +301,6 @@ class _NoticeTile extends StatelessWidget {
                   ],
                 ),
               ),
-              // 메타 정보 라인
               Padding(
                 padding: const EdgeInsets.symmetric(
                   horizontal: 44,
@@ -274,7 +334,6 @@ class _NoticeTile extends StatelessWidget {
                   ],
                 ),
               ),
-              // 내용 (토글)
               ClipRect(
                 child: AnimatedCrossFade(
                   firstChild: const SizedBox.shrink(),
@@ -301,10 +360,8 @@ class _NoticeTile extends StatelessWidget {
   }
 }
 
-/// 시안처럼 왼쪽에 둥근 아이콘 자리
 class _RoundIcon extends StatelessWidget {
   const _RoundIcon();
-
   @override
   Widget build(BuildContext context) {
     return Container(
