@@ -6,7 +6,6 @@ import 'package:sinabro/main/childView/page/level_test_page.dart';
 
 import 'package:sinabro/config.dart';
 
-
 class LoginChildScreen extends StatefulWidget {
   const LoginChildScreen({super.key});
 
@@ -23,7 +22,6 @@ class _LoginChildScreenState extends State<LoginChildScreen> {
   // 캐릭터 선택 여부 체크 함수
   Future<bool> isCharacterSelected(String childId) async {
     final url = '$baseUrl/api/character/selection/check?childId=$childId';
-    
 
     final response = await http.get(Uri.parse(url));
     if (response.statusCode == 200) {
@@ -42,7 +40,6 @@ class _LoginChildScreenState extends State<LoginChildScreen> {
     });
 
     final url = '$baseUrl/api/child/login';
-
 
     try {
       final response = await http.post(
