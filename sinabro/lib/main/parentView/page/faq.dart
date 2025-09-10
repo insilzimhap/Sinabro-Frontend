@@ -1,111 +1,202 @@
 import 'package:flutter/material.dart';
 import 'package:sinabro/main/parentView/layout/parent_layout.dart';
+import 'package:sinabro/main/parentView/page/faq_write.dart';
 
-class FaqPage extends StatelessWidget {
-  const FaqPage({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return const ParentLayout(
-      activeMenu: '문의하기',
-      content: FaqContent(), // 수정: FaqContent로 이름 변경
-    );
-  }
-}
-
-class FaqContent extends StatefulWidget {
-  const FaqContent({super.key});
+class FaqPage extends StatefulWidget {
+  final String? parentUserId; // 사이드바 동적 표시가 필요하면 전달
+  const FaqPage({super.key, this.parentUserId});
 
   @override
-  State<FaqContent> createState() => _FaqContentState();
+  State<FaqPage> createState() => _FaqPageState();
 }
 
-class _FaqContentState extends State<FaqContent> {
-  int? _openedIndex;
-
-  final List<Map<String, String>> notices = [
-    {
-      'title': '[육아처방전]#12 한 뿅, 두 뿅! 측정놀이로 기르는 우리 아이 수학 자신감',
-      'date': '2025.05.11',
-      'content':
-          '측정놀이는 아이의 수 개념과 수학적 사고를 길러주는 중요한 놀이예요. 일상 속에서 길이, 무게, 시간 등을 재보며 즐겁게 수학을 익혀보세요!',
-    },
-    {
-      'title': '[육아처방전]#11 유아 인지발달의 첫걸음, 분류 연습하기',
-      'date': '2025.05.11',
-      'content':
-          '같은 속성끼리 물건을 분류하는 활동은 인지 능력 향상에 큰 도움이 됩니다. 모양, 색깔, 크기 등으로 정리하는 놀이를 추천해요!',
-    },
+class _FaqPageState extends State<FaqPage> {
+  // 데모 데이터 (서버 연결 시 이 부분을 API 결과로 교체)
+  final List<_InquiryItem> items = [
+    _InquiryItem(
+      id: '1',
+      title: '애가 학습하기 싫어해요',
+      author: '박성민 님',
+      date: DateTime(2025, 8, 17),
+      question:
+          '애가 집중을 못하는 건 아닌데 그냥 학습에 흥미가 떨어지네요.\n다른 콘텐츠도 많이 추가됐으면 합니다...\n너무 콘텐츠들이 어린 애들 위주인 것 같아요!\n기대하겠습니다 ^^',
+      status: InquiryStatus.answered,
+      answer:
+          '안녕하세요 팀 시나브로입니다.\n우선 저희 앱을 이용해주셔서 감사합니다.\n추후 콘텐츠 추가 예정에 있습니다 ^^ 감사합니다.',
+      answerDate: DateTime(2025, 8, 17),
+    ),
+    _InquiryItem(
+      id: '2',
+      title: '애가 학습하기 싫어해요',
+      author: '박성민 님',
+      date: DateTime(2025, 8, 17),
+      question: '기기 제한 시간을 좀 더 유연하게 설정할 수 있나요?',
+      status: InquiryStatus.pending,
+    ),
+    _InquiryItem(
+      id: '3',
+      title: '애가 학습하기 싫어해요',
+      author: '박성민 님',
+      date: DateTime(2025, 8, 17),
+      question: '레벨 테스트 결과가 반영되는 기준이 궁금합니다.',
+      status: InquiryStatus.pending,
+    ),
   ];
 
   @override
   Widget build(BuildContext context) {
-    final double screenWidth = MediaQuery.of(context).size.width;
-    final double tableMaxWidth = screenWidth - 24.0 * 2;
-
-    return Padding(
-      padding: const EdgeInsets.all(24.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            '새로운 소식을 확인해보세요',
-            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 20),
-          Expanded(
-            child: SingleChildScrollView(
-              scrollDirection: Axis.vertical,
-              child: SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: ConstrainedBox(
-                  constraints: BoxConstraints(minWidth: tableMaxWidth),
-                  child: DataTable(
-                    headingRowColor:
-                        MaterialStateProperty.all(Colors.grey[200]),
-                    columns: const [
-                      DataColumn(label: Expanded(flex: 1, child: Text('No'))),
-                      DataColumn(label: Expanded(flex: 4, child: Text('제목'))),
-                      DataColumn(label: Expanded(flex: 2, child: Text('작성일'))),
-                      DataColumn(label: Expanded(flex: 2, child: Text('작성자'))),
-                    ],
-                    rows: const [
-                      DataRow(cells: [
-                        DataCell(Text('1')),
-                        DataCell(Text('사용법 관련 문의')),
-                        DataCell(Text('2025-05-11')),
-                        DataCell(Text('박성민')),
-                      ]),
-                      DataRow(cells: [
-                        DataCell(Text('2')),
-                        DataCell(Text('자녀 계정 연동이 안돼요')),
-                        DataCell(Text('2025-05-10')),
-                        DataCell(Text('김다영')),
-                      ]),
-                      DataRow(cells: [
-                        DataCell(Text('3')),
-                        DataCell(Text('학습 리포트 오류 문의')),
-                        DataCell(Text('2025-05-08')),
-                        DataCell(Text('이준수')),
-                      ]),
-                    ],
+    return ParentLayout(
+      activeMenu: '문의사항',
+      parentUserId: widget.parentUserId,
+      content: Container(
+        color: const Color(0xFFF9F2F5),
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 980),
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 20, 16, 24),
+              child: Column(
+                children: [
+                  _headerBar(),
+                  const SizedBox(height: 12),
+                  _listCard(),
+                  const SizedBox(height: 12),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: SizedBox(
+                      height: 44,
+                      child: FilledButton(
+                        onPressed: () async {
+                          final created = await Navigator.push<bool>(
+                            context,
+                            MaterialPageRoute(
+                              builder:
+                                  (_) => FaqWritePage(
+                                    parentUserId: widget.parentUserId,
+                                  ),
+                            ),
+                          );
+                          if (created == true && mounted) {
+                            // TODO: 서버라면 재조회. 데모라면 스낵바만.
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('문의가 등록되었습니다.')),
+                            );
+                          }
+                        },
+                        style: FilledButton.styleFrom(
+                          backgroundColor: const Color(0xFF6DBF73),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                        ),
+                        child: const Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 18),
+                          child: Text(
+                            '문의하기',
+                            style: TextStyle(color: Colors.white),
+                          ),
+                        ),
+                      ),
+                    ),
                   ),
-                ),
+                ],
               ),
             ),
           ),
-          const SizedBox(height: 16),
-          Align(
-            alignment: Alignment.centerRight,
-            child: ElevatedButton.icon(
-              onPressed: () {
-                Navigator.pushNamed(context, '/parent/inquiry_form');
-              },
-              icon: const Icon(Icons.edit),
-              label: const Text('문의하기'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.blue.shade50,
-                foregroundColor: Colors.black,
+        ),
+      ),
+    );
+  }
+
+  // 상단 녹색 헤더
+  Widget _headerBar() {
+    return Container(
+      height: 72,
+      decoration: BoxDecoration(
+        color: const Color(0xFF6DBF73),
+        borderRadius: BorderRadius.circular(6),
+      ),
+      alignment: Alignment.centerLeft,
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: const Text(
+        '문의하기',
+        style: TextStyle(
+          color: Colors.white,
+          fontSize: 28,
+          fontWeight: FontWeight.w900,
+        ),
+      ),
+    );
+  }
+
+  // 리스트 카드 (아코디언)
+  Widget _listCard() {
+    return Card(
+      elevation: 1,
+      clipBehavior: Clip.antiAlias,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: const BorderSide(color: Color(0xFFE0E0E0)),
+      ),
+      child: ExpansionPanelList.radio(
+        elevation: 0,
+        expandIconColor: Colors.grey[700],
+        animationDuration: const Duration(milliseconds: 200),
+        children:
+            items.map((item) {
+              return ExpansionPanelRadio(
+                value: item.id,
+                canTapOnHeader: true,
+                headerBuilder: (context, isExpanded) => _rowHeader(item),
+                body: _rowBody(item),
+              );
+            }).toList(),
+      ),
+    );
+  }
+
+  // 행 헤더 (제목/작성자/날짜/상태칩)
+  Widget _rowHeader(_InquiryItem item) {
+    final isAnswered = item.status == InquiryStatus.answered;
+    return Container(
+      color: Colors.white,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  item.title,
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w900,
+                    color: Colors.black,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  '${item.author}   ${_dateLabel(item.date)}',
+                  style: const TextStyle(fontSize: 12, color: Colors.black54),
+                ),
+              ],
+            ),
+          ),
+          Container(
+            decoration: BoxDecoration(
+              color:
+                  isAnswered
+                      ? const Color(0xFFCFEFD3)
+                      : const Color(0xFFEDEDED),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            child: Text(
+              isAnswered ? '답변 완료' : '답변 전',
+              style: TextStyle(
+                fontWeight: FontWeight.w700,
+                color: isAnswered ? const Color(0xFF2E7D32) : Colors.black54,
               ),
             ),
           ),
@@ -113,4 +204,88 @@ class _FaqContentState extends State<FaqContent> {
       ),
     );
   }
+
+  // 펼쳐진 본문
+  Widget _rowBody(_InquiryItem item) {
+    final isAnswered = item.status == InquiryStatus.answered;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Container(
+          color: const Color(0xFFF7F7F7),
+          padding: const EdgeInsets.fromLTRB(16, 14, 16, 18),
+          child: Text(
+            item.question,
+            style: const TextStyle(fontSize: 15, height: 1.5),
+          ),
+        ),
+        if (isAnswered) ...[
+          const Divider(height: 1, thickness: 1, color: Color(0xFFE9ECEF)),
+          Container(
+            color: const Color(0xFFF1F5F9),
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 18),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    const Text(
+                      '팀 시나브로 님의 답변',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w900,
+                        color: Color(0xFF495057),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      '·  ${_dateLabel(item.answerDate ?? item.date)}',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: Colors.black45,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  item.answer ?? '',
+                  style: const TextStyle(fontSize: 15, height: 1.5),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
+  String _dateLabel(DateTime d) =>
+      '${d.year.toString().padLeft(4, '0')}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+}
+
+/* =========================
+   모델 & 상태
+========================= */
+enum InquiryStatus { pending, answered }
+
+class _InquiryItem {
+  final String id;
+  final String title;
+  final String author;
+  final DateTime date;
+  final String question;
+  final InquiryStatus status;
+  final String? answer;
+  final DateTime? answerDate;
+
+  _InquiryItem({
+    required this.id,
+    required this.title,
+    required this.author,
+    required this.date,
+    required this.question,
+    required this.status,
+    this.answer,
+    this.answerDate,
+  });
 }
