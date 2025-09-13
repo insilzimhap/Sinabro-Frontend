@@ -28,6 +28,16 @@ dev_dependencies:
 flutter:
   uses-material-design: true
 
+  fonts:
+    - family: Inter
+      fonts:
+        - asset: assets/font/Inter-Light.ttf
+          weight: 300
+        - asset: assets/font/Inter-Medium.ttf
+          weight: 500
+        - asset: assets/font/Inter-Bold.ttf
+          weight: 700
+
   assets:
     - assets/img/auth/
     - assets/img/character/
@@ -35,11 +45,6 @@ flutter:
     - assets/img/contents/gameWrite/
     - assets/img/contents/studyListen/
     - assets/img/contents/studyWrite/
-    # studyWrite/test/는 studyWrite/에 포함될 수 있다면 중복을 제거합니다.
-    # 만약 studyWrite/test/ 폴더가 독립적으로 존재하고, 그 안에 꼭 필요한 파일이 있다면 유지하고,
-    # 그렇지 않다면 아래 주석 처리된 라인을 활성화하지 않습니다.
-    # 현재 `assets/img/contents/studyWrite/`에 포함되므로 이 줄은 제거하는 것이 일반적입니다.
-    # - assets/img/contents/studyWrite/test/
     - assets/img/icon/
     - assets/img/pageMain/
     - assets/img/pageSetting/
@@ -49,8 +54,4 @@ flutter:
     - assets/audio/tts/gameListen/
     - assets/audio/tts/gameWrite/
     - assets/audio/tts/studyListen/
-    # studyListen/dailyConversation/, studyListen/dailyConversation/test/,
-    # studyListen/soundWords/, studyListen/soundWords/test/는
-    # assets/audio/tts/studyListen/ 에 포함되므로 제거합니다.
     - assets/audio/tts/studyWrite/
-    # studyWrite/test/는 studyWrite/에 포함되므로 제거합니다.
