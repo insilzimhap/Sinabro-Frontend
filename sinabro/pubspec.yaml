@@ -27,6 +27,16 @@ dev_dependencies:
 flutter:
   uses-material-design: true
 
+  fonts:
+    - family: Inter
+      fonts:
+        - asset: assets/font/Inter-Light.ttf
+          weight: 300
+        - asset: assets/font/Inter-Medium.ttf
+          weight: 500
+        - asset: assets/font/Inter-Bold.ttf
+          weight: 700
+
   assets:
     - assets/img/auth/
     - assets/img/character/
@@ -48,6 +58,6 @@ flutter:
     - assets/audio/tts/studyListen/dailyConversation/
     - assets/audio/tts/studyListen/dailyConversation/test/
     - assets/audio/tts/studyListen/soundWords/
-    - assets/audio/tts/studyListen/soundWords/test/  
+    - assets/audio/tts/studyListen/soundWords/test/
     - assets/audio/tts/studyWrite/
     - assets/audio/tts/studyWrite/test/
