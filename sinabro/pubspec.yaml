@@ -33,6 +33,10 @@ flutter:
     - assets/img/contents/gameListen/
     - assets/img/contents/gameWrite/
     - assets/img/contents/studyListen/
+    - assets/img/contents/studyListen/level3/
+    - assets/img/contents/studyListen/level3/main_keyword/
+    - assets/img/contents/studyListen/level3/main_topic/
+    - assets/img/contents/studyListen/level3/story/
     - assets/img/contents/studyWrite/
     - assets/img/contents/studyWrite/test/
     - assets/img/icon/
