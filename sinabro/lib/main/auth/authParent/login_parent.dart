@@ -1,4 +1,10 @@
-// lib/login/login_parent.dart
+/**
+ * @file lib/login/login_parent.dart
+ * 역할: 부모 로그인/소셜 로그인. 로그인 성공 시 JWT를 ChildrenState에 저장.
+ */
+///
+
+
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
@@ -53,6 +59,18 @@ class _LoginPageState extends State<LoginParentScreen> {
 
       if (response.statusCode == 200) {
         final body = _safeJson(response.body);
+
+        // 🔐 JWT 토큰 저장 (있을 때만)
+        final at = body['accessToken'];
+        final rt = body['refreshToken'];
+        if (at is String && at.isNotEmpty) {
+          await ChildrenState.instance.setToken(accessToken: at, refreshToken: rt is String ? rt : null);
+          // ignore: avoid_print
+          print('[login_parent] accessToken 저장 완료');
+        }
+
+
+        // 기존 세션 저장
         final parentUserId =
             (body['userId'] ?? _userIdController.text.trim()).toString();
         final parentUserName =
@@ -129,6 +147,17 @@ class _LoginPageState extends State<LoginParentScreen> {
 
       if (response.statusCode == 200) {
         final userInfo = json.decode(response.body);
+
+        // 🔐 소셜 응답에 토큰이 같이 오면 저장
+        final at = (userInfo is Map) ? userInfo['accessToken'] : null;
+        final rt = (userInfo is Map) ? userInfo['refreshToken'] : null;
+        if (at is String && at.isNotEmpty) {
+          await ChildrenState.instance.setToken(accessToken: at, refreshToken: rt is String ? rt : null);
+          // ignore: avoid_print
+          print('[login_parent:kakao] accessToken 저장 완료');
+        }
+
+
         if (!mounted) return;
         Navigator.pushReplacement(
           context,
@@ -192,6 +221,16 @@ class _LoginPageState extends State<LoginParentScreen> {
 
       if (response.statusCode == 200) {
         final userInfo = json.decode(response.body);
+
+        // 🔐 소셜 응답에 토큰이 같이 오면 저장
+        final at = (userInfo is Map) ? userInfo['accessToken'] : null;
+        final rt = (userInfo is Map) ? userInfo['refreshToken'] : null;
+        if (at is String && at.isNotEmpty) {
+          await ChildrenState.instance.setToken(accessToken: at, refreshToken: rt is String ? rt : null);
+          // ignore: avoid_print
+          print('[login_parent:google] accessToken 저장 완료');
+        }
+
         if (!mounted) return;
         Navigator.pushReplacement(
           context,

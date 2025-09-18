@@ -1,6 +1,13 @@
+/**
+ * @file lib/main/parentView/page/add_child_form.dart
+ * 역할: 자녀 추가 화면. 서버 호출 시 AuthClient를 사용해 JWT 자동 부착.
+ */
+///
+
 // lib/main/parentView/page/add_child_form.dart
 import 'package:flutter/material.dart';
 import 'package:sinabro/main/parentView/layout/parent_layout.dart';
+import 'package:sinabro/common/auth_client.dart';  
 
 // ▼ 서버 호출용
 import 'dart:convert';
@@ -87,7 +94,7 @@ class _AddChildFormPageState extends State<AddChildFormPage> {
       final uri = Uri.parse(
         '$baseUrl/api/children/check-id',
       ).replace(queryParameters: {'childId': id});
-      final res = await http.get(uri);
+      final res = await AuthClient().get(uri); // ✅ http.get → AuthClient().get
 
       if (res.statusCode == 200) {
         // 서버가 {"available": true} 형태로 응답한다고 가정
@@ -126,7 +133,7 @@ class _AddChildFormPageState extends State<AddChildFormPage> {
         'phone': _phone.text.trim(),
       };
 
-      final res = await http.post(
+      final res = await AuthClient().post(                     // ✅ http.post → AuthClient().post
         uri,
         headers: {'Content-Type': 'application/json'},
         body: json.encode(payload),

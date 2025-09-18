@@ -1,4 +1,15 @@
-// lib/main/parentView/page/children_state.dart
+/**
+ * @file lib/main/parentView/page/children_state.dart
+ *
+ * 역할: 앱 전역에서 부모 세션, 자녀 목록, JWT 토큰을 관리하는 경량 스토어.
+ * - 로그인 성공 시 세션/토큰을 메모리와 SharedPreferences에 저장
+ * - 페이지 진입 시 부모 ID 및 토큰을 복구
+ * - ParentApi를 통해 자녀 목록을 로드/갱신
+ */
+///
+
+
+
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sinabro/main/parentView/api/parent_api.dart';
@@ -63,6 +74,19 @@ class ChildrenState extends ChangeNotifier {
       '[ChildrenState.setParent] incoming="$incomingUserId" -> resolved="${_activeUserId ?? ""}"',
     );
     notifyListeners();
+
+
+    // ✅ (세션 복구 직후) 토큰 자동 복구
+    // - 앱 재시작 등으로 메모리에 토큰이 없을 수 있음
+    // - SharedPreferences에서 읽어 _accessToken/_refreshToken 에 로드(메모리 복원)한다.  
+    if (_accessToken == null || _accessToken!.isEmpty) {
+      final prefs = await SharedPreferences.getInstance();
+      _accessToken = prefs.getString('accessToken');
+      _refreshToken = prefs.getString('refreshToken');
+      // ignore: avoid_print
+      print('[ChildrenState.setParent] 토큰 복구됨: ${_accessToken != null}');
+    }
+
   }
 
   /// 최초 1회 로드 (페이지 진입 시 호출)
@@ -107,6 +131,46 @@ class ChildrenState extends ChangeNotifier {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('parentUserId');
     await prefs.remove('parentUserName');
+    await prefs.remove('accessToken');
+    await prefs.remove('refreshToken');
+
     notifyListeners();
   }
+
+   // ---------- JWT 토큰 ----------
+  // 메모리에 보관되는 현재 액세스/리프레시 토큰.
+  // null 또는 빈 문자열이면 미로그인 상태로 간주.
+  String? _accessToken;
+  String? _refreshToken;
+
+  /// 현재 메모리에 적재된 액세스 토큰
+  String? get accessToken => _accessToken;
+
+  /// 현재 메모리에 적재된 리프레시 토큰
+  String? get refreshToken => _refreshToken;
+
+  /// 로그인/소셜 로그인 성공 시 토큰 저장
+  /// - 서버 응답의 accessToken 은 필수, refreshToken 은 있을 때만 저장
+  /// - SharedPreferences 키: 'accessToken', 'refreshToken'
+  Future<void> setToken({
+    required String accessToken,
+    String? refreshToken,
+  }) async {
+    _accessToken = accessToken;
+    _refreshToken = refreshToken;
+
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('accessToken', accessToken);
+    if (refreshToken != null) {
+      await prefs.setString('refreshToken', refreshToken);
+    }
+
+    // 디버그 로그
+    // ignore: avoid_print
+    print(
+      '[ChildrenState.setToken] accessToken 저장됨 (length=${accessToken.length})',
+    );
+    notifyListeners();
+  }
+
 }

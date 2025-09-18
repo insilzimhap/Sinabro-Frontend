@@ -1,9 +1,17 @@
+/**
+ * @file lib/login/social_info_page.dart
+ * 역할: 소셜 추가정보 제출. 응답에 토큰이 있으면 저장.
+ */
+///
+
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
 import 'package:sinabro/config.dart';
 import 'package:sinabro/main/parentView/page/notice_page.dart';
+import 'package:sinabro/common/auth_client.dart';
+
 
 class SocialExtraInfoPage extends StatefulWidget {
   final String userId;

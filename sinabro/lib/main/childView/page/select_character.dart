@@ -1,9 +1,19 @@
+/**
+ * @file lib/main/childView/page/select_character.dart
+ * 역할: 캐릭터 선택 화면. 목록 조회는 permitAll(http.get) 유지.
+ *      선택 저장은 authenticated → AuthClient.post 사용.
+ */
+///
+
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:sinabro/main/childView/page/lobby_child.dart'; // lobby_child.dart의 경로에 맞게 수정하세요
 import 'package:sinabro/config.dart';
 import 'package:flutter/foundation.dart'; // debugPrint
+
+// 🔐 JWT 자동 부착
+import 'package:sinabro/common/auth_client.dart';
 
 class SelectCharacterPage extends StatefulWidget {
   final String childId; // 반드시 로그인 시 받아와서 넘겨줘야 함!
@@ -25,9 +35,10 @@ class _SelectCharacterPageState extends State<SelectCharacterPage> {
   void initState() {
     super.initState();
     debugPrint('[CHAR] init: childId=${widget.childId}, baseUrl=$baseUrl');
-    _futureCharacters = _fetchCharacters();
+    _futureCharacters = _fetchCharacters();  //목록은 permitAll
   }
 
+  // 📥 캐릭터 목록 조회 (permitAll)
   Future<List<_CharacterItem>> _fetchCharacters() async {
     final url = '$baseUrl/api/characters';
     debugPrint('[CHAR] GET $url');
@@ -49,24 +60,25 @@ class _SelectCharacterPageState extends State<SelectCharacterPage> {
     }
   }
 
+  // 💾 캐릭터 선택 저장 (authenticated)
   Future<void> _saveCharacterSelection(_CharacterItem character) async {
     setState(() {
       _isLoading = true;
       _message = '';
     });
 
-    final url = '$baseUrl/api/character/selection'; // ✅ 프론트 경로 유지
+    final uri = Uri.parse('$baseUrl/api/character/selection'); // ✅ 프론트 경로 유지 -> 수정함
     final payload = {
       'childId': widget.childId,
       'characterId': character.characterId, // ✅ 서버 ID를 그대로 전송
     };
 
-    debugPrint('[CHAR] POST $url');
+    debugPrint('[CHAR] POST $uri');
     debugPrint('[CHAR] payload=$payload');
 
     try {
-      final response = await http.post(
-        Uri.parse(url),
+      final response = await AuthClient().post(
+        uri,
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode(payload),
       );

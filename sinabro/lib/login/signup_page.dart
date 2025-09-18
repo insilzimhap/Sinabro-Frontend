@@ -1,4 +1,10 @@
-// lib/login/signup_page.dart
+/**
+ * @file lib/login/signup_page.dart
+ * 역할: 부모 회원가입. 응답에 토큰이 있으면 저장.
+ */
+///
+
+
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
@@ -149,6 +155,15 @@ class _SignUpPageState extends State<SignUpPage> {
 
       if (res.statusCode == 200) {
         final body = _safeJson(res.body);
+        // 🔐 회원가입 응답에 토큰이 있으면 저장
+        final at = body['accessToken'];
+        final rt = body['refreshToken'];
+        if (at is String && at.isNotEmpty) {
+          await ChildrenState.instance
+              .setToken(accessToken: at, refreshToken: rt is String ? rt : null);
+          // ignore: avoid_print
+          print('[signup_parent] accessToken 저장 완료');
+        }
         final parentUserId = (body['userId'] ?? userId).toString();
         final parentUserName =
             (body['userName'] ?? _nameController.text.trim()).toString();

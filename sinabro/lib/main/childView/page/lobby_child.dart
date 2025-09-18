@@ -1,3 +1,9 @@
+/**
+ * @file lib/main/childView/page/lobby_child.dart
+ * 역할: 자녀 로비. 자녀 정보 조회는 authenticated → AuthClient 사용.
+ */
+///
+
 import 'package:flutter/material.dart';
 import 'dart:math';
 import 'package:http/http.dart' as http;
@@ -6,6 +12,10 @@ import 'dart:convert';
 // ✅ 학습 페이지 import
 import 'package:sinabro/main/studyView/writeStudy/page/write_study_page.dart';
 import 'package:sinabro/main/studyView/listenStudy/page/listen_study_page.dart';
+import 'package:sinabro/config.dart';
+
+// 🔐 JWT 자동 부착
+import 'package:sinabro/common/auth_client.dart';
 
 class LobbyChildScreen extends StatefulWidget {
   final String childId;
@@ -41,16 +51,16 @@ class _LobbyChildScreenState extends State<LobbyChildScreen> {
   @override
   void initState() {
     super.initState();
-    _fetchChildInfo();
+    _fetchChildInfo();   // ✅ AuthClient 사용
     _setRandomMessage();
   }
 
   Future<void> _fetchChildInfo() async {
-    final url = 'http://10.0.2.2:8090/api/child/info?childId=${widget.childId}';
-    //final url = 'http://172.30.1.64:8090/api/child/info?childId=${widget.childId}';
-    
+
+    final uri = Uri.parse('$baseUrl/api/child/info')
+        .replace(queryParameters: {'childId': widget.childId});
     try {
-      final response = await http.get(Uri.parse(url));
+      final response = await AuthClient().get(uri);
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         setState(() {

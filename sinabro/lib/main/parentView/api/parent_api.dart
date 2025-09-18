@@ -1,12 +1,23 @@
+/**
+ * @file lib/main/parentView/api/parent_api.dart
+ * 역할: 부모 관련 API 래퍼. (JWT는 AuthClient가 자동 부착)
+ */
+///
+
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:sinabro/config.dart';
+import 'package:sinabro/common/auth_client.dart';   
+
+
+final _client = AuthClient(); // 공용 클라이언트
+
 
 class ParentApi {
   // 부모 프로필 조회
   static Future<String> fetchParentName(String userId) async {
-    final uri = Uri.parse('$baseUrl/api/users/profile?userId=$userId');
-    final res = await http.get(uri);
+    final uri = Uri.parse('$baseUrl/api/users/profile?userId=$userId'); // 🔗 프로필 API
+    final res = await _client.get(uri); // http.get → _client.get
 
     // 디버그 로그
     // ignore: avoid_print
@@ -27,11 +38,7 @@ class ParentApi {
         'userId': userId,
       },
     );
-
-    final res = await http.get(
-      uri,
-      headers: {'Content-Type': 'application/json'},
-    );
+    final res = await _client.get(uri); // ✅ http.get → _client.get
 
     // 디버그 로그
     // ignore: avoid_print

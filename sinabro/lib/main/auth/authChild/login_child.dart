@@ -1,3 +1,11 @@
+/**
+ * @file lib/main/childView/page/login_child.dart
+ * 역할: 자녀 로그인. 로그인은 permitAll로 http.post 유지.
+ *      로그인 응답에 토큰 있으면 저장. 보호 API(선택여부 확인)는 AuthClient로 호출(JWT 자동 부착).
+ */
+///
+
+
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
@@ -5,6 +13,10 @@ import 'dart:convert';
 import 'package:sinabro/main/childView/page/lobby_child.dart';
 import 'package:sinabro/main/childView/page/level_test_page.dart';
 import 'package:sinabro/config.dart';
+
+// 🔐 JWT 저장/부착
+import 'package:sinabro/main/parentView/page/children_state.dart';
+import 'package:sinabro/common/auth_client.dart';
 
 class LoginChildScreen extends StatefulWidget {
   const LoginChildScreen({super.key});
@@ -30,12 +42,13 @@ class _LoginChildScreenState extends State<LoginChildScreen> {
     return false;
   }
 
-  // 캐릭터 선택 여부 체크 (예외 안전)
+  // 캐릭터 선택 여부 체크 (예외 안전) (authenticated → AuthClient 사용)
   Future<bool> isCharacterSelected(String childId) async {
-    final url = '$baseUrl/api/character/selection/check?childId=$childId';
+    final uri = Uri.parse('$baseUrl/api/character/selection/check')
+        .replace(queryParameters: {'childId': childId});
     try {
-      final resp = await http.get(
-        Uri.parse(url),
+      final resp = await AuthClient().get(
+        uri,
         headers: const {'Accept': 'application/json'},
       ).timeout(const Duration(seconds: 8));
 
@@ -63,6 +76,7 @@ class _LoginChildScreenState extends State<LoginChildScreen> {
     }
   }
 
+  // 🚪 로그인 (permitAll → http.post 유지)
   Future<void> _login() async {
     if (_isLoading) return;
     setState(() {
@@ -90,12 +104,26 @@ class _LoginChildScreenState extends State<LoginChildScreen> {
       if (response.statusCode == 200) {
         // childId는 응답에 있으면 우선 사용, 없으면 입력값 사용
         String childId = _idController.text.trim();
+
+        // 🔐 로그인 응답에 토큰이 있으면 저장(선택적)
         try {
           if ((response.headers['content-type'] ?? '')
               .contains('application/json')) {
             final body = json.decode(response.body);
-            if (body is Map && body['childId'] != null) {
-              childId = body['childId'].toString().trim();
+            if (body is Map) {
+              final at = body['accessToken'];
+              final rt = body['refreshToken'];
+              if (at is String && at.isNotEmpty) {
+                await ChildrenState.instance.setToken(
+                  accessToken: at,
+                  refreshToken: rt is String ? rt : null,
+                );
+                // ignore: avoid_print
+                print('[login_child] accessToken 저장 완료');
+              }
+              if (body['childId'] != null) {
+                childId = body['childId'].toString().trim();
+              }
             } else if (body is String && body.trim().isNotEmpty) {
               childId = body.trim();
             }
@@ -108,6 +136,8 @@ class _LoginChildScreenState extends State<LoginChildScreen> {
           if (raw.isNotEmpty) childId = raw;
         }
 
+
+        // ✅ 보호 API 호출: 캐릭터 선택 여부 확인은 AuthClient로
         if (!mounted) return;
         final selected = await isCharacterSelected(childId);
 
