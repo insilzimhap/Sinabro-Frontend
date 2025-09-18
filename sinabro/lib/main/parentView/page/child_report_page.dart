@@ -1,4 +1,9 @@
 // lib/main/parentView/page/child_report_page.dart
+/*
+ * 파일: lib/main/parentView/page/child_report_page.dart
+ * 개요: 자녀의 학습 리포트를 보여주는 화면(뷰 전용, 서버 미연동).
+ */
+
 import 'package:flutter/material.dart';
 import 'package:sinabro/main/parentView/layout/parent_layout.dart';
 
@@ -118,12 +123,13 @@ class ChildReportPage extends StatelessWidget {
                       await Navigator.push<bool>(
                         context,
                         MaterialPageRoute(
-                          builder: (_) => ChildProfileEditPage(
-                            parentUserId: parentUserId,
-                            childId: 'Sung1_park', // TODO: 실제 값으로 교체
-                            childName: childName,
-                            childPhone: '010-0000-0000', // TODO: 실제 값으로 교체
-                          ),
+                          builder:
+                              (_) => ChildProfileEditPage(
+                                parentUserId: parentUserId,
+                                childId: 'Sung1_park', // TODO: 실제 값으로 교체
+                                childName: childName,
+                                childPhone: '010-0000-0000', // TODO: 실제 값으로 교체
+                              ),
                         ),
                       );
                       // pop(true) 등을 받으면 필요 시 목록 갱신 로직 추가
@@ -196,14 +202,15 @@ class ChildReportPage extends StatelessWidget {
         return Wrap(
           spacing: 16,
           runSpacing: 16,
-          children: cards
-              .map(
-                (w) => SizedBox(
-                  width: isNarrow ? c.maxWidth : (c.maxWidth - 16) / 2,
-                  child: w,
-                ),
-              )
-              .toList(),
+          children:
+              cards
+                  .map(
+                    (w) => SizedBox(
+                      width: isNarrow ? c.maxWidth : (c.maxWidth - 16) / 2,
+                      child: w,
+                    ),
+                  )
+                  .toList(),
         );
       },
     );

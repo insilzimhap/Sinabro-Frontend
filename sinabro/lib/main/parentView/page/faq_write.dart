@@ -1,3 +1,8 @@
+/*
+ * 파일: lib/main/parentView/page/faq_write.dart (FaqWritePage)
+ * 개요: 부모용 문의/FAQ 작성 화면. 사이드바(ParentLayout) 내 '문의사항' 메뉴에 대응하며
+ *      제목·내용 입력 후 서버 전송(추후 연동) 및 성공 토스트를 띄운 뒤 이전 화면으로 복귀한다.
+ */
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:sinabro/main/parentView/layout/parent_layout.dart';
@@ -19,8 +24,9 @@ class _FaqWritePageState extends State<FaqWritePage> {
     final body = _bodyCtl.text.trim();
 
     if (title.isEmpty || body.isEmpty) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text('제목과 내용을 입력해 주세요.')));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('제목과 내용을 입력해 주세요.')));
       return;
     }
 
@@ -55,10 +61,7 @@ class _FaqWritePageState extends State<FaqWritePage> {
             child: Container(
               width: width,
               // ⬇️ 세로 길이 제한(원하는 사이즈로 조절 가능)
-              constraints: const BoxConstraints(
-                minHeight: 120,
-                maxHeight: 160,
-              ),
+              constraints: const BoxConstraints(minHeight: 120, maxHeight: 160),
               padding: const EdgeInsets.fromLTRB(20, 22, 20, 22),
               decoration: BoxDecoration(
                 color: bg,
@@ -87,8 +90,11 @@ class _FaqWritePageState extends State<FaqWritePage> {
                           color: const Color(0xFF6DBF73),
                           borderRadius: BorderRadius.circular(8),
                         ),
-                        child: const Icon(Icons.close,
-                            size: 16, color: Colors.white),
+                        child: const Icon(
+                          Icons.close,
+                          size: 16,
+                          color: Colors.white,
+                        ),
                       ),
                     ),
                   ),
@@ -126,7 +132,7 @@ class _FaqWritePageState extends State<FaqWritePage> {
   @override
   Widget build(BuildContext context) {
     return ParentLayout(
-      activeMenu: '문의하기',
+      activeMenu: '문의사항',
       parentUserId: widget.parentUserId,
       content: Scaffold(
         backgroundColor: const Color(0xFFF9F2F5),

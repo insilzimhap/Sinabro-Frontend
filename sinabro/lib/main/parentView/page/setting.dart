@@ -1,14 +1,15 @@
+/*
+ * 파일: lib/main/parentView/page/setting.dart (SettingsPage)
+ * 개요: 부모용 ‘설정’ 화면. ParentLayout 하위에서 수신동의/언어 등 앱 환경설정을
+ *      구성하고 로그아웃·회원탈퇴 플로우(커스텀 다이얼로그)까지 제공한다.
+ */
 import 'package:flutter/material.dart';
 import 'package:sinabro/main/parentView/layout/parent_layout.dart';
 import 'package:sinabro/main/mainView/page/home_screen.dart';
 
 class SettingsPage extends StatefulWidget {
-  /// 라우팅용 이름 (MaterialApp.routes에 등록해서 사용)
   static const String routeName = '/parent/settings';
-
-  /// 사이드바 동적 표시용 (없어도 동작)
   final String? parentUserId;
-
   const SettingsPage({super.key, this.parentUserId});
 
   @override
@@ -19,6 +20,7 @@ class _SettingsPageState extends State<SettingsPage> {
   // 수신동의
   bool agreeEmail = false;
   bool agreePush = false;
+  bool agreeTimeLimit = false; // ✅ 자녀 학습 시간 제한 기능 사용 여부
 
   // 언어설정
   final List<String> languages = const [
@@ -30,20 +32,24 @@ class _SettingsPageState extends State<SettingsPage> {
   ];
   String selectedLang = '한국어';
 
-  // ================= 저장 =================
+  // ================= Actions =================
   Future<void> _save() async {
     // TODO: 서버 저장 API 연동
-    // final payload = {...}; await http.post(...);
-
     if (!mounted) return;
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(const SnackBar(content: Text('설정이 저장되었습니다.')));
   }
 
-  // ============== 회원 탈퇴 플로우 ==============
-  // 1) 현재 비밀번호 입력 -> 실패 시 실패 팝업
-  // 2) 성공 시 확인 팝업 -> 예 누르면 탈퇴 처리 -> 성공 팝업 후 홈으로
+  Future<void> _logout() async {
+    // TODO: 토큰/세션 정리
+    if (!mounted) return;
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(builder: (_) => CloudAnimationScreen()),
+      (route) => false,
+    );
+  }
+
   Future<void> _withdrawFlow() async {
     final pw = await _askCurrentPassword();
     if (pw == null) return;
@@ -71,15 +77,13 @@ class _SettingsPageState extends State<SettingsPage> {
 
     await _showSuccessGoHome(message: '탈퇴되었습니다!\n메인 화면으로 돌아갑니다');
     if (!mounted) return;
-
-    // ✅ 탈퇴 후 home_screen.dart로 이동
     Navigator.of(context).pushAndRemoveUntil(
       MaterialPageRoute(builder: (_) => CloudAnimationScreen()),
       (route) => false,
     );
   }
 
-  // -------- 팝업 1: 현재 비밀번호 입력 --------
+  // -------- 공통 다이얼로그들 --------
   Future<String?> _askCurrentPassword() async {
     final controller = TextEditingController();
     return showDialog<String?>(
@@ -172,7 +176,6 @@ class _SettingsPageState extends State<SettingsPage> {
     );
   }
 
-  // -------- 팝업 2: 실패 --------
   Future<void> _showFailureDialog({
     required String message,
     String? titleImage,
@@ -250,7 +253,6 @@ class _SettingsPageState extends State<SettingsPage> {
     );
   }
 
-  // -------- 팝업 3: 확인(예/아니요) --------
   Future<bool?> _showConfirmDialog({
     required String message,
     String? titleImage,
@@ -366,7 +368,6 @@ class _SettingsPageState extends State<SettingsPage> {
     );
   }
 
-  // -------- 팝업 4: 성공 후 홈으로 --------
   Future<void> _showSuccessGoHome({required String message}) async {
     await showDialog<void>(
       context: context,
@@ -420,6 +421,7 @@ class _SettingsPageState extends State<SettingsPage> {
     );
   }
 
+  // ================= UI =================
   @override
   Widget build(BuildContext context) {
     return ParentLayout(
@@ -480,6 +482,13 @@ class _SettingsPageState extends State<SettingsPage> {
                             onChanged:
                                 (v) => setState(() => agreePush = v ?? false),
                           ),
+                          _checkRow(
+                            label: '자녀 학습 시간 제한 기능 사용 여부',
+                            value: agreeTimeLimit,
+                            onChanged:
+                                (v) =>
+                                    setState(() => agreeTimeLimit = v ?? false),
+                          ),
                           const SizedBox(height: 22),
                           _sectionTitle('언어설정'),
                           const SizedBox(height: 8),
@@ -489,13 +498,33 @@ class _SettingsPageState extends State<SettingsPage> {
                       ),
                     ),
                   ),
-
                   const SizedBox(height: 18),
 
-                  // 하단 버튼들
+                  // 하단 버튼들: 좌측 로그아웃 / 우측 탈퇴·저장
                   Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
                     children: [
+                      // 좌측
+                      SizedBox(
+                        height: 46,
+                        child: FilledButton(
+                          onPressed: _logout,
+                          style: FilledButton.styleFrom(
+                            backgroundColor: const Color(0xFFBDBDBD),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                          ),
+                          child: const Padding(
+                            padding: EdgeInsets.symmetric(horizontal: 18),
+                            child: Text(
+                              '로그아웃',
+                              style: TextStyle(color: Colors.white),
+                            ),
+                          ),
+                        ),
+                      ),
+                      const Spacer(),
+                      // 우측
                       SizedBox(
                         height: 46,
                         child: FilledButton(
@@ -570,7 +599,7 @@ class _SettingsPageState extends State<SettingsPage> {
           Checkbox(
             value: value,
             onChanged: onChanged,
-            shape: const CircleBorder(),
+            shape: const CircleBorder(), // ◯ 스크린샷 느낌
           ),
           const SizedBox(width: 6),
           Text(
