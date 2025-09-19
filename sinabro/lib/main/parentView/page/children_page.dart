@@ -1,9 +1,22 @@
 // lib/main/parentView/page/children_page.dart
+/*
+ * 파일: lib/main/parentView/page/children_page.dart
+ * 개요: 부모용 ‘자녀페이지’ 목록 화면. 사이드바(ParentLayout) 내 자녀 리스트를 보여주고,
+ *       자녀 추가/상세(리포트)로 이동하는 허브 역할.
+ */
+
 import 'package:flutter/material.dart';
 import 'package:sinabro/main/parentView/layout/parent_layout.dart';
 import 'package:sinabro/main/parentView/page/add_child_form.dart';
 import 'package:sinabro/main/parentView/api/parent_api.dart'; // ChildSummary
 import 'package:sinabro/main/parentView/page/children_state.dart'; // 세션 + 상태 저장소
+import 'package:sinabro/main/parentView/page/child_report_page.dart';
+
+// ── 숫자만 뽑아 나이(int)로 변환 (예: "7세" -> 7, 실패 시 0)
+int _parseAgeFromLabel(String label) {
+  final m = RegExp(r'\d+').firstMatch(label);
+  return m == null ? 0 : int.tryParse(m.group(0)!) ?? 0;
+}
 
 class ChildrenPage extends StatefulWidget {
   final String? parentUserId; // (옵션) 외부에서 명시 전달 가능
@@ -22,13 +35,11 @@ class _ChildrenPageState extends State<ChildrenPage> {
   @override
   void initState() {
     super.initState();
-    // 목록 로딩(전달 uid가 비었으면 세션/저장값으로 자동 복구)
-    _store.loadOnce(widget.parentUserId);
-    // 이름 보장
-    _nameFuture = _ensureName();
+    _store.loadOnce(widget.parentUserId); // 목록 로딩(전달 uid 없으면 세션/저장값)
+    _nameFuture = _ensureName(); // 이름 보장
   }
 
-  // 전달값 → 세션 순으로 uid를 안전하게 얻는다.
+  // 전달값 → 세션 순으로 uid 얻기
   String _resolvedUid() {
     final fromProp = (widget.parentUserId ?? '').trim();
     if (fromProp.isNotEmpty) return fromProp;
@@ -36,20 +47,15 @@ class _ChildrenPageState extends State<ChildrenPage> {
   }
 
   Future<String> _ensureName() async {
-    // 1) prop 우선
     final propName = (widget.parentDisplayName ?? '').trim();
     if (propName.isNotEmpty) return propName;
 
-    // 2) 세션 캐시
     final sessName = (_store.sessionUserName ?? '').trim();
     if (sessName.isNotEmpty) return sessName;
 
-    // 3) 서버 조회
     final uid = _resolvedUid();
     if (uid.isEmpty) return '부모';
     final name = await ParentApi.fetchParentName(uid);
-
-    // 조회한 이름을 세션에 캐시(옵션)
     if (name.trim().isNotEmpty) {
       await _store.setSession(userId: uid, userName: name.trim());
     }
@@ -64,7 +70,6 @@ class _ChildrenPageState extends State<ChildrenPage> {
       ).showSnackBar(const SnackBar(content: Text('로그인 정보를 확인해주세요.')));
       return;
     }
-
     final ok = await Navigator.push<bool>(
       context,
       MaterialPageRoute(builder: (_) => AddChildFormPage(parentUserId: uid)),
@@ -87,12 +92,9 @@ class _ChildrenPageState extends State<ChildrenPage> {
         builder: (_, __) {
           final uid = _resolvedUid();
 
-          // 아직 세션 복구 중이면 로딩 먼저
           if (uid.isEmpty && _store.loading) {
             return const Center(child: CircularProgressIndicator());
           }
-
-          // uid가 끝내 비어 있으면 에러 안내
           if (uid.isEmpty) {
             return _ErrorView(
               message: '로그인 정보가 없습니다. (userId 비어 있음)',
@@ -102,8 +104,6 @@ class _ChildrenPageState extends State<ChildrenPage> {
               },
             );
           }
-
-          // 최초 로딩 중
           if (_store.loading && _store.items.isEmpty) {
             return const Center(child: CircularProgressIndicator());
           }
@@ -202,9 +202,30 @@ class _ChildList extends StatelessWidget {
                 ),
                 itemBuilder: (_, i) {
                   final c = items[i];
+
+                  // ⚠ ChildSummary 필드명은 프로젝트에 맞춰 조정하세요.
+                  // 예) final lvl = c.level ?? 1; final prog = c.progressToNext ?? 0.0;
+                  final age = _parseAgeFromLabel(c.displayAge);
+                  const lvl = 1; // 값 없으면 기본값
+                  const prog = 0.0; // 값 없으면 기본값(0%)
+
                   return _ChildCard(
                     name: c.displayName,
                     ageLabel: c.displayAge,
+                    onTap: () {
+                      Navigator.of(context, rootNavigator: true).push(
+                        MaterialPageRoute(
+                          builder:
+                              (_) => ChildReportPage(
+                                // parentUserId는 옵션이라 생략 가능 (필요하면 전달)
+                                childName: c.displayName,
+                                childAge: age,
+                                level: lvl,
+                                progressToNext: prog,
+                              ),
+                        ),
+                      );
+                    },
                   );
                 },
               ),
@@ -219,7 +240,13 @@ class _ChildList extends StatelessWidget {
 class _ChildCard extends StatelessWidget {
   final String name;
   final String ageLabel;
-  const _ChildCard({required this.name, required this.ageLabel});
+  final VoidCallback onTap;
+
+  const _ChildCard({
+    required this.name,
+    required this.ageLabel,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -228,9 +255,7 @@ class _ChildCard extends StatelessWidget {
       borderRadius: BorderRadius.circular(12),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
-        onTap: () {
-          // TODO: 상세/리포트 이동
-        },
+        onTap: onTap,
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
           child: Column(

@@ -1,3 +1,9 @@
+/*
+ * 파일: lib/main/parentView/page/mypage.dart (MyPage)
+ * 개요: 부모용 "마이페이지" 진입 게이트 화면. ParentLayout 하위에서
+ *      비밀번호 재확인을 받아 프로필/계정 수정 화면(MyInfoEditPage)로 이동시킨다.
+ */
+
 import 'package:flutter/material.dart';
 import 'package:sinabro/main/parentView/layout/parent_layout.dart';
 import 'package:sinabro/main/parentView/page/myinfo_edit_page.dart';
@@ -30,9 +36,9 @@ class _MyPageState extends State<MyPage> {
 
   Future<void> _onVerify() async {
     if (_pwController.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('비밀번호를 입력해주세요.')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('비밀번호를 입력해주세요.')));
       return;
     }
 
@@ -182,18 +188,19 @@ class _MyPageState extends State<MyPage> {
                                   borderRadius: BorderRadius.circular(8),
                                 ),
                               ),
-                              child: _verifying
-                                  ? const SizedBox(
-                                      width: 18,
-                                      height: 18,
-                                      child: CircularProgressIndicator(
-                                        strokeWidth: 2,
-                                        valueColor: AlwaysStoppedAnimation(
-                                          Colors.white,
+                              child:
+                                  _verifying
+                                      ? const SizedBox(
+                                        width: 18,
+                                        height: 18,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                          valueColor: AlwaysStoppedAnimation(
+                                            Colors.white,
+                                          ),
                                         ),
-                                      ),
-                                    )
-                                  : const Text('확인'),
+                                      )
+                                      : const Text('확인'),
                             ),
                           ),
                         ],

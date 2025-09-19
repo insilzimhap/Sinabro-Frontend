@@ -3,11 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:sinabro/main/parentView/layout/parent_layout.dart';
 import 'package:sinabro/main/parentView/page/mypage.dart';
 
-/// 자녀 프로필 수정 (뷰 전용 / 서버 미연동)
 class ChildProfileEditPage extends StatefulWidget {
   final String? parentUserId;
 
-  /// 데모용 기본값들
+  // 데모용 기본값
   final String childId;
   final String childName;
   final String childPhone;
@@ -27,33 +26,34 @@ class ChildProfileEditPage extends StatefulWidget {
 class _ChildProfileEditPageState extends State<ChildProfileEditPage> {
   late final TextEditingController _nameCtl;
   late final TextEditingController _idCtl;
-  late final TextEditingController _phoneCtl;
+  final TextEditingController _nickCtl = TextEditingController();
   final TextEditingController _pwCtl = TextEditingController();
   final TextEditingController _pw2Ctl = TextEditingController();
+
+  int _year = DateTime.now().year;
+  int _month = 1;
+  int _day = 1;
+  int _limitMinutes = 30;
 
   @override
   void initState() {
     super.initState();
     _nameCtl = TextEditingController(text: widget.childName);
     _idCtl = TextEditingController(text: widget.childId);
-    _phoneCtl = TextEditingController(text: widget.childPhone);
   }
 
   @override
   void dispose() {
     _nameCtl.dispose();
     _idCtl.dispose();
-    _phoneCtl.dispose();
+    _nickCtl.dispose();
     _pwCtl.dispose();
     _pw2Ctl.dispose();
     super.dispose();
   }
 
-  // ---------------- Actions ----------------
-
-  // 수정 완료
+  // ───────── Actions ─────────
   Future<void> _save() async {
-    // 서버 연동 전: 간단 유효성만 체크
     if (_nameCtl.text.trim().isEmpty) {
       _toast('이름을 입력해 주세요.');
       return;
@@ -69,7 +69,6 @@ class _ChildProfileEditPageState extends State<ChildProfileEditPage> {
       }
     }
 
-    // 저장 성공 팝업 -> 이전화면으로 복귀
     await _showNiceDialog(
       title: '수정 성공',
       message: '정보가 성공적으로 수정되었습니다!',
@@ -79,13 +78,10 @@ class _ChildProfileEditPageState extends State<ChildProfileEditPage> {
     Navigator.pop(context, true);
   }
 
-  // 자녀 삭제 플로우
   Future<void> _deleteFlow() async {
-    // 1) 부모 비밀번호 입력
     final parentPw = await _askParentPassword();
     if (parentPw == null) return;
 
-    // 데모 검증: "1234"면 성공, 아니면 실패
     if (parentPw != '1234') {
       await _showNiceDialog(
         title: '실패',
@@ -95,7 +91,6 @@ class _ChildProfileEditPageState extends State<ChildProfileEditPage> {
       return;
     }
 
-    // 2) 정말 삭제하시겠습니까?
     final ok = await _confirmDialog(
       title: '주의',
       message: '정말 삭제하시겠습니까?',
@@ -104,27 +99,23 @@ class _ChildProfileEditPageState extends State<ChildProfileEditPage> {
     );
     if (ok != true) return;
 
-    // 3) 삭제 완료 안내 → 부모 페이지(마이페이지)로 이동
     await _showNiceDialog(
       title: '',
-      message: '탈퇴되었습니다!\\n부모 페이지로 돌아갑니다',
+      message: '탈퇴되었습니다!\n부모 페이지로 돌아갑니다',
       icon: Icons.info_outline,
     );
     if (!mounted) return;
 
-    // 부모 페이지(마이페이지)로 완전 이동
     Navigator.of(context).pushAndRemoveUntil(
       MaterialPageRoute(builder: (_) => const MyPage()),
       (_) => false,
     );
   }
 
-  void _toast(String msg) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
-  }
+  void _toast(String msg) =>
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
 
-  // ---------------- Dialog Helpers ----------------
-
+  // ───────── Dialog Helpers ─────────
   Future<void> _showNiceDialog({
     required String title,
     required String message,
@@ -133,57 +124,63 @@ class _ChildProfileEditPageState extends State<ChildProfileEditPage> {
     await showDialog<void>(
       context: context,
       barrierDismissible: true,
-      builder: (_) => Dialog(
-        insetPadding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        child: Container(
-          decoration: BoxDecoration(
-            color: const Color(0xFFE7F6E9),
-            border: Border.all(color: const Color(0xFF53A866), width: 3),
-            borderRadius: BorderRadius.circular(16),
-          ),
-          padding: const EdgeInsets.fromLTRB(20, 18, 20, 24),
-          child: Stack(
-            children: [
-              Positioned(
-                right: 0,
-                top: 0,
-                child: IconButton(
-                  icon: const Icon(Icons.close, color: Color(0xFF2E7D32)),
-                  onPressed: () => Navigator.pop(context),
-                ),
+      builder:
+          (_) => Dialog(
+            insetPadding: const EdgeInsets.symmetric(
+              horizontal: 32,
+              vertical: 24,
+            ),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Container(
+              decoration: BoxDecoration(
+                color: const Color(0xFFE7F6E9),
+                border: Border.all(color: const Color(0xFF53A866), width: 3),
+                borderRadius: BorderRadius.circular(16),
               ),
-              Column(
-                mainAxisSize: MainAxisSize.min,
+              padding: const EdgeInsets.fromLTRB(20, 18, 20, 24),
+              child: Stack(
                 children: [
-                  const SizedBox(height: 6),
-                  Icon(icon, size: 48, color: const Color(0xFF2E7D32)),
-                  const SizedBox(height: 14),
-                  if (title.isNotEmpty)
-                    Text(
-                      title,
-                      style: const TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.w800,
-                        color: Color(0xFF6B5A51),
+                  Positioned(
+                    right: 0,
+                    top: 0,
+                    child: IconButton(
+                      icon: const Icon(Icons.close, color: Color(0xFF2E7D32)),
+                      onPressed: () => Navigator.pop(context),
+                    ),
+                  ),
+                  Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const SizedBox(height: 6),
+                      Icon(icon, size: 48, color: const Color(0xFF2E7D32)),
+                      const SizedBox(height: 14),
+                      if (title.isNotEmpty)
+                        Text(
+                          title,
+                          style: const TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.w800,
+                            color: Color(0xFF6B5A51),
+                          ),
+                        ),
+                      if (title.isNotEmpty) const SizedBox(height: 10),
+                      Text(
+                        message,
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w700,
+                          color: Color(0xFF6B5A51),
+                        ),
                       ),
-                    ),
-                  if (title.isNotEmpty) const SizedBox(height: 10),
-                  Text(
-                    message,
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w700,
-                      color: Color(0xFF6B5A51),
-                    ),
+                    ],
                   ),
                 ],
               ),
-            ],
+            ),
           ),
-        ),
-      ),
     );
   }
 
@@ -192,79 +189,89 @@ class _ChildProfileEditPageState extends State<ChildProfileEditPage> {
     return showDialog<String?>(
       context: context,
       barrierDismissible: true,
-      builder: (_) => Dialog(
-        insetPadding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        child: Container(
-          decoration: BoxDecoration(
-            color: const Color(0xFFE7F6E9),
-            border: Border.all(color: const Color(0xFF53A866), width: 3),
-            borderRadius: BorderRadius.circular(16),
-          ),
-          padding: const EdgeInsets.fromLTRB(20, 18, 20, 24),
-          child: Stack(
-            children: [
-              Positioned(
-                right: 0,
-                top: 0,
-                child: IconButton(
-                  icon: const Icon(Icons.close, color: Color(0xFF2E7D32)),
-                  onPressed: () => Navigator.pop(context, null),
-                ),
+      builder:
+          (_) => Dialog(
+            insetPadding: const EdgeInsets.symmetric(
+              horizontal: 32,
+              vertical: 24,
+            ),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Container(
+              decoration: BoxDecoration(
+                color: const Color(0xFFE7F6E9),
+                border: Border.all(color: const Color(0xFF53A866), width: 3),
+                borderRadius: BorderRadius.circular(16),
               ),
-              Column(
-                mainAxisSize: MainAxisSize.min,
+              padding: const EdgeInsets.fromLTRB(20, 18, 20, 24),
+              child: Stack(
                 children: [
-                  const SizedBox(height: 8),
-                  const Text(
-                    '부모의 비밀번호를 입력해주십시오',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w800,
-                      color: Color(0xFF6B5A51),
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 16),
-                  SizedBox(
-                    width: 360,
-                    child: TextField(
-                      controller: ctl,
-                      obscureText: true,
-                      decoration: const InputDecoration(
-                        isDense: true,
-                        filled: true,
-                        fillColor: Colors.white,
-                        contentPadding:
-                            EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.all(Radius.circular(10)),
-                        ),
-                      ),
+                  Positioned(
+                    right: 0,
+                    top: 0,
+                    child: IconButton(
+                      icon: const Icon(Icons.close, color: Color(0xFF2E7D32)),
+                      onPressed: () => Navigator.pop(context, null),
                     ),
                   ),
-                  const SizedBox(height: 16),
-                  SizedBox(
-                    width: 160,
-                    height: 44,
-                    child: ElevatedButton(
-                      onPressed: () => Navigator.pop(context, ctl.text),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF6DBF73),
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(22),
+                  Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const SizedBox(height: 8),
+                      const Text(
+                        '부모의 비밀번호를 입력해주십시오',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w800,
+                          color: Color(0xFF6B5A51),
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 16),
+                      SizedBox(
+                        width: 360,
+                        child: TextField(
+                          controller: ctl,
+                          obscureText: true,
+                          decoration: const InputDecoration(
+                            isDense: true,
+                            filled: true,
+                            fillColor: Colors.white,
+                            contentPadding: EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 14,
+                            ),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.all(
+                                Radius.circular(10),
+                              ),
+                            ),
+                          ),
                         ),
                       ),
-                      child: const Text('확인'),
-                    ),
+                      const SizedBox(height: 16),
+                      SizedBox(
+                        width: 160,
+                        height: 44,
+                        child: ElevatedButton(
+                          onPressed: () => Navigator.pop(context, ctl.text),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF6DBF73),
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(22),
+                            ),
+                          ),
+                          child: const Text('확인'),
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
-            ],
+            ),
           ),
-        ),
-      ),
     );
   }
 
@@ -277,102 +284,107 @@ class _ChildProfileEditPageState extends State<ChildProfileEditPage> {
     return showDialog<bool>(
       context: context,
       barrierDismissible: true,
-      builder: (_) => Dialog(
-        insetPadding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        child: Container(
-          decoration: BoxDecoration(
-            color: const Color(0xFFE7F6E9),
-            border: Border.all(color: const Color(0xFF53A866), width: 3),
-            borderRadius: BorderRadius.circular(16),
-          ),
-          padding: const EdgeInsets.fromLTRB(20, 18, 20, 24),
-          child: Stack(
-            children: [
-              Positioned(
-                right: 0,
-                top: 0,
-                child: IconButton(
-                  icon: const Icon(Icons.close, color: Color(0xFF2E7D32)),
-                  onPressed: () => Navigator.pop(context, false),
-                ),
+      builder:
+          (_) => Dialog(
+            insetPadding: const EdgeInsets.symmetric(
+              horizontal: 32,
+              vertical: 24,
+            ),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Container(
+              decoration: BoxDecoration(
+                color: const Color(0xFFE7F6E9),
+                border: Border.all(color: const Color(0xFF53A866), width: 3),
+                borderRadius: BorderRadius.circular(16),
               ),
-              Column(
-                mainAxisSize: MainAxisSize.min,
+              padding: const EdgeInsets.fromLTRB(20, 18, 20, 24),
+              child: Stack(
                 children: [
-                  const SizedBox(height: 6),
-                  const Icon(
-                    Icons.warning_amber_rounded,
-                    size: 48,
-                    color: Color(0xFF2E7D32),
-                  ),
-                  const SizedBox(height: 12),
-                  Text(
-                    title,
-                    style: const TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.w800,
-                      color: Color(0xFF6B5A51),
+                  Positioned(
+                    right: 0,
+                    top: 0,
+                    child: IconButton(
+                      icon: const Icon(Icons.close, color: Color(0xFF2E7D32)),
+                      onPressed: () => Navigator.pop(context, false),
                     ),
                   ),
-                  const SizedBox(height: 12),
-                  Text(
-                    message,
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w800,
-                      color: Color(0xFF6B5A51),
-                    ),
-                  ),
-                  const SizedBox(height: 18),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
+                  Column(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      SizedBox(
-                        width: 120,
-                        height: 44,
-                        child: ElevatedButton(
-                          onPressed: () => Navigator.pop(context, true),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF6DBF73),
-                            foregroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(22),
-                            ),
-                          ),
-                          child: Text(yesText),
+                      const SizedBox(height: 6),
+                      const Icon(
+                        Icons.warning_amber_rounded,
+                        size: 48,
+                        color: Color(0xFF2E7D32),
+                      ),
+                      const SizedBox(height: 12),
+                      Text(
+                        title,
+                        style: const TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.w800,
+                          color: Color(0xFF6B5A51),
                         ),
                       ),
-                      const SizedBox(width: 16),
-                      SizedBox(
-                        width: 120,
-                        height: 44,
-                        child: ElevatedButton(
-                          onPressed: () => Navigator.pop(context, false),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF6DBF73),
-                            foregroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(22),
+                      const SizedBox(height: 12),
+                      Text(
+                        message,
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w800,
+                          color: Color(0xFF6B5A51),
+                        ),
+                      ),
+                      const SizedBox(height: 18),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          SizedBox(
+                            width: 120,
+                            height: 44,
+                            child: ElevatedButton(
+                              onPressed: () => Navigator.pop(context, true),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFF6DBF73),
+                                foregroundColor: Colors.white,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(22),
+                                ),
+                              ),
+                              child: Text(yesText),
                             ),
                           ),
-                          child: Text(noText),
-                        ),
+                          const SizedBox(width: 16),
+                          SizedBox(
+                            width: 120,
+                            height: 44,
+                            child: ElevatedButton(
+                              onPressed: () => Navigator.pop(context, false),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFF6DBF73),
+                                foregroundColor: Colors.white,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(22),
+                                ),
+                              ),
+                              child: Text(noText),
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
                 ],
               ),
-            ],
+            ),
           ),
-        ),
-      ),
     );
   }
 
-  // ---------------- UI ----------------
-
+  // ───────── UI ─────────
   @override
   Widget build(BuildContext context) {
     return ParentLayout(
@@ -385,12 +397,14 @@ class _ChildProfileEditPageState extends State<ChildProfileEditPage> {
             constraints: const BoxConstraints(maxWidth: 1100),
             child: Padding(
               padding: const EdgeInsets.fromLTRB(16, 20, 16, 24),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
+              // ✅ 스크롤 가능하도록 Column → ListView 변경
+              child: ListView(
+                physics: const AlwaysScrollableScrollPhysics(),
                 children: [
                   _headerBar(),
                   const SizedBox(height: 16),
                   _formCard(),
+                  const SizedBox(height: 24),
                 ],
               ),
             ),
@@ -432,35 +446,56 @@ class _ChildProfileEditPageState extends State<ChildProfileEditPage> {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // 아바타
+            // 왼쪽 프로필
             Column(
-              children: const [
-                CircleAvatar(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                const CircleAvatar(
                   radius: 56,
                   backgroundColor: Color(0xFFE0E0E0),
                   child: Icon(Icons.person, size: 60, color: Colors.white),
                 ),
-                SizedBox(height: 10),
-                Text('자녀 회원', style: TextStyle(color: Colors.black45)),
+                const SizedBox(height: 10),
+                const Text('자녀 회원', style: TextStyle(color: Colors.black45)),
+                const SizedBox(height: 6),
+                Text(
+                  '${widget.childName} 님',
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w800,
+                    color: Color(0xFF6B564C),
+                  ),
+                ),
               ],
             ),
             const SizedBox(width: 26),
 
-            // 폼
+            // 오른쪽 폼
             Expanded(
               child: Column(
                 children: [
                   _row('이름', _input(_nameCtl)),
                   _row('아이디', _input(_idCtl, readOnly: true)),
-                  _row('전화번호', _input(_phoneCtl, hint: '010-0000-0000')),
+                  _row('닉네임', _input(_nickCtl, hint: '표시할 닉네임')),
+                  _row('생일', _birthDropdowns()),
                   _row(
                     '비밀번호',
-                    _input(_pwCtl, hint: '8자 이상 16자 이상', obscure: true),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _input(_pwCtl, hint: '변경 시에만 입력해주십시오.', obscure: true),
+                        const SizedBox(height: 6),
+                        const Text(
+                          '8자 이상 16자 이하',
+                          style: TextStyle(fontSize: 12, color: Colors.grey),
+                        ),
+                      ],
+                    ),
                   ),
                   _row('재입력', _input(_pw2Ctl, obscure: true)),
+                  _row('제한시간', _limitDropdown()),
                   const SizedBox(height: 10),
 
-                  // 하단 버튼
                   Row(
                     mainAxisAlignment: MainAxisAlignment.end,
                     children: [
@@ -537,6 +572,25 @@ class _ChildProfileEditPageState extends State<ChildProfileEditPage> {
     );
   }
 
+  InputDecoration get _decoration => InputDecoration(
+    isDense: true,
+    filled: true,
+    fillColor: const Color(0xFFF7F7F7),
+    contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+    border: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(10),
+      borderSide: const BorderSide(color: Color(0xFFE1E1E1)),
+    ),
+    enabledBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(10),
+      borderSide: const BorderSide(color: Color(0xFFE1E1E1)),
+    ),
+    focusedBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(10),
+      borderSide: const BorderSide(color: Color(0xFFB7CDB8)),
+    ),
+  );
+
   Widget _input(
     TextEditingController c, {
     bool obscure = false,
@@ -547,28 +601,107 @@ class _ChildProfileEditPageState extends State<ChildProfileEditPage> {
       controller: c,
       obscureText: obscure,
       readOnly: readOnly,
-      decoration: InputDecoration(
-        hintText: hint,
-        isDense: true,
-        filled: true,
-        fillColor: const Color(0xFFF7F7F7),
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: Color(0xFFE1E1E1)),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: Color(0xFFE1E1E1)),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: Color(0xFFB7CDB8)),
-        ),
-      ),
-      keyboardType:
-          (hint == '010-0000-0000') ? TextInputType.phone : TextInputType.text,
+      decoration: _decoration.copyWith(hintText: hint),
     );
+  }
+
+  Widget _birthDropdowns() {
+    return Row(
+      children: [
+        Expanded(child: _yearDropdown()),
+        const SizedBox(width: 12),
+        Expanded(child: _monthDropdown()),
+        const SizedBox(width: 12),
+        Expanded(child: _dayDropdown()),
+      ],
+    );
+  }
+
+  Widget _yearDropdown() {
+    final years = List<int>.generate(40, (i) => DateTime.now().year - i);
+    final value = years.contains(_year) ? _year : years.first;
+    return DropdownButtonFormField<int>(
+      value: value,
+      items:
+          years
+              .map((y) => DropdownMenuItem(value: y, child: Text('$y년')))
+              .toList(),
+      onChanged: (v) {
+        if (v == null) return;
+        final maxDay = _daysInMonth(v, _month);
+        setState(() {
+          _year = v;
+          if (_day > maxDay) _day = maxDay;
+        });
+      },
+      decoration: _decoration,
+    );
+  }
+
+  Widget _monthDropdown() {
+    return DropdownButtonFormField<int>(
+      value: _month,
+      items:
+          List<int>.generate(12, (i) => i + 1)
+              .map(
+                (m) => DropdownMenuItem(
+                  value: m,
+                  child: Text('${m.toString().padLeft(2, '0')}월'),
+                ),
+              )
+              .toList(),
+      onChanged: (v) {
+        if (v == null) return;
+        final maxDay = _daysInMonth(_year, v);
+        setState(() {
+          _month = v;
+          if (_day > maxDay) _day = maxDay;
+        });
+      },
+      decoration: _decoration,
+    );
+  }
+
+  Widget _dayDropdown() {
+    final maxDay = _daysInMonth(_year, _month);
+    final days = List<int>.generate(maxDay, (i) => i + 1);
+    if (_day > maxDay) _day = maxDay;
+
+    return DropdownButtonFormField<int>(
+      value: _day,
+      items:
+          days
+              .map(
+                (d) => DropdownMenuItem(
+                  value: d,
+                  child: Text('${d.toString().padLeft(2, '0')}일'),
+                ),
+              )
+              .toList(),
+      onChanged: (v) => setState(() => _day = v ?? _day),
+      decoration: _decoration,
+    );
+  }
+
+  Widget _limitDropdown() {
+    const options = [30, 60, 90, 120];
+    return DropdownButtonFormField<int>(
+      value: _limitMinutes,
+      items:
+          options
+              .map((m) => DropdownMenuItem(value: m, child: Text('$m분')))
+              .toList(),
+      onChanged: (v) => setState(() => _limitMinutes = v ?? _limitMinutes),
+      decoration: _decoration,
+    );
+  }
+
+  int _daysInMonth(int y, int m) {
+    if (m == 2) {
+      final leap = (y % 4 == 0 && y % 100 != 0) || (y % 400 == 0);
+      return leap ? 29 : 28;
+    }
+    const monthDays = [31, -1, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+    return monthDays[m - 1];
   }
 }

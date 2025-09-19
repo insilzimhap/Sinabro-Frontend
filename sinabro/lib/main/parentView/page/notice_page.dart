@@ -1,4 +1,8 @@
-// lib/main/parentView/page/notice_page.dart
+/*
+ * 파일: lib/main/parentView/page/notice_page.dart (NoticePage)
+ * 개요: 부모용 공지사항 목록 화면. ParentLayout 하위에서 공지 리스트를
+ *      펼침/접힘 UI로 보여준다. 세션/부모정보를 복구해 사이드바/헤더에 반영.
+ */
 import 'package:flutter/material.dart';
 import 'package:sinabro/main/parentView/layout/parent_layout.dart';
 import 'package:sinabro/main/parentView/api/parent_api.dart' as parent_api;
