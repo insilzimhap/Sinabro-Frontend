@@ -37,7 +37,7 @@ class _AddChildFormPageState extends State<AddChildFormPage> {
   int _year = DateTime.now().year; // ← 기본값 즉시 설정
   int _month = 1;
   int _day = 1;
-  int _limitMinutes = 30;
+  int _limitMinutes = 0; // 기본은 "제한 없음"
 
   // 비밀번호 유효성
   bool get _pwValidLength => _pw.text.length >= 8 && _pw.text.length <= 16;
@@ -121,7 +121,7 @@ class _AddChildFormPageState extends State<AddChildFormPage> {
         'name': _name.text.trim(),
         'nickname': _nick.text.trim(),
         'birthDate': birth, // "YYYY-MM-DD"
-        'limitMinutes': _limitMinutes, // 30, 60, 90, 120
+        'timeLimitMinutes': _limitMinutes, // 30, 60, 90, 120
       };
 
       final res = await AuthClient().post(                     // ✅ http.post → AuthClient().post
@@ -439,13 +439,23 @@ class _AddChildFormPageState extends State<AddChildFormPage> {
   }
 
   Widget _limitDropdown() {
-    const options = [30, 60, 90, 120];
+    final options = const [
+      {'label': '제한 없음', 'value': 0},
+      {'label': '30분', 'value': 30},
+      {'label': '1시간', 'value': 60},
+      {'label': '1시간 30분', 'value': 90},
+    ];
+
     return DropdownButtonFormField<int>(
       value: _limitMinutes,
-      items:
-          options
-              .map((m) => DropdownMenuItem(value: m, child: Text('${m}분')))
-              .toList(),
+      items: options
+          .map(
+            (opt) => DropdownMenuItem<int>(
+              value: opt['value'] as int,
+              child: Text(opt['label'] as String),
+            ),
+          )
+          .toList(),
       decoration: _fieldDecoration,
       onChanged: (v) => setState(() => _limitMinutes = v ?? _limitMinutes),
     );

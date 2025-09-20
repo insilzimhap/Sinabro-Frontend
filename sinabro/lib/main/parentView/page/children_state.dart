@@ -9,10 +9,10 @@
 ///
 
 
-
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sinabro/main/parentView/api/parent_api.dart';
+import 'package:sinabro/common/auth_client.dart'; // ★ CHANGED: AuthClient 연동
 
 /// 앱 전역에서 부모 세션 + 자녀목록을 관리하는 경량 스토어
 class ChildrenState extends ChangeNotifier {
@@ -85,8 +85,12 @@ class ChildrenState extends ChangeNotifier {
       _refreshToken = prefs.getString('refreshToken');
       // ignore: avoid_print
       print('[ChildrenState.setParent] 토큰 복구됨: ${_accessToken != null}');
+      // ★ CHANGED: AuthClient에도 동기화(이후 요청에 자동 부착)
+      if (_accessToken != null && _accessToken!.isNotEmpty) {
+        await AuthClient.instance
+            .setAuthToken(_accessToken, refreshToken: _refreshToken);
+      }
     }
-
   }
 
   /// 최초 1회 로드 (페이지 진입 시 호출)
@@ -163,6 +167,9 @@ class ChildrenState extends ChangeNotifier {
     await prefs.setString('accessToken', accessToken);
     if (refreshToken != null) {
       await prefs.setString('refreshToken', refreshToken);
+
+      // ★ CHANGED: AuthClient에도 즉시 반영 → 이후 요청 자동 인증
+      await AuthClient.instance.setAuthToken(accessToken, refreshToken: refreshToken);
     }
 
     // 디버그 로그
@@ -171,6 +178,26 @@ class ChildrenState extends ChangeNotifier {
       '[ChildrenState.setToken] accessToken 저장됨 (length=${accessToken.length})',
     );
     notifyListeners();
+  }
+  
+  // ★ CHANGED: 과거 코드 호환용(부팅 시 토큰 복구 필요할 때 사용)
+  Future<void> _hydrateTokensIfNeeded() async {
+    if (_accessToken != null && _accessToken!.isNotEmpty) return;
+    final prefs = await SharedPreferences.getInstance();
+    _accessToken = prefs.getString('accessToken');
+    _refreshToken = prefs.getString('refreshToken');
+  }
+
+  /// ★ CHANGED: getAccessToken() 레거시 호환
+  Future<String?> getAccessToken() async {
+    await _hydrateTokensIfNeeded();
+    return _accessToken;
+  }
+
+  /// ★ CHANGED: getRefreshToken() 레거시 호환
+  Future<String?> getRefreshToken() async {
+    await _hydrateTokensIfNeeded();
+    return _refreshToken;
   }
 
 }
