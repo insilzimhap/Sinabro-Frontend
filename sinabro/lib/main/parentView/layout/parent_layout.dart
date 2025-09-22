@@ -182,7 +182,9 @@ class _MenuList extends StatelessWidget {
       _MenuItem(
         title: '설정',
         icon: Icons.settings_outlined,
-        destination: psettings.SettingsPage(),
+        destination: psettings.SettingsPage(
+          parentUserId: parentUserId,
+        ),
       ),
     ];
 
