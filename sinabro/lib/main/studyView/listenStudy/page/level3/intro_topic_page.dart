@@ -1,17 +1,18 @@
 import 'package:flutter/material.dart';
 import 'dart:math' as math;
+import 'style.dart';
 
 class IntroTopicPage extends StatefulWidget {
-  final String title;
   final String imagePath;
-  final VoidCallback? onTap;
+  final String title;
+  final VoidCallback onTap;
 
   const IntroTopicPage({
-    Key? key,
-    required this.title,
+    super.key,
     required this.imagePath,
-    this.onTap,
-  }) : super(key: key);
+    required this.title,
+    required this.onTap,
+  });
 
   @override
   State<IntroTopicPage> createState() => _IntroTopicPageState();
@@ -25,7 +26,7 @@ class _IntroTopicPageState extends State<IntroTopicPage>
   void initState() {
     super.initState();
     _controller = AnimationController(
-      duration: const Duration(milliseconds: 600),
+      duration: const Duration(seconds: 2),
       vsync: this,
     )..repeat(reverse: true); // 좌우 왕복
   }
@@ -38,58 +39,40 @@ class _IntroTopicPageState extends State<IntroTopicPage>
 
   @override
   Widget build(BuildContext context) {
-    final w = MediaQuery.of(context).size.width;
-    final h = MediaQuery.of(context).size.height;
-
     return Scaffold(
-      backgroundColor: const Color(0xFFFFF3E5),
-      body: GestureDetector(
+      backgroundColor: AppStyle.background,
+      body: InkWell(
         onTap: widget.onTap,
-        child: Stack(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,   // 세로 중앙
+          crossAxisAlignment: CrossAxisAlignment.center, // 가로 중앙
           children: [
-            // 뒤로가기 버튼
-            Positioned(
-              top: h * 0.02,
-              left: w * 0.02,
-              child: IconButton(
-                icon: const Icon(Icons.arrow_back,
-                    color: Colors.grey, size: 40),
-                onPressed: () => Navigator.pop(context),
+            // 좌우 흔들리는 시계
+            AnimatedBuilder(
+              animation: _controller,
+              builder: (context, child) {
+                // -20px ~ +20px 좌우 이동
+                double dx = math.sin(_controller.value * 2 * math.pi) * 20;
+                return Transform.translate(
+                  offset: Offset(dx, 0),
+                  child: child,
+                );
+              },
+              child: Image.asset(
+                widget.imagePath,
+                height: AppStyle.introImageHeight(context),
+                fit: BoxFit.contain,
               ),
             ),
 
-            // 시계 (x축 이동)
-            Center(
-              child: AnimatedBuilder(
-                animation: _controller,
-                builder: (context, child) {
-                  double dx = 20 * math.sin(_controller.value * 2 * math.pi);
-                  return Transform.translate(
-                    offset: Offset(dx, 0), // x축으로 좌우 이동
-                    child: Image.asset(
-                      widget.imagePath,
-                      width: w * 0.6,
-                      height: w * 0.6,
-                      fit: BoxFit.contain,
-                    ),
-                  );
-                },
-              ),
-            ),
+            SizedBox(height: AppStyle.introSpacing(context)),
 
             // 텍스트
-            Positioned(
-              bottom: h * 0.1,
-              left: w * 0.1,
-              right: w * 0.1,
+            Center(
               child: Text(
                 widget.title,
                 textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: w * 0.06,
-                  fontWeight: FontWeight.bold,
-                  color: const Color(0xFF7C685F),
-                ),
+                style: AppStyle.introTitle(context),
               ),
             ),
           ],

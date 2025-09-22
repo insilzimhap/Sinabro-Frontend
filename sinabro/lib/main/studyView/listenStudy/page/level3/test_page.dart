@@ -28,7 +28,7 @@ class TestPage extends StatelessWidget {
               context,
               MaterialPageRoute(
                 builder: (context) => MainTopicPage(
-                  imagePath: routine.first.imagePath,
+                  topicImagePath: routine.first.topicImagePath, // ✅ 토픽 이미지 사용
                   title: routine.first.topic,
                   onTap: () {
                     // 루틴 전체 실행 시작
@@ -54,7 +54,7 @@ class TestPage extends StatelessWidget {
       context,
       MaterialPageRoute(
         builder: (context) => MainKeywordPage(
-          imagePath: keyword.imagePath,
+          imagePath: keyword.imagePath, // ✅ 키워드 이미지는 여기서
           title: keyword.title,
           onTap: () {
             _startStoryFlow(context, routine, keywordIndex, 0);

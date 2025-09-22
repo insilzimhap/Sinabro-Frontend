@@ -1,17 +1,14 @@
 import 'package:flutter/material.dart';
 import 'style.dart';
-import 'data/routine_data.dart';
-import 'model/routine_content.dart';
-import 'main_keyword_page.dart';
 
 class MainTopicPage extends StatelessWidget {
-  final String imagePath;
+  final String topicImagePath; // 토픽 이미지
   final String title;
   final VoidCallback onTap;
 
   const MainTopicPage({
     super.key,
-    required this.imagePath,
+    required this.topicImagePath,
     required this.title,
     required this.onTap,
   });
@@ -22,36 +19,35 @@ class MainTopicPage extends StatelessWidget {
     final h = MediaQuery.of(context).size.height;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFFFF3E5),
+      backgroundColor: AppStyle.background,
       body: InkWell(
         onTap: onTap,
-        child: Stack(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Positioned(
-              top: h * 0.05,
-              left: w * 0.2,
-              right: w * 0.2,
-              child: Image.asset(
-                imagePath,
-                width: w * 0.6,
-                height: w * 0.6,
-                fit: BoxFit.contain,
-              ),
-            ),
-            Positioned(
-              bottom: h * 0.1,
-              left: w * 0.1,
-              right: w * 0.1,
-              child: Text(
-                title,
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: w * 0.1,
-                  fontWeight: FontWeight.bold,
-                  color: const Color(0xFF7C685F),
+            // 이미지 위로 올리기 → flex 비율 조정
+            Expanded(
+              flex: 7, // 기존보다 조금 줄여서 위쪽 공간 더 확보
+              child: Center(
+                child: Image.asset(
+                  topicImagePath,
+                  height: AppStyle.mainTopicImageHeight(context),
+                  fit: BoxFit.contain,
                 ),
               ),
             ),
+            SizedBox(height: AppStyle.mainTopicSpacing(context)),
+            Expanded(
+              flex: 2, // 텍스트 부분을 작게
+              child: Center(
+                child: Text(
+                  title,
+                  textAlign: TextAlign.center,
+                  style: AppStyle.mainTopicTitle(context),
+                ),
+              ),
+            ),
+            const Spacer(flex: 1), // 아래쪽 여백 확보
           ],
         ),
       ),

@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 import 'style.dart';
-import 'model/routine_content.dart';
-import 'story_page.dart';
 
 class MainKeywordPage extends StatelessWidget {
   final String imagePath;
@@ -17,41 +15,31 @@ class MainKeywordPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final w = MediaQuery.of(context).size.width;
-    final h = MediaQuery.of(context).size.height;
-
     return Scaffold(
-      backgroundColor: const Color(0xFFFFF3E5),
+      backgroundColor: AppStyle.background,
       body: InkWell(
         onTap: onTap,
-        child: Stack(
-          children: [
-            Positioned(
-              top: h * 0.05,
-              left: w * 0.2,
-              right: w * 0.2,
-              child: Image.asset(
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center, // 세로 중앙 정렬
+            children: [
+              // 키워드 이미지
+              Image.asset(
                 imagePath,
-                width: w * 0.6,
-                height: w * 0.6,
+                height: AppStyle.keywordImageHeight(context),
                 fit: BoxFit.contain,
               ),
-            ),
-            Positioned(
-              bottom: h * 0.1,
-              left: w * 0.1,
-              right: w * 0.1,
-              child: Text(
+
+              SizedBox(height: AppStyle.keywordSpacing(context)),
+
+              // 키워드 텍스트
+              Text(
                 title,
                 textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: w * 0.1,
-                  fontWeight: FontWeight.bold,
-                  color: const Color(0xFF7C685F),
-                ),
+                style: AppStyle.keywordTitle(context),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

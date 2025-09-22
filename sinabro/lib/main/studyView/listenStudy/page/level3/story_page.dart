@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'style.dart';
 
 class StoryPage extends StatefulWidget {
   final String imagePath;
@@ -28,30 +29,26 @@ class _StoryPageState extends State<StoryPage> {
 
   @override
   Widget build(BuildContext context) {
-    final w = MediaQuery.of(context).size.width;
-    final h = MediaQuery.of(context).size.height;
-
     return Scaffold(
-      backgroundColor: const Color(0xFFFFF3E5),
+      backgroundColor: AppStyle.background,
       body: Center(
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisAlignment: MainAxisAlignment.center, // 세로 중앙
           children: [
+            // 이미지
             Image.asset(
               widget.imagePath,
-              width: w * 0.5,
-              height: w * 0.5,
+              height: AppStyle.storyImageHeight(context),
               fit: BoxFit.contain,
             ),
-            SizedBox(height: h * 0.05),
+
+            SizedBox(height: AppStyle.storySpacing(context)),
+
+            // 텍스트
             Text(
               widget.text,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: w * 0.06,
-                fontWeight: FontWeight.bold,
-                color: const Color(0xFF7C685F),
-              ),
+              textAlign: TextAlign.center, // 가운데 정렬
+              style: AppStyle.storyTitle(context),
             ),
           ],
         ),
