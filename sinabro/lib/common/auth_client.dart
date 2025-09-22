@@ -64,6 +64,7 @@ class AuthClient extends http.BaseClient {
     RegExp(r'^/api/characters$'),
     RegExp(r'^/api/characters/resolve$'),
     RegExp(r'^/api/character/selection$'),
+    RegExp(r'^/api/character/selection/check$'),
 
     // ───────── notice (permitAll)
     RegExp(r'^/api/app/notices(?:/.*)?$'),

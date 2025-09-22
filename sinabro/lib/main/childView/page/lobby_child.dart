@@ -1,9 +1,3 @@
-/**
- * @file lib/main/childView/page/lobby_child.dart
- * 역할: 자녀 로비. 자녀 정보 조회는 authenticated → AuthClient 사용.
- */
-///
-
 import 'package:flutter/material.dart';
 import 'dart:math';
 import 'package:http/http.dart' as http;
@@ -12,10 +6,10 @@ import 'dart:convert';
 // ✅ 학습 페이지 import
 import 'package:sinabro/main/studyView/writeStudy/page/write_study_page.dart';
 import 'package:sinabro/main/studyView/listenStudy/page/listen_study_page.dart';
+
+// ✅ 한 곳에서 서버 주소 관리 (추가)
 import 'package:sinabro/config.dart';
 
-// 🔐 JWT 자동 부착
-import 'package:sinabro/common/auth_client.dart';
 
 class LobbyChildScreen extends StatefulWidget {
   final String childId;
@@ -28,6 +22,7 @@ class LobbyChildScreen extends StatefulWidget {
 class _LobbyChildScreenState extends State<LobbyChildScreen> {
   String characterName = '';
   String nickname = '';
+  String level = '';
   bool _isLoading = true;
 
   final Map<String, String> characterNameMap = {
@@ -51,28 +46,29 @@ class _LobbyChildScreenState extends State<LobbyChildScreen> {
   @override
   void initState() {
     super.initState();
-    _fetchChildInfo();   // ✅ AuthClient 사용
+    _fetchChildInfo();
     _setRandomMessage();
   }
 
   Future<void> _fetchChildInfo() async {
-
-    final uri = Uri.parse('$baseUrl/api/child/info')
-        .replace(queryParameters: {'childId': widget.childId});
+    final url = '$baseUrl/api/child/info?childId=${widget.childId}';
+    
     try {
-      final response = await AuthClient().get(uri);
+      final response = await http.get(Uri.parse(url));
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         setState(() {
           nickname = data['nickname'] ?? '';
           final characterId = data['characterId'];
           characterName = characterNameMap[characterId] ?? '';
+          level = (data['level'] ?? '').toString(); // ✅ 서버에서 추가한 level
           _isLoading = false;
         });
       } else {
         setState(() {
           nickname = '';
           characterName = '';
+          level = '';
           _isLoading = false;
         });
       }
@@ -80,6 +76,7 @@ class _LobbyChildScreenState extends State<LobbyChildScreen> {
       setState(() {
         nickname = '';
         characterName = '';
+        level = '';
         _isLoading = false;
       });
     }
@@ -218,6 +215,23 @@ class _LobbyChildScreenState extends State<LobbyChildScreen> {
                         Text(
                           nickname.isNotEmpty ? '$nickname님' : '',
                           style: const TextStyle(fontSize: 16, color: Colors.brown),
+                        ),
+
+                        const SizedBox(height: 6),
+
+                        // 아이디 + 레벨 (같은 줄)
+                        Row(
+                          children: [
+                            Text(
+                              'ID: ${widget.childId}',
+                              style: const TextStyle(fontSize: 14, color: Colors.brown),
+                            ),
+                            const SizedBox(width: 12),
+                            Text(
+                              '레벨: ${level.isNotEmpty ? level : "-"}',
+                              style: const TextStyle(fontSize: 14, color: Colors.brown),
+                            ),
+                          ],
                         ),
                       ],
                     ),

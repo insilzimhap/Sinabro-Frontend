@@ -1,8 +1,4 @@
-/**
- * @file lib/main/childView/page/level_test_page.dart
- * 역할: 레벨테스트 화면. 모든 API(authenticated)는 AuthClient로 호출해 JWT 자동 부착.
- */
-///
+// lib/main/childView/page/level_test_page.dart
 
 import 'dart:convert';
 
@@ -12,9 +8,6 @@ import 'package:http/http.dart' as http;
 import 'package:sinabro/config.dart';
 import 'package:sinabro/main/childView/page/select_character.dart';
 import 'package:sinabro/model/level_test_model.dart';
-
-// 🔐 JWT 자동 부착
-import 'package:sinabro/common/auth_client.dart';
 
 class LevelTestPage extends StatefulWidget {
   final String childId;
@@ -36,18 +29,14 @@ class _LevelTestPageState extends State<LevelTestPage> {
   @override
   void initState() {
     super.initState();
-    futureData = fetchLevelTestData(widget.childId); // ✅ AuthClient 버전 사용
+    futureData = fetchLevelTestData(widget.childId);
   }
 
   void _next() => setState(() => stepIndex++);
 
-  // 📤 부모 선택 제출 (authenticated)
   Future<void> _submitParentChoices() async {
-    final uri = Uri.parse(
-        '$baseUrl/api/parent-choice/submit')
-      .replace(queryParameters: {'childId': widget.childId});
-    final res = await AuthClient().post(
-      uri,
+    final res = await http.post(
+      Uri.parse('$baseUrl/api/parent-choice/submit?childId=${widget.childId}'),
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode(parentChoices),
     );
@@ -56,13 +45,9 @@ class _LevelTestPageState extends State<LevelTestPage> {
     }
   }
 
-  // 📤 자녀 선택 제출 (authenticated)
   Future<void> _submitLevelChoices() async {
-    final uri = Uri.parse(
-        '$baseUrl/api/level-test/submit')
-      .replace(queryParameters: {'childId': widget.childId});
-    final res = await AuthClient().post(
-      uri,
+    final res = await http.post(
+      Uri.parse('$baseUrl/api/level-test/submit?childId=${widget.childId}'),
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode(levelChoices),
     );
@@ -452,11 +437,10 @@ class _LevelTestPageState extends State<LevelTestPage> {
 }
 
 // ---------------- API 호출 ----------------
-// 📥 레벨테스트 문항 조회 (authenticated)
 Future<LevelTestResponse> fetchLevelTestData(String childId) async {
-  final uri = Uri.parse('$baseUrl/api/level-test/questions')
-      .replace(queryParameters: {'childId': childId});
-  final response = await AuthClient().get(uri);
+  final response = await http.get(
+    Uri.parse('$baseUrl/api/level-test/questions?childId=$childId'),
+  );
   if (response.statusCode == 200) {
     return LevelTestResponse.fromJson(jsonDecode(response.body));
   } else {
