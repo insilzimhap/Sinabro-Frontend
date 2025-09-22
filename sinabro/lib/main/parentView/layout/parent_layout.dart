@@ -124,7 +124,11 @@ class _ParentSidebar extends StatelessWidget {
 
           // ✅ 메뉴 리스트 (공지사항/마이페이지/자녀페이지/문의사항/설정)
           Expanded(
-            child: _MenuList(activeMenu: activeMenu, collapsed: collapsed),
+            child: _MenuList(
+              activeMenu: activeMenu, 
+              collapsed: collapsed,
+              parentUserId: parentUserId //추가
+            ),
           ),
         ],
       ),
@@ -136,8 +140,9 @@ class _ParentSidebar extends StatelessWidget {
 class _MenuList extends StatelessWidget {
   final String activeMenu;
   final bool collapsed;
+  final String? parentUserId; // ✅ 추가
 
-  const _MenuList({required this.activeMenu, required this.collapsed});
+  const _MenuList({required this.activeMenu, required this.collapsed, required this.parentUserId});
 
   @override
   Widget build(BuildContext context) {
@@ -145,26 +150,34 @@ class _MenuList extends StatelessWidget {
       _MenuItem(
         title: '공지사항',
         icon: Icons.campaign_outlined,
-        destination: NoticePage(),
+        destination: NoticePage(
+          parentUserId: parentUserId,  // 전달
+
+        ),
       ),
       _MenuItem(
         title: '마이페이지',
         icon: Icons.account_circle_outlined,
-        destination: const MyPage(),
+        destination: MyPage(
+          parentUserId: parentUserId,  //전달
+          
+        ),
       ),
       _MenuItem(
         title: '자녀페이지',
         icon: Icons.family_restroom_outlined,
         // ⚠️ ChildrenPage가 필수 파라미터를 요구하면 아래처럼 실제 값 전달해 주세요.
         destination: ChildrenPage(
-          parentUserId: '', // TODO: 상위에서 실제 값 전달
-          parentDisplayName: '', // TODO: 상위에서 실제 값 전달
+          parentUserId: parentUserId ?? '',          // ✅ 전달(빈문자열 폴백)
+          parentDisplayName: '',                     
         ),
       ),
       _MenuItem(
         title: '문의사항',
         icon: Icons.mail_outline,
-        destination: const FaqPage(),
+        destination: FaqPage(
+          parentUserId: parentUserId,
+        ),  //여기서부터는 하면서 넣을게
       ),
       _MenuItem(
         title: '설정',

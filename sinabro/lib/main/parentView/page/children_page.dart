@@ -35,8 +35,24 @@ class _ChildrenPageState extends State<ChildrenPage> {
   @override
   void initState() {
     super.initState();
-    _store.loadOnce(widget.parentUserId); // 목록 로딩(전달 uid 없으면 세션/저장값)
-    _nameFuture = _ensureName(); // 이름 보장
+
+    // ✅ 안전하게: 빌드 이후에 실행
+    // ✅ 변경: 첫 프레임 끝난 뒤 실행
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _store.loadOnce(widget.parentUserId);
+      setState(() {
+        _nameFuture = _ensureName(); //
+      });
+    });
+  }
+
+  /// 🔥 추가: 페이지 다시 들어올 때마다 최신 자녀목록을 불러오기
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _store.refresh();
+    });
   }
 
   // 전달값 → 세션 순으로 uid 얻기
@@ -122,6 +138,7 @@ class _ChildrenPageState extends State<ChildrenPage> {
 
               return _ChildList(
                 parentName: parentName,
+                parentUserId: sidebarUid,
                 items: _store.items,
                 onAdd: _goAdd,
               );
@@ -137,11 +154,13 @@ class _ChildrenPageState extends State<ChildrenPage> {
 
 class _ChildList extends StatelessWidget {
   final String parentName;
+  final String parentUserId;
   final List<ChildSummary> items;
   final VoidCallback onAdd;
 
   const _ChildList({
     required this.parentName,
+    required this.parentUserId,
     required this.items,
     required this.onAdd,
   });
@@ -205,26 +224,35 @@ class _ChildList extends StatelessWidget {
 
                   // ⚠ ChildSummary 필드명은 프로젝트에 맞춰 조정하세요.
                   // 예) final lvl = c.level ?? 1; final prog = c.progressToNext ?? 0.0;
-                  final age = _parseAgeFromLabel(c.displayAge);
+                  final age = c.childAge ?? 0;
                   const lvl = 1; // 값 없으면 기본값
                   const prog = 0.0; // 값 없으면 기본값(0%)
 
                   return _ChildCard(
-                    name: c.displayName,
-                    ageLabel: c.displayAge,
-                    onTap: () {
-                      Navigator.of(context, rootNavigator: true).push(
+                    name: c.childName,
+                    ageLabel: c.childAge != null ? '${c.childAge}세' : '',
+                    onTap: () async{
+                      final updated = await Navigator.of(context, rootNavigator: true).push(
                         MaterialPageRoute(
                           builder:
                               (_) => ChildReportPage(
                                 // parentUserId는 옵션이라 생략 가능 (필요하면 전달)
-                                childName: c.displayName,
-                                childAge: age,
-                                level: lvl,
-                                progressToNext: prog,
+                                parentUserId: parentUserId,
+                                childId: c.childId,
+                                childName: c.childName,  // 초기 표시용
+                                childAge: age,  // 초기 표시용
+                                level: lvl,  // 현재는 임시값
+                                progressToNext: prog,  // 현재는 임시값
                               ),
                         ),
                       );
+                      // ✅ 리포트 → 수정 후 돌아왔으면 새로고침
+                      if (updated == true) {
+                        // 레임 끝난 후 실행 → 빌드 충돌 방지
+                        WidgetsBinding.instance.addPostFrameCallback((_) async {
+                          await ChildrenState.instance.refresh();
+                        });
+                      }
                     },
                   );
                 },

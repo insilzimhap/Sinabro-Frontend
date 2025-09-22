@@ -6,15 +6,21 @@
 
 import 'package:flutter/material.dart';
 import 'package:sinabro/main/parentView/layout/parent_layout.dart';
+import 'dart:convert';
+import 'dart:developer';
+import 'package:sinabro/common/auth_client.dart';
+import 'package:sinabro/config.dart';
+
 
 // ✅ 프로필 수정 페이지 import
 import 'package:sinabro/main/parentView/page/child_profile_edit.dart';
 
 /// 자녀 학습 리포트 페이지 (뷰 전용 / 서버 미연동)
-class ChildReportPage extends StatelessWidget {
+class ChildReportPage extends StatefulWidget {
   final String? parentUserId;
 
   // 화면에 표시할 정보들
+  final String childId; //자녀 아이디
   final String childName; // 예: 박쑥일
   final int childAge; // 예: 7
   final int level; // 예: 2
@@ -29,6 +35,7 @@ class ChildReportPage extends StatelessWidget {
   const ChildReportPage({
     super.key,
     this.parentUserId,
+    required this.childId,
     required this.childName,
     required this.childAge,
     required this.level,
@@ -40,32 +47,98 @@ class ChildReportPage extends StatelessWidget {
   });
 
   @override
+  State<ChildReportPage> createState() => _ChildReportPageState();
+}
+
+class _ChildReportPageState extends State<ChildReportPage> {
+  String? _childName;
+  int? _childAge;
+  dynamic _childLevel; // null → "?" 표시
+
+  bool loading = true;
+  bool _dirty = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _childName = widget.childName;
+    _childAge = widget.childAge;
+    _childLevel = widget.level;
+    // ✅ 수정: 프레임 끝난 뒤 실행
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _fetchProfile();
+    });
+  }
+
+  Future<void> _fetchProfile() async {
+    try {
+      final uri =
+          Uri.parse("$baseUrl/api/app/mypage/children/${widget.childId}");
+      final res = await AuthClient().get(uri);
+      if (res.statusCode == 200) {
+        final data = jsonDecode(res.body);
+        setState(() {
+          _childName = data["childName"] ?? widget.childName;
+          // 나이는 DB에는 없으니 기존 값 사용
+          _childAge   = (data["childAge"] as int?) ?? widget.childAge;
+          _childLevel = data["childLevel"] ?? "?"; // 없으면 "?"
+          loading = false;
+        });
+        log("[리포트] 성공 childId=${widget.childId}");
+      } else {
+        log("[리포트] 실패 code=${res.statusCode}");
+        setState(() => loading = false);
+      }
+    } catch (e) {
+      log("[리포트] 예외 $e");
+      setState(() => loading = false);
+    }
+  }
+
+
+  @override
   Widget build(BuildContext context) {
-    return ParentLayout(
-      activeMenu: '자녀페이지',
-      parentUserId: parentUserId,
-      content: Container(
-        color: const Color(0xFFF9F2F5),
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 1100),
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 20, 16, 24),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  _headerBar(),
-                  const SizedBox(height: 16),
-                  _childHeadline(context), // ⬅️ context 전달
-                  const SizedBox(height: 18),
-                  _cardsArea(context),
-                ],
+    if (loading) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+
+    final childName = _childName ?? widget.childName;
+    final childAge = _childAge ?? widget.childAge;
+    final level = _childLevel ?? "?";
+    final prog = widget.progressToNext;
+    
+    // ★ 추가: 뒤로 갈 때 updated 여부를 부모(ChildrenPage)로 넘김
+    return WillPopScope(
+      onWillPop: () async {
+        Navigator.pop(context, _dirty);
+        return false;
+      },
+      child: ParentLayout(
+        activeMenu: '자녀페이지',
+        parentUserId: widget.parentUserId,
+        content: Container(
+          color: const Color(0xFFF9F2F5),
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 1100),
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 20, 16, 24),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    _headerBar(),
+                    const SizedBox(height: 16),
+                    _childHeadline(context, childName, childAge, level, prog),
+                    const SizedBox(height: 18),
+                    _cardsArea(context, level, prog),
+                  ],
+                ),
               ),
             ),
           ),
         ),
       ),
-    );
+    ); 
   }
 
   /// 상단 큰 녹색 바
@@ -90,7 +163,8 @@ class ChildReportPage extends StatelessWidget {
   }
 
   /// 이름/나이/레벨/프로필수정 버튼 / 진행도
-  Widget _childHeadline(BuildContext context) {
+  Widget _childHeadline(BuildContext context, String childName, int childAge,
+                                            dynamic level, double progressToNext) {
     final percent = (progressToNext * 100).clamp(0, 100).toStringAsFixed(0);
 
     return Card(
@@ -120,19 +194,24 @@ class ChildReportPage extends StatelessWidget {
                   child: OutlinedButton(
                     onPressed: () async {
                       // ✅ 프로필 편집으로 이동 (데모 값 사용)
-                      await Navigator.push<bool>(
+                      final updated = await Navigator.push<bool>(
                         context,
                         MaterialPageRoute(
                           builder:
                               (_) => ChildProfileEditPage(
-                                parentUserId: parentUserId,
-                                childId: 'Sung1_park', // TODO: 실제 값으로 교체
+                                parentUserId: widget.parentUserId,
+                                childId: widget.childId,
                                 childName: childName,
-                                childPhone: '010-0000-0000', // TODO: 실제 값으로 교체
                               ),
                         ),
                       );
-                      // pop(true) 등을 받으면 필요 시 목록 갱신 로직 추가
+                      // ✅ 수정 완료 후 돌아오면 다시 프로필 불러오기
+                      if (updated == true && mounted) {
+                        WidgetsBinding.instance.addPostFrameCallback((_) {
+                          _dirty = true;
+                          _fetchProfile();
+                        });
+                      }
                     },
                     style: OutlinedButton.styleFrom(
                       side: const BorderSide(color: Color(0xFF6DBF73)),
@@ -160,7 +239,7 @@ class ChildReportPage extends StatelessWidget {
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(6),
                     child: LinearProgressIndicator(
-                      value: (progressToNext.clamp(0.0, 1.0)) as double,
+                      value: progressToNext.clamp(0.0, 1.0).toDouble(),
                       minHeight: 10,
                       backgroundColor: const Color(0xFFECECEC),
                       color: const Color(0xFF6DBF73),
@@ -178,7 +257,7 @@ class ChildReportPage extends StatelessWidget {
   }
 
   /// 좌측: 학습 / 우측: 게임 카드
-  Widget _cardsArea(BuildContext context) {
+  Widget _cardsArea(BuildContext context, dynamic level, double progressToNext) {
     return LayoutBuilder(
       builder: (_, c) {
         final isNarrow = c.maxWidth < 860;
@@ -187,15 +266,15 @@ class ChildReportPage extends StatelessWidget {
             title: '학습',
             progressLabel:
                 '$level 레벨의 ${(progressToNext * 100).toStringAsFixed(0)}% 완료!',
-            recent: studyRecent,
-            best: studyBest,
+            recent: widget.studyRecent,
+            best: widget.studyBest,
           ),
           _statCard(
             title: '게임',
             progressLabel:
                 '$level 레벨의 ${(progressToNext * 100).toStringAsFixed(0)}% 완료!',
-            recent: gameRecent,
-            best: gameBest,
+            recent: widget.gameRecent,
+            best: widget.gameBest,
           ),
         ];
 

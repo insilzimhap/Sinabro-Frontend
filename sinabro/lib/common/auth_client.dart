@@ -20,11 +20,29 @@
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:sinabro/main/parentView/page/children_state.dart';
 
 class AuthClient extends http.BaseClient {
-  /// 전역에서 쓰기 위한 싱글턴 (setAuthToken, hydrate 전용)
-  static final AuthClient instance = AuthClient();
+  /// 전역 싱글턴
+  static final AuthClient instance = AuthClient._internal();
+
+  /// 외부에서 AuthClient()로 호출해도 동일 인스턴스 반환
+  factory AuthClient({
+    http.Client? inner,
+    String? Function()? tokenProvider,
+    List<Pattern>? skipAuthPatterns,
+  }) {
+    // 인자를 줘도 싱글턴 패턴 유지(필요 시 내부에서만 커스터마이즈)
+    return instance;
+  }
+
+  // 실제 생성자(내부용)                                     
+  AuthClient._internal({
+    http.Client? inner,
+    String? Function()? tokenProvider,
+    List<Pattern>? skipAuthPatterns,
+  })  : _inner = inner ?? http.Client(),
+        _tokenProvider = tokenProvider,
+        _skipAuthPatterns = skipAuthPatterns ?? <Pattern>[];  
 
   final http.Client _inner;
   final String? Function()? _tokenProvider;
@@ -33,21 +51,40 @@ class AuthClient extends http.BaseClient {
   // 전역 오버라이드 토큰(있으면 최우선)
   static String? _globalTokenOverride;
 
-  AuthClient({
-    http.Client? inner,
-    String? Function()? tokenProvider,
-    List<Pattern>? skipAuthPatterns,
-  })  : _inner = inner ?? http.Client(),
-        _tokenProvider =
-            tokenProvider ?? (() => ChildrenState.instance.accessToken),
-        _skipAuthPatterns = skipAuthPatterns ??
-            <Pattern>[
-              RegExp(r'/api/users/login$'),
-              RegExp(r'/api/users/register$'),
-              RegExp(r'/api/users/social-register$'),
-              RegExp(r'/api/users/check-id$'),
-              RegExp(r'/api/token/(refresh|reissue)$'),
-            ];
+  // 기본적으로 permitAll 엔드포인트 목록                   
+  static List<Pattern> _defaultSkipPatterns = <Pattern>[
+    // ───────── users (permitAll)
+    RegExp(r'^/api/users/(login|register|social-register|check-id)$'),
+    RegExp(r'^/api/token/(refresh|reissue)$'),
+
+    // ───────── child (permitAll)
+    RegExp(r'^/api/child/(login|info|logout)$'),
+
+    // ───────── characters (permitAll)
+    RegExp(r'^/api/characters$'),
+    RegExp(r'^/api/characters/resolve$'),
+    RegExp(r'^/api/character/selection$'),
+
+    // ───────── notice (permitAll)
+    RegExp(r'^/api/app/notices(?:/.*)?$'),
+
+    // ───────── level-test / parent-choice (permitAll)
+    RegExp(r'^/api/level-test(?:/.*)?$'),
+    RegExp(r'^/api/parent-choice(?:/.*)?$'),
+
+    // ───────── docs / health (permitAll)
+    RegExp(r'^/v3/api-docs(?:/.*)?$'),
+    RegExp(r'^/swagger-ui(?:/.*)?$'),
+    RegExp(r'^/swagger-ui\.html$'),
+    RegExp(r'^/actuator/health$'),
+  ];
+
+  // 싱글턴 초기화 시 한 번만 기본 skip 패턴 주입               
+  static void _initDefaultsIfNeeded() {                        
+    if (instance._skipAuthPatterns.isEmpty) {                  
+      instance._skipAuthPatterns.addAll(_defaultSkipPatterns); 
+    }                                                          
+  }  
 
   /// 부팅 시(앱 시작 시) 토큰을 SharedPreferences에서 메모리로 복구
   static Future<void> hydrateFromPrefs() async {
@@ -98,7 +135,7 @@ class AuthClient extends http.BaseClient {
     if (_globalTokenOverride != null && _globalTokenOverride!.isNotEmpty) {
       return _globalTokenOverride;
     }
-    // 2) 외부 제공자(기본: ChildrenState.accessToken)
+    // 2) 외부 제공자(있으면 사용)
     final provided = _tokenProvider?.call();
     if (provided != null && provided.isNotEmpty) return provided;
     // 3) 마지막으로 SharedPreferences 조회
@@ -108,6 +145,7 @@ class AuthClient extends http.BaseClient {
 
   @override
   Future<http.StreamedResponse> send(http.BaseRequest request) async {
+    _initDefaultsIfNeeded(); // once
     if (kDebugMode) {
       debugPrint('[AuthClient] 요청 → ${request.method} ${request.url}');
     }

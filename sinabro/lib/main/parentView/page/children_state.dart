@@ -40,7 +40,8 @@ class ChildrenState extends ChangeNotifier {
     print(
       '[ChildrenState.setSession] userId=$userId, userName=${userName ?? ""}',
     );
-    notifyListeners();
+    // ✅ 변경
+    Future.microtask(() => notifyListeners());
   }
 
   // ---------- 화면용 선택된 userId ----------
@@ -73,7 +74,8 @@ class ChildrenState extends ChangeNotifier {
     print(
       '[ChildrenState.setParent] incoming="$incomingUserId" -> resolved="${_activeUserId ?? ""}"',
     );
-    notifyListeners();
+    // notifyListeners();
+    Future.microtask(() => notifyListeners()); // 수정된 값 다시 불로오기 위해 빌드 후 실행
 
 
     // ✅ (세션 복구 직후) 토큰 자동 복구
@@ -112,7 +114,9 @@ class ChildrenState extends ChangeNotifier {
 
     try {
       loading = true;
-      notifyListeners();
+      // ❌ 즉시 notify → 빌드 중 충돌
+      // notifyListeners();
+      Future.microtask(() => notifyListeners()); // 빌드 이후 실행
 
       final list = await ParentApi.fetchChildren(uid); // List<ChildSummary>
       items = list;
@@ -120,7 +124,9 @@ class ChildrenState extends ChangeNotifier {
       // 필요시 에러처리
     } finally {
       loading = false;
-      notifyListeners();
+      // ❌ 즉시 notify → 또 충돌 가능
+      // notifyListeners();
+      Future.microtask(() => notifyListeners()); // 안전하게 빌드 후 반영
     }
   }
 
@@ -167,12 +173,10 @@ class ChildrenState extends ChangeNotifier {
     await prefs.setString('accessToken', accessToken);
     if (refreshToken != null) {
       await prefs.setString('refreshToken', refreshToken);
-
-      // ★ CHANGED: AuthClient에도 즉시 반영 → 이후 요청 자동 인증
-      await AuthClient.instance.setAuthToken(accessToken, refreshToken: refreshToken);
     }
+    // ★ CHANGED: refreshToken 유무와 상관 없이 항상 AuthClient에 주입
+    await AuthClient.instance.setAuthToken(accessToken, refreshToken: refreshToken);
 
-    // 디버그 로그
     // ignore: avoid_print
     print(
       '[ChildrenState.setToken] accessToken 저장됨 (length=${accessToken.length})',
