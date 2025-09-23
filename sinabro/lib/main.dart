@@ -28,10 +28,8 @@ Future<void> main() async {
   // 2) ⬇️ 부팅 시 저장돼 있던 JWT를 메모리로 복구 (AuthClient가 이후 모든 요청에 자동 부착)
   try {
     await AuthClient.hydrateFromPrefs();
-    // ignore: avoid_print
     print('[main] 부팅 토큰 복구 완료');
   } catch (e) {
-    // ignore: avoid_print
     print('[main][경고] 토큰 복구 중 오류: $e');
   }
 
@@ -55,26 +53,3 @@ class MyApp extends StatelessWidget {
     );
   }
 }
-
-
-// 테스트용
-// void main() {
-//   runApp(const MyTestApp());
-// }
-
-// class MyTestApp extends StatelessWidget {
-//   const MyTestApp({super.key});
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return MaterialApp(
-//       home: SocialExtraInfoPage(
-//         userId: "test123",
-//         userEmail: "test@example.com",
-//         userName: "테스트사용자",
-//         socialType: "google",
-//         socialId: "social12345",
-//       ),
-//     );
-//   }
-// }

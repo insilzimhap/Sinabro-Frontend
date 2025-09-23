@@ -1,6 +1,7 @@
 /**
  * @file lib/login/login_parent.dart
  * 역할: 부모 로그인/소셜 로그인. 로그인 성공 시 JWT를 ChildrenState에 저장.
+ * @채영: JWT+api 연결 완료
  */
 ///
 

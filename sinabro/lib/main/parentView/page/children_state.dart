@@ -5,6 +5,7 @@
  * - 로그인 성공 시 세션/토큰을 메모리와 SharedPreferences에 저장
  * - 페이지 진입 시 부모 ID 및 토큰을 복구
  * - ParentApi를 통해 자녀 목록을 로드/갱신
+ * @ 채영: auth_client, parent_api 손 보면서 코드 수정봤습니다
  */
 ///
 

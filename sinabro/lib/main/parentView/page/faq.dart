@@ -1,6 +1,7 @@
 /*
  * 파일: lib/main/parentView/page/faq_page.dart (FaqPage)
  * 개요: 부모용 문의사항 목록 화면.
+ * @ 채영: JWT+api 연결 완료
  */
 import 'dart:convert';
 import 'package:flutter/material.dart';

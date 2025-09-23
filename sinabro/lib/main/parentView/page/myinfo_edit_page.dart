@@ -2,6 +2,7 @@
  * 파일: lib/main/parentView/page/mypage_edit_page.dart (MyInfoEditPage)
  * 개요: 부모 계정 정보 수정 화면. ParentLayout(사이드바/헤더) 하위에서
  *      프로필 요약(좌측)과 계정 정보 입력 폼(우측)을 카드 형태로 제공한다.
+ * @ 채영: JWT+api 연결 완료
  */
 
 import 'package:flutter/material.dart';

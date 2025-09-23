@@ -1,6 +1,7 @@
 /**
  * @file lib/login/signup_page.dart
  * 역할: 부모 회원가입. 응답에 토큰이 있으면 저장.
+ * @채영: JWT+api 연결 완료
  */
 ///
 

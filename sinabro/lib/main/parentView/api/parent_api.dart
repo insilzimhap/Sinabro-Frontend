@@ -2,6 +2,7 @@
  * @file lib/main/parentView/api/parent_api.dart
  * 역할: 부모 관련 API 래퍼. (JWT는 AuthClient가 자동 부착)
  * 서버가 JWT 주체에서 userId를 읽으므로, 더 이상 쿼리스트링 userId를 보내지 않음.
+ * @채영
  */
 ///
 

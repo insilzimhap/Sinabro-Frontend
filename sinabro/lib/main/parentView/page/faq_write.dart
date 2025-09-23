@@ -2,6 +2,7 @@
  * 파일: lib/main/parentView/page/faq_write.dart (FaqWritePage)
  * 개요: 부모용 문의/FAQ 작성 화면. 사이드바(ParentLayout) 내 '문의사항' 메뉴에 대응하며
  *      제목·내용 입력 후 서버 전송(추후 연동) 및 성공 토스트를 띄운 뒤 이전 화면으로 복귀한다.
+ * @ 채영: JWT+api 연결 완료
  */
 import 'dart:math' as math;
 import 'package:flutter/material.dart';

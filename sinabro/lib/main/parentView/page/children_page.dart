@@ -3,6 +3,7 @@
  * 파일: lib/main/parentView/page/children_page.dart
  * 개요: 부모용 ‘자녀페이지’ 목록 화면. 사이드바(ParentLayout) 내 자녀 리스트를 보여주고,
  *       자녀 추가/상세(리포트)로 이동하는 허브 역할.
+ * @ 채영: JWT+api 연결 완료
  */
 
 import 'package:flutter/material.dart';

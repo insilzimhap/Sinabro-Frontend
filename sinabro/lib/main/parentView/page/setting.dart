@@ -3,6 +3,7 @@
  * 개요: 부모용 ‘설정’ 화면. ParentLayout 하위에서 수신동의/언어 등 앱 환경설정을
  *      구성하고 로그아웃·회원탈퇴 플로우(커스텀 다이얼로그)까지 제공한다.
  *      로그아웃 → UserSelectScreen, 탈퇴 → HomeScreen
+ * @ 채영: JWT+api 연결 완료
  */
 import 'package:flutter/material.dart';
 import 'package:sinabro/main/parentView/layout/parent_layout.dart';

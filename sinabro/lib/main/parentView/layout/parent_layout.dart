@@ -1,4 +1,6 @@
 // lib/main/parentView/layout/parent_layout.dart
+// @채영: JWT 추가함에 따라 parent_id 넘겨주는 부분 수정함
+
 import 'package:flutter/material.dart';
 
 // 상단 앱바에서 "사용자 선택"으로 돌아갈 때 사용

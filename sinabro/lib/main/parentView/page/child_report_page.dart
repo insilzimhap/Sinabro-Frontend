@@ -2,6 +2,7 @@
 /*
  * 파일: lib/main/parentView/page/child_report_page.dart
  * 개요: 자녀의 학습 리포트를 보여주는 화면(뷰 전용, 서버 미연동).
+ * @ 채영: 자녀 이름, 나이, 레벨 등 띄울 수 있는 부분은 수정 해놓음.
  */
 
 import 'package:flutter/material.dart';

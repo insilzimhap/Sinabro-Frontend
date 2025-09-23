@@ -7,6 +7,7 @@
  *        - AuthClient.instance.setAuthToken(...) : 전역 헤더 자동부착
  *        - ChildrenState.instance.setToken(...)  : UI 스토어/SharedPreferences
  *   3) 공지 페이지로 이동
+ * @채영: JWT+api 연결 완료 했으나 sha1 인증 오류로 정화랑 다시 수정 예정
  */
 ///
 

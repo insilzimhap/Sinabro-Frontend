@@ -1,11 +1,12 @@
 /*
  * 파일: lib/main/parentView/page/notice_page.dart (NoticePage)
- * @ authoor 박성민, 문채영
+ * @ authoor 박성민
  * 개요: 부모용 공지사항 목록 화면. ParentLayout 하위에서 공지 리스트를
  *      펼침/접힘 UI로 보여준다. 세션/부모정보를 복구해 사이드바/헤더에 반영.
  *      - 리스트: GET /api/app/notices?page=0&size=20
  *      - 상세:   GET /api/app/notices/{id}?increaseView=true (펼칠 때 로드)
  *      - JWT 필요 없음(permitAll). 헤더/사이드바용 부모표기는 기존 ChildrenState/ParentApi 흐름 유지.
+ * @ 채영: JWT+api 연결 완료
  */
 import 'package:flutter/material.dart';
 import 'package:sinabro/main/parentView/layout/parent_layout.dart';

@@ -2,6 +2,7 @@
  * 파일: lib/main/parentView/page/mypage.dart (MyPage)
  * 개요: 부모용 "마이페이지" 진입 게이트 화면. ParentLayout 하위에서
  *      비밀번호 재확인을 받아 프로필/계정 수정 화면(MyInfoEditPage)로 이동시킨다.
+ * @ 채영: JWT+api 연결 완료
  */
 
 import 'package:flutter/material.dart';

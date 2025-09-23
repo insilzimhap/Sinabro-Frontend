@@ -1,4 +1,5 @@
 // lib/main/childView/page/level_test_page.dart
+// 레벨 테스트 관련은 permitall 이라 수정 안했음 (그대로 http로 연결)
 
 import 'dart:convert';
 
