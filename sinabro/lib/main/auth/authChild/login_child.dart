@@ -1,3 +1,16 @@
+/**
+ * @file lib/main/auth/authChild/login_child.dart
+ * 역할: 자녀 로그인 (permitAll). 
+ *      JWT/AuthClient 전혀 사용하지 않음.
+ *      ✅ 로그인 성공 → /api/child/info 로 캐릭터 선택 여부 확인
+ *          - characterId 존재 → 자녀 로비로
+ *          - characterId 없음(null/빈문자) → 레벨테스트로
+ *      ❌ 로그인 실패(401) 또는 정보조회 실패(네트워크/서버오류)는 이동하지 않고 에러 표시
+ * @ 채영: JWT+api 연결 완료
+ */
+///
+
+
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
@@ -5,6 +18,8 @@ import 'dart:convert';
 import 'package:sinabro/main/childView/page/lobby_child.dart';
 import 'package:sinabro/main/childView/page/level_test_page.dart';
 import 'package:sinabro/config.dart';
+
+
 
 class LoginChildScreen extends StatefulWidget {
   const LoginChildScreen({super.key});
@@ -19,6 +34,8 @@ class _LoginChildScreenState extends State<LoginChildScreen> {
   String _message = '';
   bool _isLoading = false;
 
+  // ---------------- Helpers ----------------
+
   // 다양한 타입을 bool로 변환(문자열 'true', '1' 등도 처리)
   bool _toBool(dynamic v) {
     if (v is bool) return v;
@@ -30,39 +47,50 @@ class _LoginChildScreenState extends State<LoginChildScreen> {
     return false;
   }
 
-  // 캐릭터 선택 여부 체크 (예외 안전)
-  Future<bool> isCharacterSelected(String childId) async {
-    final url = '$baseUrl/api/character/selection/check?childId=$childId';
+  // 자녀 정보 조회 (permitAll). 성공 시 Map 반환, 실패 시 null
+  Future<Map<String, dynamic>?> _fetchChildInfo(String childId) async {
+    final uri = Uri.parse('$baseUrl/api/child/info')
+        .replace(queryParameters: {'childId': childId});
     try {
-      final resp = await http.get(
-        Uri.parse(url),
-        headers: const {'Accept': 'application/json'},
-      ).timeout(const Duration(seconds: 8));
+      // 로그
+      // ignore: avoid_print
+      print('[login_child] 자녀정보 조회 시작 childId=$childId');
 
-      if (resp.statusCode != 200) return false;
+      final resp = await http
+          .get(uri, headers: const {'Accept': 'application/json'})
+          .timeout(const Duration(seconds: 8));
+
+      if (resp.statusCode != 200) {
+        // ignore: avoid_print
+        print('[login_child] 자녀정보 조회 실패: 상태코드=${resp.statusCode}');
+        return null;
+      }
 
       final ct = resp.headers['content-type'] ?? '';
-      if (ct.contains('application/json')) {
-        final body = json.decode(resp.body);
-        // { selected: true } 혹은 { isSelected: true }, 혹은 { characterId: 'C001' } 등 방어
-        if (body is Map) {
-          if (body.containsKey('selected')) return _toBool(body['selected']);
-          if (body.containsKey('isSelected')) return _toBool(body['isSelected']);
-          if (body.containsKey('characterId')) {
-            final cid = (body['characterId'] ?? '').toString();
-            return cid.trim().isNotEmpty;
-          }
-        }
-        return _toBool(body);
-      } else {
-        // 평문 'true' / 'false' 대응
-        return _toBool(resp.body);
+      if (!ct.contains('application/json')) {
+        // ignore: avoid_print
+        print('[login_child] 자녀정보 응답이 JSON이 아님: $ct');
+        return null;
       }
-    } catch (_) {
-      return false;
+
+      final data = json.decode(resp.body);
+      if (data is Map<String, dynamic>) {
+        // ignore: avoid_print
+        print('[login_child] 자녀정보 조회 성공: $data');
+        return data;
+      }
+      // ignore: avoid_print
+      print('[login_child] 자녀정보 파싱 실패(형식 불일치)');
+      return null;
+    } catch (e) {
+      // ignore: avoid_print
+      print('[login_child] 자녀정보 조회 예외: $e');
+      return null;
     }
   }
 
+  //---------- 로그인 (permitAll) --------------
+  // → 성공 시 캐릭터 선택 여부 확인 → 라우팅 결정
   Future<void> _login() async {
     if (_isLoading) return;
     setState(() {
@@ -71,6 +99,12 @@ class _LoginChildScreenState extends State<LoginChildScreen> {
     });
 
     final url = '$baseUrl/api/child/login';
+    final inputChildId = _idController.text.trim();
+    final inputPw = _pwController.text.trim();
+
+    // 로그
+    // ignore: avoid_print
+    print('[login_child] 로그인 시도 childId=$inputChildId');
 
     try {
       final response = await http
@@ -80,19 +114,17 @@ class _LoginChildScreenState extends State<LoginChildScreen> {
               'Content-Type': 'application/json',
               'Accept': 'application/json',
             },
-            body: jsonEncode({
-              'childId': _idController.text.trim(),
-              'childPw': _pwController.text.trim(),
-            }),
+            body: jsonEncode({'childId': inputChildId, 'childPw': inputPw}),
           )
           .timeout(const Duration(seconds: 8));
 
       if (response.statusCode == 200) {
-        // childId는 응답에 있으면 우선 사용, 없으면 입력값 사용
-        String childId = _idController.text.trim();
+        // 성공: childId 결정 (응답이 문자열이거나 JSON일 수 있음)
+        String childId = inputChildId;
+
         try {
-          if ((response.headers['content-type'] ?? '')
-              .contains('application/json')) {
+          final ct = response.headers['content-type'] ?? '';
+          if (ct.contains('application/json')) {
             final body = json.decode(response.body);
             if (body is Map && body['childId'] != null) {
               childId = body['childId'].toString().trim();
@@ -107,39 +139,69 @@ class _LoginChildScreenState extends State<LoginChildScreen> {
           final raw = response.body.trim();
           if (raw.isNotEmpty) childId = raw;
         }
+        
+        // 공백 제거
+        childId = childId.trim();
 
-        if (!mounted) return;
-        final selected = await isCharacterSelected(childId);
+        // ignore: avoid_print
+        print('[login_child] 로그인 성공 childId=$childId');
 
+        // (중요) 여기서만 캐릭터 여부 확인/분기. 실패시 이동하지 않음.
+        final info = await _fetchChildInfo(childId);
         if (!mounted) return;
-        if (selected) {
+
+        if (info == null) {
+          setState(() {
+            _message = '캐릭터 선택 여부 확인에 실패했습니다. 잠시 후 다시 시도해 주세요.';
+          });
+          // ignore: avoid_print
+          print('[login_child] 캐릭터 확인 실패 → 이동하지 않음');
+          return;
+        }
+
+        final characterId = (info['characterId'] ?? '').toString().trim();
+        // ignore: avoid_print
+        print('[login_child] characterId=${characterId.isEmpty ? '(없음)' : characterId}');
+
+        if (characterId.isNotEmpty) {
+          // 자녀 로비로
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(builder: (_) => LobbyChildScreen(childId: childId)),
           );
         } else {
+          // 레벨테스트로
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(builder: (_) => LevelTestPage(childId: childId)),
           );
         }
+      } else if (response.statusCode == 401) {
+        // 로그인 실패
+        if (!mounted) return;
+        setState(() {
+          _message = '로그인 실패: 아이디 또는 비밀번호를 확인해 주세요. (401)';
+        });
+        // ignore: avoid_print
+        print('[login_child] 로그인 실패(401)');
       } else {
         if (!mounted) return;
         setState(() {
-          _message = '로그인 실패: 아이디 또는 비밀번호를 확인하세요. '
-              '(${response.statusCode})';
+          _message = '로그인 실패: 서버 오류(${response.statusCode})';
         });
+        // ignore: avoid_print
+        print('[login_child] 로그인 실패: 상태코드=${response.statusCode}');
       }
     } catch (e) {
       if (!mounted) return;
       setState(() {
         _message = '에러 발생: $e';
       });
+      // ignore: avoid_print
+      print('[login_child] 로그인 예외: $e');
     } finally {
       if (!mounted) return;
-      setState(() {
-        _isLoading = false;
-      });
+      setState(() => _isLoading = false);
     }
   }
 
@@ -150,6 +212,7 @@ class _LoginChildScreenState extends State<LoginChildScreen> {
     super.dispose();
   }
 
+  // ---------------- UI ----------------
   @override
   Widget build(BuildContext context) {
     return Scaffold(

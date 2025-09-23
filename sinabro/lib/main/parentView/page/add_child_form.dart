@@ -1,6 +1,17 @@
-// lib/main/parentView/page/add_child_form.dart
+/**
+ * @file lib/main/parentView/page/add_child_form.dart
+ * 역할: 자녀 추가 화면. 
+ *    - 아이디 중복 확인(permitAll).
+ *    - 자녀 등록 요청 (JWT 필요, 부모 userId 포함).
+ *    - 성공 시 다이얼로그 → "첫 로그인 안내 팝업" → 자녀 로그인 페이지로 이동.
+ * @ 채영: JWT+api 연결 완료
+ */
+///
+
 import 'package:flutter/material.dart';
 import 'package:sinabro/main/parentView/layout/parent_layout.dart';
+import 'package:sinabro/common/auth_client.dart';  
+import 'package:sinabro/main/auth/authChild/login_child.dart';
 
 // ▼ 서버 호출용
 import 'dart:convert';
@@ -26,11 +37,14 @@ class _AddChildFormPageState extends State<AddChildFormPage> {
   bool _idChecked = false; // 아이디 중복 확인 완료 여부
   bool _isSaving = false; // 저장 로딩
 
+  String _dupMessage = '';
+  Color _dupColor = Colors.grey;
+
   // 생년월일 / 제한시간
   int _year = DateTime.now().year; // ← 기본값 즉시 설정
   int _month = 1;
   int _day = 1;
-  int _limitMinutes = 30;
+  int _limitMinutes = 0; // 기본은 "제한 없음"
 
   // 비밀번호 유효성
   bool get _pwValidLength => _pw.text.length >= 8 && _pw.text.length <= 16;
@@ -72,17 +86,19 @@ class _AddChildFormPageState extends State<AddChildFormPage> {
     }
 
     try {
-      // 예시: GET /api/children/check-id?childId={id}
-      final uri = Uri.parse(
-        '$baseUrl/api/children/check-id',
-      ).replace(queryParameters: {'childId': id});
-      final res = await http.get(uri);
+      // rest api
+      final uri = Uri.parse('$baseUrl/api/child/check-id')
+          .replace(queryParameters: {'childId': id});
+      final res = await AuthClient().get(uri); // permitAll → 토큰 스킵
 
       if (res.statusCode == 200) {
         final body = json.decode(res.body) as Map<String, dynamic>;
         final ok = (body['available'] == true);
         _idChecked = ok;
-        _toast(ok ? '사용 가능한 아이디입니다.' : '이미 사용 중인 아이디입니다.');
+        setState(() {
+          _dupMessage = ok ? '사용 가능한 아이디입니다.' : '이미 사용 중인 아이디입니다.';
+          _dupColor = ok ? Colors.green : Colors.red;
+        });
       } else {
         _idChecked = false;
         _toast('중복 확인 실패: ${res.statusCode}');
@@ -94,30 +110,36 @@ class _AddChildFormPageState extends State<AddChildFormPage> {
     setState(() {});
   }
 
-  /// (서버) 자녀 생성
+  // (서버) 자녀 생성
   Future<void> _submit() async {
     if (!_canSubmit) return;
     setState(() => _isSaving = true);
 
     try {
-      // 예시: POST /api/parents/{parentUserId}/children
-      final uri = Uri.parse(
-        '$baseUrl/api/parents/${widget.parentUserId}/children',
-      );
+      final uri = Uri.parse('$baseUrl/api/child/register');
 
       final birth =
           '${_year.toString().padLeft(4, '0')}-${_month.toString().padLeft(2, '0')}-${_day.toString().padLeft(2, '0')}';
 
+      // ✅ 현재 연도 기준 나이 계산
+      final now = DateTime.now();
+      int age = now.year - _year;
+      if (now.month < _month || (now.month == _month && now.day < _day)) {
+        age -= 1;
+      }
+
       final payload = {
         'childId': _id.text.trim(),
-        'password': _pw.text.trim(),
-        'name': _name.text.trim(),
-        'nickname': _nick.text.trim(),
-        'birthDate': birth, // "YYYY-MM-DD"
-        'limitMinutes': _limitMinutes, // 30, 60, 90, 120
+        'childPw': _pw.text.trim(),
+        'childName': _name.text.trim(),
+        'childNickname': _nick.text.trim(),
+        'childBirth': birth, // "YYYY-MM-DD"
+        'childAge': age,
+        'timeLimitMinutes': _limitMinutes, // 30, 60, 90, 120
+        'userId': widget.parentUserId, // 부모 ID 필수
       };
 
-      final res = await http.post(
+      final res = await AuthClient().post(                     // ✅ http.post → AuthClient().post
         uri,
         headers: {'Content-Type': 'application/json'},
         body: json.encode(payload),
@@ -127,7 +149,13 @@ class _AddChildFormPageState extends State<AddChildFormPage> {
         if (!mounted) return;
         await _showSuccessDialog(childName: _name.text.trim());
         if (!mounted) return;
-        Navigator.pop(context, true); // 리스트 화면에서 새로고침 트리거
+        // ① 첫 로그인 안내 팝업
+        await _showFirstLoginNotice();
+        // ② 자녀 로그인 페이지로 이동
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const LoginChildScreen()),
+        );
       } else {
         String msg = '등록 실패: ${res.statusCode}';
         try {
@@ -156,6 +184,28 @@ class _AddChildFormPageState extends State<AddChildFormPage> {
 
   void _toast(String msg) =>
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+
+
+  /// "아이 첫 로그인 안내" 팝업 -> css 제대로 적용 필요
+  Future<void> _showFirstLoginNotice() {
+    return showDialog<void>(
+      context: context,
+      barrierDismissible: true,
+      builder: (_) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text('안내', style: TextStyle(fontWeight: FontWeight.bold)),
+        content: const Text(
+          '아이 첫 로그인은 부모가 옆에서 도와줘야 해요!\n레벨테스트가 있습니다!',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('확인'),
+          ),
+        ],
+      ),
+    );
+  }
 
   // ---------------- UI ----------------
 
@@ -203,7 +253,18 @@ class _AddChildFormPageState extends State<AddChildFormPage> {
                         ),
                         child: const Text('중복 확인'),
                       ),
-                      child: _input(_id, hint: '아이 아이디를 입력하세요'),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _input(_id, hint: '아이 아이디를 입력하세요'),
+                          const SizedBox(height: 6), // ✅ 간격
+                          if (_dupMessage.isNotEmpty)
+                            Text(
+                              _dupMessage,
+                              style: TextStyle(fontSize: 12, color: _dupColor),
+                            ),
+                        ],
+                      ),
                     ),
 
                     // 비밀번호
@@ -432,13 +493,23 @@ class _AddChildFormPageState extends State<AddChildFormPage> {
   }
 
   Widget _limitDropdown() {
-    const options = [30, 60, 90, 120];
+    final options = const [
+      {'label': '제한 없음', 'value': 0},
+      {'label': '30분', 'value': 30},
+      {'label': '1시간', 'value': 60},
+      {'label': '1시간 30분', 'value': 90},
+    ];
+
     return DropdownButtonFormField<int>(
       value: _limitMinutes,
-      items:
-          options
-              .map((m) => DropdownMenuItem(value: m, child: Text('${m}분')))
-              .toList(),
+      items: options
+          .map(
+            (opt) => DropdownMenuItem<int>(
+              value: opt['value'] as int,
+              child: Text(opt['label'] as String),
+            ),
+          )
+          .toList(),
       decoration: _fieldDecoration,
       onChanged: (v) => setState(() => _limitMinutes = v ?? _limitMinutes),
     );

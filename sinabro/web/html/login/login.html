@@ -33,47 +33,46 @@
         document.getElementById("header-container").innerHTML = data;
       });
 
+
     // 로그인 처리 로직
     document.addEventListener("DOMContentLoaded", function () {
-      const form = document.getElementById("loginForm");
+    const form = document.getElementById("loginForm");
 
-      form.addEventListener("submit", function (e) {
-        e.preventDefault(); // 기본 폼 제출 막기
+    form.addEventListener("submit", async function (e) {
+      e.preventDefault();
 
-        const username = form.username.value.trim();
-        const password = form.password.value.trim();
+      const userId = form.username.value.trim();
+      const password = form.password.value.trim();
 
-        if (!username || !password) {
-          alert("아이디와 비밀번호를 모두 입력해주세요.");
-          return;
-        }
+      if (!userId || !password) {
+        alert("아이디와 비밀번호를 모두 입력해주세요.");
+        return;
+      }
 
-        // 서버에 로그인 요청
-        fetch("/api/login", {
+      try {
+        const res = await fetch("http://localhost:8090/api/admin/auth/login", {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({ username, password })
-        })
-        .then(res => {
-          if (!res.ok) {
-            throw new Error("로그인 실패");
-          }
-          return res.json();
-        })
-        .then(data => {
-          // 예: JWT 토큰 받았다고 가정
-          localStorage.setItem("token", data.token); // 나중에 API 호출 시 사용 가능
-          // 로그인 성공 → 공지사항 페이지로 이동
-          window.location.href = "/web/html/board/board_notice.html";
-        })
-        .catch(err => {
-          alert("아이디 또는 비밀번호가 올바르지 않습니다.");
-          console.error("로그인 오류:", err);
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ userId, password }),
+          credentials: "include" // ✅ 세션 쿠키 저장
         });
-      });
+
+        if (res.status === 204) {
+          // 로그인 성공 → 메인 페이지로 이동
+          window.location.href = "/web/html/board/board_notice.html";
+        } else if (res.status === 401) {
+          alert("아이디 또는 비밀번호가 잘못되었습니다.");
+        } else if (res.status === 403) {
+          alert("관리자 계정만 로그인할 수 있습니다.");
+        } else {
+          alert("로그인 중 오류가 발생했습니다.");
+        }
+      } catch (err) {
+        console.error("로그인 오류:", err);
+        alert("서버와 통신할 수 없습니다.");
+      }
     });
+  });
   </script>
 </body>
 </html>

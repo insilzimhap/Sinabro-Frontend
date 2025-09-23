@@ -1,22 +1,36 @@
-// lib/main/parentView/page/child_profile_edit.dart
+/**
+ * @file lib/main/parentView/page/child_profile_edit.dart
+ * 역할: 자녀 프로필 수정 화면
+ *   - 서버 API 연동 (프리필 → PATCH 수정)
+ *   - JWT 자동 포함 (AuthClient 사용)
+ *   - 성공/실패 다이얼로그 한국어 메시지
+ * @ 채영: JWT+api 연결 완료
+ */
+///
+
 import 'package:flutter/material.dart';
 import 'package:sinabro/main/parentView/layout/parent_layout.dart';
+import 'package:sinabro/main/parentView/page/notice_page.dart';
 import 'package:sinabro/main/parentView/page/mypage.dart';
+import 'dart:convert';
+import 'package:sinabro/common/auth_client.dart';
+import 'package:sinabro/config.dart';
+import 'dart:developer';
 
 class ChildProfileEditPage extends StatefulWidget {
   final String? parentUserId;
 
-  // 데모용 기본값
+  // 프리필
   final String childId;
   final String childName;
-  final String childPhone;
+
 
   const ChildProfileEditPage({
     super.key,
     this.parentUserId,
     required this.childId,
     required this.childName,
-    required this.childPhone,
+
   });
 
   @override
@@ -35,12 +49,45 @@ class _ChildProfileEditPageState extends State<ChildProfileEditPage> {
   int _day = 1;
   int _limitMinutes = 30;
 
+  // --- 프리필 로딩 ---
   @override
   void initState() {
     super.initState();
-    _nameCtl = TextEditingController(text: widget.childName);
-    _idCtl = TextEditingController(text: widget.childId);
+    _nameCtl = TextEditingController();
+    _idCtl = TextEditingController();
+    _fetchProfile(); 
   }
+
+  Future<void> _fetchProfile() async { 
+    try {
+      final uri = Uri.parse("$baseUrl/api/app/mypage/children/${widget.childId}");
+      final res = await AuthClient().get(uri);
+
+      if (res.statusCode == 200) {
+        final data = jsonDecode(res.body);
+        setState(() {
+          _nameCtl.text = data["childName"] ?? "";
+          _idCtl.text = data["childId"] ?? "";
+          _nickCtl.text = data["childNickname"] ?? "";
+
+          if (data["childBirth"] != null) {
+            final birth = DateTime.parse(data["childBirth"]);
+            _year = birth.year;
+            _month = birth.month;
+            _day = birth.day;
+          }
+          _limitMinutes = data["timeLimitMinutes"] ?? 0;
+        });
+        log("[자녀-조회] 성공 childId=${widget.childId}");
+      } else {
+        log("[자녀-조회] 실패 code=${res.statusCode}");
+      }
+    } catch (e) {
+      log("[자녀-조회] 예외 발생: $e");
+    }
+  }
+
+  
 
   @override
   void dispose() {
@@ -52,8 +99,21 @@ class _ChildProfileEditPageState extends State<ChildProfileEditPage> {
     super.dispose();
   }
 
+
+  // 만나이 계산
+  int _calcAge(DateTime birth) {
+    final now = DateTime.now();
+    int age = now.year - birth.year;
+    if (now.month < birth.month ||
+        (now.month == birth.month && now.day < birth.day)) {
+      age -= 1;
+    }
+    return age;
+  }
+
   // ───────── Actions ─────────
   Future<void> _save() async {
+    // --- 기본 유효성 검사 ---
     if (_nameCtl.text.trim().isEmpty) {
       _toast('이름을 입력해 주세요.');
       return;
@@ -69,47 +129,142 @@ class _ChildProfileEditPageState extends State<ChildProfileEditPage> {
       }
     }
 
-    await _showNiceDialog(
-      title: '수정 성공',
-      message: '정보가 성공적으로 수정되었습니다!',
-      icon: Icons.check_circle_outline,
-    );
-    if (!mounted) return;
-    Navigator.pop(context, true);
+    // --- 생년월일 YYYY-MM-DD 포맷 + 만나이 계산 ---
+    final birth = '${_year.toString().padLeft(4, '0')}-'
+        '${_month.toString().padLeft(2, '0')}-'
+        '${_day.toString().padLeft(2, '0')}';
+
+    final birthDate = DateTime(_year, _month, _day);
+    final age = _calcAge(birthDate);
+
+    // --- 요청 payload 구성 ---
+    final payload = {
+      "childNickname": _nickCtl.text.trim(),
+      "childBirth": birth,
+      "childAge": age,
+      "timeLimitMinutes": _limitMinutes,
+      if (_pwCtl.text.isNotEmpty) "newPassword": _pwCtl.text.trim(),
+      if (_pw2Ctl.text.isNotEmpty) "newPasswordConfirm": _pw2Ctl.text.trim(),
+    };
+
+    try {
+      // 자녀 정보 수정 요청 rest api
+      final uri = Uri.parse("$baseUrl/api/app/mypage/children/${widget.childId}");
+
+      // ✅ PATCH 요청 (JWT 자동 포함됨)
+      final res = await AuthClient().patch(
+        uri,
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode(payload),
+      );
+
+      // 성공 처리
+      if (res.statusCode == 200) {
+        log("[자녀-수정] 성공 childId=${widget.childId}");
+        await _showNiceDialog(
+          title: "수정 성공",
+          message: "정보가 성공적으로 수정되었습니다!",
+          icon: Icons.check_circle_outline,
+        );
+        if (!mounted) return;
+        Navigator.pop(context, true);
+      } else {
+        // --- 실패 처리 ---
+        String msg = "수정 실패 (코드 ${res.statusCode})";
+        try {
+          final body = jsonDecode(res.body);
+          if (body is Map && body["message"] is String) msg = body["message"];
+        } catch (_) {}
+          log("[자녀-수정] 실패 code=${res.statusCode} body=${res.body}");
+          await _showNiceDialog(
+            title: "수정 실패",
+            message: msg,
+            icon: Icons.error_outline,
+          );
+        }
+      } catch (e) {
+        // --- 예외 처리 ---
+        log("[자녀-수정] 예외 발생: $e");
+        await _showNiceDialog(
+          title: "수정 실패",
+          message: "에러: $e",
+          icon: Icons.error_outline,
+        );
+      }
   }
 
+  // changed: 삭제 플로우를 서버 verify → confirm → delete API 구조로 맞춤
   Future<void> _deleteFlow() async {
     final parentPw = await _askParentPassword();
-    if (parentPw == null) return;
+    if (parentPw == null || parentPw.isEmpty) return;
 
-    if (parentPw != '1234') {
+    // [1단계] 부모 비밀번호 검증 (verify-delete)
+    final verifyUri = Uri.parse(
+      "$baseUrl/api/app/mypage/parent/${widget.parentUserId}/children/${widget.childId}/verify-delete",
+    );
+    final verifyRes = await AuthClient().post(
+      verifyUri,
+      headers: {"Content-Type": "application/json"},
+      body: jsonEncode({"parentPassword": parentPw}),
+    );
+
+    log("[자녀-삭제검증] 응답 code=${verifyRes.statusCode} body=${verifyRes.body}");
+
+    if (verifyRes.statusCode != 200) {
       await _showNiceDialog(
-        title: '실패',
-        message: '현재 비밀번호가 올바르지 않습니다!',
+        title: "실패",
+        message: "부모 비밀번호가 올바르지 않습니다!",
         icon: Icons.error_outline,
       );
       return;
     }
 
+    final verifyData = jsonDecode(verifyRes.body);
+    final childName = verifyData["childName"] ?? widget.childName;
+
+    // [2단계] 사용자에게 재차 확인
     final ok = await _confirmDialog(
-      title: '주의',
-      message: '정말 삭제하시겠습니까?',
-      yesText: '예',
-      noText: '아니요',
+      title: "주의",
+      message: "($childName) 님을 삭제하시겠습니까?",
+      yesText: "예",
+      noText: "아니요",
     );
     if (ok != true) return;
 
-    await _showNiceDialog(
-      title: '',
-      message: '탈퇴되었습니다!\n부모 페이지로 돌아갑니다',
-      icon: Icons.info_outline,
+    // [3단계] 실제 삭제 요청
+    final delUri = Uri.parse(
+      "$baseUrl/api/app/mypage/parent/${widget.parentUserId}/children/${widget.childId}",
     );
-    if (!mounted) return;
+    final delRes = await AuthClient().delete(
+      delUri,
+      headers: {"Content-Type": "application/json"},
+      body: jsonEncode({"parentPassword": parentPw}),
+    );
 
-    Navigator.of(context).pushAndRemoveUntil(
-      MaterialPageRoute(builder: (_) => const MyPage()),
-      (_) => false,
-    );
+    log("[자녀-삭제] 응답 code=${delRes.statusCode} body=${delRes.body}");
+
+    if (delRes.statusCode == 200) {
+      await _showNiceDialog(
+        title: "",
+        message: "탈퇴되었습니다!\n부모 페이지로 돌아갑니다",
+        icon: Icons.info_outline,
+      );
+      if (!mounted) return;
+
+      // changed: 탈퇴 성공 시 NoticePage로 이동
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(
+          builder: (_) => NoticePage(parentUserId: widget.parentUserId),
+        ),
+        (_) => false,
+      );
+    } else {
+      await _showNiceDialog(
+        title: "실패",
+        message: "삭제 실패 (${delRes.statusCode})",
+        icon: Icons.error_outline,
+      );
+    }
   }
 
   void _toast(String msg) =>
@@ -684,13 +839,23 @@ class _ChildProfileEditPageState extends State<ChildProfileEditPage> {
   }
 
   Widget _limitDropdown() {
-    const options = [30, 60, 90, 120];
+    final options = const [
+      {'label': '제한 없음', 'value': 0},
+      {'label': '30분', 'value': 30},
+      {'label': '1시간', 'value': 60},
+      {'label': '1시간 30분', 'value': 90},
+    ];
+
     return DropdownButtonFormField<int>(
       value: _limitMinutes,
-      items:
-          options
-              .map((m) => DropdownMenuItem(value: m, child: Text('$m분')))
-              .toList(),
+      items: options
+          .map(
+            (opt) => DropdownMenuItem<int>(
+              value: opt['value'] as int,
+              child: Text(opt['label'] as String),
+            ),
+          )
+          .toList(),
       onChanged: (v) => setState(() => _limitMinutes = v ?? _limitMinutes),
       decoration: _decoration,
     );

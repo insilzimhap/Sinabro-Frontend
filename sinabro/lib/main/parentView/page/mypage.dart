@@ -2,6 +2,7 @@
  * 파일: lib/main/parentView/page/mypage.dart (MyPage)
  * 개요: 부모용 "마이페이지" 진입 게이트 화면. ParentLayout 하위에서
  *      비밀번호 재확인을 받아 프로필/계정 수정 화면(MyInfoEditPage)로 이동시킨다.
+ * @ 채영: JWT+api 연결 완료
  */
 
 import 'package:flutter/material.dart';
@@ -12,7 +13,7 @@ import 'package:sinabro/main/parentView/api/parent_api.dart';
 class MyPage extends StatefulWidget {
   /// 사이드바를 동적으로 채우고, 상단 이름을 불러오려면 parentUserId를 넘겨주세요.
   final String? parentUserId;
-  const MyPage({super.key, this.parentUserId});
+  const MyPage({super.key, required this.parentUserId});
 
   @override
   State<MyPage> createState() => _MyPageState();
@@ -35,6 +36,11 @@ class _MyPageState extends State<MyPage> {
   }
 
   Future<void> _onVerify() async {
+    final uid = widget.parentUserId?.trim() ?? '';
+    if (uid.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('세션이 만료되었습니다. 다시 로그인해주세요.')));
+      return;
+    }
     if (_pwController.text.trim().isEmpty) {
       ScaffoldMessenger.of(
         context,
@@ -46,16 +52,20 @@ class _MyPageState extends State<MyPage> {
 
     // TODO: 서버 비밀번호 검증 API 연동 (예: /api/users/verify-password)
     // 지금은 데모로 바로 통과 처리
-    await Future.delayed(const Duration(milliseconds: 300));
+    try {
+      await ParentApi.verifyParentPassword(uid, _pwController.text.trim()); // ✅ 서버 검증 호출
+    } catch (e) {
+      setState(() => _verifying = false);
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+      return;
+    }
 
     if (!mounted) return;
     setState(() => _verifying = false);
 
     Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (_) => MyInfoEditPage(parentUserId: widget.parentUserId),
-      ),
+      MaterialPageRoute(builder: (_) => MyInfoEditPage(parentUserId: uid)),
     );
   }
 

@@ -2,10 +2,14 @@
  * 파일: lib/main/parentView/page/setting.dart (SettingsPage)
  * 개요: 부모용 ‘설정’ 화면. ParentLayout 하위에서 수신동의/언어 등 앱 환경설정을
  *      구성하고 로그아웃·회원탈퇴 플로우(커스텀 다이얼로그)까지 제공한다.
+ *      로그아웃 → UserSelectScreen, 탈퇴 → HomeScreen
+ * @ 채영: JWT+api 연결 완료
  */
 import 'package:flutter/material.dart';
 import 'package:sinabro/main/parentView/layout/parent_layout.dart';
 import 'package:sinabro/main/mainView/page/home_screen.dart';
+import 'package:sinabro/main/parentView/api/parent_api.dart';
+import 'package:sinabro/main/mainView/page/user_select_screen.dart';
 
 class SettingsPage extends StatefulWidget {
   static const String routeName = '/parent/settings';
@@ -20,43 +24,131 @@ class _SettingsPageState extends State<SettingsPage> {
   // 수신동의
   bool agreeEmail = false;
   bool agreePush = false;
-  bool agreeTimeLimit = false; // ✅ 자녀 학습 시간 제한 기능 사용 여부
 
   // 언어설정
   final List<String> languages = const [
     '한국어',
+    'English',
+    '日本語',
+    'Tiếng Việt',
     '中文',
     'ไทย',
-    'English',
-    'Tiếng Việt',
   ];
   String selectedLang = '한국어';
 
-  // ================= Actions =================
-  Future<void> _save() async {
-    // TODO: 서버 저장 API 연동
-    if (!mounted) return;
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('설정이 저장되었습니다.')));
+  bool _loading = false;
+  bool _saving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSettings(); //서버 프리필
   }
 
+  // 부모 설정 불러오기: GET /api/app/mypage/parent/{userId}/settings
+  Future<void> _loadSettings() async {
+    if ((widget.parentUserId ?? '').isEmpty) return;
+    setState(() => _loading = true);
+    try {
+      final s = await ParentApi.fetchSettings(widget.parentUserId!);
+      setState(() {
+        agreeEmail = s.emailSubscription;
+        agreePush = s.allowNotifications;
+        selectedLang = _reverseMapLang(s.userLanguage); //언어 매핑 적용
+      });
+      print('[설정 불러오기 성공] allow=$agreePush, email=$agreeEmail, lang=$selectedLang'); 
+    } catch (e) {
+      if (mounted) {
+        print('[설정 불러오기 실패] $e'); 
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('설정 불러오기 실패: $e')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  // 부모 설정 저장: PATCH /api/app/mypage/parent/{userId}/settings
+  Future<void> _save() async {
+    if ((widget.parentUserId ?? '').isEmpty) return;
+    setState(() => _saving = true);
+    try {
+      await ParentApi.updateSettings(
+        userId: widget.parentUserId!,
+        allowNotifications: agreePush,
+        emailSubscription: agreeEmail,
+        userLanguage: _mapLang(selectedLang), // 언어 매핑
+      );
+      if (!mounted) return;
+      print('[설정 저장 성공]'); 
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('설정이 저장되었습니다.')),
+      );
+    } catch (e) {
+      if (mounted) {
+        print('[설정 저장 실패] $e'); 
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('설정 저장 실패: $e')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
+
+  // 언어 매핑 (프론트 → 서버) 
+  String _mapLang(String v) {
+    switch (v) {
+      case '한국어': return 'Korea';
+      case 'English': return 'English';
+      case '日本語': return 'Japanese';
+      case 'Tiếng Việt': return 'Vietnamese';
+      case '中文': return 'Chinese';
+      case 'ไทย': return 'Thai';
+      default: return 'Korea';
+    }
+  }
+
+  // 언어 매핑 (서버 → 프론트) 
+  String _reverseMapLang(String v) {
+    switch (v) {
+      case 'Korea': return '한국어';
+      case 'English': return 'English';
+      case 'Japanese': return '日本語';
+      case 'Vietnamese': return 'Tiếng Việt';
+      case 'Chinese': return '中文';
+      case 'Thai': return 'ไทย';
+      default: return '한국어';
+    }
+  }
+
+  // ================= Actions =================
+
+  // 로그아웃: POST /api/users/logout
   Future<void> _logout() async {
-    // TODO: 토큰/세션 정리
+    try {
+      await ParentApi.logout();
+      print('[로그아웃 성공]');
+    } catch (e) {
+      print('[로그아웃 실패] $e');
+    }
     if (!mounted) return;
     Navigator.of(context).pushAndRemoveUntil(
-      MaterialPageRoute(builder: (_) => CloudAnimationScreen()),
+      MaterialPageRoute(builder: (_) => const UserSelectScreen()),
       (route) => false,
     );
   }
 
+  // 회원 탈퇴 플로우
   Future<void> _withdrawFlow() async {
     final pw = await _askCurrentPassword();
-    if (pw == null) return;
+    if (pw == null || pw.isEmpty) return;
 
-    // TODO: 실제 비밀번호 검증 API
-    final verified = pw.isNotEmpty;
-    if (!verified) {
+    // 1단계: 비밀번호 검증
+    try {
+      await ParentApi.verifyDelete(widget.parentUserId!, pw);
+    } catch (e) {
       await _showFailureDialog(
         titleImage: 'assets/img/dialog/fail.png',
         message: '현재 비밀번호가 올바르지 않습니다!',
@@ -64,6 +156,7 @@ class _SettingsPageState extends State<SettingsPage> {
       return;
     }
 
+    // 2단계: 정말 탈퇴하시겠습니까?
     final ok = await _showConfirmDialog(
       titleImage: 'assets/img/dialog/warn.png',
       message: '정말 탈퇴하시겠습니까?',
@@ -72,15 +165,21 @@ class _SettingsPageState extends State<SettingsPage> {
     );
     if (ok != true) return;
 
-    // TODO: 실제 탈퇴 API 호출
-    await Future.delayed(const Duration(milliseconds: 350));
-
-    await _showSuccessGoHome(message: '탈퇴되었습니다!\n메인 화면으로 돌아갑니다');
-    if (!mounted) return;
-    Navigator.of(context).pushAndRemoveUntil(
-      MaterialPageRoute(builder: (_) => CloudAnimationScreen()),
-      (route) => false,
-    );
+    // 3단계: 탈퇴 API 호출
+    try {
+      await ParentApi.deleteParent(widget.parentUserId!, pw);
+      await _showSuccessGoHome(message: '탈퇴되었습니다!\n메인 화면으로 돌아갑니다');
+      if (!mounted) return;
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (_) => CloudAnimationScreen()),
+        (route) => false,
+      );
+    } catch (e) {
+      await _showFailureDialog(
+        titleImage: 'assets/img/dialog/fail.png',
+        message: '탈퇴 실패: $e',
+      );
+    }
   }
 
   // -------- 공통 다이얼로그들 --------
@@ -395,7 +494,13 @@ class _SettingsPageState extends State<SettingsPage> {
                     top: 0,
                     child: IconButton(
                       icon: const Icon(Icons.close, color: Color(0xFF2E7D32)),
-                      onPressed: () => Navigator.pop(context),
+                      onPressed: () {
+                          Navigator.pop(context); 
+                          Navigator.of(context).pushAndRemoveUntil(
+                            MaterialPageRoute(builder: (_) => CloudAnimationScreen()),
+                            (route) => false,
+                          );
+                      } 
                     ),
                   ),
                   Column(
@@ -482,13 +587,6 @@ class _SettingsPageState extends State<SettingsPage> {
                             onChanged:
                                 (v) => setState(() => agreePush = v ?? false),
                           ),
-                          _checkRow(
-                            label: '자녀 학습 시간 제한 기능 사용 여부',
-                            value: agreeTimeLimit,
-                            onChanged:
-                                (v) =>
-                                    setState(() => agreeTimeLimit = v ?? false),
-                          ),
                           const SizedBox(height: 22),
                           _sectionTitle('언어설정'),
                           const SizedBox(height: 8),
@@ -503,7 +601,7 @@ class _SettingsPageState extends State<SettingsPage> {
                   // 하단 버튼들: 좌측 로그아웃 / 우측 탈퇴·저장
                   Row(
                     children: [
-                      // 좌측
+                      // 좌측 로그아웃
                       SizedBox(
                         height: 46,
                         child: FilledButton(
@@ -524,7 +622,7 @@ class _SettingsPageState extends State<SettingsPage> {
                         ),
                       ),
                       const Spacer(),
-                      // 우측
+                      // 우측 탈퇴
                       SizedBox(
                         height: 46,
                         child: FilledButton(
@@ -545,6 +643,7 @@ class _SettingsPageState extends State<SettingsPage> {
                         ),
                       ),
                       const SizedBox(width: 12),
+                      // 저장하기
                       SizedBox(
                         height: 46,
                         child: FilledButton(

@@ -2,10 +2,15 @@
  * 파일: lib/main/parentView/page/faq_write.dart (FaqWritePage)
  * 개요: 부모용 문의/FAQ 작성 화면. 사이드바(ParentLayout) 내 '문의사항' 메뉴에 대응하며
  *      제목·내용 입력 후 서버 전송(추후 연동) 및 성공 토스트를 띄운 뒤 이전 화면으로 복귀한다.
+ * @ 채영: JWT+api 연결 완료
  */
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:sinabro/main/parentView/layout/parent_layout.dart';
+import 'package:sinabro/common/auth_client.dart'; //changed (JWT 자동 부착)
+import 'package:sinabro/config.dart';             //changed (baseUrl)
+import 'dart:convert';
+
 
 class FaqWritePage extends StatefulWidget {
   final String? parentUserId;
@@ -30,16 +35,35 @@ class _FaqWritePageState extends State<FaqWritePage> {
       return;
     }
 
-    // TODO: 서버로 전송 API 연동
-    // await http.post(...)
+    try {
+      //changed: 서버 API 호출
+      final uri = Uri.parse(
+          '$baseUrl/api/app/inquiries/parent/${widget.parentUserId}');
+      final resp = await AuthClient().post(
+        uri,
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'title': title, 'content': body}),
+      );
 
-    if (!mounted) return;
-    await _showSuccessToast(); // ✅ 커스텀 성공 팝업 (짧은 높이)
-    if (!mounted) return;
-    Navigator.pop(context, true);
+      if (resp.statusCode == 201 || resp.statusCode == 200) {
+        if (!mounted) return;
+        await _showSuccessToast();
+        if (!mounted) return;
+        Navigator.pop(context, true);
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('등록 실패 (${resp.statusCode})')),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('네트워크 오류: $e')),
+      );
+    }
   }
 
   /// ✅ 시안(2번) 형태의 커스텀 팝업 (배경 흐림 없음, 짧은 세로)
+  /// /// ✅ 성공 토스트 (CSS 그대로 유지)
   Future<void> _showSuccessToast() async {
     const bg = Color(0xFFE7F6E9); // 연두 배경
     const bd = Color(0xFF53A866); // 초록 보더

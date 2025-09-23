@@ -1,11 +1,20 @@
-// lib/login/signup_page.dart
+/**
+ * @file lib/login/signup_page.dart
+ * 역할: 부모 회원가입. 응답에 토큰이 있으면 저장.
+ * @채영: JWT+api 연결 완료
+ */
+///
+
+
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
 import 'package:sinabro/config.dart';
-import 'package:sinabro/main/parentView/page/notice_page.dart';
+import 'package:sinabro/main/auth/authParent/login_parent.dart';  //가입 후 로그인 화면 이동
 import 'package:sinabro/main/parentView/page/children_state.dart';
+import 'package:flutter/services.dart'; // TextInputFormatter 전화번호 양식 유지
+
 
 class SignUpPage extends StatefulWidget {
   final String role; // 'parent' 등
@@ -55,6 +64,23 @@ class _SignUpPageState extends State<SignUpPage> {
       return <String, dynamic>{};
     }
   }
+
+  // 언어값 서버 매핑(화이트리스트)
+  String _mapLang(String v) {
+    switch (v) {
+      case '한국어':     return 'Korea';
+      case 'English':   return 'English';
+      case '日本語':     return 'Japanese';
+      case 'Tiếng Việt':return 'Vietnamese';
+      case '中文':       return 'Chinese';
+      case 'ไทย':       return 'Thai';
+      default:          return 'Korea';
+    }
+  }
+
+  // 전화번호 양식 고정 helper
+  bool _isPhoneValid(String v) => RegExp(r'^010-\d{4}-\d{4}$').hasMatch(v);
+
 
   // ───────────────── 아이디 중복 확인 ─────────────────
   Future<void> _checkUserId() async {
@@ -124,6 +150,12 @@ class _SignUpPageState extends State<SignUpPage> {
     if (_emailController.text.trim().isEmpty) {
       return _showSnack('이메일을 입력하세요.');
     }
+    if (!_agreePrivacy) {
+      return _showSnack('개인정보 수집 동의가 필요합니다.');
+    }
+    if (!_isPhoneValid(_phoneController.text.trim())) {
+      return _showSnack('전화번호는 010-0000-0000 형식으로 입력해 주세요.');
+    }
 
     setState(() {
       _isLoading = true;
@@ -131,29 +163,39 @@ class _SignUpPageState extends State<SignUpPage> {
     });
 
     try {
+      // ✅ 서버가 요구하는 settings 포함
+      final payload = {
+        'userId': userId,
+        'userPw': userPw,
+        'confirmPw': confirmPw,
+        'userEmail': _emailController.text.trim(),
+        'userName': _nameController.text.trim(),
+        'userPhoneNum': _phoneController.text.trim(),
+        'role': widget.role,                 // 보통 'parent'
+        'userLanguage': _mapLang(_lang),     // 옵션. 미보내도 서버에서 Korea 기본값
+        'settings': {
+          'privacyConsent': true,            // 필수
+          'allowNotifications': _agreePush,  // 선택
+          'emailSubscription': _agreeEmail,  // 선택
+        },
+      };
+
       final res = await http.post(
         Uri.parse('$baseUrl/api/users/register'),
         headers: {'Content-Type': 'application/json'},
-        body: json.encode({
-          'userId': userId,
-          'userPw': userPw,
-          'confirmPw': confirmPw,
-          'userEmail': _emailController.text.trim(),
-          'userName': _nameController.text.trim(),
-          'userPhoneNum': _phoneController.text.trim(),
-          'role': widget.role, // 보통 'parent'
-        }),
+        body: json.encode(payload),
       );
 
       if (!mounted) return;
 
       if (res.statusCode == 200) {
         final body = _safeJson(res.body);
+
         final parentUserId = (body['userId'] ?? userId).toString();
         final parentUserName =
             (body['userName'] ?? _nameController.text.trim()).toString();
 
-        // ✅ 세션 저장 (SharedPreferences 포함)
+        // 세션 저장 (SharedPreferences 포함)
         await ChildrenState.instance.setSession(
           userId: parentUserId,
           userName: parentUserName.isEmpty ? null : parentUserName,
@@ -163,10 +205,10 @@ class _SignUpPageState extends State<SignUpPage> {
         // await ChildrenState.instance.setParent(parentUserId);
         // await ChildrenState.instance.refresh();
 
-        // 공지사항으로 이동
+        // 로그인으로 이동
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (_) => const NoticePage()),
+          MaterialPageRoute(builder: (_) => const LoginParentScreen()),
         );
       } else if (res.statusCode == 409) {
         _showSnack('이미 존재하는 아이디/이메일입니다.');
@@ -408,8 +450,28 @@ class _SignUpPageState extends State<SignUpPage> {
             TextField(
               controller: _phoneController,
               keyboardType: TextInputType.phone,
-              decoration: _input('전화번호'),
+              onChanged: (_) => setState(() {}), // 입력 시 즉시 검증 문구 갱신
+              inputFormatters: [
+                FilteringTextInputFormatter.allow(RegExp(r'[0-9-]')), // 숫자/하이픈만
+              ],
+              maxLength: 13, // 010-0000-0000
+              decoration: _input('전화번호').copyWith(
+                hintText: '010-0000-0000',
+                counterText: '', // 길이 카운터 숨김
+              ),
             ),
+            if (_phoneController.text.isNotEmpty &&
+                !_isPhoneValid(_phoneController.text.trim()))
+              Padding(
+                padding: const EdgeInsets.only(top: 6),
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    '전화번호 형식: 010-0000-0000',
+                    style: const TextStyle(color: Colors.red, fontSize: 12),
+                  ),
+                ),
+              ),
             const SizedBox(height: 12),
 
             // 개인정보 수집 동의 (UI만)
@@ -504,6 +566,9 @@ class _SignUpPageState extends State<SignUpPage> {
                   DropdownMenuItem(value: '한국어', child: Text('한국어')),
                   DropdownMenuItem(value: 'English', child: Text('English')),
                   DropdownMenuItem(value: '日本語', child: Text('日本語')),
+                  DropdownMenuItem(value: 'Tiếng Việt', child: Text('Tiếng Việt')),
+                  DropdownMenuItem(value: '中文', child: Text('中文')),
+                  DropdownMenuItem(value: 'ไทย', child: Text('ไทย')),
                 ],
                 onChanged: (v) => setState(() => _lang = v ?? '한국어'),
               ),

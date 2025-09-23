@@ -124,3 +124,4 @@ app.*.symbols
 .DS_Store
 sinabro/android/gradle.properties
 sinabro/pubspec.yaml
+sinabro/android/gradle.properties
