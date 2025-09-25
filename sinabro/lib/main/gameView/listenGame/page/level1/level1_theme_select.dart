@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'dart:math';
 import 'level1_story.dart'; // 스토리 페이지 연결
+import 'level1_game.dart';
+import 'level1_result.dart';
 
 class Level1ThemeSelectPage extends StatefulWidget {
   const Level1ThemeSelectPage({super.key});
