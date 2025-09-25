@@ -4,12 +4,14 @@ import 'package:sinabro/config.dart';  //추가
 import 'package:sinabro/login/social_info_page.dart'; // 네 SocialExtraInfoPage 파일 경로 맞게 수정! 테스트용
 import 'package:kakao_flutter_sdk_common/kakao_flutter_sdk_common.dart';
 
+
 //듣기학습
 // import 'package:sinabro/main/studyView/listenStudy/page/listen_study_page.dart';
 // import 'package:sinabro/main/studyView/writeStudy/page/write_study_page.dart';
 // import 'package:sinabro/selvy_example_view/handwriting_screen.dart';
-// ✅ JWT 자동부착 클라이언트 (부팅 시 토큰 복구용)
 
+
+// ✅ JWT 자동부착 클라이언트 (부팅 시 토큰 복구용)
 import 'package:sinabro/common/auth_client.dart';
 
 
