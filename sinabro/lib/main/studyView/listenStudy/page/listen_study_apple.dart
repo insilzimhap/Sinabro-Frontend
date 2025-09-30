@@ -1,9 +1,6 @@
 import 'package:flutter/material.dart';
-import 'level3/data/routine_data.dart';
-import 'level3/model/routine_content.dart';
-import 'level3/intro_topic_page.dart';
-import 'level3/main_topic_page.dart';
-import 'level3/routine_flow.dart'; // ✅ startRoutineFlow, startStoryFlow 분리해둔 파일
+import 'level2/routine_flow.dart'; // ✅ 루틴 실행 분리 불러오기
+import 'level3/routine_flow.dart'; // ✅ 루틴 실행 분리 불러오기
 
 enum ContentStatus { locked, available, done }
 
@@ -42,59 +39,41 @@ class _ListenAppleSelectState extends State<ListenAppleSelect> {
     Offset(0.87, 0.42), // 13 : 4번 루틴
   ];
 
-  // ✅ 루틴 선택
-  void _startRoutine(BuildContext context, int routineIndex) {
-    final routine = routineContents
-        .where((r) => r.id.startsWith("${routineIndex + 1}-"))
-        .toList();
-
-    if (routine.isEmpty) return;
-
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => IntroTopicPage(
-          title: "째깍째깍... 지금 뭐하는 시간이지?",
-          imagePath: "assets/img/contents/studyListen/level3/clock.png",
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => MainTopicPage(
-                  topicImagePath: routine.first.topicImagePath,
-                  title: routine.first.topic,
-                  onTap: () {
-                    // ✅ 실제 실행은 routine_flow.dart 에 정의
-                    startRoutineFlow(context, routine, 0);
-                  },
-                ),
-              ),
-            );
-          },
-        ),
-      ),
-    );
-  }
-
+  // ✅ 사과 탭 → 루틴 실행
   Future<void> _tap(int index) async {
     if (status[index] == ContentStatus.locked) return;
 
     switch (index) {
-      // 3번 나무 (10~13) → 루틴 실행
+      // 두 번째 나무 (5~9) → 레벨2 루틴 실행
+      case 5:
+        startLevel2Routine(context); // story1
+        break;
+      case 6:
+        startLevel2Routine2(context, 0); // story2
+        break;
+      case 7:
+        startLevel2Routine2(context, 1); // story2
+        break;
+      case 8:
+        startLevel2Routine3(context, 2); // story3
+        break;
+      case 9:
+        startLevel2Routine3(context, 3); // story3
+        break;
+
+      // 세 번째 나무 (10~13) → 레벨3 루틴 실행
       case 10:
-        _startRoutine(context, 0);
+        startLevel3Routine(context, 0);
         break;
       case 11:
-        _startRoutine(context, 1);
+        startLevel3Routine(context, 1);
         break;
       case 12:
-        _startRoutine(context, 2);
+        startLevel3Routine(context, 2);
         break;
       case 13:
-        _startRoutine(context, 3);
+        startLevel3Routine(context, 3);
         break;
-      default:
-        return;
     }
   }
 
