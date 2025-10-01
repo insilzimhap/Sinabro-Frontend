@@ -27,6 +27,9 @@
      private DHWR.Ink mInk;
      private DHWR.Setting mSetting;
      private DHWR.Result mResult;
+
+    // changed: 후보셋 저장 (Flutter에서 내려옴)
+    private final List<String> candidateSet = new ArrayList<>();
  
      public WritingRecognizer(Context context) {
          this.mContext = context;
@@ -79,6 +82,13 @@
      public void clearInk() {
          mInk.Clear();
      }
+
+    // changed: 후보셋 설정 (MainActivity에서 호출)
+    public void setCandidateSet(List<String> chars) {
+        candidateSet.clear();
+        if (chars != null) candidateSet.addAll(chars);
+        Log.d(TAG, "🎯 setCandidateSet size=" + candidateSet.size());
+    }
  
      // 인식 요청
      public String recognize() {
@@ -96,7 +106,12 @@
          if (status == DHWR.ERR_SUCCESS) {
              Log.d("Selvy", "✅ DHWR.Recognize 성공, 후보 추출 시도");
              candidates = getCandidates(mResult);
-             Log.d("Selvy", "🎯 후보 결과: " + candidates);  // 🔥 추가
+
+            // changed: 후보 1~3만 로그로 출력
+            String[] lines = candidates.split("\n");
+            for (int i = 0; i < Math.min(3, lines.length); i++) {
+                Log.d("Selvy", "🎯 후보" + (i + 1) + ": " + lines[i]);
+            }
          }
          else{
              Log.e(TAG, "[WritingRecognizer] 인식 실패, status != ERR_SUCCESS");
@@ -107,8 +122,54 @@
              Log.w("Selvy", "⚠️ 후보 결과가 비어 있음 → No result");
              candidates = "No result";
          }
-         return candidates;
+        // changed: 후보셋이 있으면 후보셋에 포함된 것만 허용
+        if (!candidateSet.isEmpty()) {
+            String top1 = extractTop1(mResult).trim();
+            String normTop = normalize(top1);
+            boolean allowed = false;
+            for (String c : candidateSet) {
+                if (normalize(c).equals(normTop)) {
+                    allowed = true;
+                    break;
+                }
+            }
+            if (!allowed) {
+                Log.d("Selvy", "❌ top1 not in candidateSet → \"\"");
+                return "";
+            }
+        }
+         
+        return candidates;
      }
+
+     // changed: top1만 추출 (후보셋 필터링에 사용)
+    private String extractTop1(DHWR.Result r) {
+        if (r == null || r.size() < 1) return "";
+        DHWR.Line line = r.get(0);
+        if (line == null || line.size() < 1) return "";
+        DHWR.Block block = line.get(0);
+        if (block == null || block.candidates == null || block.candidates.size() < 1) return "";
+        return String.valueOf(block.candidates.get(0));
+    }
+
+    // changed: normalize (유니코드 자모 → 일반 자모)
+    private String normalize(String s) {
+        if (s == null) return "";
+        String t = s.trim();
+        switch (t) {
+            case "ᄀ": case "U+1100": return "ㄱ";
+            case "ᄁ": case "U+1101": return "ㄲ";
+            case "ᄃ": case "U+1103": return "ㄷ";
+            case "ᄄ": case "U+1104": return "ㄸ";
+            case "ᄉ": case "U+1109": return "ㅅ";
+            case "ᄊ": case "U+110A": return "ㅆ";
+            case "ᄌ": case "U+110C": return "ㅈ";
+            case "ᄍ": case "U+110D": return "ㅉ";
+            case "ᄇ": case "U+1107": return "ㅂ";
+            case "ᄈ": case "U+1108": return "ㅃ";
+            default: return t;
+        }
+    }
  
      // 언어 설정 변경
      public void setLanguage(int language, int option) {
