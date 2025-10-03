@@ -1,13 +1,15 @@
+// lib/main/gameView/common/layout/listen_game_layout.dart
 import 'package:flutter/material.dart';
 
 /// 듣기 게임 공용 레이아웃
 /// - 캐릭터 이미지 / 대사창(말풍선) / 오디오 버튼 / 보기 선택 영역 포함
-/// - 모든 실제 데이터는 외부에서 주입받아 사용
+/// - optionImagePaths(이미지) 또는 optionWidgets(위젯) 둘 중 하나를 사용
 class ListenGameLayout extends StatelessWidget {
   final String characterName;
-  final String dialogueText; // 여러 줄일 경우 \n 기준으로 분할
+  final String dialogueText;
   final String characterImagePath;
-  final List<String> optionImagePaths; // 보기 이미지 경로 리스트
+  final List<String>? optionImagePaths; // 이미지 기반 보기
+  final List<Widget>? optionWidgets; // 커스텀 위젯 기반 보기
   final VoidCallback onPlayAudio;
   final Color dialogueColor; // 대사창 색상
   final Color nameTagColor; // 이름 태그 색상
@@ -17,8 +19,9 @@ class ListenGameLayout extends StatelessWidget {
     required this.characterName,
     required this.dialogueText,
     required this.characterImagePath,
-    required this.optionImagePaths,
     required this.onPlayAudio,
+    this.optionImagePaths,
+    this.optionWidgets,
     this.dialogueColor = const Color(0xFFFFF3E0),
     this.nameTagColor = const Color(0xFFFFCC80),
   });
@@ -42,11 +45,7 @@ class ListenGameLayout extends StatelessWidget {
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Image.asset(
-                  characterImagePath,
-                  width: 80,
-                  height: 80,
-                ),
+                Image.asset(characterImagePath, width: 80, height: 80),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Column(
@@ -55,7 +54,9 @@ class ListenGameLayout extends StatelessWidget {
                       // 캐릭터 이름 태그
                       Container(
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 8, vertical: 4),
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
                         decoration: BoxDecoration(
                           color: nameTagColor,
                           borderRadius: BorderRadius.circular(8),
@@ -63,7 +64,9 @@ class ListenGameLayout extends StatelessWidget {
                         child: Text(
                           characterName,
                           style: const TextStyle(
-                              fontWeight: FontWeight.bold, fontSize: 14),
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                          ),
                         ),
                       ),
                       const SizedBox(height: 6),
@@ -94,23 +97,30 @@ class ListenGameLayout extends StatelessWidget {
             const Spacer(),
 
             // ── 보기 선택 영역 ───────────────────────────────
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: List.generate(optionImagePaths.length, (index) {
-                return Column(
-                  children: [
-                    Text("보기 ${index + 1}"),
-                    const SizedBox(height: 6),
-                    Image.asset(
-                      optionImagePaths[index],
-                      width: 80,
-                      height: 80,
-                      fit: BoxFit.cover,
-                    ),
-                  ],
-                );
-              }),
-            ),
+            if (optionWidgets != null) ...[
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: optionWidgets!,
+              ),
+            ] else if (optionImagePaths != null) ...[
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: List.generate(optionImagePaths!.length, (index) {
+                  return Column(
+                    children: [
+                      Text("보기 ${index + 1}"),
+                      const SizedBox(height: 6),
+                      Image.asset(
+                        optionImagePaths![index],
+                        width: 80,
+                        height: 80,
+                        fit: BoxFit.cover,
+                      ),
+                    ],
+                  );
+                }),
+              ),
+            ],
           ],
         ),
       ),
@@ -179,10 +189,7 @@ class SpeechBubble extends StatelessWidget {
       painter: BubblePainter(color),
       child: Container(
         padding: const EdgeInsets.all(12),
-        child: Text(
-          text,
-          style: const TextStyle(fontSize: 16),
-        ),
+        child: Text(text, style: const TextStyle(fontSize: 16)),
       ),
     );
   }
@@ -198,8 +205,13 @@ class BubblePainter extends CustomPainter {
     final paint = Paint()..color = color;
 
     // 본체
-    final r = RRect.fromLTRBR(0, 0, size.width, size.height,
-        const Radius.circular(12));
+    final r = RRect.fromLTRBR(
+      0,
+      0,
+      size.width,
+      size.height,
+      const Radius.circular(12),
+    );
     canvas.drawRRect(r, paint);
 
     // 꼬리 (왼쪽 중간)

@@ -1,5 +1,9 @@
+// lib/main/gameView/common/listenGame/page/level1/level1_tutorial.dart
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:sinabro/main/gameView/common/layout/listen_game_layout.dart';
+import 'package:sinabro/main/gameView/common/layout/listen_game_transition.dart';
+import 'package:sinabro/main/gameView/listenGame/page/level1/level1_theme_select.dart';
 
 class Level1TutorialPage extends StatefulWidget {
   const Level1TutorialPage({super.key});
@@ -10,196 +14,138 @@ class Level1TutorialPage extends StatefulWidget {
 
 class _Level1TutorialPageState extends State<Level1TutorialPage>
     with SingleTickerProviderStateMixin {
-  int _currentIndex = 0;
-  String _visibleText = "";
-  Timer? _timer;
-  bool _finished = false;
+  int step = 0;
+  late AnimationController _blinkController;
+  Timer? _autoTimer;
 
-  late AnimationController _arrowController;
-
-  final List<_TutorialStep> steps = [
-    _TutorialStep("알쏭달쏭 연습실에 도착했어요!"),
-    _TutorialStep("여기서 올바른 답을 고르면..."),
-    _TutorialStep("무언가 만들어진다고 해요!"),
-    _TutorialStep("무엇인지 들어볼까요?", highlight: "audio"),
-    _TutorialStep("빨간색을 찾겠네요! 보기를 눌러주세요!", highlight: "red"),
-    _TutorialStep("이런식으로 하다보면 연습이 될 것 같아요!"),
-    _TutorialStep("바로 해볼까요? 잘 부탁드려요!"),
+  final List<String> dialogues = [
+    "알쏭달쏭 연습실에 도착했어요!",
+    "여기서 올바른 답을 고르면...",
+    "무언가 만들어진다고 해요!",
+    "무엇인지 들어볼까요?", // 🔊 사운드 버튼만 동작
+    "빨간색을 찾고있네요! 보기를 눌러주세요!", // 🔴 카드만 동작
+    "이런식으로 하다보면 연습이 될 것 같아요!", // 자동 진행
+    "바로 해볼까요? 잘 부탁드려요!", // 자동 진행 후 transition
   ];
 
   @override
   void initState() {
     super.initState();
-    _arrowController =
-        AnimationController(vsync: this, duration: const Duration(milliseconds: 800))
-          ..repeat(reverse: true);
-    _startTyping();
-  }
+    _blinkController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 1),
+    )..repeat(reverse: true);
 
-  void _startTyping() {
-    _visibleText = "";
-    _finished = false;
-    final dialogue = steps[_currentIndex].dialogue;
-    int i = 0;
-
-    _timer?.cancel();
-    _timer = Timer.periodic(const Duration(milliseconds: 50), (timer) {
-      if (i < dialogue.length) {
-        setState(() {
-          _visibleText += dialogue[i];
-          i++;
-        });
-      } else {
-        timer.cancel();
-        setState(() => _finished = true);
-      }
-    });
-  }
-
-  void _nextDialogue() {
-    if (!_finished) return; // 타이핑 끝나야 넘어감
-    if (_currentIndex < steps.length - 1) {
-      setState(() => _currentIndex++);
-      _startTyping();
-    } else {
-      Navigator.pop(context); // 튜토리얼 종료
-    }
+    _startAutoTimerIfNeeded();
   }
 
   @override
   void dispose() {
-    _timer?.cancel();
-    _arrowController.dispose();
+    _blinkController.dispose();
+    _autoTimer?.cancel();
     super.dispose();
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final step = steps[_currentIndex];
-
-    return Scaffold(
-      backgroundColor: Colors.white,
-      body: GestureDetector(
-        onTap: _nextDialogue,
-        child: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              // 캐릭터 + 말풍선
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Image.asset(
-                    "assets/img/contents/gameListen/yangji_chat.png",
-                    width: 120,
-                    height: 120,
-                  ),
-                  Expanded(
-                    child: Container(
-                      margin: const EdgeInsets.only(left: 12, right: 24, top: 12),
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFFFEED7),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: const Color(0xFFEEC186)),
-                      ),
-                      child: Stack(
-                        children: [
-                          Text(
-                            _visibleText,
-                            style: const TextStyle(fontSize: 16),
-                          ),
-                          if (_finished)
-                            Positioned(
-                              right: 0,
-                              bottom: -8,
-                              child: FadeTransition(
-                                opacity: _arrowController,
-                                child: const Icon(
-                                  Icons.arrow_drop_down,
-                                  size: 28,
-                                  color: Colors.black54,
-                                ),
-                              ),
-                            ),
-                        ],
-                      ),
-                    ),
-                  )
-                ],
+  void _nextStep() {
+    if (step < dialogues.length - 1) {
+      setState(() {
+        step++;
+      });
+      _startAutoTimerIfNeeded();
+    } else {
+      // 마지막 단계 → 전환 페이지 → 테마 선택
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder:
+              (_) => const ListenGameTransition(
+                nextPage: Level1ThemeSelectPage(),
+                duration: Duration(seconds: 3),
               ),
-              const SizedBox(height: 24),
-
-              // 오디오 버튼
-              Stack(
-                alignment: Alignment.center,
-                children: [
-                  const Icon(Icons.volume_up, size: 48, color: Colors.black87),
-                  if (step.highlight == "audio")
-                    Positioned(
-                      right: -50,
-                      bottom: -30,
-                      child: FadeTransition(
-                        opacity: _arrowController,
-                        child: Image.asset(
-                          "assets/img/contents/gameListen/level1/hand_pointer.png",
-                          width: 48,
-                          height: 48,
-                        ),
-                      ),
-                    ),
-                ],
-              ),
-              const SizedBox(height: 24),
-
-              // 보기 3개
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 32),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
-                  children: [
-                    _buildOption("①", Colors.red,
-                        highlight: step.highlight == "red"),
-                    _buildOption("②", Colors.green),
-                    _buildOption("③", Colors.yellow),
-                  ],
-                ),
-              ),
-            ],
-          ),
         ),
-      ),
-    );
+      );
+    }
   }
 
-  Widget _buildOption(String label, Color color, {bool highlight = false}) {
+  void _startAutoTimerIfNeeded() {
+    _autoTimer?.cancel();
+
+    // 인트로(0~2) + 튜토리얼 후반(5,6) → 7초 후 자동 진행
+    if (step <= 2 || step == 5 || step == 6) {
+      _autoTimer = Timer(const Duration(seconds: 7), () {
+        if (mounted) _nextStep();
+      });
+    }
+  }
+
+  bool get _isSoundStep => step == 3;
+  bool get _isRedCardStep => step == 4;
+
+  @override
+  Widget build(BuildContext context) {
     return Stack(
-      alignment: Alignment.center,
       children: [
-        Column(
-          children: [
-            Text(label, style: const TextStyle(fontWeight: FontWeight.bold)),
-            const SizedBox(height: 4),
-            Container(
-              width: 70,
-              height: 70,
-              decoration: BoxDecoration(
-                color: color,
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.black26),
-              ),
+        ListenGameLayout(
+          characterName: "양지",
+          dialogueText: dialogues[step],
+          characterImagePath:
+              "assets/img/contents/gameListen/level1/yangji_chat.png",
+          optionWidgets: [
+            _OptionCard(
+              number: "①",
+              child: _ColorCircle(color: Colors.red),
+              onTap: () {
+                if (_isRedCardStep) _nextStep();
+              },
+            ),
+            _OptionCard(
+              number: "②",
+              child: _ColorCircle(color: Colors.green),
+              onTap: () {},
+            ),
+            _OptionCard(
+              number: "③",
+              child: _ColorCircle(color: Colors.yellow),
+              onTap: () {},
             ),
           ],
+          onPlayAudio: () {
+            if (_isSoundStep) {
+              // 🔊 추후 오디오 재생 코드 삽입
+              debugPrint("🔊 오디오 재생 실행 (추후 추가 예정)");
+              _nextStep();
+            }
+          },
         ),
-        if (highlight)
+
+        // ── 손가락 안내 PNG ─────────────────────────────
+        if (_isSoundStep) // 스피커 가리킴
           Positioned(
-            bottom: -30,
+            top: 280,
+            left: MediaQuery.of(context).size.width / 2 - 40,
             child: FadeTransition(
-              opacity: _arrowController,
-              child: Image.asset(
-                "assets/img/contents/gameListen/level1/hand_pointer.png",
-                width: 48,
-                height: 48,
+              opacity: _blinkController,
+              child: Transform.rotate(
+                angle: -0.28,
+                child: Image.asset(
+                  "assets/img/contents/gameListen/level1/hand_pointer.png",
+                  width: 80,
+                ),
+              ),
+            ),
+          ),
+        if (_isRedCardStep) // 빨강 카드 가리킴
+          Positioned(
+            bottom: 120,
+            left: 40,
+            child: FadeTransition(
+              opacity: _blinkController,
+              child: Transform.rotate(
+                angle: -2.42,
+                child: Image.asset(
+                  "assets/img/contents/gameListen/level1/hand_pointer.png",
+                  width: 80,
+                ),
               ),
             ),
           ),
@@ -208,8 +154,52 @@ class _Level1TutorialPageState extends State<Level1TutorialPage>
   }
 }
 
-class _TutorialStep {
-  final String dialogue;
-  final String? highlight; // "audio", "red" 등 강조 포인트
-  const _TutorialStep(this.dialogue, {this.highlight});
+class _OptionCard extends StatelessWidget {
+  final String number;
+  final Widget child;
+  final VoidCallback onTap;
+
+  const _OptionCard({
+    required this.number,
+    required this.child,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 90,
+        height: 110,
+        decoration: BoxDecoration(
+          border: Border.all(color: Colors.black26),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(number, style: const TextStyle(fontWeight: FontWeight.bold)),
+            const SizedBox(height: 6),
+            child,
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ColorCircle extends StatelessWidget {
+  final Color color;
+
+  const _ColorCircle({required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 60,
+      height: 60,
+      decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+    );
+  }
 }

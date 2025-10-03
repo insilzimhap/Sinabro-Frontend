@@ -1,126 +1,89 @@
+// lib/main/gameView/common/listenGame/page/level1/level1_result.dart
 import 'package:flutter/material.dart';
 import 'level1_theme_select.dart';
 
 class Level1ResultPage extends StatelessWidget {
   final int themeId;
-  final bool isClear;
+  final bool success;
 
   const Level1ResultPage({
     super.key,
     required this.themeId,
-    required this.isClear,
+    required this.success,
   });
 
   @override
   Widget build(BuildContext context) {
-    // 🔹 클리어 이미지 (파일명 theme_X_clear.png)
-    final clearData = {
-      1: {
-        "image": "assets/img/contents/gameListen/level1/theme_1_clear.png",
-        "dialogue": "드디어 무지개를 만들었어요! 감사해요",
-      },
-      2: {
-        "image": "assets/img/contents/gameListen/level1/theme_2_clear.png",
-        "dialogue": "덕분에 사탕을 많이 만들 수 있었어요!",
-      },
-      3: {
-        "image": "assets/img/contents/gameListen/level1/theme_3_clear.png",
-        "dialogue": "제 친구들과 마법을 더 잘 할 거예요!",
-      },
-      4: {
-        "image": "assets/img/contents/gameListen/level1/theme_4_clear.png",
-        "dialogue": "이번 시험도 걱정 없을 것 같아요",
-      },
-      5: {
-        "image": "assets/img/contents/gameListen/level1/theme_5_clear.png",
-        "dialogue": "도와주신 덕분에 마법 완성이에요~!",
-      },
+    final imagePath =
+        success
+            ? "assets/img/contents/gameListen/level1/theme_${themeId}_clear.png"
+            : "assets/img/contents/gameListen/level1/theme_fail.png";
+
+    final Map<int, String> successDialogue = {
+      1: "드디어 무지개를 만들었어요! 감사해요",
+      2: "덕분에 사탕을 많이 만들 수 있었어요!",
+      3: "제 친구들보다 마법을 더 잘 쓸 거예요!",
+      4: "이번 시험도 걱정 없을 것 같아요",
+      5: "도와주신 덕분에 마법 만점이에요~!",
     };
 
-    // 🔹 실패 이미지 (임시 placeholder, 나중에 교체 가능)
-    final failData = {
-      1: {
-        "image": "assets/img/contents/gameListen/level1/theme_1_fail.png",
-        "dialogue": "무지개 만들기 실패... 다시 해볼까요?",
-      },
-      2: {
-        "image": "assets/img/contents/gameListen/level1/theme_2_fail.png",
-        "dialogue": "사탕 마법 실패... 아쉽네요!",
-      },
-      3: {
-        "image": "assets/img/contents/gameListen/level1/theme_3_fail.png",
-        "dialogue": "친구들이 슬퍼하고 있어요...",
-      },
-      4: {
-        "image": "assets/img/contents/gameListen/level1/theme_4_fail.png",
-        "dialogue": "이번엔 조금 부족했어요",
-      },
-      5: {
-        "image": "assets/img/contents/gameListen/level1/theme_5_fail.png",
-        "dialogue": "마법 실패... 다시 도전해요!",
-      },
-    };
-
-    final data = isClear ? clearData[themeId]! : failData[themeId]!;
+    final List<String> dialogue =
+        success
+            ? [successDialogue[themeId] ?? ""]
+            : ["앗! 마법으로 만들어지지 않았어요", "만드는걸 다시 도와주실래요?"];
 
     return Scaffold(
-      backgroundColor: Colors.white,
-      body: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              // 이미지 (사이즈 고정)
-              Image.asset(
-                data["image"]!,
-                width: 240,
-                height: 240,
-              ),
-              const SizedBox(height: 20),
+      appBar: AppBar(
+        title: const Text("결과"),
+        backgroundColor: Colors.orange[200],
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(24.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            // 결과 이미지
+            Image.asset(imagePath, width: 250, fit: BoxFit.contain),
+            const SizedBox(height: 24),
 
-              // 말풍선 (고정 레이아웃)
-              Container(
-                padding: const EdgeInsets.all(12),
-                margin: const EdgeInsets.symmetric(horizontal: 24),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFFFEED7),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: const Color(0xFFEEC186)),
-                ),
+            // 대사 출력
+            ...dialogue.map(
+              (line) => Padding(
+                padding: const EdgeInsets.symmetric(vertical: 4),
                 child: Text(
-                  data["dialogue"]!,
-                  style: const TextStyle(fontSize: 18),
+                  line,
                   textAlign: TextAlign.center,
-                ),
-              ),
-              const SizedBox(height: 30),
-
-              ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.orange[300],
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w500,
                   ),
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
-                ),
-                onPressed: () {
-                  Navigator.pushAndRemoveUntil(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => const Level1ThemeSelectPage(),
-                    ),
-                    (route) => false,
-                  );
-                },
-                child: const Text(
-                  "테마 선택으로 돌아가기",
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                 ),
               ),
-            ],
-          ),
+            ),
+
+            const SizedBox(height: 32),
+
+            // 버튼
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pushAndRemoveUntil(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const Level1ThemeSelectPage(),
+                  ),
+                  (route) => false, // 뒤로가기 불가능
+                );
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.orange[300],
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 12,
+                ),
+              ),
+              child: const Text("테마 선택으로 돌아가기", style: TextStyle(fontSize: 16)),
+            ),
+          ],
         ),
       ),
     );
