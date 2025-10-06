@@ -41,14 +41,14 @@ class _Level2IntroPageState extends State<Level2IntroPage> {
             Stack(
               alignment: Alignment.center,
               children: [
-                Image.asset("assets/img/family/photo_frame.png", height: 250),
+                Image.asset("assets/img/contents/studyListen/level2/family_frame.png", height: 250),
                 if (_dustVisible[0])
                   Positioned(
                     top: 40,
                     left: 60,
                     child: GestureDetector(
                       onTap: () => _clearDust(0),
-                      child: Image.asset("assets/img/family/dust.png", height: 80),
+                      child: Image.asset("assets/img/contents/studyListen/level2/dust.png", height: 80),
                     ),
                   ),
                 if (_dustVisible[1])
