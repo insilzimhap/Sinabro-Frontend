@@ -8,10 +8,10 @@
 
 import 'package:flutter/material.dart';
 import 'package:sinabro/main/parentView/layout/parent_layout.dart';
-import 'package:sinabro/main/parentView/page/add_child_form.dart';
+import 'package:sinabro/main/parentView/page/child/add_child_form.dart';
 import 'package:sinabro/main/parentView/api/parent_api.dart'; // ChildSummary
-import 'package:sinabro/main/parentView/page/children_state.dart'; // 세션 + 상태 저장소
-import 'package:sinabro/main/parentView/page/child_report_page.dart';
+import 'package:sinabro/main/parentView/page/child/children_state.dart'; // 세션 + 상태 저장소
+import 'package:sinabro/main/parentView/page/child/child_report_page.dart';
 
 // ── 숫자만 뽑아 나이(int)로 변환 (예: "7세" -> 7, 실패 시 0)
 int _parseAgeFromLabel(String label) {

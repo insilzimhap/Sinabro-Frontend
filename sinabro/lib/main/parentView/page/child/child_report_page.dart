@@ -14,7 +14,7 @@ import 'package:sinabro/config.dart';
 
 
 // ✅ 프로필 수정 페이지 import
-import 'package:sinabro/main/parentView/page/child_profile_edit.dart';
+import 'package:sinabro/main/parentView/page/child/child_profile_edit.dart';
 
 /// 자녀 학습 리포트 페이지 (뷰 전용 / 서버 미연동)
 class ChildReportPage extends StatefulWidget {

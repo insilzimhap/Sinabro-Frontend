@@ -2,7 +2,7 @@
  * @file lib/main/parentView/api/parent_api.dart
  * 역할: 부모 관련 API 래퍼. (JWT는 AuthClient가 자동 부착)
  * 서버가 JWT 주체에서 userId를 읽으므로, 더 이상 쿼리스트링 userId를 보내지 않음.
- * @채영
+ * @수정: 채영
  */
 ///
 
@@ -234,6 +234,37 @@ class ParentApi {
     print('[POST logout] ${res.statusCode}');
     if (res.statusCode == 204) return;
     throw Exception('로그아웃 실패: ${res.statusCode} ${res.body}');
+  }
+
+  // 부모 언어 조회: GET /api/app/mypage/parent/{userId}/language -> for 연슈슈!!!
+  static Future<String> fetchParentLanguage(String userId) async {
+    final uri = Uri.parse('$baseUrl/api/app/mypage/parent/$userId/language');
+    print('[ParentApi] 부모 언어 조회 요청: GET /api/app/mypage/parent/$userId/language');
+
+    final res = await _client.get(
+      uri,
+      headers: const {'Accept': 'application/json'},
+    );
+
+    // 결과 로그 (상태코드 확인)
+    print('[ParentApi] 응답 코드 → ${res.statusCode}');
+
+    // ✅ 정상 처리
+    if (res.statusCode == 200) {
+      final lang = res.body.replaceAll('"', '').trim(); // 단일 문자열 정리
+      print('[ParentApi] 부모 언어 로드 성공 ✅ → $lang');
+      return lang;
+    }
+
+    // ⚠️ 인증 오류 (토큰 만료 또는 미로그인)
+    if (res.statusCode == 401) {
+      print('[ParentApi] ❌ 인증 오류 (401) → 토큰이 없거나 만료됨');
+      throw Exception('부모 언어 조회 실패(401): 인증이 필요합니다.');
+    }
+
+    // ❌ 기타 오류
+    print('[ParentApi] ⚠️ 알 수 없는 오류 → ${res.statusCode} ${res.body}');
+    throw Exception('부모 언어 조회 실패: ${res.statusCode} ${res.body}');
   }
 
 }

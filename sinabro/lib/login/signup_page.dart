@@ -12,7 +12,7 @@ import 'dart:convert';
 
 import 'package:sinabro/config.dart';
 import 'package:sinabro/main/auth/authParent/login_parent.dart';  //가입 후 로그인 화면 이동
-import 'package:sinabro/main/parentView/page/children_state.dart';
+import 'package:sinabro/main/parentView/page/child/children_state.dart';
 import 'package:flutter/services.dart'; // TextInputFormatter 전화번호 양식 유지
 
 

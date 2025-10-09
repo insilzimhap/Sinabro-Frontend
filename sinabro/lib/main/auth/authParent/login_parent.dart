@@ -18,11 +18,11 @@ import 'package:sinabro/login/social_info_page.dart';
 import 'package:sinabro/common/auth_client.dart';
 
 // ✅ 세션
-import 'package:sinabro/main/parentView/page/children_state.dart';
+import 'package:sinabro/main/parentView/page/child/children_state.dart';
 
 
 // (선택) 공지로 가는 버튼 유지
-import 'package:sinabro/main/parentView/page/notice_page.dart' show NoticePage;
+import 'package:sinabro/main/parentView/page/notice/notice_page.dart' show NoticePage;
 
 class LoginParentScreen extends StatefulWidget {
   // ⛏️ 변경: role 필요 없음 (소셜은 무조건 부모)

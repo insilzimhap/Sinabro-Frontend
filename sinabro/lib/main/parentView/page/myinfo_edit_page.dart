@@ -8,7 +8,7 @@
 import 'package:flutter/material.dart';
 import 'package:sinabro/main/parentView/layout/parent_layout.dart';
 import 'package:sinabro/main/parentView/api/parent_api.dart';
-import 'package:sinabro/main/parentView/page/notice_page.dart';
+import 'package:sinabro/main/parentView/page/notice/notice_page.dart';
 
 
 class MyInfoEditPage extends StatefulWidget {

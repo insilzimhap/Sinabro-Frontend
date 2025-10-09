@@ -16,9 +16,9 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 
 import 'package:sinabro/config.dart';
-import 'package:sinabro/main/parentView/page/notice_page.dart';
+import 'package:sinabro/main/parentView/page/notice/notice_page.dart';
 import 'package:sinabro/common/auth_client.dart';
-import 'package:sinabro/main/parentView/page/children_state.dart';
+import 'package:sinabro/main/parentView/page/child/children_state.dart';
 import 'package:flutter/services.dart';
 
 

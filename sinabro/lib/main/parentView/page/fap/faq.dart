@@ -9,7 +9,7 @@ import 'package:flutter/material.dart';
 import 'package:sinabro/common/auth_client.dart';
 import 'package:sinabro/config.dart';
 import 'package:sinabro/main/parentView/layout/parent_layout.dart';
-import 'package:sinabro/main/parentView/page/faq_write.dart';
+import 'package:sinabro/main/parentView/page/fap/faq_write.dart';
 
 
 

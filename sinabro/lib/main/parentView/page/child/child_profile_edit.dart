@@ -10,7 +10,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:sinabro/main/parentView/layout/parent_layout.dart';
-import 'package:sinabro/main/parentView/page/notice_page.dart';
+import 'package:sinabro/main/parentView/page/notice/notice_page.dart';
 import 'package:sinabro/main/parentView/page/mypage.dart';
 import 'dart:convert';
 import 'package:sinabro/common/auth_client.dart';
