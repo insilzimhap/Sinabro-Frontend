@@ -1,11 +1,72 @@
 import 'package:flutter/material.dart';
 import 'package:sinabro/main/mainView/page/home_screen.dart';
+import 'package:kakao_flutter_sdk_common/kakao_flutter_sdk_common.dart';
+
 //듣기학습
 //import 'package:sinabro/main/studyView/listenStudy/page/listen_study_page.dart';
 //import 'package:sinabro/main/studyView/writeStudy/page/write_study_page.dart';
 //import 'package:sinabro/selvy_example_view/handwriting_screen.dart';
 
+//재미나이가 준 코드
+import 'package:sinabro/main/studyView/listenStudy/page/level1/colors/color_entry_page.dart';
+import 'package:sinabro/main/studyView/listenStudy/page/level1/colors/models/color_lesson_model.dart';
+
+import 'package:sinabro/main/studyView/listenStudy/page/level1/animals/animals_intro_page1.dart';
+import 'package:sinabro/main/studyView/listenStudy/page/level1/animals/dog_reveal_page.dart';
+import 'package:sinabro/main/studyView/listenStudy/page/level1/animals/dog_story_page.dart';
+import 'package:sinabro/main/studyView/listenStudy/page/level1/animals/dog_outro_page.dart';
+import 'package:sinabro/main/studyView/listenStudy/page/level1/animals/cat_reveal_page.dart';
+import 'package:sinabro/main/studyView/listenStudy/page/level1/animals/cat_story_page.dart';
+import 'package:sinabro/main/studyView/listenStudy/page/level1/animals/cat_outro_page.dart';
+import 'package:sinabro/main/studyView/listenStudy/page/level1/animals/duck_reveal_page.dart';
+import 'package:sinabro/main/studyView/listenStudy/page/level1/animals/duck_story_page.dart';
+import 'package:sinabro/main/studyView/listenStudy/page/level1/animals/duck_outro_page.dart';
+import 'package:sinabro/main/studyView/listenStudy/page/level1/animals/bird_reveal_page.dart';
+import 'package:sinabro/main/studyView/listenStudy/page/level1/animals/bird_story_page.dart';
+import 'package:sinabro/main/studyView/listenStudy/page/level1/animals/bird_outro_page.dart';
+import 'package:sinabro/main/studyView/listenStudy/page/level1/animals/flog_reveal_page.dart';
+import 'package:sinabro/main/studyView/listenStudy/page/level1/animals/flog_story_page.dart';
+import 'package:sinabro/main/studyView/listenStudy/page/level1/animals/flog_outro_page.dart';
+
+import 'package:sinabro/main/studyView/listenStudy/page/level1/animals/animals_intro_page2.dart';
+import 'package:sinabro/main/studyView/listenStudy/page/level1/animals/sheep_reveal_page.dart';
+import 'package:sinabro/main/studyView/listenStudy/page/level1/animals/sheep_story_page.dart';
+import 'package:sinabro/main/studyView/listenStudy/page/level1/animals/sheep_outro_page.dart';
+import 'package:sinabro/main/studyView/listenStudy/page/level1/animals/tiger_reveal_page.dart';
+import 'package:sinabro/main/studyView/listenStudy/page/level1/animals/tiger_story_page.dart';
+import 'package:sinabro/main/studyView/listenStudy/page/level1/animals/tiger_outro_page.dart';
+import 'package:sinabro/main/studyView/listenStudy/page/level1/animals/monkey_reveal_page.dart';
+import 'package:sinabro/main/studyView/listenStudy/page/level1/animals/monkey_story_page.dart';
+import 'package:sinabro/main/studyView/listenStudy/page/level1/animals/monkey_outro_page.dart';
+import 'package:sinabro/main/studyView/listenStudy/page/level1/animals/rabbit_reveal_page.dart';
+import 'package:sinabro/main/studyView/listenStudy/page/level1/animals/rabbit_story_page.dart';
+import 'package:sinabro/main/studyView/listenStudy/page/level1/animals/rabbit_outro_page.dart';
+import 'package:sinabro/main/studyView/listenStudy/page/level1/animals/elephant_reveal_page.dart';
+import 'package:sinabro/main/studyView/listenStudy/page/level1/animals/elephant_story_page.dart';
+import 'package:sinabro/main/studyView/listenStudy/page/level1/animals/elephant_outro_page.dart';
+
+import 'package:sinabro/main/studyView/listenStudy/page/level1/animals/animals_intro_page3.dart';
+import 'package:sinabro/main/studyView/listenStudy/page/level1/animals/chicken_reveal_page.dart';
+import 'package:sinabro/main/studyView/listenStudy/page/level1/animals/chicken_story_page.dart';
+import 'package:sinabro/main/studyView/listenStudy/page/level1/animals/chicken_outro_page.dart';
+import 'package:sinabro/main/studyView/listenStudy/page/level1/animals/penguin_reveal_page.dart';
+import 'package:sinabro/main/studyView/listenStudy/page/level1/animals/penguin_story_page.dart';
+import 'package:sinabro/main/studyView/listenStudy/page/level1/animals/penguin_outro_page.dart';
+import 'package:sinabro/main/studyView/listenStudy/page/level1/animals/turtle_reveal_page.dart';
+import 'package:sinabro/main/studyView/listenStudy/page/level1/animals/turtle_story_page.dart';
+import 'package:sinabro/main/studyView/listenStudy/page/level1/animals/turtle_outro_page.dart';
+import 'package:sinabro/main/studyView/listenStudy/page/level1/animals/mouse_reveal_page.dart';
+import 'package:sinabro/main/studyView/listenStudy/page/level1/animals/mouse_story_page.dart';
+import 'package:sinabro/main/studyView/listenStudy/page/level1/animals/mouse_outro_page.dart';
+import 'package:sinabro/main/studyView/listenStudy/page/level1/animals/pig_reveal_page.dart';
+import 'package:sinabro/main/studyView/listenStudy/page/level1/animals/pig_story_page.dart';
+import 'package:sinabro/main/studyView/listenStudy/page/level1/animals/pig_outro_page.dart';
+
 void main() {
+  // ✅ 네이티브 앱 키로 초기화 (Kakao Developers 콘솔의 "네이티브 앱 키")
+  KakaoSdk.init(
+    nativeAppKey: 'ca5d66d22c4255e3dced6bc1a2d4fdcd',
+  );
   runApp(MyApp());
 }
 
@@ -19,6 +80,91 @@ class MyApp extends StatelessWidget {
       //home: const HandwritingScreen(),
       //home: ListenStudyPage(),
       //home: WriteStudyPage(),
+
+      routes: {
+        AnimalsIntroPage1.routeName: (context) => const AnimalsIntroPage1(),
+        DogRevealPage.routeName: (context) => const DogRevealPage(),
+        DogStoryPage.routeName: (context) => const DogStoryPage(),
+        DogOutroPage.routeName: (context) => const DogOutroPage(),
+        CatRevealPage.routeName: (context) => const CatRevealPage(),
+        CatStoryPage.routeName: (context) => const CatStoryPage(),
+        CatOutroPage.routeName: (context) => const CatOutroPage(),
+        DuckRevealPage.routeName: (context) => const DuckRevealPage(),
+        DuckStoryPage.routeName: (context) => const DuckStoryPage(),
+        DuckOutroPage.routeName: (context) => const DuckOutroPage(),
+        BirdRevealPage.routeName: (context) => const BirdRevealPage(),
+        BirdStoryPage.routeName: (context) => const BirdStoryPage(),
+        BirdOutroPage.routeName: (context) => const BirdOutroPage(),
+        FlogRevealPage.routeName: (context) => const FlogRevealPage(),
+        FlogStoryPage.routeName: (context) => const FlogStoryPage(),
+        FlogOutroPage.routeName: (context) => const FlogOutroPage(),
+
+        AnimalsIntroPage2.routeName: (context) => const AnimalsIntroPage2(),
+        SheepRevealPage.routeName: (context) => const SheepRevealPage(),
+        SheepStoryPage.routeName: (context) => const SheepStoryPage(),
+        SheepOutroPage.routeName: (context) => const SheepOutroPage(),
+        TigerRevealPage.routeName: (context) => const TigerRevealPage(),
+        TigerStoryPage.routeName: (context) => const TigerStoryPage(),
+        TigerOutroPage.routeName: (context) => const TigerOutroPage(),
+        MonkeyRevealPage.routeName: (context) => const MonkeyRevealPage(),
+        MonkeyStoryPage.routeName: (context) => const MonkeyStoryPage(),
+        MonkeyOutroPage.routeName: (context) => const MonkeyOutroPage(),
+        RabbitRevealPage.routeName: (context) => const RabbitRevealPage(),
+        RabbitStoryPage.routeName: (context) => const RabbitStoryPage(),
+        RabbitOutroPage.routeName: (context) => const RabbitOutroPage(),
+        ElephantRevealPage.routeName: (context) => const ElephantRevealPage(),
+        ElephantStoryPage.routeName: (context) => const ElephantStoryPage(),
+        ElephantOutroPage.routeName: (context) => const ElephantOutroPage(),
+        AnimalsIntroPage3.routeName: (context) => const AnimalsIntroPage3(),
+        ChickenRevealPage.routeName: (context) => const ChickenRevealPage(),
+        ChickenStoryPage.routeName: (context) => const ChickenStoryPage(),
+        ChickenOutroPage.routeName: (context) => const ChickenOutroPage(),
+        PenguinRevealPage.routeName: (context) => const PenguinRevealPage(),
+        PenguinStoryPage.routeName: (context) => const PenguinStoryPage(),
+        PenguinOutroPage.routeName: (context) => const PenguinOutroPage(),
+        TurtleRevealPage.routeName: (context) => const TurtleRevealPage(),
+        TurtleStoryPage.routeName: (context) => const TurtleStoryPage(),
+        TurtleOutroPage.routeName: (context) => const TurtleOutroPage(),
+        MouseRevealPage.routeName: (context) => const MouseRevealPage(),
+        MouseStoryPage.routeName: (context) => const MouseStoryPage(),
+        MouseOutroPage.routeName: (context) => const MouseOutroPage(),
+        PigRevealPage.routeName: (context) => const PigRevealPage(),
+        PigStoryPage.routeName: (context) => const PigStoryPage(),
+        PigOutroPage.routeName: (context) => const PigOutroPage(),
+
+        //.routeName: (context) => const
+      },
+
+      onGenerateRoute: (settings) {
+        final args = settings.arguments as Map<String, dynamic>?;
+
+        MaterialPageRoute error(String msg) => MaterialPageRoute(
+              builder: (_) => Scaffold(
+                body: Center(child: Text('라우팅 오류: $msg')),
+              ),
+              settings: settings,
+            );
+
+        switch (settings.name) {
+          case ColorEntryPage.routeName:
+            {
+              final list = args?['lessonsToShow'];
+              if (list is List<ColorLessonData>) {
+                return MaterialPageRoute(
+                  builder: (_) => ColorEntryPage(lessonsToShow: list),
+                  settings: settings,
+                );
+              }
+              return error('lessonsToShow 누락/타입 오류');
+            }
+          default:
+            return MaterialPageRoute(
+              builder: (_) =>
+                  const Scaffold(body: Center(child: Text('페이지를 찾을 수 없습니다.'))),
+              settings: settings,
+            );
+        }
+      },
     );
   }
 }

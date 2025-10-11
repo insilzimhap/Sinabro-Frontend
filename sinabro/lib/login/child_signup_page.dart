@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:sinabro/config.dart';
 
 class ChildSignUpPage extends StatefulWidget {
   final String parentUserId; // 부모의 userId (로그인 상태에서 받아와야 함)
@@ -27,8 +28,8 @@ class _ChildSignUpPageState extends State<ChildSignUpPage> {
       _isLoading = true;
       _message = '';
     });
+    final url = '$baseUrl/api/child/register';
 
-    const url = 'http://10.0.2.2:8090/api/child/register';
 
     try {
       final response = await http.post(

@@ -1,14 +1,14 @@
+// lib/login/signup_page.dart
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import 'kakao_login_api.dart'; // 카카오 로그인 로직 분리된 파일
-import 'package:google_sign_in/google_sign_in.dart';
-import '/main/parentView/page/lobby_parent.dart';
-import '/main/childView/page/lobby_child.dart';
-import 'social_info_page.dart';
+
+import 'package:sinabro/config.dart';
+import 'package:sinabro/main/parentView/page/notice_page.dart';
+import 'package:sinabro/main/parentView/page/children_state.dart';
 
 class SignUpPage extends StatefulWidget {
-  final String role;
+  final String role; // 'parent' 등
   const SignUpPage({super.key, required this.role});
 
   @override
@@ -16,275 +16,535 @@ class SignUpPage extends StatefulWidget {
 }
 
 class _SignUpPageState extends State<SignUpPage> {
-  final _usernameController = TextEditingController();   // 아이디
-  final _passwordController = TextEditingController();   // 비밀번호
-  final _emailController = TextEditingController();      // 이메일
-  final _nameController = TextEditingController();       // 이름
-  final _phoneController = TextEditingController();      // 휴대폰 번호
+  // Controllers
+  final _userIdController = TextEditingController(); // 아이디
+  final _emailController = TextEditingController(); // 이메일
+  final _pwController = TextEditingController(); // 비밀번호
+  final _pwConfirmController = TextEditingController(); // 비밀번호 재입력
+  final _nameController = TextEditingController(); // 이름
+  final _phoneController = TextEditingController(); // 전화번호
 
-  String _message = '';
+  // State
   bool _isLoading = false;
+  String _message = '';
 
-  // ✅ 일반 회원가입 요청
+  // ID 중복 체크 상태
+  bool _idChecking = false;
+  bool? _idAvailable; // null=미확인, true=사용가능, false=중복
+  String _idCheckMsg = '';
+
+  // 동의/설정 (UI만)
+  bool _agreePrivacy = false; // 개인정보 수집 동의
+  bool _agreeEmail = false; // 이메일 수신
+  bool _agreePush = false; // 알림 수신
+  String _lang = '한국어';
+
+  // ───────────────── helpers ─────────────────
+  void _showSnack(String msg) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+  }
+
+  bool _isPasswordValid(String pw) => pw.length >= 8 && pw.length <= 16;
+
+  Map<String, dynamic> _safeJson(String s) {
+    try {
+      final v = json.decode(s);
+      return (v is Map<String, dynamic>) ? v : <String, dynamic>{};
+    } catch (_) {
+      return <String, dynamic>{};
+    }
+  }
+
+  // ───────────────── 아이디 중복 확인 ─────────────────
+  Future<void> _checkUserId() async {
+    final id = _userIdController.text.trim();
+    if (id.isEmpty) {
+      setState(() {
+        _idAvailable = null;
+        _idCheckMsg = '아이디를 입력하세요.';
+      });
+      return;
+    }
+
+    setState(() {
+      _idChecking = true;
+      _idCheckMsg = '';
+    });
+
+    final uri = Uri.parse(
+      '$baseUrl/api/users/check-id',
+    ).replace(queryParameters: {'userId': id});
+
+    try {
+      final res = await http.get(uri);
+      if (res.statusCode == 200) {
+        final data = _safeJson(res.body);
+        final available = (data['available'] == true);
+        setState(() {
+          _idAvailable = available;
+          _idCheckMsg = available ? '사용 가능한 아이디예요.' : '이미 사용 중인 아이디예요.';
+        });
+      } else {
+        setState(() {
+          _idAvailable = null;
+          _idCheckMsg = '중복 확인 실패(${res.statusCode})';
+        });
+      }
+    } catch (e) {
+      setState(() {
+        _idAvailable = null;
+        _idCheckMsg = '중복 확인 중 오류: $e';
+      });
+    } finally {
+      setState(() => _idChecking = false);
+    }
+  }
+
+  // ───────────────── 회원가입 ─────────────────
   Future<void> _registerUser() async {
+    final userId = _userIdController.text.trim();
+    final userPw = _pwController.text;
+    final confirmPw = _pwConfirmController.text;
+
+    // 클라이언트 검증
+    if (userId.isEmpty) return _showSnack('아이디를 입력하세요.');
+    if (_idAvailable == false || _idAvailable == null) {
+      return _showSnack('아이디 중복 확인을 완료해 주세요.');
+    }
+    if (!_isPasswordValid(userPw)) {
+      return _showSnack('비밀번호는 8~16자로 설정해 주세요.');
+    }
+    if (userPw != confirmPw) {
+      return _showSnack('비밀번호와 재입력이 일치하지 않습니다.');
+    }
+    if (_nameController.text.trim().isEmpty) {
+      return _showSnack('이름을 입력하세요.');
+    }
+    if (_emailController.text.trim().isEmpty) {
+      return _showSnack('이메일을 입력하세요.');
+    }
+
     setState(() {
       _isLoading = true;
       _message = '';
     });
 
-    const url = 'http://10.0.2.2:8090/api/users/register';
-
     try {
-      final response = await http.post(
-        Uri.parse(url),
+      final res = await http.post(
+        Uri.parse('$baseUrl/api/users/register'),
         headers: {'Content-Type': 'application/json'},
         body: json.encode({
-          'userId': _usernameController.text.trim(),
-          'userPw': _passwordController.text.trim(),
+          'userId': userId,
+          'userPw': userPw,
+          'confirmPw': confirmPw,
           'userEmail': _emailController.text.trim(),
           'userName': _nameController.text.trim(),
           'userPhoneNum': _phoneController.text.trim(),
-          'role': widget.role, // 추가!
-          // 서버에서 기본값 처리: userLanguage, role, socialType, socialId
+          'role': widget.role, // 보통 'parent'
         }),
       );
 
-      if (response.statusCode == 200) {
-        if (!mounted) return;
-        final resBody = json.decode(response.body);
-        final childId = resBody['childId'] ?? _usernameController.text.trim();
+      if (!mounted) return;
 
-        if (widget.role == 'child') {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(
-              builder: (context) => LobbyChildScreen(childId: childId),
-            ),
-          );
-        } else {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(
-              builder: (context) => LobbyParentScreen(parentUserId: _usernameController.text.trim()),
-            ),
-          );
-        }
-      }
- else if (response.statusCode == 409) {
-        // 중복 아이디
-        showDialog(
-          context: context,
-          builder: (context) => AlertDialog(
-            title: const Text('중복 오류'),
-            content: const Text('이미 존재하는 아이디입니다.'),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text('확인'),
-              ),
-            ],
-          ),
+      if (res.statusCode == 200) {
+        final body = _safeJson(res.body);
+        final parentUserId = (body['userId'] ?? userId).toString();
+        final parentUserName =
+            (body['userName'] ?? _nameController.text.trim()).toString();
+
+        // ✅ 세션 저장 (SharedPreferences 포함)
+        await ChildrenState.instance.setSession(
+          userId: parentUserId,
+          userName: parentUserName.isEmpty ? null : parentUserName,
         );
-      } else {
-        setState(() {
-          _message = '회원가입 실패: ${response.statusCode}\n${response.body}';
-        });
-      }
-    } catch (e) {
-      setState(() {
-        _message = '에러 발생: $e';
-      });
-    } finally {
-      setState(() {
-        _isLoading = false;
-      });
-    }
-  }
 
-  // ✅ 카카오 로그인 + 서버 전송 (이전 코드 그대로)
-  Future<void> _loginWithKakao() async {
-    final result = await KakaoLoginApi.kakaoLogin();
+        // (선택) 즉시 목록 프리페치 하고 싶으면 주석 해제
+        // await ChildrenState.instance.setParent(parentUserId);
+        // await ChildrenState.instance.refresh();
 
-    if (result == null) {
-      setState(() {
-        _message = '카카오 로그인 실패';
-      });
-      return;
-    }
-
-    const url = 'http://10.0.2.2:8090/api/users/social-register';
-
-    try {
-      final response = await http.post(
-        Uri.parse(url),
-        headers: {'Content-Type': 'application/json'},
-        body: json.encode({
-          'userId': result['id'] ?? '',
-          'userEmail': result['email'] ?? '',
-          'userPw': result['accessToken'] ?? '',
-          'userName': result['nickname'] ?? '',
-          'socialType': 'kakao',
-          'socialId': result['id'] ?? '',
-        }),
-      );
-
-      if (response.statusCode == 200) {
-        final userInfo = json.decode(response.body);
-        if (!mounted) return;
+        // 공지사항으로 이동
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(
-            builder: (context) => SocialExtraInfoPage(
-              userId: userInfo['userId'],
-              userEmail: userInfo['userEmail'],
-              userName: userInfo['userName'],
-              socialType: userInfo['socialType'],
-              socialId: userInfo['socialId'],
-            ),
-          ),
+          MaterialPageRoute(builder: (_) => const NoticePage()),
         );
+      } else if (res.statusCode == 409) {
+        _showSnack('이미 존재하는 아이디/이메일입니다.');
+      } else if (res.statusCode == 400) {
+        _showSnack(_safeJson(res.body).toString());
       } else {
         setState(() {
-          _message = '서버 응답 오류: ${response.statusCode}\n${response.body}';
+          _message = '회원가입 실패: ${res.statusCode}\n${res.body}';
         });
       }
     } catch (e) {
       setState(() {
         _message = '요청 실패: $e';
       });
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
-  // ✅ 구글 로그인 + 서버 전송 (이전 코드 그대로)
-  Future<void> _loginWithGoogle() async {
-    setState(() {
-      _isLoading = true;
-      _message = '';
-    });
-
-    try {
-      final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
-
-      if (googleUser == null) {
-        setState(() {
-          _message = '구글 로그인 취소됨';
-        });
-        return;
-      }
-
-      final name = googleUser.displayName ?? '구글사용자';
-      final email = googleUser.email;
-      final id = googleUser.id;
-
-      const url = 'http://10.0.2.2:8090/api/users/social-register';
-
-      final response = await http.post(
-        Uri.parse(url),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'userId': id,
-          'userEmail': email,
-          'userPw': id,
-          'userName': name,
-          'socialType': 'google',
-          'socialId': id,
-        }),
-      );
-
-      if (response.statusCode == 200) {
-        final userInfo = json.decode(response.body);
-        if (!mounted) return;
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (context) => SocialExtraInfoPage(
-              userId: userInfo['userId'],
-              userEmail: userInfo['userEmail'],
-              userName: userInfo['userName'],
-              socialType: userInfo['socialType'],
-              socialId: userInfo['socialId'],
-            ),
-          ),
-        );
-      } else {
-        setState(() {
-          _message = '구글 로그인 실패: ${response.statusCode}';
-        });
-      }
-    } catch (e) {
-      setState(() {
-        _message = '구글 로그인 에러: $e';
-      });
-    } finally {
-      setState(() {
-        _isLoading = false;
-      });
-    }
+  // ───────────────── UI ─────────────────
+  InputDecoration _input(String label, {Widget? suffix}) {
+    return InputDecoration(
+      labelText: label,
+      filled: true,
+      fillColor: Colors.white,
+      suffixIcon: suffix,
+      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
+    const bg = Color(0xFFFFF1F1);
+    final cardColor = Colors.white;
+    final headerStyle = Theme.of(context).textTheme.headlineSmall?.copyWith(
+      color: const Color(0xFF7A4F3B),
+      fontWeight: FontWeight.w800,
+    );
+
     return Scaffold(
-      appBar: AppBar(title: const Text('회원가입')),
-      body: Padding(
+      backgroundColor: bg,
+      body: SafeArea(
+        child: LayoutBuilder(
+          builder: (context, c) {
+            final isWide = c.maxWidth >= 900;
+            final page = Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 8,
+                    ),
+                    child: Text('회원가입', style: headerStyle),
+                  ),
+                  const SizedBox(height: 12),
+                  Expanded(
+                    child:
+                        isWide
+                            ? Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Expanded(
+                                  flex: 3,
+                                  child: _leftFormCard(cardColor),
+                                ),
+                                const SizedBox(width: 20),
+                                Expanded(
+                                  flex: 2,
+                                  child: Column(
+                                    children: [
+                                      _rightConsentCard(cardColor),
+                                      const SizedBox(height: 20),
+                                      _animationBox(cardColor),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            )
+                            : SingleChildScrollView(
+                              child: Column(
+                                children: [
+                                  _leftFormCard(cardColor),
+                                  const SizedBox(height: 16),
+                                  _rightConsentCard(cardColor),
+                                  const SizedBox(height: 16),
+                                  _animationBox(cardColor),
+                                ],
+                              ),
+                            ),
+                  ),
+                ],
+              ),
+            );
+            return page;
+          },
+        ),
+      ),
+    );
+  }
+
+  // 좌측: 입력 폼 카드
+  Widget _leftFormCard(Color cardColor) {
+    final idHintColor =
+        _idAvailable == null
+            ? Colors.grey
+            : _idAvailable == true
+            ? Colors.green
+            : Colors.red;
+
+    return Card(
+      color: cardColor,
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Padding(
         padding: const EdgeInsets.all(20),
         child: Column(
           children: [
-            TextField(
-              controller: _usernameController,
-              decoration: const InputDecoration(labelText: '아이디'),
+            // 아이디 + 중복확인
+            Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _userIdController,
+                    onChanged: (_) {
+                      setState(() {
+                        _idAvailable = null;
+                        _idCheckMsg = '';
+                      });
+                    },
+                    decoration: _input('아이디'),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                SizedBox(
+                  height: 48,
+                  child: ElevatedButton(
+                    onPressed: _idChecking ? null : _checkUserId,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFFFFC5C5),
+                      foregroundColor: Colors.brown[800],
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                    child:
+                        _idChecking
+                            ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                            : const Text('중복 확인'),
+                  ),
+                ),
+              ],
             ),
-            TextField(
-              controller: _passwordController,
-              obscureText: true,
-              decoration: const InputDecoration(labelText: '비밀번호'),
-            ),
+            if (_idCheckMsg.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.only(top: 6),
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    _idCheckMsg,
+                    style: TextStyle(color: idHintColor, fontSize: 12),
+                  ),
+                ),
+              ),
+            const SizedBox(height: 16),
+
+            // 이메일
             TextField(
               controller: _emailController,
-              decoration: const InputDecoration(labelText: '이메일'),
+              keyboardType: TextInputType.emailAddress,
+              decoration: _input('이메일'),
             ),
+            const SizedBox(height: 16),
+
+            // 비밀번호
             TextField(
-              controller: _nameController,
-              decoration: const InputDecoration(labelText: '이름'),
+              controller: _pwController,
+              obscureText: true,
+              decoration: _input('비밀번호'),
             ),
+            Padding(
+              padding: const EdgeInsets.only(top: 6),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  '8자 이상 16자 이하',
+                  style: TextStyle(
+                    color:
+                        _isPasswordValid(_pwController.text)
+                            ? Colors.green
+                            : Colors.grey,
+                    fontSize: 12,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            // 재입력
+            TextField(
+              controller: _pwConfirmController,
+              obscureText: true,
+              onChanged: (_) => setState(() {}),
+              decoration: _input('재입력'),
+            ),
+            if (_pwConfirmController.text.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.only(top: 6),
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    _pwConfirmController.text == _pwController.text
+                        ? '비밀번호가 일치합니다.'
+                        : '비밀번호가 일치하지 않습니다.',
+                    style: TextStyle(
+                      color:
+                          _pwConfirmController.text == _pwController.text
+                              ? Colors.green
+                              : Colors.red,
+                      fontSize: 12,
+                    ),
+                  ),
+                ),
+              ),
+            const SizedBox(height: 16),
+
+            // 이름
+            TextField(controller: _nameController, decoration: _input('이름')),
+            const SizedBox(height: 16),
+
+            // 전화번호
             TextField(
               controller: _phoneController,
-              decoration: const InputDecoration(labelText: '휴대폰 번호'),
+              keyboardType: TextInputType.phone,
+              decoration: _input('전화번호'),
             ),
-            const SizedBox(height: 20),
-            _isLoading
-                ? const CircularProgressIndicator()
-                : Column(
-                    children: [
-                      ElevatedButton(
-                        onPressed: _registerUser,
-                        child: const Text('회원가입'),
-                      ),
-                      const SizedBox(height: 12),
-                      ElevatedButton(
-                        onPressed: _loginWithKakao,
-                        style: ElevatedButton.styleFrom(backgroundColor: Colors.yellow),
-                        child: const Text(
-                          '카카오로 시작하기',
-                          style: TextStyle(color: Colors.black),
-                        ),
-                      ),
-                      ElevatedButton(
-                        onPressed: _loginWithGoogle,
-                        style: ElevatedButton.styleFrom(backgroundColor: Colors.white),
-                        child: const Text(
-                          '구글 계정으로 시작하기', 
-                          style: TextStyle(color: Colors.black),
-                        ),
-                      ),
-                    ],
+            const SizedBox(height: 12),
+
+            // 개인정보 수집 동의 (UI만)
+            Row(
+              children: [
+                Checkbox(
+                  value: _agreePrivacy,
+                  onChanged: (v) => setState(() => _agreePrivacy = v ?? false),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(4),
                   ),
-            const SizedBox(height: 20),
-            Text(
-              _message,
-              style: const TextStyle(color: Colors.red),
+                ),
+                const Text('개인정보 수집 동의'),
+                const SizedBox(width: 8),
+                OutlinedButton(
+                  onPressed: () => _showSnack('개인정보 처리 방침 모달은 추후 연결 예정'),
+                  child: const Text('전문 읽기'),
+                ),
+              ],
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  // 우측: 수신동의/언어 카드
+  Widget _rightConsentCard(Color cardColor) {
+    return Card(
+      color: cardColor,
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          children: [
+            Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                '수신동의 (선택)',
+                style: TextStyle(
+                  fontWeight: FontWeight.w800,
+                  color: Colors.brown[700],
+                  fontSize: 18,
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
+            CheckboxListTile(
+              contentPadding: EdgeInsets.zero,
+              value: _agreeEmail,
+              onChanged: (v) => setState(() => _agreeEmail = v ?? false),
+              title: const Text('이메일 수신 동의'),
+              controlAffinity: ListTileControlAffinity.leading,
+            ),
+            CheckboxListTile(
+              contentPadding: EdgeInsets.zero,
+              value: _agreePush,
+              onChanged: (v) => setState(() => _agreePush = v ?? false),
+              title: const Text('알림 수신 동의'),
+              controlAffinity: ListTileControlAffinity.leading,
+            ),
+            const SizedBox(height: 8),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                '언어설정',
+                style: TextStyle(
+                  fontWeight: FontWeight.w800,
+                  color: Colors.brown[700],
+                  fontSize: 18,
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
+            SizedBox(
+              width: double.infinity,
+              child: DropdownButtonFormField<String>(
+                value: _lang,
+                decoration: InputDecoration(
+                  filled: true,
+                  fillColor: Colors.white,
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 12,
+                  ),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                items: const [
+                  DropdownMenuItem(value: '한국어', child: Text('한국어')),
+                  DropdownMenuItem(value: 'English', child: Text('English')),
+                  DropdownMenuItem(value: '日本語', child: Text('日本語')),
+                ],
+                onChanged: (v) => setState(() => _lang = v ?? '한국어'),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // 하단: 가입하기 애니메이션 박스 (자리만)
+  Widget _animationBox(Color cardColor) {
+    return Card(
+      color: const Color(0xFFBDBDBD),
+      elevation: 1,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: SizedBox(
+        height: 180,
+        width: double.infinity,
+        child: Center(
+          child:
+              _isLoading
+                  ? const CircularProgressIndicator()
+                  : ElevatedButton(
+                    onPressed: _registerUser,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFFFFC5C5),
+                      foregroundColor: Colors.brown[800],
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 28,
+                        vertical: 14,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: const Text(
+                      '가입하기 애니메이션(자리)',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                  ),
         ),
       ),
     );
