@@ -19,6 +19,8 @@ dependencies:
   audioplayers: ^5.2.0
   provider: ^6.1.1
   http: ^1.1.0
+  just_audio: ^0.9.36
+  audio_session: ^0.1.21
 
 dev_dependencies:
   flutter_test:
@@ -42,16 +44,34 @@ flutter:
     - assets/img/auth/
     - assets/img/character/
     - assets/img/contents/gameListen/
+    - assets/img/contents/gameListen/level1/
+    - assets/img/contents/gameListen/level2/
+    - assets/img/contents/gameListen/level3/
     - assets/img/contents/gameWrite/
     - assets/img/contents/studyListen/
+    - assets/img/contents/studyListen/level1/colors/
+    - assets/img/contents/studyListen/level1/animals/
+    - assets/img/contents/studyListen/level2/
+    - assets/img/contents/studyListen/level3/
+    - assets/img/contents/studyListen/level3/main_keyword/
+    - assets/img/contents/studyListen/level3/main_topic/
+    - assets/img/contents/studyListen/level3/story/
     - assets/img/contents/studyWrite/
     - assets/img/icon/
+    - assets/img/leveltest/
     - assets/img/pageMain/
     - assets/img/pageSetting/
 
     - assets/audio/bgm/
     - assets/audio/effect/
+    - assets/audio/tts/levelTest/
     - assets/audio/tts/gameListen/
     - assets/audio/tts/gameWrite/
     - assets/audio/tts/studyListen/
+    - assets/audio/tts/studyListen/level1/animals/
+    - assets/audio/tts/studyListen/level1/colors/
+    - assets/audio/tts/studyListen/level2/emotions/
+    - assets/audio/tts/studyListen/level2/family/
+    - assets/audio/tts/studyListen/level2/numbers/
+    - assets/audio/tts/studyListen/level3/daily/
     - assets/audio/tts/studyWrite/
