@@ -53,7 +53,7 @@ class MainKeywordPage extends StatelessWidget {
               children: [
                 Image.asset(
                   _imagePath,
-                  width: MediaQuery.of(context).size.width * 0.5,
+                  width: MediaQuery.of(context).size.width * 0.3,
                   fit: BoxFit.contain,
                 ),
                 const SizedBox(height: 40),

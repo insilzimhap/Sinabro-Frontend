@@ -1,63 +1,66 @@
-// lib/main/studyView/listenStudy/level2/story2/intro_page.dart
-import 'dart:async';
 import 'package:flutter/material.dart';
-import 'data/routine_data.dart';
 
-class Story2IntroPage extends StatefulWidget {
+/// 🍊 Story2 - 감정 인트로 페이지
+/// 감정 학습 시작 화면.
+/// 탭하면 감정 토픽(예: 좋아요, 배고파요)으로 이동.
+class Story2IntroPage extends StatelessWidget {
   final VoidCallback onNext;
   const Story2IntroPage({super.key, required this.onNext});
 
   @override
-  State<Story2IntroPage> createState() => _Story2IntroPageState();
-}
-
-class _Story2IntroPageState extends State<Story2IntroPage> {
-  Timer? _timer;
-  bool _canTap = false;
-
-  @override
-  void initState() {
-    super.initState();
-    // 5초 뒤 → 터치 가능
-    Future.delayed(const Duration(seconds: 5), () {
-      if (mounted) setState(() => _canTap = true);
-    });
-    // 20초 뒤 → 자동 진행
-    _timer = Timer(const Duration(seconds: 20), () {
-      if (mounted) widget.onNext();
-    });
-  }
-
-  @override
-  void dispose() {
-    _timer?.cancel();
-    super.dispose();
-  }
-
-  void _handleTap() {
-    if (_canTap) widget.onNext();
-  }
-
-  @override
   Widget build(BuildContext context) {
-    final intro = introData.first;
+    final screenWidth = MediaQuery.of(context).size.width;
+
     return Scaffold(
+      backgroundColor: const Color(0xFFFDF7EF),
       body: GestureDetector(
-        onTap: _handleTap,
-        child: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Image.asset(intro.imagePath ?? "", width: 240),
-              const SizedBox(height: 24),
-              Text(intro.text, style: const TextStyle(fontSize: 20)),
-              if (!_canTap)
-                const Padding(
-                  padding: EdgeInsets.only(top: 12),
-                  child: Text("잠시만 기다려주세요...",
-                      style: TextStyle(color: Colors.grey)),
+        onTap: onNext,
+        child: SafeArea(
+          child: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                // 🖼️ 감정 대표 이미지
+                Image.asset(
+                  "assets/img/contents/studyListen/level2/face.png",
+                  width: screenWidth * 0.4,
+                  fit: BoxFit.contain,
                 ),
-            ],
+                const SizedBox(height: 40),
+
+                // ✨ 인트로 텍스트
+                const Text(
+                  "짠! 오늘은 감정에 대해서 알아볼까요?",
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.brown,
+                    height: 1.4,
+                  ),
+                ),
+                const SizedBox(height: 20),
+
+                const Text(
+                  "기쁨, 무서움, 놀람 같은 감정을 함께 배워봐요 🍎",
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: Colors.brown,
+                  ),
+                ),
+                const SizedBox(height: 60),
+
+                // 💬 안내 문구
+                const Text(
+                  "화면을 터치하면 시작됩니다",
+                  style: TextStyle(
+                    color: Colors.black45,
+                    fontSize: 14,
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),

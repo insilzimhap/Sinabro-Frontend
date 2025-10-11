@@ -21,20 +21,19 @@ class StoryPage extends StatelessWidget {
     final base = "assets/img/contents/studyListen/level2/story";
     final genderLabel = gender == Gender.male ? "boy" : "girl";
 
-    // 5는 성별 버전 나눠짐
     switch (index) {
       case 1:
-        return "$base/1-1-1.png";
+        return "$base/1-1-1.png"; // 엄마
       case 2:
-        return "$base/1-2-1.png";
+        return "$base/1-2-1.png"; // 아빠
       case 3:
-        return "$base/1-3-${gender == Gender.male ? 1 : 2}.png";
+        return "$base/1-4-${gender == Gender.male ? 1 : 2}.png"; // 언니/누나
       case 4:
-        return "$base/1-4-${gender == Gender.male ? 1 : 2}.png";
+        return "$base/1-5-${gender == Gender.male ? 1 : 2}.png"; // 형/오빠
       case 5:
-        return "$base/1-5(${genderLabel}).png";
+        return "$base/1-6-${gender == Gender.male ? 1 : 2}.png"; // 나
       case 6:
-        return "$base/1-6-${gender == Gender.male ? 1 : 2}.png";
+        return "$base/1-7-${gender == Gender.male ? 1 : 2}.png"; // 동생
       default:
         return "";
     }
@@ -64,7 +63,29 @@ class StoryPage extends StatelessWidget {
     return Scaffold(
       backgroundColor: const Color(0xFFFDF7EF),
       body: GestureDetector(
-        onTap: onFinished, // 👈 탭 시 다음 단계로 이동
+        onTap: () async {
+          // ✅ 아빠 뒤에는 부모님 페이지 추가
+          if (index == 2) {
+            await Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => _ParentsStoryPage(gender: gender),
+              ),
+            );
+          }
+
+          // ✅ 동생 뒤에는 가족 화목 페이지 추가
+          if (index == 6) {
+            await Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => _FamilyHarmonyPage(gender: gender),
+              ),
+            );
+          }
+
+          onFinished();
+        },
         child: SafeArea(
           child: Center(
             child: Column(
@@ -80,6 +101,99 @@ class StoryPage extends StatelessWidget {
                   _text,
                   textAlign: TextAlign.center,
                   style: const TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.brown,
+                  ),
+                ),
+                const SizedBox(height: 40),
+                const Text(
+                  "화면을 터치하면 다음으로 넘어갑니다",
+                  style: TextStyle(color: Colors.black45, fontSize: 14),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// ✅ 부모님은 나를 사랑해! 페이지
+class _ParentsStoryPage extends StatelessWidget {
+  final Gender gender;
+  const _ParentsStoryPage({required this.gender});
+
+  @override
+  Widget build(BuildContext context) {
+    final base = "assets/img/contents/studyListen/level2/story";
+    return Scaffold(
+      backgroundColor: const Color(0xFFFDF7EF),
+      body: GestureDetector(
+        onTap: () => Navigator.pop(context),
+        child: SafeArea(
+          child: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Image.asset(
+                  "$base/1-3-${gender == Gender.male ? 1 : 2}.png",
+                  width: MediaQuery.of(context).size.width * 0.6,
+                  fit: BoxFit.contain,
+                ),
+                const SizedBox(height: 40),
+                const Text(
+                  "부모님은 나를 사랑해!",
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.brown,
+                  ),
+                ),
+                const SizedBox(height: 40),
+                const Text(
+                  "화면을 터치하면 다음으로 넘어갑니다",
+                  style: TextStyle(color: Colors.black45, fontSize: 14),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// ✅ 우리 가족은 화목해~ 페이지
+class _FamilyHarmonyPage extends StatelessWidget {
+  final Gender gender;
+  const _FamilyHarmonyPage({required this.gender});
+
+  @override
+  Widget build(BuildContext context) {
+    final base = "assets/img/contents/studyListen/level2/story";
+
+    return Scaffold(
+      backgroundColor: const Color(0xFFFDF7EF),
+      body: GestureDetector(
+        onTap: () => Navigator.pop(context),
+        child: SafeArea(
+          child: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Image.asset(
+                  "$base/1-8-${gender == Gender.male ? 1 : 2}.png",
+                  width: MediaQuery.of(context).size.width * 0.6,
+                  fit: BoxFit.contain,
+                ),
+                const SizedBox(height: 40),
+                const Text(
+                  "우리 가족은 화목해~",
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.w600,
                     color: Colors.brown,

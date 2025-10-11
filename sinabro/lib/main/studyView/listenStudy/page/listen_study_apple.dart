@@ -19,24 +19,24 @@ class _ListenAppleSelectState extends State<ListenAppleSelect> {
   // 배경 기준 비율 좌표
   final List<Offset> spots = const [
     // 첫 번째 나무 (왼쪽) 5개
-    Offset(0.16, 0.28),
-    Offset(0.26, 0.28),
-    Offset(0.14, 0.42),
-    Offset(0.25, 0.43),
-    Offset(0.28, 0.36),
+    Offset(0.14, 0.35),
+    Offset(0.23, 0.38),
+    Offset(0.09, 0.48),
+    Offset(0.18, 0.53),
+    Offset(0.27, 0.50),
 
     // 두 번째 나무 (가운데) 5개
-    Offset(0.46, 0.28),
-    Offset(0.56, 0.28),
-    Offset(0.44, 0.42),
-    Offset(0.55, 0.43),
-    Offset(0.59, 0.36),
+    Offset(0.46, 0.35),
+    Offset(0.55, 0.38),
+    Offset(0.41, 0.48),
+    Offset(0.50, 0.53),
+    Offset(0.59, 0.50),
 
     // 세 번째 나무 (오른쪽) 4개
-    Offset(0.76, 0.28), // 10 : 1번 루틴
-    Offset(0.86, 0.28), // 11 : 2번 루틴
-    Offset(0.75, 0.42), // 12 : 3번 루틴
-    Offset(0.87, 0.42), // 13 : 4번 루틴
+    Offset(0.80, 0.35), // 10 : 1번 루틴
+    Offset(0.89, 0.41), // 11 : 2번 루틴
+    Offset(0.77, 0.50), // 12 : 3번 루틴
+    Offset(0.87, 0.56), // 13 : 4번 루틴
   ];
 
   // ✅ 사과 탭 → 루틴 실행
@@ -49,10 +49,10 @@ class _ListenAppleSelectState extends State<ListenAppleSelect> {
         startLevel2Routine(context); // story1
         break;
       case 6:
-        startLevel2Routine2(context, 0); // story2
+        startLevel2Routine2(context, 0); // story2 - routine_data_1.dart
         break;
       case 7:
-        startLevel2Routine2(context, 1); // story2
+        startLevel2Routine2(context, 1); // story2 - routine_data_2.dart
         break;
       case 8:
         startLevel2Routine3(context, 2); // story3
@@ -84,7 +84,7 @@ class _ListenAppleSelectState extends State<ListenAppleSelect> {
       body: LayoutBuilder(
         builder: (context, c) {
           final size = Size(c.maxWidth, c.maxHeight);
-          final appleSize = size.width * 0.07;
+          final appleSize = size.width * 0.06;
 
           return Stack(
             fit: StackFit.expand,
@@ -174,7 +174,7 @@ class _AppleState extends State<_Apple> {
               style: TextStyle(
                 color: Colors.white,
                 fontWeight: FontWeight.w900,
-                fontSize: widget.size * 0.4,
+                fontSize: widget.size * 0.45,
                 shadows: const [
                   Shadow(
                     blurRadius: 4,
