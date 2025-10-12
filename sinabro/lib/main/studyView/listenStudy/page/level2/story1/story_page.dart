@@ -93,10 +93,10 @@ class StoryPage extends StatelessWidget {
               children: [
                 Image.asset(
                   _imagePath,
-                  width: MediaQuery.of(context).size.width * 0.6,
+                  width: MediaQuery.of(context).size.height * 0.5,
                   fit: BoxFit.contain,
                 ),
-                const SizedBox(height: 40),
+                const SizedBox(height: 30),
                 Text(
                   _text,
                   textAlign: TextAlign.center,
@@ -106,7 +106,7 @@ class StoryPage extends StatelessWidget {
                     color: Colors.brown,
                   ),
                 ),
-                const SizedBox(height: 40),
+                const SizedBox(height: 35),
                 const Text(
                   "화면을 터치하면 다음으로 넘어갑니다",
                   style: TextStyle(color: Colors.black45, fontSize: 14),
@@ -139,7 +139,7 @@ class _ParentsStoryPage extends StatelessWidget {
               children: [
                 Image.asset(
                   "$base/1-3-${gender == Gender.male ? 1 : 2}.png",
-                  width: MediaQuery.of(context).size.width * 0.6,
+                  width: MediaQuery.of(context).size.height * 0.7,
                   fit: BoxFit.contain,
                 ),
                 const SizedBox(height: 40),

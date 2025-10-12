@@ -1,3 +1,4 @@
+// ../../../common/widget/apple_popup.dart';
 import 'package:flutter/material.dart';
 
 /// 🍎 사과 팝업 (황금 사과 반짝이 효과 포함)
@@ -25,8 +26,15 @@ Future<void> showApplePopup(BuildContext context, {required bool isGold}) async 
     },
   );
 
-  await Future.delayed(const Duration(seconds: 2));
+  // ✅ 팝업 5초 유지
+  await Future.delayed(const Duration(seconds: 5));
+
+  // 팝업 닫기
   Navigator.of(context, rootNavigator: true).pop();
+
+  // ✅ 나무(열매 선택 페이지)로 복귀
+  await Future.delayed(const Duration(milliseconds: 300)); // 자연스러운 전환 딜레이
+  Navigator.popUntil(context, (route) => route.isFirst);
 }
 
 class _ApplePopupContent extends StatefulWidget {
@@ -83,13 +91,13 @@ class _ApplePopupContentState extends State<_ApplePopupContent>
                     ? "assets/img/icon/popup/apple_gold.png"
                     : "assets/img/icon/popup/apple_red.png",
                 width: 90,
-              )
+              ),
             ],
           ),
           const SizedBox(height: 20),
           Text(
             widget.isFinal
-                ? "이번 나무의 사과를 획득했어요!\n이번 나무의 황금사과까지 전부 모았어요!\n다음 나무의 사과도 부탁해~"
+                ? "이번 나무의 사과를 획득했어요!\n황금사과까지 전부 모았어요!\n다음 나무의 사과도 부탁해~"
                 : "이번 나무의 사과를 획득했어요!\n잠시 후 나무로 돌아가요~",
             textAlign: TextAlign.center,
             style: const TextStyle(

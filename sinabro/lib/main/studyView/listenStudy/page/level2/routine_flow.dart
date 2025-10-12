@@ -34,8 +34,8 @@ import 'story3/data/routine_data_2.dart' as story3Data2;
 // ======================================================
 // 🍎 레벨2 Story1 (가족)
 // ======================================================
-void startLevel2Routine(BuildContext context) {
-  Navigator.push(
+Future<void> startLevel2Routine(BuildContext context, {required bool isGold}) async {
+  await Navigator.push(
     context,
     MaterialPageRoute(
       builder: (_) => Level2IntroPage(
@@ -45,7 +45,7 @@ void startLevel2Routine(BuildContext context) {
             MaterialPageRoute(
               builder: (_) => GenderSelectPage(
                 onSelected: (gender) {
-                  _startStory1Flow(context, gender, 1);
+                  _startStory1Flow(context, gender, 1, isGold);
                 },
               ),
             ),
@@ -56,9 +56,15 @@ void startLevel2Routine(BuildContext context) {
   );
 }
 
-void _startStory1Flow(BuildContext context, Gender gender, int index) {
+Future<void> _startStory1Flow(
+  BuildContext context,
+  Gender gender,
+  int index,
+  bool isGold,
+) async {
   if (index > 6) {
-    Navigator.popUntil(context, (route) => route.isFirst);
+    // ✅ 루틴 종료 시
+    await showApplePopup(context, isGold: isGold);
     return;
   }
 
@@ -76,7 +82,7 @@ void _startStory1Flow(BuildContext context, Gender gender, int index) {
                 index: index,
                 gender: gender,
                 onFinished: () {
-                  _startStory1Flow(context, gender, index + 1);
+                  _startStory1Flow(context, gender, index + 1, isGold);
                 },
               ),
             ),
@@ -90,8 +96,11 @@ void _startStory1Flow(BuildContext context, Gender gender, int index) {
 // ======================================================
 // 🍊 레벨2 Story2 (감정)
 // ======================================================
-Future<void> startLevel2Routine2(BuildContext context, int routineIndex) async {
-  // 6번째=Data1 / 7번째=Data2
+Future<void> startLevel2Routine2(
+  BuildContext context,
+  int routineIndex, {
+  required bool isGold,
+}) async {
   final dataSource = (routineIndex == 0)
       ? story2Data1.keywordRoutine
       : story2Data2.keywordRoutine;
@@ -101,21 +110,22 @@ Future<void> startLevel2Routine2(BuildContext context, int routineIndex) async {
     MaterialPageRoute(
       builder: (_) => Story2IntroPage(
         onNext: () {
-          _startEmotionTopicFlow(context, 0, dataSource);
+          _startEmotionTopicFlow(context, 0, dataSource, isGold);
         },
       ),
     ),
   );
 }
 
-/// 내부: 토픽 → 키워드 → 스토리 순서 진행
-void _startEmotionTopicFlow(
+Future<void> _startEmotionTopicFlow(
   BuildContext context,
   int index,
   List<Map<String, dynamic>> dataSource,
-) {
+  bool isGold,
+) async {
   if (index >= dataSource.length) {
-    Navigator.popUntil(context, (route) => route.isFirst);
+    // ✅ 루틴 종료 시
+    await showApplePopup(context, isGold: isGold);
     return;
   }
 
@@ -124,28 +134,25 @@ void _startEmotionTopicFlow(
   final keyword = item["keyword"] as RoutineContent;
   final stories = item["stories"] as List<RoutineContent>;
 
-  // ① 토픽 페이지
   Navigator.push(
     context,
     MaterialPageRoute(
       builder: (_) => TopicPage(
         topic: topic,
         onNext: () {
-          // ② 키워드 페이지
           Navigator.push(
             context,
             MaterialPageRoute(
               builder: (_) => KeywordPage(
                 keyword: keyword,
                 onNext: () {
-                  // ③ 스토리 페이지 (3장 순차)
                   Navigator.push(
                     context,
                     MaterialPageRoute(
                       builder: (_) => story2.StoryPage(
                         data: stories,
                         onFinished: () {
-                          _startEmotionTopicFlow(context, index + 1, dataSource);
+                          _startEmotionTopicFlow(context, index + 1, dataSource, isGold);
                         },
                       ),
                     ),
@@ -163,9 +170,11 @@ void _startEmotionTopicFlow(
 // ======================================================
 // 🍇 레벨2 Story3 (숫자)
 // ======================================================
-
-Future<void> startLevel2Routine3(BuildContext context, int routineIndex) async {
-  // 🍎 4번째=Data1(1~5) / 5번째=Data2(6~10)
+Future<void> startLevel2Routine3(
+  BuildContext context,
+  int routineIndex, {
+  required bool isGold,
+}) async {
   final dataSource = (routineIndex == 2)
       ? story3Data1.numberRoutine
       : story3Data2.numberRoutine;
@@ -173,33 +182,28 @@ Future<void> startLevel2Routine3(BuildContext context, int routineIndex) async {
   await Navigator.push(
     context,
     MaterialPageRoute(
-      builder: (_) => story3Intro.Story3IntroPage( // ✅ 클래스 이름 일치 수정
-        routineIndex: (routineIndex == 2) ? 0 : 1, // 데이터 구분용
+      builder: (_) => story3Intro.Story3IntroPage(
+        routineIndex: (routineIndex == 2) ? 0 : 1,
         onNext: () {
-          _startNumberFlow(context, 0, routineIndex);
+          _startNumberFlow(context, 0, routineIndex, isGold);
         },
       ),
     ),
   );
 }
 
-/// 내부: 숫자 → 손 → 과일 → 정리 페이지 순서대로 진행
 void _startNumberFlow(
   BuildContext context,
   int index,
   int routineIndex,
+  bool isGold,
 ) {
   final dataSource = (routineIndex == 2)
       ? story3Data1.numberRoutine
       : story3Data2.numberRoutine;
 
-  // ✅ 모든 숫자 학습 완료 시 (루틴 종료 시점)
   if (index >= dataSource.length) {
-    // 🍏 나무2 열매5(=routineIndex 2), 나무3 열매4(=routineIndex 3)에서만 팝업 표시
-    final bool isGoldPopup =
-        (routineIndex == 2) || (routineIndex == 3);
-
-    showApplePopup(context, isGold: isGoldPopup);
+    showApplePopup(context, isGold: isGold);
     return;
   }
 
@@ -220,7 +224,7 @@ void _startNumberFlow(
                 stories: [keyword, ...stories],
                 number: index + 1 + ((routineIndex == 2) ? 0 : 5),
                 onNext: () {
-                  _startNumberFlow(context, index + 1, routineIndex);
+                  _startNumberFlow(context, index + 1, routineIndex, isGold);
                 },
               ),
             ),

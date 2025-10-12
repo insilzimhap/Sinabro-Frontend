@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'level2/routine_flow.dart'; // ✅ 루틴 실행 분리 불러오기
 import 'level3/routine_flow.dart'; // ✅ 루틴 실행 분리 불러오기
 
+import '../../common/widget/apple_popup.dart';
+
 enum ContentStatus { locked, available, done }
 
 class ListenAppleSelect extends StatefulWidget {
@@ -39,43 +41,48 @@ class _ListenAppleSelectState extends State<ListenAppleSelect> {
     Offset(0.87, 0.56), // 13 : 4번 루틴
   ];
 
-  // ✅ 사과 탭 → 루틴 실행
-  Future<void> _tap(int index) async {
-    if (status[index] == ContentStatus.locked) return;
+Future<void> _tap(int index) async {
+  if (status[index] == ContentStatus.locked) return;
 
-    switch (index) {
-      // 두 번째 나무 (5~9) → 레벨2 루틴 실행
-      case 5:
-        startLevel2Routine(context); // story1
-        break;
-      case 6:
-        startLevel2Routine2(context, 0); // story2 - routine_data_1.dart
-        break;
-      case 7:
-        startLevel2Routine2(context, 1); // story2 - routine_data_2.dart
-        break;
-      case 8:
-        startLevel2Routine3(context, 2); // story3
-        break;
-      case 9:
-        startLevel2Routine3(context, 3); // story3
-        break;
+  // ✅ 골드 사과 위치만 true
+  final bool isGold = (index == 9 || index == 13);
 
-      // 세 번째 나무 (10~13) → 레벨3 루틴 실행
-      case 10:
-        startLevel3Routine(context, 0);
-        break;
-      case 11:
-        startLevel3Routine(context, 1);
-        break;
-      case 12:
-        startLevel3Routine(context, 2);
-        break;
-      case 13:
-        startLevel3Routine(context, 3);
-        break;
-    }
+  switch (index) {
+    // 두 번째 나무 (5~9)
+    case 5:
+      await startLevel2Routine(context, isGold: isGold);
+      break;
+    case 6:
+      await startLevel2Routine2(context, 0, isGold: isGold);
+      break;
+    case 7:
+      await startLevel2Routine2(context, 1, isGold: isGold);
+      break;
+    case 8:
+      await startLevel2Routine3(context, 2, isGold: isGold);
+      break;
+    case 9:
+      await startLevel2Routine3(context, 3, isGold: isGold);
+      break;
+
+    // 세 번째 나무 (10~13)
+    case 10:
+      await startLevel3Routine(context, 0, isGold: isGold);
+      break;
+    case 11:
+      await startLevel3Routine(context, 1, isGold: isGold);
+      break;
+    case 12:
+      await startLevel3Routine(context, 2, isGold: isGold);
+      break;
+    case 13:
+      await startLevel3Routine(context, 3, isGold: isGold);
+      break;
   }
+}
+
+
+
 
   @override
   Widget build(BuildContext context) {
