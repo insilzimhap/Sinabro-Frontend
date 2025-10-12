@@ -1,107 +1,149 @@
-// lib/main/gameView/listenGame/page/level2/level2_theme_select.dart
+// lib/main/studyView/listenGame/page/level2/theme_select_page.dart
 import 'package:flutter/material.dart';
-import 'dart:math';
-import 'package:sinabro/main/gameView/listenGame/page/level2/level2_story.dart';
-import 'package:sinabro/main/gameView/listenGame/page/level2/level2_game.dart';
-import 'package:sinabro/main/gameView/listenGame/page/level2/level2_result.dart';
+import '../listen_game_page.dart';
+import '../../data/level2_data.dart';
 
-class Level2ThemeSelectPage extends StatefulWidget {
+class Level2ThemeSelectPage extends StatelessWidget {
   const Level2ThemeSelectPage({super.key});
 
   @override
-  State<Level2ThemeSelectPage> createState() => _Level2ThemeSelectPageState();
+  Widget build(BuildContext context) {
+    final themePaths = [
+      'assets/img/contents/listenGame/level2/theme/theme_1.png',
+      'assets/img/contents/listenGame/level2/theme/theme_2.png',
+      'assets/img/contents/listenGame/level2/theme/theme_3.png',
+    ];
+    const decoPath =
+        'assets/img/contents/listenGame/level2/theme/theme_deco.png';
+    const bgPath =
+        'assets/img/contents/listenGame/level2/theme/background.png';
+
+    return Scaffold(
+      body: SafeArea(
+        child: Stack(
+          children: [
+            // 🟢 배경
+            Positioned.fill(
+              child: Image.asset(
+                bgPath,
+                fit: BoxFit.cover,
+              ),
+            ),
+
+            // 🌿 하단 풀 장식
+            Positioned(
+              bottom: 0,
+              left: 0,
+              right: 0,
+              child: Image.asset(decoPath, fit: BoxFit.cover, height: 100),
+            ),
+
+            // 🔙 뒤로가기
+            Positioned(
+              top: 16,
+              left: 16,
+              child: IconButton(
+                icon: const Icon(Icons.arrow_back_ios_new_rounded,
+                    color: Color(0xFF2E6B3D)),
+                onPressed: () => Navigator.pop(context),
+              ),
+            ),
+
+            // 🍀 테마 선택 버튼
+            Center(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: List.generate(themePaths.length, (index) {
+                    final path = themePaths[index];
+                    return _ThemeButton(
+                      index: index + 1,
+                      imagePath: path,
+                      onTap: () {
+                        final start = index * 5;
+                        final end = start + 5;
+                        final selected = level2GameData.sublist(start, end);
+
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => ListenGamePage(
+                              gameData: selected,
+                              onFinished: () => Navigator.popUntil(
+                                  context, (route) => route.isFirst),
+                            ),
+                          ),
+                        );
+                      },
+                    );
+                  }),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
-class _Level2ThemeSelectPageState extends State<Level2ThemeSelectPage>
-    with TickerProviderStateMixin {
-  late AnimationController _floatController;
-  late AnimationController _starController;
+class _ThemeButton extends StatefulWidget {
+  final int index;
+  final String imagePath;
+  final VoidCallback onTap;
+
+  const _ThemeButton({
+    required this.index,
+    required this.imagePath,
+    required this.onTap,
+  });
+
+  @override
+  State<_ThemeButton> createState() => _ThemeButtonState();
+}
+
+class _ThemeButtonState extends State<_ThemeButton>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
 
   @override
   void initState() {
     super.initState();
-
-    _floatController = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 2),
-    )..repeat(reverse: true);
-
-    _starController = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 1),
-    )..repeat(reverse: true);
+    _controller =
+        AnimationController(vsync: this, duration: const Duration(seconds: 2))
+          ..repeat(reverse: true);
   }
 
   @override
   void dispose() {
-    _floatController.dispose();
-    _starController.dispose();
+    _controller.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final themes = List.generate(3, (index) {
-      return {
-        "id": index + 1,
-        "imagePath":
-            "assets/img/contents/gameListen/level2/theme_${index + 1}.png",
-      };
-    });
+    final isCenter = widget.index == 2; // 가운데만 반짝이
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text("레벨2 테마 선택"),
-        backgroundColor: Colors.green[200],
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(24.0),
-        child: GridView.builder(
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 2,
-            crossAxisSpacing: 16,
-            mainAxisSpacing: 16,
+    return GestureDetector(
+      onTap: widget.onTap,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          Image.asset(
+            widget.imagePath,
+            width: MediaQuery.of(context).size.width * 0.25,
           ),
-          itemCount: themes.length,
-          itemBuilder: (context, index) {
-            final theme = themes[index];
-            final isOpened = true; // 지금은 전부 열림
-
-            return GestureDetector(
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder:
-                        (_) => Level2StoryPage(themeId: theme["id"] as int),
-                  ),
-                );
-              },
-              child: Stack(
-                alignment: Alignment.center,
-                children: [
-                  AnimatedBuilder(
-                    animation: _floatController,
-                    builder: (context, child) {
-                      final dy = sin(_floatController.value * 2 * pi) * 6;
-                      return Transform.translate(
-                        offset: Offset(0, dy),
-                        child: Opacity(
-                          opacity: isOpened ? 1.0 : 0.3,
-                          child: child,
-                        ),
-                      );
-                    },
-                    child: Image.asset(
-                      theme["imagePath"] as String,
-                      fit: BoxFit.contain,
-                    ),
-                  ),
-                ],
+          if (isCenter)
+            FadeTransition(
+              opacity: Tween(begin: 0.4, end: 1.0).animate(
+                CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
               ),
-            );
-          },
-        ),
+              child: const Icon(Icons.star_rounded,
+                  color: Colors.amber, size: 40),
+            ),
+        ],
       ),
     );
   }

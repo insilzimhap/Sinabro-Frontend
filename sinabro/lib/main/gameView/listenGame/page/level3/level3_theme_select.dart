@@ -1,107 +1,148 @@
-// lib/main/gameView/listenGame/page/level3/level3_theme_select.dart
+// lib/main/studyView/listenGame/page/level3/theme_select_page.dart
 import 'package:flutter/material.dart';
-import 'dart:math';
-import 'package:sinabro/main/gameView/listenGame/page/level3/level3_story.dart';
-import 'package:sinabro/main/gameView/listenGame/page/level3/level3_game.dart';
-import 'package:sinabro/main/gameView/listenGame/page/level3/level3_result.dart';
+import '../listen_game_page.dart';
+import '../../data/level3_data.dart';
 
-class Level3ThemeSelectPage extends StatefulWidget {
+class Level3ThemeSelectPage extends StatelessWidget {
   const Level3ThemeSelectPage({super.key});
 
   @override
-  State<Level3ThemeSelectPage> createState() => _Level3ThemeSelectPageState();
+  Widget build(BuildContext context) {
+    const bgPath =
+        'assets/img/contents/listenGame/level3/theme/background.png';
+    const decoPath =
+        'assets/img/contents/listenGame/level3/theme/theme_deco.png';
+    final themePaths = [
+      'assets/img/contents/listenGame/level3/theme/theme_1.png',
+      'assets/img/contents/listenGame/level3/theme/theme_2.png',
+    ];
+
+    return Scaffold(
+      body: SafeArea(
+        child: Stack(
+          children: [
+            // 🌊 배경
+            Positioned.fill(
+              child: Image.asset(
+                bgPath,
+                fit: BoxFit.cover,
+              ),
+            ),
+
+            // 🏝️ 모래 데코
+            Positioned(
+              bottom: 0,
+              left: 0,
+              right: 0,
+              child: Image.asset(decoPath, fit: BoxFit.cover, height: 100),
+            ),
+
+            // ⬅️ 뒤로가기
+            Positioned(
+              top: 16,
+              left: 16,
+              child: IconButton(
+                icon: const Icon(Icons.arrow_back_ios_new_rounded,
+                    color: Color(0xFF0D4F79)),
+                onPressed: () => Navigator.pop(context),
+              ),
+            ),
+
+            // 🐠 테마 선택 (2개)
+            Center(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 40),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: List.generate(themePaths.length, (index) {
+                    final path = themePaths[index];
+                    return _ThemeButton(
+                      index: index + 1,
+                      imagePath: path,
+                      onTap: () {
+                        final start = index * 5;
+                        final end = start + 5;
+                        final selected = level3GameData.sublist(start, end);
+
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => ListenGamePage(
+                              gameData: selected,
+                              onFinished: () => Navigator.popUntil(
+                                  context, (route) => route.isFirst),
+                            ),
+                          ),
+                        );
+                      },
+                    );
+                  }),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
-class _Level3ThemeSelectPageState extends State<Level3ThemeSelectPage>
-    with TickerProviderStateMixin {
-  late AnimationController _floatController;
-  late AnimationController _starController;
+class _ThemeButton extends StatefulWidget {
+  final int index;
+  final String imagePath;
+  final VoidCallback onTap;
+
+  const _ThemeButton({
+    required this.index,
+    required this.imagePath,
+    required this.onTap,
+  });
+
+  @override
+  State<_ThemeButton> createState() => _ThemeButtonState();
+}
+
+class _ThemeButtonState extends State<_ThemeButton>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
 
   @override
   void initState() {
     super.initState();
-
-    _floatController = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 2),
-    )..repeat(reverse: true);
-
-    _starController = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 1),
-    )..repeat(reverse: true);
+    _controller =
+        AnimationController(vsync: this, duration: const Duration(seconds: 2))
+          ..repeat(reverse: true);
   }
 
   @override
   void dispose() {
-    _floatController.dispose();
-    _starController.dispose();
+    _controller.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final themes = List.generate(2, (index) {
-      return {
-        "id": index + 1,
-        "imagePath":
-            "assets/img/contents/gameListen/level3/theme_${index + 1}.png",
-      };
-    });
+    final isRight = widget.index == 2;
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text("레벨3 테마 선택"),
-        backgroundColor: Colors.blue[200],
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(24.0),
-        child: GridView.builder(
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 2,
-            crossAxisSpacing: 16,
-            mainAxisSpacing: 16,
+    return GestureDetector(
+      onTap: widget.onTap,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          Image.asset(
+            widget.imagePath,
+            width: MediaQuery.of(context).size.width * 0.35,
           ),
-          itemCount: themes.length,
-          itemBuilder: (context, index) {
-            final theme = themes[index];
-            final isOpened = true;
-
-            return GestureDetector(
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder:
-                        (_) => Level3StoryPage(themeId: theme["id"] as int),
-                  ),
-                );
-              },
-              child: Stack(
-                alignment: Alignment.center,
-                children: [
-                  AnimatedBuilder(
-                    animation: _floatController,
-                    builder: (context, child) {
-                      final dy = sin(_floatController.value * 2 * pi) * 6;
-                      return Transform.translate(
-                        offset: Offset(0, dy),
-                        child: Opacity(
-                          opacity: isOpened ? 1.0 : 0.3,
-                          child: child,
-                        ),
-                      );
-                    },
-                    child: Image.asset(
-                      theme["imagePath"] as String,
-                      fit: BoxFit.contain,
-                    ),
-                  ),
-                ],
+          if (isRight)
+            FadeTransition(
+              opacity: Tween(begin: 0.4, end: 1.0).animate(
+                CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
               ),
-            );
-          },
-        ),
+              child:
+                  const Icon(Icons.star_rounded, color: Colors.amber, size: 40),
+            ),
+        ],
       ),
     );
   }

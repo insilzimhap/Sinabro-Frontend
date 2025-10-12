@@ -1,159 +1,142 @@
-// lib/main/gameView/common/listenGame/page/level1/level1_theme_select.dart
+// lib/main/studyView/listenGame/page/level1/theme_select_page.dart
 import 'package:flutter/material.dart';
-import 'dart:math';
-import 'level1_game.dart'; // 스토리 페이지 연결
+import '../listen_game_page.dart'; // 공용 게임 페이지
+import '../../data/level1_data.dart';
 
-class Level1ThemeSelectPage extends StatefulWidget {
+class Level1ThemeSelectPage extends StatelessWidget {
   const Level1ThemeSelectPage({super.key});
 
   @override
-  State<Level1ThemeSelectPage> createState() => _Level1ThemeSelectPageState();
+  Widget build(BuildContext context) {
+    final themes = List.generate(
+      5,
+      (i) => 'assets/img/contents/listenGame/level1/theme/theme_${i + 1}.png',
+    );
+
+    return Scaffold(
+      backgroundColor: const Color(0xFFFFF8EE),
+      body: SafeArea(
+        child: Stack(
+          children: [
+            // 🟤 뒤로가기
+            Positioned(
+              top: 16,
+              left: 16,
+              child: IconButton(
+                icon: const Icon(Icons.arrow_back_ios_new_rounded,
+                    color: Color(0xFFB05E2E)),
+                onPressed: () => Navigator.pop(context),
+              ),
+            ),
+
+            // 📚 테마 5개
+            Center(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 40),
+                child: GridView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 2,
+                    mainAxisSpacing: 24,
+                    crossAxisSpacing: 24,
+                    childAspectRatio: 1,
+                  ),
+                  itemCount: themes.length,
+                  itemBuilder: (context, index) {
+                    final themePath = themes[index];
+                    return _ThemeBook(
+                      index: index + 1,
+                      imagePath: themePath,
+                      onTap: () {
+                        // 테마 선택 → 데이터 구간 계산
+                        final start = index * 5;
+                        final end = start + 5;
+                        final selectedSet =
+                            level1GameData.sublist(start, end);
+
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => ListenGamePage(
+                              gameData: selectedSet,
+                              onFinished: () {
+                                // 테마 완료 후 다시 테마선택 페이지로 복귀
+                                Navigator.popUntil(
+                                    context, (route) => route.isFirst);
+                              },
+                            ),
+                          ),
+                        );
+                      },
+                    );
+                  },
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
-class _Level1ThemeSelectPageState extends State<Level1ThemeSelectPage>
-    with TickerProviderStateMixin {
-  late AnimationController _floatController;
-  late AnimationController _starController;
+class _ThemeBook extends StatefulWidget {
+  final int index;
+  final String imagePath;
+  final VoidCallback onTap;
 
-  int unlockedStage = 1; // 현재 오픈된 단계 (처음엔 1단계만 열림)
+  const _ThemeBook({
+    required this.index,
+    required this.imagePath,
+    required this.onTap,
+  });
+
+  @override
+  State<_ThemeBook> createState() => _ThemeBookState();
+}
+
+class _ThemeBookState extends State<_ThemeBook>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
 
   @override
   void initState() {
     super.initState();
-
-    // 책 둥실둥실
-    _floatController = AnimationController(
+    _controller = AnimationController(
       vsync: this,
       duration: const Duration(seconds: 2),
-    )..repeat(reverse: true);
-
-    // 별 반짝임
-    _starController = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 1),
     )..repeat(reverse: true);
   }
 
   @override
   void dispose() {
-    _floatController.dispose();
-    _starController.dispose();
+    _controller.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final themes = List.generate(5, (index) {
-      return {
-        "id": index + 1,
-        "imagePath":
-            "assets/img/contents/gameListen/level1/theme_${index + 1}.png",
-      };
-    });
+    // 마지막 테마(5번)에만 반짝이 효과 ✨
+    final isSpecial = widget.index == 5;
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text("레벨1 테마 선택"),
-        backgroundColor: Colors.orange[200],
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(24.0),
-        child: GridView.builder(
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 2,
-            crossAxisSpacing: 16,
-            mainAxisSpacing: 16,
-          ),
-          itemCount: themes.length,
-          itemBuilder: (context, index) {
-            final theme = themes[index];
-            final isOpened = index + 1 <= unlockedStage;
-
-            return GestureDetector(
-              onTap: () {
-                if (isOpened) {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder:
-                          (_) => Level1GamePage(themeId: theme["id"] as int),
-                    ),
-                  );
-                }
-              },
-              child: Stack(
-                alignment: Alignment.center,
-                children: [
-                  // 책 이미지 (둥실둥실 애니메이션)
-                  AnimatedBuilder(
-                    animation: _floatController,
-                    builder: (context, child) {
-                      final dy = sin(_floatController.value * 2 * pi) * 6;
-                      return Transform.translate(
-                        offset: Offset(0, dy),
-                        child: Opacity(
-                          opacity: isOpened ? 1.0 : 0.3, // 잠긴 경우 반투명
-                          child: child,
-                        ),
-                      );
-                    },
-                    child: Image.asset(
-                      theme["imagePath"] as String,
-                      fit: BoxFit.contain,
-                    ),
-                  ),
-
-                  // 반짝이는 별 (열린 경우만)
-                  if (isOpened)
-                    Positioned.fill(
-                      child: IgnorePointer(
-                        child: AnimatedBuilder(
-                          animation: _starController,
-                          builder: (context, child) {
-                            final opacity =
-                                0.5 + 0.5 * sin(_starController.value * 2 * pi);
-                            return Opacity(
-                              opacity: opacity,
-                              child: Stack(
-                                children: [
-                                  Positioned(
-                                    top: 10,
-                                    left: 10,
-                                    child: Icon(
-                                      Icons.star,
-                                      color: Colors.yellow[600],
-                                      size: 20,
-                                    ),
-                                  ),
-                                  Positioned(
-                                    top: 20,
-                                    right: 15,
-                                    child: Icon(
-                                      Icons.star,
-                                      color: Colors.yellow[700],
-                                      size: 16,
-                                    ),
-                                  ),
-                                  Positioned(
-                                    bottom: 15,
-                                    left: 25,
-                                    child: Icon(
-                                      Icons.star,
-                                      color: Colors.yellow[500],
-                                      size: 18,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            );
-                          },
-                        ),
-                      ),
-                    ),
-                ],
+    return GestureDetector(
+      onTap: widget.onTap,
+      child: ScaleTransition(
+        scale: Tween(begin: 0.98, end: 1.05)
+            .animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut)),
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            Image.asset(widget.imagePath, fit: BoxFit.contain),
+            if (isSpecial)
+              Positioned(
+                right: 8,
+                bottom: 8,
+                child: Icon(Icons.auto_awesome,
+                    color: Colors.amber.withOpacity(0.8), size: 28),
               ),
-            );
-          },
+          ],
         ),
       ),
     );

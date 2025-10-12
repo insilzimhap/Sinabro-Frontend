@@ -3,15 +3,10 @@ import 'package:sinabro/main/mainView/page/home_screen.dart';
 import 'package:kakao_flutter_sdk_common/kakao_flutter_sdk_common.dart';
 
 // 듣기학습 테스트용
-import 'package:sinabro/main/studyView/listenStudy/page/listen_study_apple.dart';
+// import 'package:sinabro/main/studyView/listenStudy/page/listen_study_apple.dart';
 
-// 듣기게임 테스트용 (제거 예정)
-//import 'package:sinabro/main/gameView/listenGame/page/test_page.dart';
-
-//듣기학습
-//import 'package:sinabro/main/studyView/listenStudy/page/listen_study_page.dart';
-//import 'package:sinabro/main/studyView/writeStudy/page/write_study_page.dart';
-//import 'package:sinabro/selvy_example_view/handwriting_screen.dart';
+// 듣기게임 테스트용
+import 'main/gameView/listenGame/chapter_page.dart';
 
 void main() {
   
@@ -33,7 +28,8 @@ class MyApp extends StatelessWidget {
       //home: const HandwritingScreen(),
       //home: ListenStudyPage(),
       //home: WriteStudyPage(),
-      home: const ListenAppleSelect(childId: "test_child"),
+      // home: const ListenAppleSelect(childId: "test_child"), ✔️ 듣기학습용
+      home: ListenGameChapterPage(),
     );
   }
 }

@@ -30,6 +30,11 @@ flutter:
   assets:
     - assets/img/auth/
     - assets/img/character/
+    - assets/img/character/gomjae/
+    - assets/img/character/tosoon/
+    - assets/img/character/ojjang/
+    - assets/img/character/gonyam/
+    - assets/img/character/meongji/
     - assets/img/icon/
     - assets/img/icon/popup/
     - assets/img/logo/
@@ -40,12 +45,14 @@ flutter:
     - assets/img/contents/gameWrite/
 
     - assets/img/contents/gameListen/
+    - assets/img/contents/gameListen/chapter/
 
     - assets/img/contents/studyListen/
     - assets/img/contents/studyListen/level2/
     - assets/img/contents/studyListen/level2/main_keyword/
     - assets/img/contents/studyListen/level2/main_topic/
     - assets/img/contents/studyListen/level2/story/
+    
     - assets/img/contents/studyListen/level3/
     - assets/img/contents/studyListen/level3/main_keyword/
     - assets/img/contents/studyListen/level3/main_topic/
