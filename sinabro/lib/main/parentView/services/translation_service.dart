@@ -14,7 +14,7 @@ class TranslationService extends ChangeNotifier {
   bool _isLoading = false;
   bool _isInitialized = false; // ✨ 초기화 여부를 추적하는 플래그
   final Map<String, String> _translationCache = {};
-  
+
   final htmlUnescape = HtmlUnescape();
 
   bool get isLoading => _isLoading;
@@ -55,9 +55,10 @@ class TranslationService extends ChangeNotifier {
       return _translationCache[sourceText]!;
     }
 
-    const apiKey = 'AIzaSyBRSdDSFargBqKLoxvib54hCi7DhIYvnN0';
+    const apiKey = 'GOOGLE_API_KEY'; //Google API 키 값 넣는 곳
 
-    final url = Uri.parse('https://translation.googleapis.com/language/translate/v2?key=$apiKey');
+    final url = Uri.parse(
+        'https://translation.googleapis.com/language/translate/v2?key=$apiKey');
 
     try {
       final response = await http.post(
@@ -73,7 +74,7 @@ class TranslationService extends ChangeNotifier {
         final body = json.decode(utf8.decode(response.bodyBytes));
         final rawText = body['data']['translations'][0]['translatedText'];
         final translatedText = htmlUnescape.convert(rawText);
-        
+
         _translationCache[sourceText] = translatedText;
         return translatedText;
       } else {
@@ -88,13 +89,20 @@ class TranslationService extends ChangeNotifier {
 
   String _mapApiLangToGoogleCode(String apiLang) {
     switch (apiLang) {
-      case 'Korea': return 'ko';
-      case 'English': return 'en';
-      case 'Japanese': return 'ja';
-      case 'Vietnamese': return 'vi';
-      case 'Chinese': return 'zh-CN';
-      case 'Thai': return 'th';
-      default: return 'ko';
+      case 'Korea':
+        return 'ko';
+      case 'English':
+        return 'en';
+      case 'Japanese':
+        return 'ja';
+      case 'Vietnamese':
+        return 'vi';
+      case 'Chinese':
+        return 'zh-CN';
+      case 'Thai':
+        return 'th';
+      default:
+        return 'ko';
     }
   }
 }
