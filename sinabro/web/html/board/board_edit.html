@@ -3,91 +3,9 @@
 <head>
   <meta charset="UTF-8" />
   <title>공지사항 수정 - 시나브로</title>
-  <link rel="stylesheet" href="../../css/header.css" />
-  <style>
-    body {
-      font-family: 'Arial', sans-serif;
-      background-color: #f0f4f8;
-      margin: 0;
-      padding: 0;
-    }
+<link rel="stylesheet" href="/web/css/header.css" />
+<link rel="stylesheet" href="/web/css/board/board_edit.css" />
 
-    main {
-      padding: 50px;
-      display: flex;
-      justify-content: center;
-    }
-
-    .container {
-      background: white;
-      padding: 30px;
-      border-radius: 10px;
-      box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
-      width: 500px;
-    }
-
-    h2 {
-      text-align: center;
-      margin-bottom: 30px;
-    }
-
-    .form-group {
-      display: flex;
-      flex-direction: column;
-      margin-bottom: 20px;
-    }
-
-    .form-group label {
-      font-weight: bold;
-      margin-bottom: 6px;
-    }
-
-    .form-group input,
-    .form-group textarea {
-      padding: 10px;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-      font-size: 14px;
-      width: 100%;
-    }
-
-    textarea {
-      resize: vertical;
-      min-height: 100px;
-    }
-
-    .form-group input[readonly] {
-      background-color: #eee;
-    }
-
-    .button-row {
-      display: flex;
-      justify-content: center;
-      gap: 10px;
-    }
-
-    .button-row button {
-      padding: 10px 20px;
-      border: none;
-      border-radius: 4px;
-      font-size: 14px;
-      cursor: pointer;
-      color: white;
-    }
-
-    .save-btn {
-      background-color: #4caf50;
-    }
-
-    .cancel-btn {
-      background-color: #777;
-    }
-    form {
-  display: block !important;
-  flex-direction: column !important;
-}
-
-  </style>
 </head>
 <body>
   <div id="header-container"></div>
@@ -98,22 +16,22 @@
       <form id="editForm">
         <div class="form-group">
           <label for="title">제목</label>
-          <input type="text" id="title" value="시스템 점검 안내" required />
+          <input type="text" id="title" required />
         </div>
 
         <div class="form-group">
           <label for="content">내용</label>
-          <textarea id="content" required>금일 22:00 시스템 점검이 예정되어 있습니다.</textarea>
+          <textarea id="content" required></textarea>
         </div>
 
         <div class="form-group">
           <label for="date">작성일</label>
-          <input type="text" id="date" value="2025-04-11" readonly />
+          <input type="text" id="date" readonly />
         </div>
 
         <div class="form-group">
-          <label for="author">작성자</label>
-          <input type="text" id="author" value="관리자" readonly />
+          <label for="type">유형</label>
+          <input type="text" id="type"/>
         </div>
 
         <div class="button-row">
@@ -125,29 +43,81 @@
   </main>
 
   <script>
-    document.getElementById('editForm').addEventListener('submit', function(e) {
-      e.preventDefault();
-      alert("공지사항이 수정되었습니다.");
-      window.location.href = 'board_notice.html';
-    });
-  </script>
-  <script>
     // 공통 헤더 삽입
-    fetch("../../header.html")
+    fetch("/web/header.html")
       .then(res => res.text())
-      .then(data => {
-        document.getElementById("header-container").innerHTML = data;
-      });
+      .then(data => { document.getElementById("header-container").innerHTML = data; });
 
-    function saveReply() {
-      const replyText = document.getElementById('reply').value.trim();
-      if (replyText) {
-        alert('답변이 저장되었습니다!');
-        window.location.href = 'board_qna.html';
-      } else {
-        alert('답변을 입력해주세요!');
+    const API_BASE = "http://localhost:8090/api/admin/notices";
+
+    // yyyy-MM-dd로 변환
+    function formatDate(iso) {
+      if (!iso) return "";
+      try { return iso.split("T")[0]; } catch { return ""; }
+    }
+
+    // URL ?id= 추출
+    const params = new URLSearchParams(window.location.search);
+    const noticeId = params.get("id");
+
+    if (!noticeId) {
+      alert("잘못된 접근입니다. 공지 ID가 없습니다.");
+      location.replace("board_notice.html");
+    }
+
+    // 초기 데이터 로드 (상세 조회)
+    async function loadDetail() {
+      try {
+        const res = await fetch(`${API_BASE}/${noticeId}`);
+        if (!res.ok) throw new Error("공지사항을 불러오지 못했습니다.");
+
+        const n = await res.json();
+        // 폼 채우기
+        document.getElementById("title").value = n.title || "";
+        document.getElementById("content").value = n.content || "";
+        document.getElementById("type").value = n.noticeType || "";
+        document.getElementById("date").value = formatDate(n.createdDate);
+      } catch (e) {
+        console.error(e);
+        alert("공지사항 정보를 불러오는 중 오류가 발생했습니다.");
+        location.replace("board_notice.html");
       }
     }
+
+    // 저장(수정) 처리
+    document.getElementById("editForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      const payload = {
+        title: document.getElementById("title").value.trim(),
+        content: document.getElementById("content").value.trim(),
+        noticeType: document.getElementById("type").value.trim()
+      };
+
+      if (!payload.title || !payload.content) {
+        alert("제목과 내용을 입력해주세요.");
+        return;
+      }
+
+      try {
+        const res = await fetch(`${API_BASE}/${noticeId}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+        if (!res.ok) throw new Error("수정 실패");
+
+        alert("공지사항이 수정되었습니다.");
+        // 수정 후 목록으로 이동 (원하면 상세로 이동해도 됨)
+        location.href = "board_notice.html";
+      } catch (e) {
+        console.error(e);
+        alert("수정 중 오류가 발생했습니다.");
+      }
+    });
+
+    // 페이지 로드 시점
+    document.addEventListener("DOMContentLoaded", loadDetail);
   </script>
 </body>
 </html>

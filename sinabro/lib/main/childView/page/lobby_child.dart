@@ -10,7 +10,6 @@ import 'package:sinabro/main/studyView/listenStudy/page/listen_study_page.dart';
 // ✅ 한 곳에서 서버 주소 관리 (추가)
 import 'package:sinabro/config.dart';
 
-
 class LobbyChildScreen extends StatefulWidget {
   final String childId;
   const LobbyChildScreen({super.key, required this.childId});
@@ -52,7 +51,7 @@ class _LobbyChildScreenState extends State<LobbyChildScreen> {
 
   Future<void> _fetchChildInfo() async {
     final url = '$baseUrl/api/child/info?childId=${widget.childId}';
-    
+
     try {
       final response = await http.get(Uri.parse(url));
       if (response.statusCode == 200) {
@@ -94,162 +93,192 @@ class _LobbyChildScreenState extends State<LobbyChildScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFFDF5E6),
       body: SafeArea(
-        child: _isLoading
-            ? const Center(child: CircularProgressIndicator())
-            : Stack(
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.all(24),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // 캐릭터명 탭
-                        Container(
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFFFF2B3),
-                            borderRadius: const BorderRadius.only(
-                              topLeft: Radius.circular(12),
-                              topRight: Radius.circular(12),
-                            ),
-                          ),
-                          child: Text(
-                            characterName.isNotEmpty ? characterName : '캐릭터 없음',
-                            style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-
-                        // 응원 메시지 대화창
-                        GestureDetector(
-                          onTap: _setRandomMessage,
-                          child: Container(
-                            width: double.infinity,
-                            padding: const EdgeInsets.all(16),
+        child:
+            _isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : Stack(
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.all(24),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // 캐릭터명 탭
+                          Container(
+                            padding: const EdgeInsets.all(12),
                             decoration: BoxDecoration(
-                              color: Colors.white,
-                              border: Border.all(color: const Color(0xFFE0D9B8)),
+                              color: const Color(0xFFFFF2B3),
                               borderRadius: const BorderRadius.only(
-                                bottomLeft: Radius.circular(12),
-                                bottomRight: Radius.circular(12),
-                                topLeft: Radius.circular(0),
-                                topRight: Radius.circular(0),
+                                topLeft: Radius.circular(12),
+                                topRight: Radius.circular(12),
                               ),
                             ),
                             child: Text(
-                              currentMessage,
+                              characterName.isNotEmpty
+                                  ? characterName
+                                  : '캐릭터 없음',
                               style: const TextStyle(
                                 fontSize: 16,
-                                color: Colors.brown,
+                                fontWeight: FontWeight.bold,
                               ),
                             ),
                           ),
-                        ),
 
-                        const SizedBox(height: 20),
-
-                        // 캐릭터 이미지 + 버튼들
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            // 캐릭터 이미지
-                            Container(
-                              width: 100,
-                              height: 100,
-                              margin: const EdgeInsets.only(right: 20),
+                          // 응원 메시지 대화창
+                          GestureDetector(
+                            onTap: _setRandomMessage,
+                            child: Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.all(16),
                               decoration: BoxDecoration(
-                                color: const Color(0xFFE8E1CD),
-                                borderRadius: BorderRadius.circular(12),
+                                color: Colors.white,
+                                border: Border.all(
+                                  color: const Color(0xFFE0D9B8),
+                                ),
+                                borderRadius: const BorderRadius.only(
+                                  bottomLeft: Radius.circular(12),
+                                  bottomRight: Radius.circular(12),
+                                  topLeft: Radius.circular(0),
+                                  topRight: Radius.circular(0),
+                                ),
                               ),
-                              child: Center(child: Text(characterName.isNotEmpty ? characterName : '캐릭터')),
-                            ),
-
-                            // 2x2 버튼
-                            Expanded(
-                              child: Column(
-                                children: [
-                                  Row(
-                                    children: [
-                                      _buildActionButton('쓰기 학습', () {
-                                        Navigator.push(
-                                          context,
-                                          MaterialPageRoute(
-                                            builder: (_) => WriteStudyPage(childId: widget.childId),
-                                          ),
-                                        );
-                                      }),
-                                      const SizedBox(width: 10),
-                                      _buildActionButton('듣기 학습', () {
-                                        Navigator.push(
-                                          context,
-                                          MaterialPageRoute(
-                                            builder: (_) => ListenStudyPage(childId: widget.childId),
-                                          ),
-                                        );
-                                      }),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 10),
-                                  Row(
-                                    children: [
-                                      _buildActionButton('쓰기 게임', () {
-                                        // TODO: 추후 연결
-                                      }),
-                                      const SizedBox(width: 10),
-                                      _buildActionButton('듣기 게임', () {
-                                        // TODO: 추후 연결
-                                      }),
-                                    ],
-                                  ),
-                                ],
+                              child: Text(
+                                currentMessage,
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  color: Colors.brown,
+                                ),
                               ),
                             ),
-                          ],
-                        ),
+                          ),
 
-                        const SizedBox(height: 20),
+                          const SizedBox(height: 20),
 
-                        // 닉네임
-                        Text(
-                          nickname.isNotEmpty ? '$nickname님' : '',
-                          style: const TextStyle(fontSize: 16, color: Colors.brown),
-                        ),
+                          // 캐릭터 이미지 + 버튼들
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              // 캐릭터 이미지
+                              Container(
+                                width: 100,
+                                height: 100,
+                                margin: const EdgeInsets.only(right: 20),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFE8E1CD),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Center(
+                                  child: Text(
+                                    characterName.isNotEmpty
+                                        ? characterName
+                                        : '캐릭터',
+                                  ),
+                                ),
+                              ),
 
-                        const SizedBox(height: 6),
+                              // 2x2 버튼
+                              Expanded(
+                                child: Column(
+                                  children: [
+                                    Row(
+                                      children: [
+                                        _buildActionButton('쓰기 학습', () {
+                                          Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder:
+                                                  (_) => WriteStudyPage(
+                                                    childId: widget.childId,
+                                                  ),
+                                            ),
+                                          );
+                                        }),
+                                        const SizedBox(width: 10),
+                                        _buildActionButton('듣기 학습', () {
+                                          Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder:
+                                                  (_) => ListenStudyPage(
+                                                    childId: widget.childId,
+                                                  ),
+                                            ),
+                                          );
+                                        }),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 10),
+                                    Row(
+                                      children: [
+                                        _buildActionButton('쓰기 게임', () {
+                                          // TODO: 추후 연결
+                                        }),
+                                        const SizedBox(width: 10),
+                                        _buildActionButton('듣기 게임', () {
+                                          // TODO: 추후 연결
+                                        }),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
 
-                        // 아이디 + 레벨 (같은 줄)
-                        Row(
-                          children: [
-                            Text(
-                              'ID: ${widget.childId}',
-                              style: const TextStyle(fontSize: 14, color: Colors.brown),
+                          const SizedBox(height: 20),
+
+                          // 닉네임
+                          Text(
+                            nickname.isNotEmpty ? '$nickname님' : '',
+                            style: const TextStyle(
+                              fontSize: 16,
+                              color: Colors.brown,
                             ),
-                            const SizedBox(width: 12),
-                            Text(
-                              '레벨: ${level.isNotEmpty ? level : "-"}',
-                              style: const TextStyle(fontSize: 14, color: Colors.brown),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
+                          ),
 
-                  // 환경설정 아이콘
-                  Positioned(
-                    bottom: 24,
-                    right: 24,
-                    child: IconButton(
-                      icon: const Icon(Icons.settings, size: 32, color: Colors.brown),
-                      onPressed: () {
-                        // 설정 화면 이동 등 추후 구현
-                      },
+                          const SizedBox(height: 6),
+
+                          // 아이디 + 레벨 (같은 줄)
+                          Row(
+                            children: [
+                              Text(
+                                'ID: ${widget.childId}',
+                                style: const TextStyle(
+                                  fontSize: 14,
+                                  color: Colors.brown,
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Text(
+                                '레벨: ${level.isNotEmpty ? level : "-"}',
+                                style: const TextStyle(
+                                  fontSize: 14,
+                                  color: Colors.brown,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                ],
-              ),
+
+                    // 환경설정 아이콘
+                    Positioned(
+                      bottom: 24,
+                      right: 24,
+                      child: IconButton(
+                        icon: const Icon(
+                          Icons.settings,
+                          size: 32,
+                          color: Colors.brown,
+                        ),
+                        onPressed: () {
+                          // 설정 화면 이동 등 추후 구현
+                        },
+                      ),
+                    ),
+                  ],
+                ),
       ),
     );
   }

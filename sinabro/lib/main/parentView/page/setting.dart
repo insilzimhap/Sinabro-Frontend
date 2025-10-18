@@ -1,14 +1,23 @@
+/*
+ * 파일: lib/main/parentView/page/setting.dart (SettingsPage)
+ * 개요: 부모용 ‘설정’ 화면. ParentLayout 하위에서 수신동의/언어 등 앱 환경설정을
+ * 구성하고 로그아웃·회원탈퇴 플로우(커스텀 다이얼로그)까지 제공한다.
+ * 로그아웃 → UserSelectScreen, 탈퇴 → HomeScreen
+ * @ 채영: JWT+api 연결 완료
+ * @연수: 언어팩 지원을 위해 수정중 // ✨
+ * @연수: 설정 -> 언어 변경 후 저장하기 눌렀을 때, 언어 새로고침
+ */
 import 'package:flutter/material.dart';
 import 'package:sinabro/main/parentView/layout/parent_layout.dart';
 import 'package:sinabro/main/mainView/page/home_screen.dart';
+import 'package:sinabro/main/parentView/api/parent_api.dart';
+import 'package:sinabro/main/mainView/page/user_select_screen.dart';
+import 'package:sinabro/main/parentView/services/translation_service.dart';
+import 'package:sinabro/main/parentView/widget/translated_text.dart'; // ✨
 
 class SettingsPage extends StatefulWidget {
-  /// 라우팅용 이름 (MaterialApp.routes에 등록해서 사용)
   static const String routeName = '/parent/settings';
-
-  /// 사이드바 동적 표시용 (없어도 동작)
   final String? parentUserId;
-
   const SettingsPage({super.key, this.parentUserId});
 
   @override
@@ -23,136 +32,424 @@ class _SettingsPageState extends State<SettingsPage> {
   // 언어설정
   final List<String> languages = const [
     '한국어',
+    'English',
+    '日本語',
+    'Tiếng Việt',
     '中文',
     'ไทย',
-    'English',
-    'Tiếng Việt',
   ];
   String selectedLang = '한국어';
 
-  // ================= 저장 =================
-  Future<void> _save() async {
-    // TODO: 서버 저장 API 연동
-    // final payload = {...}; await http.post(...);
+  bool _loading = false;
+  bool _saving = false;
 
-    if (!mounted) return;
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('설정이 저장되었습니다.')));
+  @override
+  void initState() {
+    super.initState();
+    _loadSettings(); //서버 프리필
   }
 
-  // ============== 회원 탈퇴 플로우 ==============
-  // 1) 현재 비밀번호 입력 -> 실패 시 실패 팝업
-  // 2) 성공 시 확인 팝업 -> 예 누르면 탈퇴 처리 -> 성공 팝업 후 홈으로
+  // 부모 설정 불러오기: GET /api/app/mypage/parent/{userId}/settings
+  Future<void> _loadSettings() async {
+    if ((widget.parentUserId ?? '').isEmpty) return;
+    setState(() => _loading = true);
+    try {
+      final s = await ParentApi.fetchSettings(widget.parentUserId!);
+      if (!mounted) return;
+      setState(() {
+        agreeEmail = s.emailSubscription;
+        agreePush = s.allowNotifications;
+        selectedLang = _reverseMapLang(s.userLanguage); //언어 매핑 적용
+      });
+      print(
+        '[설정 불러오기 성공] allow=$agreePush, email=$agreeEmail, lang=$selectedLang',
+      );
+    } catch (e) {
+      if (mounted) {
+        print('[설정 불러오기 실패] $e');
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('설정 불러오기 실패: $e'))); // TODO: 번역
+      }
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  // 부모 설정 저장: PATCH /api/app/mypage/parent/{userId}/settings
+  Future<void> _save() async {
+    if ((widget.parentUserId ?? '').isEmpty) return;
+    setState(() => _saving = true);
+    try {
+      // 1. 서버에 변경된 설정을 저장합니다.
+      await ParentApi.updateSettings(
+        userId: widget.parentUserId!,
+        allowNotifications: agreePush,
+        emailSubscription: agreeEmail,
+        userLanguage: _mapLang(selectedLang), // 언어 매핑
+      );
+
+      // ✨ 2. 성공 시, TranslationService를 다시 초기화하여 변경된 언어를 즉시 앱에 적용합니다.
+      await TranslationService.instance.initialize(widget.parentUserId!);
+
+      if (!mounted) return;
+      print('[설정 저장 성공]');
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('설정이 저장되었습니다.'))); // TODO: 번역
+    } catch (e) {
+      if (mounted) {
+        print('[설정 저장 실패] $e');
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('설정 저장 실패: $e'))); // TODO: 번역
+      }
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
+
+  // 언어 매핑 (프론트 → 서버)
+  String _mapLang(String v) {
+    switch (v) {
+      case '한국어':
+        return 'Korea';
+      case 'English':
+        return 'English';
+      case '日本語':
+        return 'Japanese';
+      case 'Tiếng Việt':
+        return 'Vietnamese';
+      case '中文':
+        return 'Chinese';
+      case 'ไทย':
+        return 'Thai';
+      default:
+        return 'Korea';
+    }
+  }
+
+  // 언어 매핑 (서버 → 프론트)
+  String _reverseMapLang(String v) {
+    switch (v) {
+      case 'Korea':
+        return '한국어';
+      case 'English':
+        return 'English';
+      case 'Japanese':
+        return '日本語';
+      case 'Vietnamese':
+        return 'Tiếng Việt';
+      case 'Chinese':
+        return '中文';
+      case 'Thai':
+        return 'ไทย';
+      default:
+        return '한국어';
+    }
+  }
+
+  // ================= Actions =================
+
+  // 로그아웃: POST /api/users/logout
+  Future<void> _logout() async {
+    try {
+      await ParentApi.logout();
+      print('[로그아웃 성공]');
+    } catch (e) {
+      print('[로그아웃 실패] $e');
+    }
+    if (!mounted) return;
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(builder: (_) => const UserSelectScreen()),
+      (route) => false,
+    );
+  }
+
+  // 회원 탈퇴 플로우
   Future<void> _withdrawFlow() async {
     final pw = await _askCurrentPassword();
-    if (pw == null) return;
+    if (pw == null || pw.isEmpty) return;
 
-    // TODO: 실제 비밀번호 검증 API
-    final verified = pw.isNotEmpty;
-    if (!verified) {
+    // 1단계: 비밀번호 검증
+    try {
+      await ParentApi.verifyDelete(widget.parentUserId!, pw);
+    } catch (e) {
       await _showFailureDialog(
-        titleImage: 'assets/img/dialog/fail.png',
+        title: '실패', // ✨
         message: '현재 비밀번호가 올바르지 않습니다!',
       );
       return;
     }
 
+    // 2단계: 정말 탈퇴하시겠습니까?
     final ok = await _showConfirmDialog(
-      titleImage: 'assets/img/dialog/warn.png',
+      title: '주의', // ✨
       message: '정말 탈퇴하시겠습니까?',
       yesText: '예',
       noText: '아니요',
     );
     if (ok != true) return;
 
-    // TODO: 실제 탈퇴 API 호출
-    await Future.delayed(const Duration(milliseconds: 350));
-
-    await _showSuccessGoHome(message: '탈퇴되었습니다!\n메인 화면으로 돌아갑니다');
-    if (!mounted) return;
-
-    // ✅ 탈퇴 후 home_screen.dart로 이동
-    Navigator.of(context).pushAndRemoveUntil(
-      MaterialPageRoute(builder: (_) => CloudAnimationScreen()),
-      (route) => false,
-    );
+    // 3단계: 탈퇴 API 호출
+    try {
+      await ParentApi.deleteParent(widget.parentUserId!, pw);
+      await _showSuccessGoHome(message: '탈퇴되었습니다!\n메인 화면으로 돌아갑니다');
+      if (!mounted) return;
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (_) => CloudAnimationScreen()),
+        (route) => false,
+      );
+    } catch (e) {
+      await _showFailureDialog(
+        title: '실패', // ✨
+        message: '탈퇴 실패: $e',
+      );
+    }
   }
 
-  // -------- 팝업 1: 현재 비밀번호 입력 --------
+  // -------- 공통 다이얼로그들 --------
   Future<String?> _askCurrentPassword() async {
     final controller = TextEditingController();
     return showDialog<String?>(
       context: context,
       barrierDismissible: true,
-      builder:
-          (_) => Dialog(
-            insetPadding: const EdgeInsets.symmetric(
-              horizontal: 32,
-              vertical: 24,
-            ),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Container(
-              decoration: BoxDecoration(
-                color: const Color(0xFFE7F6E9),
-                border: Border.all(color: const Color(0xFF53A866), width: 3),
-                borderRadius: BorderRadius.circular(16),
+      builder: (_) => Dialog(
+        insetPadding: const EdgeInsets.symmetric(
+          horizontal: 32,
+          vertical: 24,
+        ),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Container(
+          decoration: BoxDecoration(
+            color: const Color(0xFFE7F6E9),
+            border: Border.all(color: const Color(0xFF53A866), width: 3),
+            borderRadius: BorderRadius.circular(16),
+          ),
+          padding: const EdgeInsets.fromLTRB(20, 18, 20, 24),
+          child: Stack(
+            children: [
+              Positioned(
+                right: 0,
+                top: 0,
+                child: IconButton(
+                  icon: const Icon(Icons.close, color: Color(0xFF2E7D32)),
+                  onPressed: () => Navigator.pop(context, null),
+                ),
               ),
-              padding: const EdgeInsets.fromLTRB(20, 18, 20, 24),
-              child: Stack(
+              Column(
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  Positioned(
-                    right: 0,
-                    top: 0,
-                    child: IconButton(
-                      icon: const Icon(Icons.close, color: Color(0xFF2E7D32)),
-                      onPressed: () => Navigator.pop(context, null),
+                  const SizedBox(height: 8),
+                  const TranslatedText(
+                    // ✨
+                    '현재 비밀번호를 입력해주십시오',
+                    style: TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.w800,
+                      color: Color(0xFF6B5A51),
                     ),
+                    textAlign: TextAlign.center,
                   ),
-                  Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const SizedBox(height: 8),
-                      const Text(
-                        '현재 비밀번호를 입력해주십시오',
-                        style: TextStyle(
-                          fontSize: 22,
-                          fontWeight: FontWeight.w800,
-                          color: Color(0xFF6B5A51),
+                  const SizedBox(height: 16),
+                  SizedBox(
+                    width: 420,
+                    child: TextField(
+                      controller: controller,
+                      obscureText: true,
+                      decoration: const InputDecoration(
+                        isDense: true,
+                        filled: true,
+                        fillColor: Colors.white,
+                        contentPadding: EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 14,
                         ),
-                        textAlign: TextAlign.center,
-                      ),
-                      const SizedBox(height: 16),
-                      SizedBox(
-                        width: 420,
-                        child: TextField(
-                          controller: controller,
-                          obscureText: true,
-                          decoration: const InputDecoration(
-                            isDense: true,
-                            filled: true,
-                            fillColor: Colors.white,
-                            contentPadding: EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 14,
-                            ),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.all(
-                                Radius.circular(10),
-                              ),
-                            ),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.all(
+                            Radius.circular(10),
                           ),
                         ),
                       ),
-                      const SizedBox(height: 16),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  SizedBox(
+                    width: 160,
+                    height: 44,
+                    child: ElevatedButton(
+                      onPressed: () => Navigator.pop(context, controller.text),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF6DBF73),
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(22),
+                        ),
+                      ),
+                      child: const TranslatedText('확인'), // ✨
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _showFailureDialog(
+      {required String title, required String message}) async {
+    // ✨
+    await showDialog<void>(
+      context: context,
+      barrierDismissible: true,
+      builder: (_) => Dialog(
+        insetPadding: const EdgeInsets.symmetric(
+          horizontal: 32,
+          vertical: 24,
+        ),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Container(
+          decoration: BoxDecoration(
+            color: const Color(0xFFE7F6E9),
+            border: Border.all(color: const Color(0xFF53A866), width: 3),
+            borderRadius: BorderRadius.circular(16),
+          ),
+          padding: const EdgeInsets.fromLTRB(20, 18, 20, 24),
+          child: Stack(
+            children: [
+              Positioned(
+                right: 0,
+                top: 0,
+                child: IconButton(
+                  icon: const Icon(Icons.close, color: Color(0xFF2E7D32)),
+                  onPressed: () => Navigator.pop(context),
+                ),
+              ),
+              Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const SizedBox(height: 6),
+                  Container(
+                    width: 240,
+                    height: 120,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFDDE6D6),
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    alignment: Alignment.center,
+                    child: TranslatedText(
+                      // ✨
+                      title,
+                      style: const TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.w800,
+                        color: Color(0xFF6B5A51),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  TranslatedText(
+                    // ✨
+                    message,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w800,
+                      color: Color(0xFF6B5A51),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<bool?> _showConfirmDialog({
+    required String title, // ✨
+    required String message,
+    String yesText = '예',
+    String noText = '아니요',
+  }) async {
+    return showDialog<bool>(
+      context: context,
+      barrierDismissible: true,
+      builder: (_) => Dialog(
+        insetPadding: const EdgeInsets.symmetric(
+          horizontal: 32,
+          vertical: 24,
+        ),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Container(
+          decoration: BoxDecoration(
+            color: const Color(0xFFE7F6E9),
+            border: Border.all(color: const Color(0xFF53A866), width: 3),
+            borderRadius: BorderRadius.circular(16),
+          ),
+          padding: const EdgeInsets.fromLTRB(20, 18, 20, 24),
+          child: Stack(
+            children: [
+              Positioned(
+                right: 0,
+                top: 0,
+                child: IconButton(
+                  icon: const Icon(Icons.close, color: Color(0xFF2E7D32)),
+                  onPressed: () => Navigator.pop(context, false),
+                ),
+              ),
+              Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const SizedBox(height: 6),
+                  Container(
+                    width: 240,
+                    height: 120,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFDDE6D6),
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    alignment: Alignment.center,
+                    child: TranslatedText(
+                      // ✨
+                      title,
+                      style: const TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.w800,
+                        color: Color(0xFF6B5A51),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  TranslatedText(
+                    // ✨
+                    message,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.w900,
+                      color: Color(0xFF6B5A51),
+                    ),
+                  ),
+                  const SizedBox(height: 18),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
                       SizedBox(
-                        width: 160,
+                        width: 140,
                         height: 44,
                         child: ElevatedButton(
-                          onPressed:
-                              () => Navigator.pop(context, controller.text),
+                          onPressed: () => Navigator.pop(context, true),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: const Color(0xFF6DBF73),
                             foregroundColor: Colors.white,
@@ -160,266 +457,98 @@ class _SettingsPageState extends State<SettingsPage> {
                               borderRadius: BorderRadius.circular(22),
                             ),
                           ),
-                          child: const Text('확인'),
+                          child: TranslatedText(yesText), // ✨
                         ),
                       ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ),
-    );
-  }
-
-  // -------- 팝업 2: 실패 --------
-  Future<void> _showFailureDialog({
-    required String message,
-    String? titleImage,
-  }) async {
-    await showDialog<void>(
-      context: context,
-      barrierDismissible: true,
-      builder:
-          (_) => Dialog(
-            insetPadding: const EdgeInsets.symmetric(
-              horizontal: 32,
-              vertical: 24,
-            ),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Container(
-              decoration: BoxDecoration(
-                color: const Color(0xFFE7F6E9),
-                border: Border.all(color: const Color(0xFF53A866), width: 3),
-                borderRadius: BorderRadius.circular(16),
-              ),
-              padding: const EdgeInsets.fromLTRB(20, 18, 20, 24),
-              child: Stack(
-                children: [
-                  Positioned(
-                    right: 0,
-                    top: 0,
-                    child: IconButton(
-                      icon: const Icon(Icons.close, color: Color(0xFF2E7D32)),
-                      onPressed: () => Navigator.pop(context),
-                    ),
-                  ),
-                  Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const SizedBox(height: 6),
-                      Container(
-                        width: 240,
-                        height: 120,
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFDDE6D6),
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        alignment: Alignment.center,
-                        child:
-                            (titleImage == null)
-                                ? const Text(
-                                  '실패',
-                                  style: TextStyle(
-                                    fontSize: 24,
-                                    fontWeight: FontWeight.w800,
-                                    color: Color(0xFF6B5A51),
-                                  ),
-                                )
-                                : Image.asset(titleImage, fit: BoxFit.contain),
-                      ),
-                      const SizedBox(height: 16),
-                      Text(
-                        message,
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.w800,
-                          color: Color(0xFF6B5A51),
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ),
-    );
-  }
-
-  // -------- 팝업 3: 확인(예/아니요) --------
-  Future<bool?> _showConfirmDialog({
-    required String message,
-    String? titleImage,
-    String yesText = '예',
-    String noText = '아니요',
-  }) async {
-    return showDialog<bool>(
-      context: context,
-      barrierDismissible: true,
-      builder:
-          (_) => Dialog(
-            insetPadding: const EdgeInsets.symmetric(
-              horizontal: 32,
-              vertical: 24,
-            ),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Container(
-              decoration: BoxDecoration(
-                color: const Color(0xFFE7F6E9),
-                border: Border.all(color: const Color(0xFF53A866), width: 3),
-                borderRadius: BorderRadius.circular(16),
-              ),
-              padding: const EdgeInsets.fromLTRB(20, 18, 20, 24),
-              child: Stack(
-                children: [
-                  Positioned(
-                    right: 0,
-                    top: 0,
-                    child: IconButton(
-                      icon: const Icon(Icons.close, color: Color(0xFF2E7D32)),
-                      onPressed: () => Navigator.pop(context, false),
-                    ),
-                  ),
-                  Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const SizedBox(height: 6),
-                      Container(
-                        width: 240,
-                        height: 120,
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFDDE6D6),
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        alignment: Alignment.center,
-                        child:
-                            (titleImage == null)
-                                ? const Text(
-                                  '주의',
-                                  style: TextStyle(
-                                    fontSize: 24,
-                                    fontWeight: FontWeight.w800,
-                                    color: Color(0xFF6B5A51),
-                                  ),
-                                )
-                                : Image.asset(titleImage, fit: BoxFit.contain),
-                      ),
-                      const SizedBox(height: 16),
-                      Text(
-                        message,
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(
-                          fontSize: 22,
-                          fontWeight: FontWeight.w900,
-                          color: Color(0xFF6B5A51),
-                        ),
-                      ),
-                      const SizedBox(height: 18),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          SizedBox(
-                            width: 140,
-                            height: 44,
-                            child: ElevatedButton(
-                              onPressed: () => Navigator.pop(context, true),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFF6DBF73),
-                                foregroundColor: Colors.white,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(22),
-                                ),
-                              ),
-                              child: Text(yesText),
+                      const SizedBox(width: 16),
+                      SizedBox(
+                        width: 140,
+                        height: 44,
+                        child: ElevatedButton(
+                          onPressed: () => Navigator.pop(context, false),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF6DBF73),
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(22),
                             ),
                           ),
-                          const SizedBox(width: 16),
-                          SizedBox(
-                            width: 140,
-                            height: 44,
-                            child: ElevatedButton(
-                              onPressed: () => Navigator.pop(context, false),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFF6DBF73),
-                                foregroundColor: Colors.white,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(22),
-                                ),
-                              ),
-                              child: Text(noText),
-                            ),
-                          ),
-                        ],
+                          child: TranslatedText(noText), // ✨
+                        ),
                       ),
                     ],
                   ),
                 ],
               ),
-            ),
+            ],
           ),
+        ),
+      ),
     );
   }
 
-  // -------- 팝업 4: 성공 후 홈으로 --------
   Future<void> _showSuccessGoHome({required String message}) async {
     await showDialog<void>(
       context: context,
       barrierDismissible: true,
-      builder:
-          (_) => Dialog(
-            insetPadding: const EdgeInsets.symmetric(
-              horizontal: 32,
-              vertical: 24,
-            ),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Container(
-              decoration: BoxDecoration(
-                color: const Color(0xFFE7F6E9),
-                border: Border.all(color: const Color(0xFF53A866), width: 3),
-                borderRadius: BorderRadius.circular(16),
+      builder: (_) => Dialog(
+        insetPadding: const EdgeInsets.symmetric(
+          horizontal: 32,
+          vertical: 24,
+        ),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Container(
+          decoration: BoxDecoration(
+            color: const Color(0xFFE7F6E9),
+            border: Border.all(color: const Color(0xFF53A866), width: 3),
+            borderRadius: BorderRadius.circular(16),
+          ),
+          padding: const EdgeInsets.fromLTRB(20, 18, 20, 24),
+          child: Stack(
+            children: [
+              Positioned(
+                right: 0,
+                top: 0,
+                child: IconButton(
+                  icon: const Icon(Icons.close, color: Color(0xFF2E7D32)),
+                  onPressed: () {
+                    Navigator.pop(context);
+                    Navigator.of(context).pushAndRemoveUntil(
+                      MaterialPageRoute(
+                        builder: (_) => CloudAnimationScreen(),
+                      ),
+                      (route) => false,
+                    );
+                  },
+                ),
               ),
-              padding: const EdgeInsets.fromLTRB(20, 18, 20, 24),
-              child: Stack(
+              Column(
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  Positioned(
-                    right: 0,
-                    top: 0,
-                    child: IconButton(
-                      icon: const Icon(Icons.close, color: Color(0xFF2E7D32)),
-                      onPressed: () => Navigator.pop(context),
+                  const SizedBox(height: 6),
+                  TranslatedText(
+                    // ✨
+                    message,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.w800,
+                      color: Color(0xFF6B5A51),
                     ),
                   ),
-                  Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const SizedBox(height: 6),
-                      Text(
-                        message,
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(
-                          fontSize: 22,
-                          fontWeight: FontWeight.w800,
-                          color: Color(0xFF6B5A51),
-                        ),
-                      ),
-                      const SizedBox(height: 6),
-                    ],
-                  ),
+                  const SizedBox(height: 6),
                 ],
               ),
-            ),
+            ],
           ),
+        ),
+      ),
     );
   }
 
+  // ================= UI =================
   @override
   Widget build(BuildContext context) {
     return ParentLayout(
@@ -443,7 +572,8 @@ class _SettingsPageState extends State<SettingsPage> {
                     ),
                     alignment: Alignment.centerLeft,
                     padding: const EdgeInsets.symmetric(horizontal: 20),
-                    child: const Text(
+                    child: const TranslatedText(
+                      // ✨
                       '설정',
                       style: TextStyle(
                         color: Colors.white,
@@ -466,22 +596,22 @@ class _SettingsPageState extends State<SettingsPage> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          _sectionTitle('수신동의'),
+                          _sectionTitle(const TranslatedText('수신동의')), // ✨
                           const SizedBox(height: 8),
                           _checkRow(
-                            label: '이메일 수신 동의',
+                            label: const TranslatedText('이메일 수신 동의'), // ✨
                             value: agreeEmail,
-                            onChanged:
-                                (v) => setState(() => agreeEmail = v ?? false),
+                            onChanged: (v) =>
+                                setState(() => agreeEmail = v ?? false),
                           ),
                           _checkRow(
-                            label: '알림 수신 동의',
+                            label: const TranslatedText('알림 수신 동의'), // ✨
                             value: agreePush,
-                            onChanged:
-                                (v) => setState(() => agreePush = v ?? false),
+                            onChanged: (v) =>
+                                setState(() => agreePush = v ?? false),
                           ),
                           const SizedBox(height: 22),
-                          _sectionTitle('언어설정'),
+                          _sectionTitle(const TranslatedText('언어설정')), // ✨
                           const SizedBox(height: 8),
                           _langDropdown(),
                           const SizedBox(height: 8),
@@ -489,13 +619,34 @@ class _SettingsPageState extends State<SettingsPage> {
                       ),
                     ),
                   ),
-
                   const SizedBox(height: 18),
 
-                  // 하단 버튼들
+                  // 하단 버튼들: 좌측 로그아웃 / 우측 탈퇴·저장
                   Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
                     children: [
+                      // 좌측 로그아웃
+                      SizedBox(
+                        height: 46,
+                        child: FilledButton(
+                          onPressed: _logout,
+                          style: FilledButton.styleFrom(
+                            backgroundColor: const Color(0xFFBDBDBD),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                          ),
+                          child: const Padding(
+                            padding: EdgeInsets.symmetric(horizontal: 18),
+                            child: TranslatedText(
+                              // ✨
+                              '로그아웃',
+                              style: TextStyle(color: Colors.white),
+                            ),
+                          ),
+                        ),
+                      ),
+                      const Spacer(),
+                      // 우측 탈퇴
                       SizedBox(
                         height: 46,
                         child: FilledButton(
@@ -508,7 +659,8 @@ class _SettingsPageState extends State<SettingsPage> {
                           ),
                           child: const Padding(
                             padding: EdgeInsets.symmetric(horizontal: 18),
-                            child: Text(
+                            child: TranslatedText(
+                              // ✨
                               '회원 탈퇴',
                               style: TextStyle(color: Colors.white),
                             ),
@@ -516,6 +668,7 @@ class _SettingsPageState extends State<SettingsPage> {
                         ),
                       ),
                       const SizedBox(width: 12),
+                      // 저장하기
                       SizedBox(
                         height: 46,
                         child: FilledButton(
@@ -528,7 +681,8 @@ class _SettingsPageState extends State<SettingsPage> {
                           ),
                           child: const Padding(
                             padding: EdgeInsets.symmetric(horizontal: 22),
-                            child: Text(
+                            child: TranslatedText(
+                              // ✨
                               '저장하기',
                               style: TextStyle(color: Colors.white),
                             ),
@@ -547,19 +701,22 @@ class _SettingsPageState extends State<SettingsPage> {
   }
 
   // ============= 공용 위젯 =============
-  Widget _sectionTitle(String text) {
-    return Text(
-      text,
+  Widget _sectionTitle(Widget child) {
+    // ✨ String -> Widget
+    return DefaultTextStyle(
+      // ✨
       style: const TextStyle(
         fontSize: 18,
         fontWeight: FontWeight.w900,
         color: Color(0xFF6A5C53),
+        fontFamily: 'DefaultFont', // 폰트 깨짐 방지
       ),
+      child: child,
     );
   }
 
   Widget _checkRow({
-    required String label,
+    required Widget label, // ✨ String -> Widget
     required bool value,
     required ValueChanged<bool?> onChanged,
   }) {
@@ -570,16 +727,18 @@ class _SettingsPageState extends State<SettingsPage> {
           Checkbox(
             value: value,
             onChanged: onChanged,
-            shape: const CircleBorder(),
+            shape: const CircleBorder(), // ◯ 스크린샷 느낌
           ),
           const SizedBox(width: 6),
-          Text(
-            label,
+          DefaultTextStyle(
+            // ✨
             style: const TextStyle(
               fontSize: 16,
               color: Colors.black54,
               fontWeight: FontWeight.w600,
+              fontFamily: 'DefaultFont', // 폰트 깨짐 방지
             ),
+            child: label,
           ),
         ],
       ),
@@ -597,10 +756,10 @@ class _SettingsPageState extends State<SettingsPage> {
       child: DropdownButtonHideUnderline(
         child: DropdownButton<String>(
           value: selectedLang,
-          items:
-              languages
-                  .map((e) => DropdownMenuItem(value: e, child: Text(e)))
-                  .toList(),
+          items: languages
+              .map((e) =>
+                  DropdownMenuItem(value: e, child: TranslatedText(e))) // ✨
+              .toList(),
           onChanged: (v) => setState(() => selectedLang = v ?? selectedLang),
         ),
       ),

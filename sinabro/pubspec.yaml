@@ -21,6 +21,10 @@ dependencies:
   http: ^1.1.0
   just_audio: ^0.9.36
   audio_session: ^0.1.21
+  googleapis_auth: ^1.6.0 # 구글 번역 api 
+  html_unescape: ^2.0.0 # 특수문자를 안전하게 전달
+
+
 
 dev_dependencies:
   flutter_test:

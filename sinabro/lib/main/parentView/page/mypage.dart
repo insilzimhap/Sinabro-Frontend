@@ -1,12 +1,21 @@
+/*
+ * 파일: lib/main/parentView/page/mypage.dart (MyPage)
+ * 개요: 부모용 "마이페이지" 진입 게이트 화면. ParentLayout 하위에서
+ * 비밀번호 재확인을 받아 프로필/계정 수정 화면(MyInfoEditPage)로 이동시킨다.
+ * @ 채영: JWT+api 연결 완료
+ * @연수: 언어팩 지원을 위해 수정중 // ✨
+ */
+
 import 'package:flutter/material.dart';
 import 'package:sinabro/main/parentView/layout/parent_layout.dart';
 import 'package:sinabro/main/parentView/page/myinfo_edit_page.dart';
 import 'package:sinabro/main/parentView/api/parent_api.dart';
+import 'package:sinabro/main/parentView/widget/translated_text.dart'; // ✨
 
 class MyPage extends StatefulWidget {
   /// 사이드바를 동적으로 채우고, 상단 이름을 불러오려면 parentUserId를 넘겨주세요.
   final String? parentUserId;
-  const MyPage({super.key, this.parentUserId});
+  const MyPage({super.key, required this.parentUserId});
 
   @override
   State<MyPage> createState() => _MyPageState();
@@ -29,27 +38,45 @@ class _MyPageState extends State<MyPage> {
   }
 
   Future<void> _onVerify() async {
+    final uid = widget.parentUserId?.trim() ?? '';
+    if (uid.isEmpty) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(
+          content: Text('세션이 만료되었습니다. 다시 로그인해주세요.'))); // TODO: 번역
+      return;
+    }
     if (_pwController.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('비밀번호를 입력해주세요.')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(
+          const SnackBar(content: Text('비밀번호를 입력해주세요.'))); // TODO: 번역
       return;
     }
 
     setState(() => _verifying = true);
 
-    // TODO: 서버 비밀번호 검증 API 연동 (예: /api/users/verify-password)
-    // 지금은 데모로 바로 통과 처리
-    await Future.delayed(const Duration(milliseconds: 300));
+    try {
+      await ParentApi.verifyParentPassword(
+        uid,
+        _pwController.text.trim(),
+      ); // ✅ 서버 검증 호출
+    } catch (e) {
+      if (mounted) {
+        setState(() => _verifying = false);
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(e.toString()))); // TODO: 번역
+      }
+      return;
+    }
 
     if (!mounted) return;
     setState(() => _verifying = false);
 
     Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (_) => MyInfoEditPage(parentUserId: widget.parentUserId),
-      ),
+      MaterialPageRoute(builder: (_) => MyInfoEditPage(parentUserId: uid)),
     );
   }
 
@@ -78,7 +105,8 @@ class _MyPageState extends State<MyPage> {
                     child: Row(
                       children: const [
                         SizedBox(width: 16),
-                        Text(
+                        TranslatedText(
+                          // ✨
                           '마이 페이지',
                           style: TextStyle(
                             color: Colors.white,
@@ -115,7 +143,8 @@ class _MyPageState extends State<MyPage> {
                             ),
                           ),
                           const SizedBox(height: 16),
-                          const Text(
+                          const TranslatedText(
+                            // ✨
                             '부모 회원',
                             style: TextStyle(
                               color: Colors.black54,
@@ -129,18 +158,32 @@ class _MyPageState extends State<MyPage> {
                             future: _loadParentName(),
                             builder: (context, snap) {
                               final name = (snap.data ?? '').trim();
-                              return Text(
-                                name.isEmpty ? '회원님' : '$name 님',
-                                style: const TextStyle(
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.w800,
-                                ),
+                              // ✨
+                              return Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text(
+                                    name.isEmpty ? '' : '$name ',
+                                    style: const TextStyle(
+                                      fontSize: 20,
+                                      fontWeight: FontWeight.w800,
+                                    ),
+                                  ),
+                                  TranslatedText(
+                                    name.isEmpty ? '회원님' : '님',
+                                    style: const TextStyle(
+                                      fontSize: 20,
+                                      fontWeight: FontWeight.w800,
+                                    ),
+                                  ),
+                                ],
                               );
                             },
                           ),
 
                           const SizedBox(height: 28),
-                          const Text(
+                          const TranslatedText(
+                            // ✨
                             '비밀번호를 입력해주세요',
                             style: TextStyle(
                               fontSize: 13,
@@ -193,7 +236,7 @@ class _MyPageState extends State<MyPage> {
                                         ),
                                       ),
                                     )
-                                  : const Text('확인'),
+                                  : const TranslatedText('확인'), // ✨
                             ),
                           ),
                         ],

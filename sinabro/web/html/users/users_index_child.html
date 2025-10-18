@@ -3,56 +3,9 @@
 <head>
   <meta charset="UTF-8" />
   <title>문짜짜 자녀 상세 페이지</title>
-  <link rel="stylesheet" href="../../css/header.css">
+  <link rel="stylesheet" href="/web/css/header.css" />
+<link rel="stylesheet" href="/web/css/users/users_index_child.css" />
 
-  <style>
-    body {
-      font-family: 'Arial', sans-serif;
-      margin: 0;
-      padding: 0;
-    }
-
-    .container {
-      max-width: 800px;
-      margin: 40px auto;
-      padding: 20px;
-      border: 1px solid #ccc;
-      border-radius: 8px;
-    }
-
-    h2 {
-      display: flex;
-      align-items: center;
-      font-size: 24px;
-      margin-bottom: 20px;
-    }
-
-    .info-row {
-      display: flex;
-      justify-content: space-between;
-      margin-bottom: 10px;
-    }
-
-    .info-row div {
-      flex: 1;
-      margin-right: 20px;
-    }
-
-    .info-row div:last-child {
-      margin-right: 0;
-    }
-
-    .label {
-      font-weight: bold;
-      margin-bottom: 5px;
-    }
-
-    .level {
-      margin-left: 15px;
-      font-size: 14px;
-      color: #555;
-    }
-  </style>
 </head>
 
 <body>
@@ -62,6 +15,7 @@
   <!-- Main content -->
   <div class="container">
     <h2>문짜짜 님 <span class="level">현재 레벨: 초급 3</span></h2>
+
     <div class="info-row">
       <div>
         <div class="label">아이디</div>
@@ -76,15 +30,26 @@
         <div>asdf12345!@</div>
       </div>
     </div>
+
+    <div class="button-container">
+      <button class="delete-btn" onclick="deleteChild()">자녀 삭제하기</button>
+    </div>
   </div>
 
   <script>
     // 공통 헤더 불러오기
-    fetch("../../header.html")
+    fetch("/web/header.html")
       .then(res => res.text())
       .then(data => {
         document.getElementById("header-container").innerHTML = data;
       });
+
+    function deleteChild() {
+      if (confirm("자녀 계정을 삭제하시겠습니까?")) {
+        // 실제 삭제 처리 후 이동 (현재는 화면 이동만 처리)
+        window.location.href = "users_index_parent.html";
+      }
+    }
   </script>
 </body>
 </html>

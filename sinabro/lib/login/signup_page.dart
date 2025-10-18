@@ -1,11 +1,19 @@
-// lib/login/signup_page.dart
+/**
+ * @file lib/login/signup_page.dart
+ * 역할: 부모 회원가입. 응답에 토큰이 있으면 저장.
+ * @채영: JWT+api 연결 완료
+ * @연수: 디버깅 로그 추가
+ */
+///
+
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
 import 'package:sinabro/config.dart';
-import 'package:sinabro/main/parentView/page/notice_page.dart';
-import 'package:sinabro/main/parentView/page/children_state.dart';
+import 'package:sinabro/main/auth/authParent/login_parent.dart'; //가입 후 로그인 화면 이동
+import 'package:sinabro/main/parentView/page/child/children_state.dart';
+import 'package:flutter/services.dart'; // TextInputFormatter 전화번호 양식 유지
 
 class SignUpPage extends StatefulWidget {
   final String role; // 'parent' 등
@@ -33,7 +41,7 @@ class _SignUpPageState extends State<SignUpPage> {
   bool? _idAvailable; // null=미확인, true=사용가능, false=중복
   String _idCheckMsg = '';
 
-  // 동의/설정 (UI만)
+  // 동의/설정
   bool _agreePrivacy = false; // 개인정보 수집 동의
   bool _agreeEmail = false; // 이메일 수신
   bool _agreePush = false; // 알림 수신
@@ -55,6 +63,27 @@ class _SignUpPageState extends State<SignUpPage> {
       return <String, dynamic>{};
     }
   }
+
+  String _mapLang(String v) {
+    switch (v) {
+      case '한국어':
+        return 'Korea';
+      case 'English':
+        return 'English';
+      case '日本語':
+        return 'Japanese';
+      case 'Tiếng Việt':
+        return 'Vietnamese';
+      case '中文':
+        return 'Chinese';
+      case 'ไทย':
+        return 'Thai';
+      default:
+        return 'Korea';
+    }
+  }
+
+  bool _isPhoneValid(String v) => RegExp(r'^010-\d{4}-\d{4}$').hasMatch(v);
 
   // ───────────────── 아이디 중복 확인 ─────────────────
   Future<void> _checkUserId() async {
@@ -92,6 +121,8 @@ class _SignUpPageState extends State<SignUpPage> {
         });
       }
     } catch (e) {
+      // ✅ 디버깅용 print 추가
+      print('🛑 아이디 중복 확인 중 오류: $e');
       setState(() {
         _idAvailable = null;
         _idCheckMsg = '중복 확인 중 오류: $e';
@@ -107,7 +138,6 @@ class _SignUpPageState extends State<SignUpPage> {
     final userPw = _pwController.text;
     final confirmPw = _pwConfirmController.text;
 
-    // 클라이언트 검증
     if (userId.isEmpty) return _showSnack('아이디를 입력하세요.');
     if (_idAvailable == false || _idAvailable == null) {
       return _showSnack('아이디 중복 확인을 완료해 주세요.');
@@ -124,6 +154,12 @@ class _SignUpPageState extends State<SignUpPage> {
     if (_emailController.text.trim().isEmpty) {
       return _showSnack('이메일을 입력하세요.');
     }
+    if (!_agreePrivacy) {
+      return _showSnack('개인정보 수집 동의가 필요합니다.');
+    }
+    if (!_isPhoneValid(_phoneController.text.trim())) {
+      return _showSnack('전화번호는 010-0000-0000 형식으로 입력해 주세요.');
+    }
 
     setState(() {
       _isLoading = true;
@@ -131,18 +167,26 @@ class _SignUpPageState extends State<SignUpPage> {
     });
 
     try {
+      final payload = {
+        'userId': userId,
+        'userPw': userPw,
+        'confirmPw': confirmPw,
+        'userEmail': _emailController.text.trim(),
+        'userName': _nameController.text.trim(),
+        'userPhoneNum': _phoneController.text.trim(),
+        'role': widget.role,
+        'userLanguage': _mapLang(_lang),
+        'settings': {
+          'privacyConsent': true,
+          'allowNotifications': _agreePush,
+          'emailSubscription': _agreeEmail,
+        },
+      };
+
       final res = await http.post(
         Uri.parse('$baseUrl/api/users/register'),
         headers: {'Content-Type': 'application/json'},
-        body: json.encode({
-          'userId': userId,
-          'userPw': userPw,
-          'confirmPw': confirmPw,
-          'userEmail': _emailController.text.trim(),
-          'userName': _nameController.text.trim(),
-          'userPhoneNum': _phoneController.text.trim(),
-          'role': widget.role, // 보통 'parent'
-        }),
+        body: json.encode(payload),
       );
 
       if (!mounted) return;
@@ -153,31 +197,29 @@ class _SignUpPageState extends State<SignUpPage> {
         final parentUserName =
             (body['userName'] ?? _nameController.text.trim()).toString();
 
-        // ✅ 세션 저장 (SharedPreferences 포함)
         await ChildrenState.instance.setSession(
           userId: parentUserId,
           userName: parentUserName.isEmpty ? null : parentUserName,
         );
-
-        // (선택) 즉시 목록 프리페치 하고 싶으면 주석 해제
-        // await ChildrenState.instance.setParent(parentUserId);
-        // await ChildrenState.instance.refresh();
-
-        // 공지사항으로 이동
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (_) => const NoticePage()),
+          MaterialPageRoute(builder: (_) => const LoginParentScreen()),
         );
       } else if (res.statusCode == 409) {
         _showSnack('이미 존재하는 아이디/이메일입니다.');
       } else if (res.statusCode == 400) {
         _showSnack(_safeJson(res.body).toString());
       } else {
+        // ✅ 디버깅용 print 추가
+        print('🚨 서버 응답 오류: ${res.statusCode}');
+        print('📄 서버 응답 내용: ${res.body}');
         setState(() {
           _message = '회원가입 실패: ${res.statusCode}\n${res.body}';
         });
       }
     } catch (e) {
+      // ✅ 디버깅용 print 추가
+      print('🛑 회원가입 요청 중 심각한 오류 발생: $e');
       setState(() {
         _message = '요청 실패: $e';
       });
@@ -210,68 +252,62 @@ class _SignUpPageState extends State<SignUpPage> {
     return Scaffold(
       backgroundColor: bg,
       body: SafeArea(
-        child: LayoutBuilder(
-          builder: (context, c) {
-            final isWide = c.maxWidth >= 900;
-            final page = Padding(
-              padding: const EdgeInsets.all(24),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 8,
+        // ✅ SingleChildScrollView 추가 (오버플로우 방지)
+        child: SingleChildScrollView(
+          child: LayoutBuilder(
+            builder: (context, c) {
+              final isWide = c.maxWidth >= 900;
+              final page = Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 8,
+                      ),
+                      child: Text('회원가입', style: headerStyle),
                     ),
-                    child: Text('회원가입', style: headerStyle),
-                  ),
-                  const SizedBox(height: 12),
-                  Expanded(
-                    child:
-                        isWide
-                            ? Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Expanded(
-                                  flex: 3,
-                                  child: _leftFormCard(cardColor),
-                                ),
-                                const SizedBox(width: 20),
-                                Expanded(
-                                  flex: 2,
-                                  child: Column(
-                                    children: [
-                                      _rightConsentCard(cardColor),
-                                      const SizedBox(height: 20),
-                                      _animationBox(cardColor),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            )
-                            : SingleChildScrollView(
+                    const SizedBox(height: 12),
+                    isWide
+                        ? Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(flex: 3, child: _leftFormCard(cardColor)),
+                            const SizedBox(width: 20),
+                            Expanded(
+                              flex: 2,
                               child: Column(
                                 children: [
-                                  _leftFormCard(cardColor),
-                                  const SizedBox(height: 16),
                                   _rightConsentCard(cardColor),
-                                  const SizedBox(height: 16),
+                                  const SizedBox(height: 20),
                                   _animationBox(cardColor),
                                 ],
                               ),
                             ),
-                  ),
-                ],
-              ),
-            );
-            return page;
-          },
+                          ],
+                        )
+                        : Column(
+                          children: [
+                            _leftFormCard(cardColor),
+                            const SizedBox(height: 16),
+                            _rightConsentCard(cardColor),
+                            const SizedBox(height: 16),
+                            _animationBox(cardColor),
+                          ],
+                        ),
+                  ],
+                ),
+              );
+              return page;
+            },
+          ),
         ),
       ),
     );
   }
 
-  // 좌측: 입력 폼 카드
   Widget _leftFormCard(Color cardColor) {
     final idHintColor =
         _idAvailable == null
@@ -288,7 +324,6 @@ class _SignUpPageState extends State<SignUpPage> {
         padding: const EdgeInsets.all(20),
         child: Column(
           children: [
-            // 아이디 + 중복확인
             Row(
               children: [
                 Expanded(
@@ -339,16 +374,12 @@ class _SignUpPageState extends State<SignUpPage> {
                 ),
               ),
             const SizedBox(height: 16),
-
-            // 이메일
             TextField(
               controller: _emailController,
               keyboardType: TextInputType.emailAddress,
               decoration: _input('이메일'),
             ),
             const SizedBox(height: 16),
-
-            // 비밀번호
             TextField(
               controller: _pwController,
               obscureText: true,
@@ -371,8 +402,6 @@ class _SignUpPageState extends State<SignUpPage> {
               ),
             ),
             const SizedBox(height: 16),
-
-            // 재입력
             TextField(
               controller: _pwConfirmController,
               obscureText: true,
@@ -399,20 +428,33 @@ class _SignUpPageState extends State<SignUpPage> {
                 ),
               ),
             const SizedBox(height: 16),
-
-            // 이름
             TextField(controller: _nameController, decoration: _input('이름')),
             const SizedBox(height: 16),
-
-            // 전화번호
             TextField(
               controller: _phoneController,
               keyboardType: TextInputType.phone,
-              decoration: _input('전화번호'),
+              onChanged: (_) => setState(() {}),
+              inputFormatters: [
+                FilteringTextInputFormatter.allow(RegExp(r'[0-9-]')),
+              ],
+              maxLength: 13,
+              decoration: _input(
+                '전화번호',
+              ).copyWith(hintText: '010-0000-0000', counterText: ''),
             ),
+            if (_phoneController.text.isNotEmpty &&
+                !_isPhoneValid(_phoneController.text.trim()))
+              Padding(
+                padding: const EdgeInsets.only(top: 6),
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    '전화번호 형식: 010-0000-0000',
+                    style: const TextStyle(color: Colors.red, fontSize: 12),
+                  ),
+                ),
+              ),
             const SizedBox(height: 12),
-
-            // 개인정보 수집 동의 (UI만)
             Row(
               children: [
                 Checkbox(
@@ -436,7 +478,6 @@ class _SignUpPageState extends State<SignUpPage> {
     );
   }
 
-  // 우측: 수신동의/언어 카드
   Widget _rightConsentCard(Color cardColor) {
     return Card(
       color: cardColor,
@@ -504,6 +545,12 @@ class _SignUpPageState extends State<SignUpPage> {
                   DropdownMenuItem(value: '한국어', child: Text('한국어')),
                   DropdownMenuItem(value: 'English', child: Text('English')),
                   DropdownMenuItem(value: '日本語', child: Text('日本語')),
+                  DropdownMenuItem(
+                    value: 'Tiếng Việt',
+                    child: Text('Tiếng Việt'),
+                  ),
+                  DropdownMenuItem(value: '中文', child: Text('中文')),
+                  DropdownMenuItem(value: 'ไทย', child: Text('ไทย')),
                 ],
                 onChanged: (v) => setState(() => _lang = v ?? '한국어'),
               ),
@@ -514,17 +561,31 @@ class _SignUpPageState extends State<SignUpPage> {
     );
   }
 
-  // 하단: 가입하기 애니메이션 박스 (자리만)
   Widget _animationBox(Color cardColor) {
     return Card(
-      color: const Color(0xFFBDBDBD),
-      elevation: 1,
+      color: cardColor, // 배경색을 흰색으로 변경
+      elevation: 2,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: SizedBox(
         height: 180,
         width: double.infinity,
         child: Center(
-          child:
+          // ✅ Column 추가 (오류 메시지 표시 위함)
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              if (_message.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 16, left: 8, right: 8),
+                  child: Text(
+                    _message,
+                    style: const TextStyle(
+                      color: Colors.red,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
               _isLoading
                   ? const CircularProgressIndicator()
                   : ElevatedButton(
@@ -541,10 +602,12 @@ class _SignUpPageState extends State<SignUpPage> {
                       ),
                     ),
                     child: const Text(
-                      '가입하기 애니메이션(자리)',
+                      '가입하기',
                       style: TextStyle(fontWeight: FontWeight.bold),
                     ),
                   ),
+            ],
+          ),
         ),
       ),
     );

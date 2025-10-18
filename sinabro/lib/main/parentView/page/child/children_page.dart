@@ -1,9 +1,18 @@
-// lib/main/parentView/page/children_page.dart
+/*
+ * 파일: lib/main/parentView/page/children_page.dart
+ * 개요: 부모용 ‘자녀페이지’ 목록 화면. 사이드바(ParentLayout) 내 자녀 리스트를 보여주고,
+ * 자녀 추가/상세(리포트)로 이동하는 허브 역할.
+ * @ 채영: JWT+api 연결 완료
+ * @연수: 언어팩 지원을 위해 수정중 // ✨
+ */
+
 import 'package:flutter/material.dart';
 import 'package:sinabro/main/parentView/layout/parent_layout.dart';
-import 'package:sinabro/main/parentView/page/add_child_form.dart';
+import 'package:sinabro/main/parentView/page/child/add_child_form.dart';
 import 'package:sinabro/main/parentView/api/parent_api.dart'; // ChildSummary
-import 'package:sinabro/main/parentView/page/children_state.dart'; // 세션 + 상태 저장소
+import 'package:sinabro/main/parentView/page/child/children_state.dart'; // 세션 + 상태 저장소
+import 'package:sinabro/main/parentView/page/child/child_report_page.dart';
+import 'package:sinabro/main/parentView/widget/translated_text.dart'; // ✨
 
 class ChildrenPage extends StatefulWidget {
   final String? parentUserId; // (옵션) 외부에서 명시 전달 가능
@@ -22,13 +31,27 @@ class _ChildrenPageState extends State<ChildrenPage> {
   @override
   void initState() {
     super.initState();
-    // 목록 로딩(전달 uid가 비었으면 세션/저장값으로 자동 복구)
-    _store.loadOnce(widget.parentUserId);
-    // 이름 보장
-    _nameFuture = _ensureName();
+
+    // ✅ 안전하게: 빌드 이후에 실행
+    // ✅ 변경: 첫 프레임 끝난 뒤 실행
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _store.loadOnce(widget.parentUserId);
+      setState(() {
+        _nameFuture = _ensureName(); //
+      });
+    });
   }
 
-  // 전달값 → 세션 순으로 uid를 안전하게 얻는다.
+  /// 🔥 추가: 페이지 다시 들어올 때마다 최신 자녀목록을 불러오기
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _store.refresh();
+    });
+  }
+
+  // 전달값 → 세션 순으로 uid 얻기
   String _resolvedUid() {
     final fromProp = (widget.parentUserId ?? '').trim();
     if (fromProp.isNotEmpty) return fromProp;
@@ -36,20 +59,15 @@ class _ChildrenPageState extends State<ChildrenPage> {
   }
 
   Future<String> _ensureName() async {
-    // 1) prop 우선
     final propName = (widget.parentDisplayName ?? '').trim();
     if (propName.isNotEmpty) return propName;
 
-    // 2) 세션 캐시
     final sessName = (_store.sessionUserName ?? '').trim();
     if (sessName.isNotEmpty) return sessName;
 
-    // 3) 서버 조회
     final uid = _resolvedUid();
     if (uid.isEmpty) return '부모';
     final name = await ParentApi.fetchParentName(uid);
-
-    // 조회한 이름을 세션에 캐시(옵션)
     if (name.trim().isNotEmpty) {
       await _store.setSession(userId: uid, userName: name.trim());
     }
@@ -61,10 +79,10 @@ class _ChildrenPageState extends State<ChildrenPage> {
     if (uid.isEmpty) {
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text('로그인 정보를 확인해주세요.')));
+      ).showSnackBar(
+          const SnackBar(content: Text('로그인 정보를 확인해주세요.'))); // TODO: 번역
       return;
     }
-
     final ok = await Navigator.push<bool>(
       context,
       MaterialPageRoute(builder: (_) => AddChildFormPage(parentUserId: uid)),
@@ -87,23 +105,18 @@ class _ChildrenPageState extends State<ChildrenPage> {
         builder: (_, __) {
           final uid = _resolvedUid();
 
-          // 아직 세션 복구 중이면 로딩 먼저
           if (uid.isEmpty && _store.loading) {
             return const Center(child: CircularProgressIndicator());
           }
-
-          // uid가 끝내 비어 있으면 에러 안내
           if (uid.isEmpty) {
             return _ErrorView(
-              message: '로그인 정보가 없습니다. (userId 비어 있음)',
+              message: '로그인 정보가 없습니다. (userId 비어 있음)', // ✨
               onRetry: () {
                 _store.loadOnce(widget.parentUserId);
                 setState(() => _nameFuture = _ensureName());
               },
             );
           }
-
-          // 최초 로딩 중
           if (_store.loading && _store.items.isEmpty) {
             return const Center(child: CircularProgressIndicator());
           }
@@ -111,10 +124,9 @@ class _ChildrenPageState extends State<ChildrenPage> {
           return FutureBuilder<String>(
             future: _nameFuture,
             builder: (context, snap) {
-              final parentName =
-                  (snap.data ?? '').trim().isNotEmpty
-                      ? snap.data!.trim()
-                      : '부모';
+              final parentName = (snap.data ?? '').trim().isNotEmpty
+                  ? snap.data!.trim()
+                  : '부모';
 
               if (_store.items.isEmpty) {
                 return _EmptyState(parentName: parentName, onAdd: _goAdd);
@@ -122,6 +134,7 @@ class _ChildrenPageState extends State<ChildrenPage> {
 
               return _ChildList(
                 parentName: parentName,
+                parentUserId: sidebarUid,
                 items: _store.items,
                 onAdd: _goAdd,
               );
@@ -137,11 +150,13 @@ class _ChildrenPageState extends State<ChildrenPage> {
 
 class _ChildList extends StatelessWidget {
   final String parentName;
+  final String parentUserId;
   final List<ChildSummary> items;
   final VoidCallback onAdd;
 
   const _ChildList({
     required this.parentName,
+    required this.parentUserId,
     required this.items,
     required this.onAdd,
   });
@@ -159,12 +174,20 @@ class _ChildList extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                '$parentName 님의 자녀 리스트',
-                style: const TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.w700,
-                ),
+              // ✨
+              Wrap(
+                crossAxisAlignment: WrapCrossAlignment.center,
+                children: [
+                  Text(
+                    '$parentName ',
+                    style: const TextStyle(
+                        fontSize: 22, fontWeight: FontWeight.w700),
+                  ),
+                  const TranslatedText(
+                    '님의 자녀 리스트',
+                    style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700),
+                  )
+                ],
               ),
               ElevatedButton(
                 onPressed: onAdd,
@@ -179,7 +202,7 @@ class _ChildList extends StatelessWidget {
                     borderRadius: BorderRadius.circular(12),
                   ),
                 ),
-                child: const Text('추가하기'),
+                child: const TranslatedText('추가하기'), // ✨
               ),
             ],
           ),
@@ -202,9 +225,34 @@ class _ChildList extends StatelessWidget {
                 ),
                 itemBuilder: (_, i) {
                   final c = items[i];
+
+                  final age = c.childAge; // ✨ int?로 직접 전달
+                  const lvl = 1;
+                  const prog = 0.0;
+
                   return _ChildCard(
-                    name: c.displayName,
-                    ageLabel: c.displayAge,
+                    name: c.childName,
+                    age: age, // ✨
+                    onTap: () async {
+                      final updated =
+                          await Navigator.of(context, rootNavigator: true).push(
+                        MaterialPageRoute(
+                          builder: (_) => ChildReportPage(
+                            parentUserId: parentUserId,
+                            childId: c.childId,
+                            childName: c.childName,
+                            childAge: age ?? 0,
+                            level: lvl,
+                            progressToNext: prog,
+                          ),
+                        ),
+                      );
+                      if (updated == true) {
+                        WidgetsBinding.instance.addPostFrameCallback((_) async {
+                          await ChildrenState.instance.refresh();
+                        });
+                      }
+                    },
                   );
                 },
               ),
@@ -218,8 +266,14 @@ class _ChildList extends StatelessWidget {
 
 class _ChildCard extends StatelessWidget {
   final String name;
-  final String ageLabel;
-  const _ChildCard({required this.name, required this.ageLabel});
+  final int? age; // ✨ String ageLabel -> int? age로 변경
+  final VoidCallback onTap;
+
+  const _ChildCard({
+    required this.name,
+    required this.age,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -228,9 +282,7 @@ class _ChildCard extends StatelessWidget {
       borderRadius: BorderRadius.circular(12),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
-        onTap: () {
-          // TODO: 상세/리포트 이동
-        },
+        onTap: onTap,
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
           child: Column(
@@ -242,10 +294,26 @@ class _ChildCard extends StatelessWidget {
                 child: Icon(Icons.person, size: 40, color: Colors.white),
               ),
               const SizedBox(height: 10),
-              Text(
-                ageLabel.isEmpty ? '나이 정보 없음' : ageLabel,
-                style: const TextStyle(fontSize: 13, color: Colors.grey),
-              ),
+              // ✨ 나이 표시 로직 변경
+              age == null
+                  ? const TranslatedText(
+                      '나이 정보 없음',
+                      style: TextStyle(fontSize: 13, color: Colors.grey),
+                    )
+                  : Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          '$age',
+                          style:
+                              const TextStyle(fontSize: 13, color: Colors.grey),
+                        ),
+                        const TranslatedText(
+                          '세',
+                          style: TextStyle(fontSize: 13, color: Colors.grey),
+                        ),
+                      ],
+                    ),
               Text(
                 name,
                 style: const TextStyle(
@@ -279,9 +347,25 @@ class _EmptyState extends StatelessWidget {
             color: Colors.brown,
           ),
           const SizedBox(height: 12),
-          Text(
-            '현재 $parentName 님의 자녀가 없어요',
-            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          // ✨
+          Wrap(
+            crossAxisAlignment: WrapCrossAlignment.center,
+            spacing: 4,
+            children: [
+              const TranslatedText(
+                '현재',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              Text(
+                parentName,
+                style:
+                    const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              const TranslatedText(
+                '님의 자녀가 없어요',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+            ],
           ),
           const SizedBox(height: 16),
           ElevatedButton(
@@ -294,7 +378,7 @@ class _EmptyState extends StatelessWidget {
               ),
               padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 12),
             ),
-            child: const Text('아이 추가하기'),
+            child: const TranslatedText('아이 추가하기'), // ✨
           ),
         ],
       ),
@@ -315,9 +399,10 @@ class _ErrorView extends StatelessWidget {
         children: [
           const Icon(Icons.error_outline, size: 48, color: Colors.redAccent),
           const SizedBox(height: 12),
-          Text(message, textAlign: TextAlign.center),
+          TranslatedText(message, textAlign: TextAlign.center), // ✨
           const SizedBox(height: 12),
-          OutlinedButton(onPressed: onRetry, child: const Text('다시 시도')),
+          OutlinedButton(
+              onPressed: onRetry, child: const TranslatedText('다시 시도')), // ✨
         ],
       ),
     );
