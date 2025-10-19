@@ -60,12 +60,13 @@ class _SocialExtraInfoPageState extends State<SocialExtraInfoPage> {
   bool _isPasswordValid(String pw) => pw.length >= 8 && pw.length <= 16;
 
   InputDecoration _input(String label) => InputDecoration(
-    labelText: label,
-    filled: true,
-    fillColor: Colors.white,
-    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-  );
+        labelText: label,
+        filled: true,
+        fillColor: Colors.white,
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      );
 
   void _showSnack(String msg) {
     if (!mounted) return;
@@ -146,10 +147,8 @@ class _SocialExtraInfoPageState extends State<SocialExtraInfoPage> {
         payload['confirmPw'] = _pwConfirmController.text;
       }
 
-      print(
-        '[소셜추가] 요청 보냄: /api/users/social-register '
-        '(socialType=${widget.socialType}, userId=${widget.userId})',
-      );
+      print('[소셜추가] 요청 보냄: /api/users/social-register '
+          '(socialType=${widget.socialType}, userId=${widget.userId})');
 
       // 2) 전송 (permitAll API라 Authorization 자동 미부착)
       final client = AuthClient();
@@ -185,8 +184,7 @@ class _SocialExtraInfoPageState extends State<SocialExtraInfoPage> {
                 (refresh != null && refresh.isNotEmpty) ? refresh : null,
           );
           print(
-            '[소셜추가] 토큰 저장 완료 (AT=${token.length}자, RT=${refresh != null ? '있음' : '없음'})',
-          );
+              '[소셜추가] 토큰 저장 완료 (AT=${token.length}자, RT=${refresh != null ? '있음' : '없음'})');
         } else {
           print('[소셜추가][경고] 응답에 토큰이 없음');
         }
@@ -196,8 +194,7 @@ class _SocialExtraInfoPageState extends State<SocialExtraInfoPage> {
           userName: parentUserName.isEmpty ? null : parentUserName,
         );
         print(
-          '[소셜추가] 세션 저장 완료 (userId=$parentUserId, userName=$parentUserName)',
-        );
+            '[소셜추가] 세션 저장 완료 (userId=$parentUserId, userName=$parentUserName)');
 
         // 추가 정보 등록 완료 → 공지사항으로 이동
         Navigator.pushReplacement(
@@ -232,9 +229,9 @@ class _SocialExtraInfoPageState extends State<SocialExtraInfoPage> {
     const bg = Color(0xFFFFF1F1);
     final cardColor = Colors.white;
     final headerStyle = Theme.of(context).textTheme.headlineSmall?.copyWith(
-      color: const Color(0xFF7A4F3B),
-      fontWeight: FontWeight.w800,
-    );
+          color: const Color(0xFF7A4F3B),
+          fontWeight: FontWeight.w800,
+        );
 
     return Scaffold(
       backgroundColor: bg,
@@ -249,55 +246,48 @@ class _SocialExtraInfoPageState extends State<SocialExtraInfoPage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 8,
-                    ),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
                     child: Text('가입하기', style: headerStyle),
                   ),
                   const SizedBox(height: 12),
                   Expanded(
-                    child:
-                        isWide
-                            ? Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Expanded(
-                                  flex: 3,
-                                  child: _leftFormCard(cardColor),
+                    child: isWide
+                        ? Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Expanded(
+                                  flex: 3, child: _leftFormCard(cardColor)),
+                              const SizedBox(width: 20),
+                              Expanded(
+                                flex: 2,
+                                child: Column(
+                                  children: [
+                                    _rightConsentCard(cardColor),
+                                    const SizedBox(height: 20),
+                                    _animationBox(cardColor),
+                                  ],
                                 ),
-                                const SizedBox(width: 20),
-                                Expanded(
-                                  flex: 2,
-                                  child: Column(
-                                    children: [
-                                      _rightConsentCard(cardColor),
-                                      const SizedBox(height: 20),
-                                      _animationBox(cardColor),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            )
-                            : SingleChildScrollView(
-                              child: Column(
-                                children: [
-                                  _leftFormCard(cardColor),
-                                  const SizedBox(height: 16),
-                                  _rightConsentCard(cardColor),
-                                  const SizedBox(height: 16),
-                                  _animationBox(cardColor),
-                                ],
                               ),
+                            ],
+                          )
+                        : SingleChildScrollView(
+                            child: Column(
+                              children: [
+                                _leftFormCard(cardColor),
+                                const SizedBox(height: 16),
+                                _rightConsentCard(cardColor),
+                                const SizedBox(height: 16),
+                                _animationBox(cardColor),
+                              ],
                             ),
+                          ),
                   ),
                   if (_message.isNotEmpty)
                     Padding(
                       padding: const EdgeInsets.only(top: 8),
-                      child: Text(
-                        _message,
-                        style: const TextStyle(color: Colors.red),
-                      ),
+                      child: Text(_message,
+                          style: const TextStyle(color: Colors.red)),
                     ),
                 ],
               ),
@@ -357,9 +347,10 @@ class _SocialExtraInfoPageState extends State<SocialExtraInfoPage> {
                 FilteringTextInputFormatter.allow(RegExp(r'[0-9-]')),
               ],
               maxLength: 13, // 010-0000-0000
-              decoration: _input(
-                '전화번호',
-              ).copyWith(hintText: '010-0000-0000', counterText: ''),
+              decoration: _input('전화번호').copyWith(
+                hintText: '010-0000-0000',
+                counterText: '',
+              ),
             ),
             if (_phoneController.text.isNotEmpty &&
                 !_isPhoneValid(_phoneController.text.trim()))
@@ -388,10 +379,9 @@ class _SocialExtraInfoPageState extends State<SocialExtraInfoPage> {
                 child: Text(
                   '8자 이상 16자 이하',
                   style: TextStyle(
-                    color:
-                        _isPasswordValid(_pwController.text)
-                            ? Colors.green
-                            : Colors.grey,
+                    color: _isPasswordValid(_pwController.text)
+                        ? Colors.green
+                        : Colors.grey,
                     fontSize: 12,
                   ),
                 ),
@@ -416,10 +406,9 @@ class _SocialExtraInfoPageState extends State<SocialExtraInfoPage> {
                         ? '비밀번호가 일치합니다.'
                         : '비밀번호가 일치하지 않습니다.',
                     style: TextStyle(
-                      color:
-                          _pwConfirmController.text == _pwController.text
-                              ? Colors.green
-                              : Colors.red,
+                      color: _pwConfirmController.text == _pwController.text
+                          ? Colors.green
+                          : Colors.red,
                       fontSize: 12,
                     ),
                   ),
@@ -507,10 +496,8 @@ class _SocialExtraInfoPageState extends State<SocialExtraInfoPage> {
                 decoration: InputDecoration(
                   filled: true,
                   fillColor: Colors.white,
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 14,
-                    vertical: 12,
-                  ),
+                  contentPadding:
+                      const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
@@ -520,9 +507,7 @@ class _SocialExtraInfoPageState extends State<SocialExtraInfoPage> {
                   DropdownMenuItem(value: 'English', child: Text('English')),
                   DropdownMenuItem(value: '日本語', child: Text('日本語')),
                   DropdownMenuItem(
-                    value: 'Tiếng Việt',
-                    child: Text('Tiếng Việt'),
-                  ),
+                      value: 'Tiếng Việt', child: Text('Tiếng Việt')),
                   DropdownMenuItem(value: '中文', child: Text('中文')),
                   DropdownMenuItem(value: 'ไทย', child: Text('ไทย')),
                 ],
@@ -545,27 +530,24 @@ class _SocialExtraInfoPageState extends State<SocialExtraInfoPage> {
         height: 180,
         width: double.infinity,
         child: Center(
-          child:
-              _isLoading
-                  ? const CircularProgressIndicator()
-                  : ElevatedButton(
-                    onPressed: _submit,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFFFFC5C5),
-                      foregroundColor: Colors.brown[800],
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 28,
-                        vertical: 14,
-                      ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    child: const Text(
-                      '가입하기 애니메이션(자리)',
-                      style: TextStyle(fontWeight: FontWeight.bold),
+          child: _isLoading
+              ? const CircularProgressIndicator()
+              : ElevatedButton(
+                  onPressed: _submit,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFFFC5C5),
+                    foregroundColor: Colors.brown[800],
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 28, vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
                     ),
                   ),
+                  child: const Text(
+                    '가입하기 애니메이션(자리)',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                ),
         ),
       ),
     );

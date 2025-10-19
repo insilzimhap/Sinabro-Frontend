@@ -3,14 +3,14 @@
  * 개요: 부모 계정 정보 수정 화면. ParentLayout(사이드바/헤더) 하위에서
  * 프로필 요약(좌측)과 계정 정보 입력 폼(우측)을 카드 형태로 제공한다.
  * @ 채영: JWT+api 연결 완료
- * @연수: 언어팩 지원을 위해 수정중 // ✨
+ * @연수: 언어팩 지원 코드 수정 완료
  */
 
 import 'package:flutter/material.dart';
-import 'package:sinabro/main/parentView/layout/parent_layout.dart';
 import 'package:sinabro/main/parentView/api/parent_api.dart';
+import 'package:sinabro/main/parentView/layout/parent_layout.dart';
 import 'package:sinabro/main/parentView/page/notice/notice_page.dart';
-import 'package:sinabro/main/parentView/widget/translated_text.dart'; // ✨
+import 'package:sinabro/main/parentView/widget/translated_text.dart';
 
 class MyInfoEditPage extends StatefulWidget {
   /// 동적 사이드바/헤더에 쓰일 parentUserId (없어도 동작)
@@ -135,7 +135,14 @@ class _MyInfoEditPageState extends State<MyInfoEditPage> {
       context: context,
       barrierDismissible: true,
       builder: (_) => Dialog(
-        // ... (기존 Dialog 구조 동일)
+        elevation: 0,
+        insetPadding: const EdgeInsets.symmetric(
+          horizontal: 40,
+          vertical: 24,
+        ),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
         child: Container(
           decoration: BoxDecoration(
             color: const Color(0xFFE7F6E9),
@@ -160,7 +167,6 @@ class _MyInfoEditPageState extends State<MyInfoEditPage> {
                   Icon(Icons.check_circle, size: 48, color: Color(0xFF2E7D32)),
                   SizedBox(height: 14),
                   TranslatedText(
-                    // ✨
                     '수정 성공',
                     style: TextStyle(
                       fontSize: 22,
@@ -170,7 +176,6 @@ class _MyInfoEditPageState extends State<MyInfoEditPage> {
                   ),
                   SizedBox(height: 10),
                   TranslatedText(
-                    // ✨
                     '정보가 성공적으로 수정되었습니다!',
                     textAlign: TextAlign.center,
                     style: TextStyle(
@@ -191,8 +196,7 @@ class _MyInfoEditPageState extends State<MyInfoEditPage> {
     if (!mounted) return;
     Navigator.of(context).pushAndRemoveUntil(
       MaterialPageRoute(
-        builder: (_) => NoticePage(parentUserId: widget.parentUserId),
-      ),
+          builder: (_) => NoticePage(parentUserId: widget.parentUserId)),
       (_) => false,
     );
   }
@@ -220,7 +224,6 @@ class _MyInfoEditPageState extends State<MyInfoEditPage> {
                     alignment: Alignment.centerLeft,
                     padding: const EdgeInsets.symmetric(horizontal: 20),
                     child: const TranslatedText(
-                      // ✨
                       '마이 페이지',
                       style: TextStyle(
                         color: Colors.white,
@@ -251,7 +254,6 @@ class _MyInfoEditPageState extends State<MyInfoEditPage> {
                               ),
                               const SizedBox(height: 12),
                               const TranslatedText(
-                                // ✨
                                 '부모 회원',
                                 style: TextStyle(
                                   color: Colors.black54,
@@ -259,7 +261,6 @@ class _MyInfoEditPageState extends State<MyInfoEditPage> {
                                 ),
                               ),
                               const SizedBox(height: 6),
-                              // ✨
                               Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
@@ -296,34 +297,34 @@ class _MyInfoEditPageState extends State<MyInfoEditPage> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   _row(const TranslatedText('이름'), _name,
-                                      readOnly: true), // ✨
+                                      readOnly: true),
                                   const SizedBox(height: 14),
                                   _row(const TranslatedText('아이디'), _userId,
-                                      readOnly: true), // ✨
+                                      readOnly: true),
                                   const SizedBox(height: 14),
                                   _row(
-                                    const TranslatedText('이메일'), // ✨
+                                    const TranslatedText('이메일'),
                                     _email,
                                     keyboard: TextInputType.emailAddress,
                                   ),
                                   const SizedBox(height: 14),
                                   _row(
-                                    const TranslatedText('전화번호'), // ✨
+                                    const TranslatedText('전화번호'),
                                     _phone,
                                     keyboard: TextInputType.phone,
                                   ),
                                   const SizedBox(height: 14),
                                   _row(
-                                    const TranslatedText('비밀번호'), // ✨
+                                    const TranslatedText('비밀번호'),
                                     _pw,
                                     obscure: true,
                                     hint: '변경 시에만 입력해주세요.',
-                                    helperWidget: const TranslatedText(
-                                        '8자 이상 16자 이상'), // ✨
+                                    helperWidget:
+                                        const TranslatedText('8자 이상 16자 이상'),
                                   ),
                                   const SizedBox(height: 14),
                                   _row(
-                                    const TranslatedText('재입력'), // ✨
+                                    const TranslatedText('재입력'),
                                     _pw2,
                                     obscure: true,
                                     errorText: _pwMismatch
@@ -361,8 +362,7 @@ class _MyInfoEditPageState extends State<MyInfoEditPage> {
                                                           Colors.white),
                                                 ),
                                               )
-                                            : const TranslatedText(
-                                                '수정 완료'), // ✨
+                                            : const TranslatedText('수정 완료'),
                                       ),
                                     ),
                                   ),
@@ -384,14 +384,14 @@ class _MyInfoEditPageState extends State<MyInfoEditPage> {
   }
 }
 
-// ✨ 공통 라벨+필드 행 위젯 수정
+// 공통 라벨+필드 행 위젯
 Widget _row(
-  Widget label, // ✨ String -> Widget
+  Widget label, // String -> Widget
   TextEditingController c, {
   bool readOnly = false,
   bool obscure = false,
   String? hint,
-  Widget? helperWidget, // ✨ String? helper -> Widget? helperWidget
+  Widget? helperWidget, // String? helper -> Widget? helperWidget
   String? errorText,
   TextInputType? keyboard,
 }) {
@@ -402,12 +402,11 @@ Widget _row(
         width: 100,
         child: Padding(
           padding: const EdgeInsets.only(top: 12.0),
-          // ✨
           child: DefaultTextStyle(
             style: const TextStyle(
               fontWeight: FontWeight.w800,
               color: Color(0xFF7E6F64),
-              fontFamily: 'DefaultFont', // 폰트가 깨지지 않도록 기본 폰트 지정
+              fontFamily: 'DefaultFont',
             ),
             child: label,
           ),
@@ -425,7 +424,7 @@ Widget _row(
             filled: true,
             fillColor: const Color(0xFFF5F7F9),
             hintText: hint,
-            helper: helperWidget, // ✨ helperText -> helper
+            helper: helperWidget, // helperText -> helper
             errorText: errorText,
             contentPadding:
                 const EdgeInsets.symmetric(horizontal: 16, vertical: 14),

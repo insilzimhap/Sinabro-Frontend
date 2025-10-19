@@ -56,18 +56,15 @@ class _MyPageState extends State<MyPage> {
 
     setState(() => _verifying = true);
 
+    // TODO: 서버 비밀번호 검증 API 연동 (예: /api/users/verify-password)
+    // 지금은 데모로 바로 통과 처리
     try {
       await ParentApi.verifyParentPassword(
-        uid,
-        _pwController.text.trim(),
-      ); // ✅ 서버 검증 호출
+          uid, _pwController.text.trim()); // ✅ 서버 검증 호출
     } catch (e) {
-      if (mounted) {
-        setState(() => _verifying = false);
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(e.toString()))); // TODO: 번역
-      }
+      setState(() => _verifying = false);
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(e.toString())));
       return;
     }
 
@@ -144,7 +141,6 @@ class _MyPageState extends State<MyPage> {
                           ),
                           const SizedBox(height: 16),
                           const TranslatedText(
-                            // ✨
                             '부모 회원',
                             style: TextStyle(
                               color: Colors.black54,

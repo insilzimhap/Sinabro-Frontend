@@ -71,14 +71,6 @@ class MainActivity: FlutterActivity() {
                     result.success(null)
                 }
 
-                "recognize" -> {
-                    ensureRecognizer()
-                    Log.d("Selvy", "📥 [Kotlin] recognize 메서드 호출됨")
-                    val candidates = recognizer.recognize()
-                    Log.d("Selvy", "📤 [Kotlin] recognizer에서 받은 결과: $candidates")
-                    result.success(candidates)
-                }
-
                 "setLanguage" -> {
                     ensureRecognizer()
                     val lang = call.argument<Int>("language") ?: 101 // 기본값: 한국어
@@ -98,6 +90,62 @@ class MainActivity: FlutterActivity() {
                     val due = recognizer.getDueDate()
                     result.success(due)
                 }
+
+                // changed: Flutter에서 전달한 후보 문자 집합을 네이티브 엔진에 직접 반영하도록 추가.
+                //          인식 결과가 후보셋 안에 없으면 무효 처리되어 정확도 향상.
+                "setCandidateSet" -> {
+                    ensureRecognizer()
+                    val chars = call.argument<List<String>>("chars") ?: emptyList()
+                    try {
+                        recognizer.setCandidateSet(chars)
+                        Log.d(TAG, "🎯 setCandidateSet(size=${chars.size})") // changed
+                    } catch (e: Throwable) {
+                        Log.e(TAG, "❌ setCandidateSet 실패", e)
+                    }
+                    result.success(null)
+                }
+
+
+                // changed: 인식된 전체 후보 문자열에서 상위 1~3개를 로그로만 출력.
+                //          UI에는 반영하지 않고, 디버깅 시 어떤 후보들이 검출되는지 확인 용도.
+                "recognize" -> {
+                    ensureRecognizer()
+                    Log.d("Selvy", "📥 [Kotlin] recognize 메서드 호출됨")
+                    val candidates = recognizer.recognize()
+                    // changed: 후보 1~3 로그
+                    val lines = candidates.split("\n")
+                    for (i in 0 until minOf(3, lines.size)) {
+                        Log.d("Selvy", "🎯 후보${i+1}: ${lines[i]}")
+                    }
+                    Log.d("Selvy", "📤 [Kotlin] recognizer 전체 결과: $candidates")
+                    result.success(candidates)
+                }
+
+                // --- 추가: beginInk (캔버스 사이즈 참고용) ---
+                "beginInk" -> { // changed
+                    ensureRecognizer()
+                    val w = call.argument<Number>("w")?.toDouble() ?: 0.0
+                    val h = call.argument<Number>("h")?.toDouble() ?: 0.0
+                    val dpr = call.argument<Number>("dpr")?.toDouble() ?: 1.0
+                    Log.d(TAG, "🖼️ beginInk(w=$w, h=$h, dpr=$dpr)")
+                    result.success(null)
+                }
+                // --- 추가: addPoints (배치 좌표 처리) ---
+                "addPoints" -> { // changed
+                    ensureRecognizer()
+                    val points: List<Map<String, Any?>> = call.argument("points") ?: emptyList()
+                    var received = 0
+                    for (m in points) {
+                        val xi = (m["x"] as? Number)?.toInt() ?: continue
+                        val yi = (m["y"] as? Number)?.toInt() ?: continue
+                        recognizer.addPoint(xi, yi)
+                        received++
+                    }
+                    Log.d(TAG, "🖊️ addPoints(): received=$received")
+                    result.success(null)
+                }
+
+
 
                 else -> result.notImplemented()
             }

@@ -46,17 +46,16 @@ class _LoginChildScreenState extends State<LoginChildScreen> {
 
   // 자녀 정보 조회 (permitAll). 성공 시 Map 반환, 실패 시 null
   Future<Map<String, dynamic>?> _fetchChildInfo(String childId) async {
-    final uri = Uri.parse(
-      '$baseUrl/api/child/info',
-    ).replace(queryParameters: {'childId': childId});
+    final uri = Uri.parse('$baseUrl/api/child/info')
+        .replace(queryParameters: {'childId': childId});
     try {
       // 로그
       // ignore: avoid_print
       print('[login_child] 자녀정보 조회 시작 childId=$childId');
 
-      final resp = await http
-          .get(uri, headers: const {'Accept': 'application/json'})
-          .timeout(const Duration(seconds: 8));
+      final resp = await http.get(uri, headers: const {
+        'Accept': 'application/json'
+      }).timeout(const Duration(seconds: 8));
 
       if (resp.statusCode != 200) {
         // ignore: avoid_print
@@ -160,8 +159,7 @@ class _LoginChildScreenState extends State<LoginChildScreen> {
         final characterId = (info['characterId'] ?? '').toString().trim();
         // ignore: avoid_print
         print(
-          '[login_child] characterId=${characterId.isEmpty ? '(없음)' : characterId}',
-        );
+            '[login_child] characterId=${characterId.isEmpty ? '(없음)' : characterId}');
 
         if (characterId.isNotEmpty) {
           // 자녀 로비로

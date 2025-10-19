@@ -82,8 +82,7 @@ class _LoginPageState extends State<LoginParentScreen> {
             refreshToken: (rt != null && rt.isNotEmpty) ? rt : null,
           );
           print(
-            '[로그인] 토큰 저장 완료 (AT=${at.length}자, RT=${rt != null ? '있음' : '없음'})',
-          );
+              '[로그인] 토큰 저장 완료 (AT=${at.length}자, RT=${rt != null ? '있음' : '없음'})');
         } else {
           print('[로그인][경고] 응답에 토큰이 없음');
         }
@@ -101,25 +100,22 @@ class _LoginPageState extends State<LoginParentScreen> {
           userName: parentUserName.isEmpty ? null : parentUserName,
         );
         print(
-          '[로그인] 세션 저장 완료 (userId=$parentUserId, userName=$parentUserName)',
-        );
+            '[로그인] 세션 저장 완료 (userId=$parentUserId, userName=$parentUserName)');
 
         // 현재 코드는 공지 페이지로 이동
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
-            builder:
-                (_) => NoticePage(
-                  parentUserId: parentUserId,
-                  parentDisplayName: parentUserName,
-                ),
+            builder: (_) => NoticePage(
+              parentUserId: parentUserId,
+              parentDisplayName: parentUserName,
+            ),
           ),
         );
       } else {
         final body = _safeJson(response.body);
         setState(() {
-          _message =
-              (body['message'] as String?) ??
+          _message = (body['message'] as String?) ??
               '로그인 실패: 아이디 또는 비밀번호를 확인하세요. (${response.statusCode})';
         });
       }
@@ -187,8 +183,7 @@ class _LoginPageState extends State<LoginParentScreen> {
             refreshToken: (rt != null && rt.isNotEmpty) ? rt : null,
           );
           print(
-            '[카카오] 토큰 저장 완료 (AT=${at.length}자, RT=${rt != null ? '있음' : '없음'})',
-          );
+              '[카카오] 토큰 저장 완료 (AT=${at.length}자, RT=${rt != null ? '있음' : '없음'})');
         } else {
           print('[카카오][경고] 응답에 토큰이 없음');
         }
@@ -201,19 +196,17 @@ class _LoginPageState extends State<LoginParentScreen> {
           userName: parentUserName.isEmpty ? null : parentUserName,
         );
         print(
-          '[카카오] 세션 저장 완료 (userId=$parentUserId, userName=$parentUserName)',
-        );
+            '[카카오] 세션 저장 완료 (userId=$parentUserId, userName=$parentUserName)');
 
         // 정상 흐름: 공지/홈으로
         if (!mounted) return;
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
-            builder:
-                (_) => NoticePage(
-                  parentUserId: parentUserId,
-                  parentDisplayName: parentUserName,
-                ),
+            builder: (_) => NoticePage(
+              parentUserId: parentUserId,
+              parentDisplayName: parentUserName,
+            ),
           ),
         );
       } else if (response.statusCode == 400) {
@@ -222,14 +215,13 @@ class _LoginPageState extends State<LoginParentScreen> {
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
-            builder:
-                (_) => SocialExtraInfoPage(
-                  userId: kakaoId,
-                  userEmail: email,
-                  userName: nickname,
-                  socialType: 'kakao',
-                  socialId: kakaoId,
-                ),
+            builder: (_) => SocialExtraInfoPage(
+              userId: kakaoId,
+              userEmail: email,
+              userName: nickname,
+              socialType: 'kakao',
+              socialId: kakaoId,
+            ),
           ),
         );
       } else if (response.statusCode == 409) {
@@ -303,8 +295,7 @@ class _LoginPageState extends State<LoginParentScreen> {
           );
           // ignore: avoid_print
           print(
-            '[구글] 토큰 저장 완료 (AT=${at.length}자, RT=${rt != null ? '있음' : '없음'})',
-          );
+              '[구글] 토큰 저장 완료 (AT=${at.length}자, RT=${rt != null ? '있음' : '없음'})');
         } else {
           print('[구글][경고] 응답에 토큰이 없음');
         }
@@ -323,11 +314,10 @@ class _LoginPageState extends State<LoginParentScreen> {
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
-            builder:
-                (_) => NoticePage(
-                  parentUserId: parentUserId,
-                  parentDisplayName: parentUserName,
-                ),
+            builder: (_) => NoticePage(
+              parentUserId: parentUserId,
+              parentDisplayName: parentUserName,
+            ),
           ),
         );
       } else if (response.statusCode == 400) {
@@ -336,14 +326,13 @@ class _LoginPageState extends State<LoginParentScreen> {
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
-            builder:
-                (_) => SocialExtraInfoPage(
-                  userId: id,
-                  userEmail: email,
-                  userName: name,
-                  socialType: 'google',
-                  socialId: id,
-                ),
+            builder: (_) => SocialExtraInfoPage(
+              userId: id,
+              userEmail: email,
+              userName: name,
+              socialType: 'google',
+              socialId: id,
+            ),
           ),
         );
       } else if (response.statusCode == 409) {
@@ -361,13 +350,12 @@ class _LoginPageState extends State<LoginParentScreen> {
       final details = e.details; // null 일 수 있음
 
       setState(() {
-        _message =
-            code == 'network_error'
-                ? '구글 로그인 네트워크 오류입니다.\n'
-                    '· 에뮬레이터가 Google Play 이미지인지 확인\n'
-                    '· Play 서비스/스토어 업데이트\n'
-                    '· VPN/사내망 차단 여부 확인'
-                : '구글 로그인 에러($code) $msg ${details ?? ''}';
+        _message = code == 'network_error'
+            ? '구글 로그인 네트워크 오류입니다.\n'
+                '· 에뮬레이터가 Google Play 이미지인지 확인\n'
+                '· Play 서비스/스토어 업데이트\n'
+                '· VPN/사내망 차단 여부 확인'
+            : '구글 로그인 에러($code) $msg ${details ?? ''}';
       });
     } catch (e, st) {
       // 그 외 모든 예외
@@ -407,44 +395,43 @@ class _LoginPageState extends State<LoginParentScreen> {
       body: Stack(
         children: [
           LayoutBuilder(
-            builder:
-                (context, viewport) => SingleChildScrollView(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 30,
-                  ),
+            builder: (context, viewport) => SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 30,
+              ),
+              child: ConstrainedBox(
+                constraints: BoxConstraints(
+                  minHeight: viewport.maxHeight - 60,
+                ),
+                child: Center(
                   child: ConstrainedBox(
-                    constraints: BoxConstraints(
-                      minHeight: viewport.maxHeight - 60,
-                    ),
-                    child: Center(
-                      child: ConstrainedBox(
-                        constraints: const BoxConstraints(maxWidth: 1200),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Text(
-                              '로그인',
-                              style: TextStyle(
-                                fontSize: 36,
-                                fontWeight: FontWeight.w800,
-                                color: Color(0xFF5A4032),
-                              ),
-                            ),
-                            const SizedBox(height: 28),
-                            _twoCardsRow(),
-                            const SizedBox(height: 16),
-                            if (_message.isNotEmpty)
-                              Text(
-                                _message,
-                                style: const TextStyle(color: Colors.red),
-                              ),
-                          ],
+                    constraints: const BoxConstraints(maxWidth: 1200),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Text(
+                          '로그인',
+                          style: TextStyle(
+                            fontSize: 36,
+                            fontWeight: FontWeight.w800,
+                            color: Color(0xFF5A4032),
+                          ),
                         ),
-                      ),
+                        const SizedBox(height: 28),
+                        _twoCardsRow(),
+                        const SizedBox(height: 16),
+                        if (_message.isNotEmpty)
+                          Text(
+                            _message,
+                            style: const TextStyle(color: Colors.red),
+                          ),
+                      ],
                     ),
                   ),
                 ),
+              ),
+            ),
           ),
           Positioned(
             left: 12,
@@ -506,14 +493,12 @@ class _LoginPageState extends State<LoginParentScreen> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         GestureDetector(
-                          onTap:
-                              () => Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder:
-                                      (_) => const SignUpPage(role: 'parent'),
-                                ),
-                              ),
+                          onTap: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const SignUpPage(role: 'parent'),
+                            ),
+                          ),
                           child: const Text(
                             '계정이 없으신가요?',
                             style: TextStyle(
@@ -577,15 +562,15 @@ class _LoginPageState extends State<LoginParentScreen> {
   }
 
   static InputDecoration _inputDecoration() => const InputDecoration(
-    filled: true,
-    fillColor: Color(0xFFF8F7F6),
-    border: OutlineInputBorder(
-      borderSide: BorderSide(color: Color(0xFFE5E2E0)),
-      borderRadius: BorderRadius.all(Radius.circular(8)),
-    ),
-    isDense: true,
-    contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-  );
+        filled: true,
+        fillColor: Color(0xFFF8F7F6),
+        border: OutlineInputBorder(
+          borderSide: BorderSide(color: Color(0xFFE5E2E0)),
+          borderRadius: BorderRadius.all(Radius.circular(8)),
+        ),
+        isDense: true,
+        contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+      );
 }
 
 class _LoginCard extends StatelessWidget {
@@ -594,21 +579,21 @@ class _LoginCard extends StatelessWidget {
   const _LoginCard({required this.child, this.width});
   @override
   Widget build(BuildContext context) => Container(
-    width: width ?? 360,
-    padding: const EdgeInsets.all(26),
-    decoration: BoxDecoration(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(30),
-      boxShadow: [
-        BoxShadow(
-          color: Colors.black.withOpacity(0.03),
-          blurRadius: 12,
-          offset: const Offset(0, 6),
+        width: width ?? 360,
+        padding: const EdgeInsets.all(26),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(30),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.03),
+              blurRadius: 12,
+              offset: const Offset(0, 6),
+            ),
+          ],
         ),
-      ],
-    ),
-    child: child,
-  );
+        child: child,
+      );
 }
 
 class _CardTitle extends StatelessWidget {
@@ -617,14 +602,15 @@ class _CardTitle extends StatelessWidget {
   const _CardTitle(this.text, {this.underline = false});
   @override
   Widget build(BuildContext context) => Text(
-    text,
-    style: TextStyle(
-      fontSize: 22,
-      fontWeight: FontWeight.w800,
-      color: const Color(0xFF5A4032),
-      decoration: underline ? TextDecoration.underline : TextDecoration.none,
-    ),
-  );
+        text,
+        style: TextStyle(
+          fontSize: 22,
+          fontWeight: FontWeight.w800,
+          color: const Color(0xFF5A4032),
+          decoration:
+              underline ? TextDecoration.underline : TextDecoration.none,
+        ),
+      );
 }
 
 class _FieldLabel extends StatelessWidget {
@@ -632,7 +618,7 @@ class _FieldLabel extends StatelessWidget {
   const _FieldLabel(this.text);
   @override
   Widget build(BuildContext context) => Text(
-    text,
-    style: const TextStyle(fontSize: 14, color: Color(0xFF5A4032)),
-  );
+        text,
+        style: const TextStyle(fontSize: 14, color: Color(0xFF5A4032)),
+      );
 }

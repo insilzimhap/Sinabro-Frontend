@@ -379,11 +379,11 @@ class ParentProfile {
   });
 
   factory ParentProfile.fromJson(Map<String, dynamic> j) => ParentProfile(
-    userId: (j['userId'] ?? '').toString(),
-    userName: (j['userName'] ?? '').toString(),
-    userEmail: j['userEmail']?.toString(),
-    userPhoneNum: j['userPhoneNum']?.toString(),
-  );
+        userId: (j['userId'] ?? '').toString(),
+        userName: (j['userName'] ?? '').toString(),
+        userEmail: j['userEmail']?.toString(),
+        userPhoneNum: j['userPhoneNum']?.toString(),
+      );
 }
 
 // 부모 설정 응답 모댈
@@ -399,14 +399,14 @@ class ParentSettings {
   });
 
   factory ParentSettings.fromJson(Map<String, dynamic> j) => ParentSettings(
-    allowNotifications: j['allowNotifications'] == true,
-    emailSubscription: j['emailSubscription'] == true,
-    userLanguage: (j['userLanguage'] ?? 'Korea').toString(),
-  );
+        allowNotifications: j['allowNotifications'] == true,
+        emailSubscription: j['emailSubscription'] == true,
+        userLanguage: (j['userLanguage'] ?? 'Korea').toString(),
+      );
 
   Map<String, dynamic> toJson() => {
-    'allowNotifications': allowNotifications,
-    'emailSubscription': emailSubscription,
-    'userLanguage': userLanguage,
-  };
+        'allowNotifications': allowNotifications,
+        'emailSubscription': emailSubscription,
+        'userLanguage': userLanguage,
+      };
 }

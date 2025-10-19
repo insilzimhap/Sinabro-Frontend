@@ -5,8 +5,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-// 메뉴 대상 페이지들
+// 상단 앱바에서 "사용자 선택"으로 돌아갈 때 사용
 import 'package:sinabro/main/mainView/page/user_select_screen.dart';
+
+// 메뉴 대상 페이지들
 import 'package:sinabro/main/parentView/page/child/children_page.dart';
 import 'package:sinabro/main/parentView/page/fap/faq.dart';
 import 'package:sinabro/main/parentView/page/mypage.dart';
@@ -17,9 +19,18 @@ import 'package:sinabro/main/parentView/page/setting.dart' as psettings;
 import 'package:sinabro/main/parentView/services/translation_service.dart';
 import 'package:sinabro/main/parentView/widget/translated_text.dart';
 
+/// 부모 공통 레이아웃
+/// - 좌측 사이드바(접기/펼치기)
+/// - 상단 AppBar(뒤로가기, 햄버거 토글)
 class ParentLayout extends StatefulWidget {
+  /// 현재 활성 메뉴 이름 (사이드바 하이라이트용)
+  /// '공지사항' | '마이페이지' | '자녀페이지' | '문의사항' | '설정'
   final String activeMenu;
+
+  /// 실제 본문 위젯
   final Widget content;
+
+  /// 서버 연동 시 사이드바에서 부모정보를 불러올 일이 있으면 넘겨 쓸 ID(선택)
   final String? parentUserId;
 
   const ParentLayout({
@@ -36,15 +47,13 @@ class ParentLayout extends StatefulWidget {
 class _ParentLayoutState extends State<ParentLayout> {
   bool _collapsed = false;
 
-  // ✨ initState는 이제 필요 없으므로 제거합니다.
-
   void _toggleSidebar() => setState(() => _collapsed = !_collapsed);
 
   @override
   Widget build(BuildContext context) {
     final green = Colors.green.shade200;
 
-    // ✨ ChangeNotifierProvider를 제거하고 Scaffold를 직접 반환합니다.
+    // Scaffold를 직접 반환합니다.
     return Scaffold(
       appBar: AppBar(
         backgroundColor: green,
@@ -73,7 +82,7 @@ class _ParentLayoutState extends State<ParentLayout> {
         ),
         leadingWidth: 104,
       ),
-      // ✨ Consumer 위젯으로 body를 감싸서 TranslationService의 상태를 감지합니다.
+      // Consumer 위젯으로 body를 감싸서 TranslationService의 상태를 감지합니다.
       body: Consumer<TranslationService>(
         builder: (context, translationService, child) {
           // 위젯이 빌드될 때 초기화 함수를 한번만 안전하게 호출합니다.
@@ -82,7 +91,7 @@ class _ParentLayoutState extends State<ParentLayout> {
             // isInitialized 플래그를 사용하여 중복 호출 방지 (다음 단계에서 추가할 예정)
             translationService.initialize(userId);
           }
-          
+
           // 언어 설정을 불러오는 동안 로딩 화면을 보여줍니다.
           if (translationService.isLoading) {
             return const Center(child: CircularProgressIndicator());
@@ -107,8 +116,7 @@ class _ParentLayoutState extends State<ParentLayout> {
   }
 }
 
-// 이하 _ParentSidebar, _MenuList, _MenuItem, _MenuTile 코드는 이전과 동일합니다.
-// (생략)
+/// 좌측 사이드바 (메뉴만 간결히 표시)
 
 class _ParentSidebar extends StatelessWidget {
   final String activeMenu;
@@ -123,6 +131,7 @@ class _ParentSidebar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // 스타일
     const sideBg = Color(0xFFF5F5F5);
     const wCollapsed = 72.0;
     const wExpanded = 220.0;
@@ -139,6 +148,7 @@ class _ParentSidebar extends StatelessWidget {
           const SizedBox(height: 12),
           const Divider(height: 1, color: Color(0xFFE6E6E6)),
           const SizedBox(height: 8),
+          // ✅ 메뉴 리스트 (공지사항/마이페이지/자녀페이지/문의사항/설정)
           Expanded(
             child: _MenuList(
               activeMenu: activeMenu,
@@ -152,6 +162,7 @@ class _ParentSidebar extends StatelessWidget {
   }
 }
 
+/// 메뉴 리스트 (현재 페이지는 초록 하이라이트)
 class _MenuList extends StatelessWidget {
   final String activeMenu;
   final bool collapsed;
@@ -197,7 +208,9 @@ class _MenuList extends StatelessWidget {
         title: 'setting',
         koreanTitle: '설정',
         icon: Icons.settings_outlined,
-        destination: psettings.SettingsPage(parentUserId: parentUserId),
+        destination: psettings.SettingsPage(
+          parentUserId: parentUserId,
+        ),
       ),
     ];
 
@@ -315,8 +328,6 @@ class _MenuTile extends StatelessWidget {
       ),
     );
 
-    return collapsed
-        ? Tooltip(message: item.koreanTitle, child: tile)
-        : tile;
+    return collapsed ? Tooltip(message: item.koreanTitle, child: tile) : tile;
   }
 }

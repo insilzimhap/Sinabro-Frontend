@@ -68,35 +68,13 @@ import 'package:sinabro/main/studyView/listenStudy/page/level1/animals/pig_revea
 import 'package:sinabro/main/studyView/listenStudy/page/level1/animals/pig_story_page.dart';
 import 'package:sinabro/main/studyView/listenStudy/page/level1/animals/pig_outro_page.dart';
 
-// ✅ JWT 자동부착 클라이언트 (부팅 시 토큰 복구용)
-import 'package:sinabro/common/auth_client.dart';
-
-/// 앱 시작점
-Future<void> main() async {
+void main() {
   // ✅ 네이티브 앱 키로 초기화 (Kakao Developers 콘솔의 "네이티브 앱 키")
   KakaoSdk.init(
     nativeAppKey: 'ca5d66d22c4255e3dced6bc1a2d4fdcd',
   );
 
-  // 1) 플러터 엔진-플랫폼 채널 준비
-  WidgetsFlutterBinding.ensureInitialized();
-
-  // 2) ⬇️ 부팅 시 저장돼 있던 JWT를 메모리로 복구 (AuthClient가 이후 모든 요청에 자동 부착)
-  try {
-    await AuthClient.hydrateFromPrefs();
-    print('[main] 부팅 토큰 복구 완료');
-  } catch (e) {
-    print('[main][경고] 토큰 복구 중 오류: $e');
-  }
-
-  // 3) 앱 실행
-  // ✨ runApp 부분을 ChangeNotifierProvider로 감싸줍니다.
-  runApp(
-    ChangeNotifierProvider(
-      create: (context) => TranslationService.instance,
-      child: const MyApp(),
-    ),
-  );
+  runApp(MyApp());
 }
 
 class MyApp extends StatelessWidget {

@@ -4,8 +4,8 @@
  * 구성하고 로그아웃·회원탈퇴 플로우(커스텀 다이얼로그)까지 제공한다.
  * 로그아웃 → UserSelectScreen, 탈퇴 → HomeScreen
  * @ 채영: JWT+api 연결 완료
- * @연수: 언어팩 지원을 위해 수정중 // ✨
- * @연수: 설정 -> 언어 변경 후 저장하기 눌렀을 때, 언어 새로고침
+ * @ 연수: 언어팩 지원을 위한 코드 수정 완료
+ * @연수: 설정 -> 언어 변경 후 저장하기 눌렀을 때, 언어 새로고침 수정중
  */
 import 'package:flutter/material.dart';
 import 'package:sinabro/main/parentView/layout/parent_layout.dart';
@@ -13,7 +13,7 @@ import 'package:sinabro/main/mainView/page/home_screen.dart';
 import 'package:sinabro/main/parentView/api/parent_api.dart';
 import 'package:sinabro/main/mainView/page/user_select_screen.dart';
 import 'package:sinabro/main/parentView/services/translation_service.dart';
-import 'package:sinabro/main/parentView/widget/translated_text.dart'; // ✨
+import 'package:sinabro/main/parentView/widget/translated_text.dart';
 
 class SettingsPage extends StatefulWidget {
   static const String routeName = '/parent/settings';
@@ -89,7 +89,7 @@ class _SettingsPageState extends State<SettingsPage> {
         userLanguage: _mapLang(selectedLang), // 언어 매핑
       );
 
-      // ✨ 2. 성공 시, TranslationService를 다시 초기화하여 변경된 언어를 즉시 앱에 적용합니다.
+      // 2. 성공 시, TranslationService를 다시 초기화하여 변경된 언어를 즉시 앱에 적용합니다.
       await TranslationService.instance.initialize(widget.parentUserId!);
 
       if (!mounted) return;
@@ -176,7 +176,7 @@ class _SettingsPageState extends State<SettingsPage> {
       await ParentApi.verifyDelete(widget.parentUserId!, pw);
     } catch (e) {
       await _showFailureDialog(
-        title: '실패', // ✨
+        title: '실패',
         message: '현재 비밀번호가 올바르지 않습니다!',
       );
       return;
@@ -184,7 +184,7 @@ class _SettingsPageState extends State<SettingsPage> {
 
     // 2단계: 정말 탈퇴하시겠습니까?
     final ok = await _showConfirmDialog(
-      title: '주의', // ✨
+      title: '주의',
       message: '정말 탈퇴하시겠습니까?',
       yesText: '예',
       noText: '아니요',
@@ -202,7 +202,7 @@ class _SettingsPageState extends State<SettingsPage> {
       );
     } catch (e) {
       await _showFailureDialog(
-        title: '실패', // ✨
+        title: '실패',
         message: '탈퇴 실패: $e',
       );
     }
@@ -244,7 +244,6 @@ class _SettingsPageState extends State<SettingsPage> {
                 children: [
                   const SizedBox(height: 8),
                   const TranslatedText(
-                    // ✨
                     '현재 비밀번호를 입력해주십시오',
                     style: TextStyle(
                       fontSize: 22,
@@ -288,7 +287,7 @@ class _SettingsPageState extends State<SettingsPage> {
                           borderRadius: BorderRadius.circular(22),
                         ),
                       ),
-                      child: const TranslatedText('확인'), // ✨
+                      child: const TranslatedText('확인'),
                     ),
                   ),
                 ],
@@ -302,7 +301,6 @@ class _SettingsPageState extends State<SettingsPage> {
 
   Future<void> _showFailureDialog(
       {required String title, required String message}) async {
-    // ✨
     await showDialog<void>(
       context: context,
       barrierDismissible: true,
@@ -344,7 +342,6 @@ class _SettingsPageState extends State<SettingsPage> {
                     ),
                     alignment: Alignment.center,
                     child: TranslatedText(
-                      // ✨
                       title,
                       style: const TextStyle(
                         fontSize: 24,
@@ -355,7 +352,6 @@ class _SettingsPageState extends State<SettingsPage> {
                   ),
                   const SizedBox(height: 16),
                   TranslatedText(
-                    // ✨
                     message,
                     textAlign: TextAlign.center,
                     style: const TextStyle(
@@ -375,7 +371,7 @@ class _SettingsPageState extends State<SettingsPage> {
   }
 
   Future<bool?> _showConfirmDialog({
-    required String title, // ✨
+    required String title,
     required String message,
     String yesText = '예',
     String noText = '아니요',
@@ -421,7 +417,6 @@ class _SettingsPageState extends State<SettingsPage> {
                     ),
                     alignment: Alignment.center,
                     child: TranslatedText(
-                      // ✨
                       title,
                       style: const TextStyle(
                         fontSize: 24,
@@ -432,7 +427,6 @@ class _SettingsPageState extends State<SettingsPage> {
                   ),
                   const SizedBox(height: 16),
                   TranslatedText(
-                    // ✨
                     message,
                     textAlign: TextAlign.center,
                     style: const TextStyle(
@@ -457,7 +451,7 @@ class _SettingsPageState extends State<SettingsPage> {
                               borderRadius: BorderRadius.circular(22),
                             ),
                           ),
-                          child: TranslatedText(yesText), // ✨
+                          child: TranslatedText(yesText),
                         ),
                       ),
                       const SizedBox(width: 16),
@@ -473,7 +467,7 @@ class _SettingsPageState extends State<SettingsPage> {
                               borderRadius: BorderRadius.circular(22),
                             ),
                           ),
-                          child: TranslatedText(noText), // ✨
+                          child: TranslatedText(noText),
                         ),
                       ),
                     ],
@@ -529,7 +523,6 @@ class _SettingsPageState extends State<SettingsPage> {
                 children: [
                   const SizedBox(height: 6),
                   TranslatedText(
-                    // ✨
                     message,
                     textAlign: TextAlign.center,
                     style: const TextStyle(
@@ -573,7 +566,6 @@ class _SettingsPageState extends State<SettingsPage> {
                     alignment: Alignment.centerLeft,
                     padding: const EdgeInsets.symmetric(horizontal: 20),
                     child: const TranslatedText(
-                      // ✨
                       '설정',
                       style: TextStyle(
                         color: Colors.white,
@@ -596,22 +588,22 @@ class _SettingsPageState extends State<SettingsPage> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          _sectionTitle(const TranslatedText('수신동의')), // ✨
+                          _sectionTitle(const TranslatedText('수신동의')),
                           const SizedBox(height: 8),
                           _checkRow(
-                            label: const TranslatedText('이메일 수신 동의'), // ✨
+                            label: const TranslatedText('이메일 수신 동의'),
                             value: agreeEmail,
                             onChanged: (v) =>
                                 setState(() => agreeEmail = v ?? false),
                           ),
                           _checkRow(
-                            label: const TranslatedText('알림 수신 동의'), // ✨
+                            label: const TranslatedText('알림 수신 동의'),
                             value: agreePush,
                             onChanged: (v) =>
                                 setState(() => agreePush = v ?? false),
                           ),
                           const SizedBox(height: 22),
-                          _sectionTitle(const TranslatedText('언어설정')), // ✨
+                          _sectionTitle(const TranslatedText('언어설정')),
                           const SizedBox(height: 8),
                           _langDropdown(),
                           const SizedBox(height: 8),
@@ -638,7 +630,6 @@ class _SettingsPageState extends State<SettingsPage> {
                           child: const Padding(
                             padding: EdgeInsets.symmetric(horizontal: 18),
                             child: TranslatedText(
-                              // ✨
                               '로그아웃',
                               style: TextStyle(color: Colors.white),
                             ),
@@ -660,7 +651,6 @@ class _SettingsPageState extends State<SettingsPage> {
                           child: const Padding(
                             padding: EdgeInsets.symmetric(horizontal: 18),
                             child: TranslatedText(
-                              // ✨
                               '회원 탈퇴',
                               style: TextStyle(color: Colors.white),
                             ),
@@ -682,7 +672,6 @@ class _SettingsPageState extends State<SettingsPage> {
                           child: const Padding(
                             padding: EdgeInsets.symmetric(horizontal: 22),
                             child: TranslatedText(
-                              // ✨
                               '저장하기',
                               style: TextStyle(color: Colors.white),
                             ),
@@ -702,9 +691,7 @@ class _SettingsPageState extends State<SettingsPage> {
 
   // ============= 공용 위젯 =============
   Widget _sectionTitle(Widget child) {
-    // ✨ String -> Widget
     return DefaultTextStyle(
-      // ✨
       style: const TextStyle(
         fontSize: 18,
         fontWeight: FontWeight.w900,
@@ -716,7 +703,7 @@ class _SettingsPageState extends State<SettingsPage> {
   }
 
   Widget _checkRow({
-    required Widget label, // ✨ String -> Widget
+    required Widget label,
     required bool value,
     required ValueChanged<bool?> onChanged,
   }) {
@@ -727,11 +714,10 @@ class _SettingsPageState extends State<SettingsPage> {
           Checkbox(
             value: value,
             onChanged: onChanged,
-            shape: const CircleBorder(), // ◯ 스크린샷 느낌
+            shape: const CircleBorder(),
           ),
           const SizedBox(width: 6),
           DefaultTextStyle(
-            // ✨
             style: const TextStyle(
               fontSize: 16,
               color: Colors.black54,
@@ -757,8 +743,7 @@ class _SettingsPageState extends State<SettingsPage> {
         child: DropdownButton<String>(
           value: selectedLang,
           items: languages
-              .map((e) =>
-                  DropdownMenuItem(value: e, child: TranslatedText(e))) // ✨
+              .map((e) => DropdownMenuItem(value: e, child: TranslatedText(e)))
               .toList(),
           onChanged: (v) => setState(() => selectedLang = v ?? selectedLang),
         ),
