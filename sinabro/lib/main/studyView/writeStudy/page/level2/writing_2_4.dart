@@ -1,7 +1,13 @@
+// 레벨 2 열매 4 모음2 서버 연결 완료
 import 'package:flutter/material.dart';
 import 'dart:async';
 import 'package:sinabro/main/studyView/writeStudy/page/main_apple_tree.dart';
 import 'package:sinabro/main/studyView/writeStudy/widget/writing_canvas.dart'; // ✅ Selvy 캔버스
+
+import 'package:http/http.dart' as http; // ⭐️ 1. http 패키지
+import 'dart:convert';                   // ⭐️ 2. json 변환용
+import 'package:sinabro/config.dart';    // ⭐️ 3. baseUrl 사용
+
 
 /// ─────────────────────────────────────────────────────────────────────────
 /// 스펙: 모음(2-4) — mask / trace / preview를 자소별로 개별 조정
@@ -232,6 +238,8 @@ const List<String> VOWEL_ORDER4 = [
 class Writing24Page extends StatefulWidget {
   final String childId;
   final String lesson; // 시작키(기본: ya)
+  final String fruitId; // ⭐️ fruitId 변수 추가!
+
   final bool showIntro; // ✅ 인트로 표시 여부
 
   const Writing24Page({
@@ -239,6 +247,7 @@ class Writing24Page extends StatefulWidget {
     required this.childId,
     this.lesson = 'ya',
     this.showIntro = true,
+    required this.fruitId,
   });
 
   @override
@@ -256,10 +265,17 @@ class _Writing24PageState extends State<Writing24Page> {
   bool _finalPopupScheduled = false;
   Timer? _finalPopupTimer;
 
+  // ⭐️ API 연동 변수 추가
+  late DateTime _startTime; // 학습 시작 시간
+  bool _apiCallSent = false;  // API 중복 호출 방지 플래그
+
   @override
   void initState() {
     super.initState();
     _showIntro = widget.showIntro;
+
+    _startTime = DateTime.now(); // ⭐️ 시간 측정 시작!
+
   }
 
   @override
@@ -295,6 +311,41 @@ class _Writing24PageState extends State<Writing24Page> {
         return 2;
       default:
         return 1;
+    }
+  }
+
+  /// ⭐️ (신규) 학습 완료 API 호출 함수 - JWT 없이
+  Future<void> _uploadStudyResult() async {
+    // 1. 걸린 시간 계산
+    final timeSpentSecs = DateTime.now().difference(_startTime).inSeconds;
+
+    // 2. API 엔드포인트
+    final url = Uri.parse('$baseUrl/api/study/writing/complete');
+
+    // 3. 전송할 데이터
+    final body = json.encode({
+      'childId': widget.childId,
+      'fruitId': widget.fruitId, // ⭐️ 생성자로 받은 fruitId 사용!
+      'isCompleted': true,
+      'timeSpentSecs': timeSpentSecs,
+    });
+
+    // 4. 헤더 (Content-Type만)
+    final headers = {
+      'Content-Type': 'application/json',
+    };
+
+    try {
+      // 5. API 호출
+      final response = await http.post(url, headers: headers, body: body);
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        debugPrint('[Writing22] API 연동 성공: fruitId ${widget.fruitId} 완료!');
+      } else {
+        debugPrint('[Writing22] API 연동 실패: ${response.statusCode} ${response.body}');
+      }
+    } catch (e) {
+      debugPrint('[Writing22] API 연동 중 예외 발생: $e');
     }
   }
 
@@ -345,14 +396,24 @@ class _Writing24PageState extends State<Writing24Page> {
     final target = _norm(spec.bigChar);
 
     if (got.isNotEmpty && got == target) {
+      // 1. 인식 성공! 완료 단계로 UI 변경
       setState(() => step = 1);
 
+      // ⭐️⭐️⭐️ 2. 여기가 핵심! ⭐️⭐️⭐️
+      // 마지막 레슨('ui')이고, API를 아직 안 보냈다면 호출!
+      if (_isFinalLesson && !_apiCallSent) {
+        _apiCallSent = true; // 중복 호출 방지 플래그 설정
+        _uploadStudyResult();  // API 호출 함수 실행!
+      }
+      // ⭐️⭐️⭐️⭐️⭐️⭐️⭐️⭐️⭐️⭐️⭐️⭐️⭐️⭐️⭐️
+
+      // 3. (기존 로직) 마지막 레슨이면 팝업 예약
       if (_isFinalLesson && !_rewardShowing && !_finalPopupScheduled) {
         _finalPopupScheduled = true;
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (!mounted) return;
           _finalPopupTimer = Timer(const Duration(seconds: 3), () {
-            if (mounted) _showRewardPopup();
+            if (mounted) _showRewardPopup(); // 팝업 표시
           });
         });
       }
@@ -445,6 +506,7 @@ class _Writing24PageState extends State<Writing24Page> {
             builder:
                 (_) => Writing24Page(
                   childId: widget.childId,
+                  fruitId: widget.fruitId,
                   lesson: k,
                   showIntro: false, // ✅ 다음 레슨은 인트로 없이
                 ),

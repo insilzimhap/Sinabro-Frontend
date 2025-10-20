@@ -4,6 +4,10 @@ import 'package:flutter/material.dart';
 import 'package:sinabro/main/studyView/writeStudy/page/main_apple_tree.dart';
 import 'package:sinabro/main/studyView/writeStudy/widget/writing_canvas.dart';
 
+import 'package:http/http.dart' as http; // ⭐️ 1. http 패키지
+import 'dart:convert';                   // ⭐️ 2. json 변환용
+import 'package:sinabro/config.dart';    // ⭐️ 3. baseUrl 사용
+
 const String kMainAppleTreeRoute = '/apple_garden';
 
 /// 항상 나무 화면으로 복귀
@@ -29,19 +33,41 @@ void _goToGarden(BuildContext context, String childId) {
 void _pushNamedOrFallback(
   BuildContext context,
   String routeName, {
-  Object? arguments,
+  Object? arguments, // Map<String, dynamic> 형태라고 가정
   Widget? fallback,
 }) {
   final nav = Navigator.of(context, rootNavigator: true);
   try {
+    // 1. 이름으로 라우트 시도
     nav.pushNamed(routeName, arguments: arguments);
   } catch (_) {
+    // 2. 실패 시:
     if (fallback != null) {
+      // 명시적으로 fallback 위젯이 주어졌으면 그걸 사용
       nav.push(MaterialPageRoute(builder: (_) => fallback));
     } else {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Route not found: $routeName')));
+      // fallback 위젯이 없으면, _routeFallbackWithChild 함수를 사용해서 생성 시도
+      
+      // ⭐️⭐️⭐️ 여기가 수정된 부분! ⭐️⭐️⭐️
+      // arguments 맵에서 childId, fruitId, startTime을 안전하게 추출
+      final argsMap = arguments as Map<String, dynamic>?;
+      final childId = argsMap?['childId'] as String? ?? 'unknown'; // 기본값 또는 에러 처리 필요
+      final fruitId = argsMap?['fruitId'] as String?;
+      final startTime = argsMap?['startTime'] as DateTime?;
+
+      // 추출한 값들을 _routeFallbackWithChild에 순서대로 전달!
+      final fallbackWidget = _routeFallbackWithChild(routeName, childId, fruitId, startTime);
+      // ⭐️⭐️⭐️⭐️⭐️⭐️⭐️⭐️⭐️⭐️⭐️⭐️⭐️⭐️⭐️⭐️⭐️⭐️
+
+      if (fallbackWidget != null) {
+         // Fallback 위젯 생성 성공!
+         nav.push(MaterialPageRoute(builder: (_) => fallbackWidget));
+      } else {
+        // _routeFallbackWithChild 마저 실패하면 에러 메시지 표시
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Route not found: $routeName')));
+      }
     }
   }
 }
@@ -55,34 +81,49 @@ void _replaceNamedOrFallback(
   final nav = Navigator.of(context, rootNavigator: true);
   try {
     nav.pushReplacementNamed(routeName, arguments: arguments);
-  } catch (_) {
+  } catch (e) {
+    debugPrint('pushReplacementNamed failed for $routeName: $e. Trying fallback...'); // 실패 로그 추가
     if (fallback != null) {
       nav.pushReplacement(MaterialPageRoute(builder: (_) => fallback));
     } else {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Route not found: $routeName')));
+      // arguments 맵에서 값 추출 시도
+      final argsMap = arguments as Map<String, dynamic>?;
+      final childId = argsMap?['childId'] as String? ?? 'unknown';
+      final fruitId = argsMap?['fruitId'] as String?;
+      final startTime = argsMap?['startTime'] as DateTime?;
+
+      // 추출한 값으로 Fallback 위젯 생성 시도
+      final fallbackWidget = _routeFallbackWithChild(routeName, childId, fruitId, startTime);
+
+      if (fallbackWidget != null) {
+         nav.pushReplacement(MaterialPageRoute(builder: (_) => fallbackWidget));
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Fallback Route not found: $routeName')),
+        );
+      }
     }
   }
 }
 
 // 라우트 문자열 → 페이지 위젯( childId 포함 ) 매퍼
-Widget? _routeFallbackWithChild(String name, String childId) {
+Widget? _routeFallbackWithChild(String name, String childId, String? fruitId,     // ⭐️ 추가 (nullable)
+  DateTime? startTime,) {
   switch (name) {
     case Writing3_IntroPage.routeName:
-      return Writing3_IntroPage(childId: childId);
+      return Writing3_IntroPage(childId: childId,fruitId: fruitId!);
     case Writing3_1Page.routeName:
-      return Writing3_1Page(childId: childId);
+      return Writing3_1Page(childId: childId, fruitId: fruitId!);
     case Writing3_2Page.routeName:
-      return Writing3_2Page(childId: childId);
+      return Writing3_2Page(childId: childId, fruitId: fruitId!, startTime: startTime!);
     case Writing3_3Page.routeName:
-      return Writing3_3Page(childId: childId);
+      return Writing3_3Page(childId: childId, fruitId: fruitId!, startTime: startTime!);
     case Writing3_4Page.routeName:
-      return Writing3_4Page(childId: childId);
+      return Writing3_4Page(childId: childId, fruitId: fruitId!, startTime: startTime!);
     case Writing3_5Page.routeName:
-      return Writing3_5Page(childId: childId);
+      return Writing3_5Page(childId: childId, fruitId: fruitId!, startTime: startTime!);
     case Writing3_6Page.routeName:
-      return Writing3_6Page(childId: childId);
+      return Writing3_6Page(childId: childId, fruitId: fruitId!, startTime: startTime!);
     case Writing3_DonePage.routeName:
       return Writing3_DonePage(childId: childId);
     default:
@@ -94,9 +135,10 @@ Widget? _routeFallbackWithChild(String name, String childId) {
 // 인트로 페이지
 // ──────────────────────────────────────────────────────────────────────────────
 class Writing3_IntroPage extends StatefulWidget {
-  const Writing3_IntroPage({super.key, required this.childId});
+  const Writing3_IntroPage({super.key, required this.childId,required this.fruitId});
   static const routeName = '/study/write/writing_3_1_intro';
   final String childId;
+  final String fruitId;
 
   @override
   State<Writing3_IntroPage> createState() => _Writing3_IntroPageState();
@@ -114,8 +156,8 @@ class _Writing3_IntroPageState extends State<Writing3_IntroPage> {
       _replaceNamedOrFallback(
         context,
         Writing3_1Page.routeName,
-        arguments: {'childId': widget.childId},
-        fallback: Writing3_1Page(childId: widget.childId),
+        arguments: {'childId': widget.childId, 'fruitId': widget.fruitId},
+        fallback: Writing3_1Page(childId: widget.childId, fruitId: widget.fruitId),
       );
     });
   }
@@ -206,6 +248,10 @@ class _WritingAnimalPage extends StatefulWidget {
   const _WritingAnimalPage({
     super.key,
     required this.childId,
+    required this.fruitId,       // ⭐️ 추가!
+    this.startTime,       // ⭐️ 추가! (첫 페이지 제외하고 받음)
+    this.isFirstPage = false, // ⭐️ 추가!
+    this.isLastPage = false,  // ⭐️ 추가!
     required this.illustPath,
     required this.previewPath,
     required this.tracePath,
@@ -217,6 +263,10 @@ class _WritingAnimalPage extends StatefulWidget {
   });
 
   final String childId;
+  final String fruitId;      // ⭐️ 추가!
+  final DateTime? startTime; // ⭐️ 추가!
+  final bool isFirstPage;    // ⭐️ 추가!
+  final bool isLastPage;
   final String illustPath;
   final String previewPath;
   final String tracePath;
@@ -233,6 +283,50 @@ class _WritingAnimalPage extends StatefulWidget {
 
 class _WritingAnimalPageState extends State<_WritingAnimalPage> {
   final _canvasKey = GlobalKey<WritingCanvasState>();
+  late DateTime _startTime; // ⭐️ API용 시작 시간 기록
+  bool _apiCallSent = false; // ⭐️ API 중복 호출 방지
+
+  @override
+  void initState() {
+    super.initState();
+    // ⭐️ 첫 페이지면 지금 시간 기록, 아니면 전달받은 시간 사용
+    _startTime = widget.isFirstPage ? DateTime.now() : widget.startTime!;
+  }
+
+  /// ⭐️ (신규) 학습 완료 API 호출 함수 - JWT 없이
+  Future<void> _uploadStudyResult() async {
+    // 1. 걸린 시간 계산 (첫 페이지 시작 시간 기준)
+    final timeSpentSecs = DateTime.now().difference(_startTime).inSeconds;
+
+    // 2. API 엔드포인트
+    final url = Uri.parse('$baseUrl/api/study/writing/complete');
+
+    // 3. 전송할 데이터
+    final body = json.encode({
+      'childId': widget.childId,
+      'fruitId': widget.fruitId, // ⭐️ 생성자로 받은 fruitId 사용!
+      'isCompleted': true,
+      'timeSpentSecs': timeSpentSecs,
+    });
+
+    // 4. 헤더 (Content-Type만)
+    final headers = {
+      'Content-Type': 'application/json',
+    };
+
+    try {
+      // 5. API 호출
+      final response = await http.post(url, headers: headers, body: body);
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        debugPrint('[Writing3_X] API 연동 성공: fruitId ${widget.fruitId} 완료!');
+      } else {
+        debugPrint('[Writing3_X] API 연동 실패: ${response.statusCode} ${response.body}');
+      }
+    } catch (e) {
+      debugPrint('[Writing3_X] API 연동 중 예외 발생: $e');
+    }
+  }
 
   /// 셀비식 정답 판별: 1) 첫 줄만, 2) 한글만, 3) 후보 일치
   bool _isCorrect(String raw) {
@@ -248,11 +342,22 @@ class _WritingAnimalPageState extends State<_WritingAnimalPage> {
   }
 
   void _goNext(BuildContext context) {
+
+    if (widget.isLastPage && !_apiCallSent) {
+      _apiCallSent = true;
+      _uploadStudyResult(); // ⭐️ API 호출!
+    }
+
     _pushNamedOrFallback(
       context,
       widget.nextRouteName,
-      arguments: {'childId': widget.childId},
-      fallback: _routeFallbackWithChild(widget.nextRouteName, widget.childId),
+      arguments: {'childId': widget.childId, 'fruitId': widget.fruitId},
+      fallback: _routeFallbackWithChild(
+        widget.nextRouteName, // 1번째: route 이름
+        widget.childId,      // 2번째: childId
+        widget.fruitId,      // 3번째: fruitId (이름 없이 값만!)
+        _startTime,          // 4번째: startTime (이름 없이 값만!)
+      ),
     );
   }
 
@@ -509,20 +614,22 @@ class _GridSplitPainter extends CustomPainter {
 
 // 강아지
 class Writing3_1Page extends StatelessWidget {
-  const Writing3_1Page({super.key, required this.childId});
+  const Writing3_1Page({super.key, required this.childId, required this.fruitId,});
   static const routeName = '/study/write/writing_3_1';
   final String childId;
+  final String fruitId;
+  
 
   @override
   Widget build(BuildContext context) {
-    final argId =
-        (ModalRoute.of(context)?.settings.arguments
-                as Map<String, dynamic>?)?['childId']
-            as String?;
-    final id = argId ?? childId;
+    
+    final arguments = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+    final id = arguments?['childId'] as String? ?? childId;
+    final fId = arguments?['fruitId'] as String? ?? fruitId; // ⭐️ 3. fruitId 가져오기!
 
     return _WritingAnimalPage(
       childId: id,
+      fruitId: fId,
       illustPath: 'assets/img/contents/studyWrite/dog.png',
       previewPath: 'assets/img/contents/studyWrite/dog_preview.png',
       tracePath: 'assets/img/contents/studyWrite/dog_trace.png',
@@ -530,26 +637,36 @@ class Writing3_1Page extends StatelessWidget {
       columns: 3,
       expectedWord: '강아지',
       acceptedWords: const ['강아지', '강이지', '깅이지', '강야지'],
+      isFirstPage: true,
     );
   }
 }
 
 // 고양이
 class Writing3_2Page extends StatelessWidget {
-  const Writing3_2Page({super.key, required this.childId});
+  const Writing3_2Page
+    ({super.key, 
+      required this.childId, 
+      required this.fruitId,
+      required this.startTime,});
+
   static const routeName = '/study/write/writing_3_2';
   final String childId;
+  final String fruitId; // ⭐️ 추가
+  final DateTime startTime; // ⭐️ 추가
+  
 
   @override
   Widget build(BuildContext context) {
-    final argId =
-        (ModalRoute.of(context)?.settings.arguments
-                as Map<String, dynamic>?)?['childId']
-            as String?;
-    final id = argId ?? childId;
+    final arguments = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+    final id = arguments?['childId'] as String? ?? childId;
+    final fId = arguments?['fruitId'] as String? ?? fruitId;
+    final start = arguments?['startTime'] as DateTime? ?? startTime; // ⭐️ startTime 가져오기
 
     return _WritingAnimalPage(
       childId: id,
+      fruitId: fId, // ⭐️ 넘기기
+      startTime: start, // ⭐️ 넘기기
       illustPath: 'assets/img/contents/studyWrite/cat.png',
       previewPath: 'assets/img/contents/studyWrite/cat_preview.png',
       tracePath: 'assets/img/contents/studyWrite/cat_trace.png',
@@ -563,20 +680,29 @@ class Writing3_2Page extends StatelessWidget {
 
 // 토끼
 class Writing3_3Page extends StatelessWidget {
-  const Writing3_3Page({super.key, required this.childId});
+  const Writing3_3Page
+    ({super.key, 
+      required this.childId, 
+      required this.fruitId, // ⭐️ 추가
+      required this.startTime,});
+
   static const routeName = '/study/write/writing_3_3';
   final String childId;
+  final String fruitId; // ⭐️ 추가
+  final DateTime startTime; // ⭐️ 추가
 
   @override
   Widget build(BuildContext context) {
-    final argId =
-        (ModalRoute.of(context)?.settings.arguments
-                as Map<String, dynamic>?)?['childId']
-            as String?;
-    final id = argId ?? childId;
+    final arguments = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+    final id = arguments?['childId'] as String? ?? childId;
+    final fId = arguments?['fruitId'] as String? ?? fruitId;
+    final start = arguments?['startTime'] as DateTime? ?? startTime; // ⭐️ startTime 가져오기
+
 
     return _WritingAnimalPage(
       childId: id,
+      fruitId: fId, // ⭐️ 넘기기
+      startTime: start, // ⭐️ 넘기기
       illustPath: 'assets/img/contents/studyWrite/rabbit.png',
       previewPath: 'assets/img/contents/studyWrite/rabbit_preview.png',
       tracePath: 'assets/img/contents/studyWrite/rabbit_trace.png',
@@ -590,20 +716,29 @@ class Writing3_3Page extends StatelessWidget {
 
 // 오리
 class Writing3_4Page extends StatelessWidget {
-  const Writing3_4Page({super.key, required this.childId});
+  const Writing3_4Page
+    ({super.key, 
+      required this.childId, 
+      required this.fruitId, // ⭐️ 추가
+      required this.startTime,});
+
   static const routeName = '/study/write/writing_3_4';
   final String childId;
+  final String fruitId; // ⭐️ 추가
+  final DateTime startTime; // ⭐️ 추가
 
   @override
   Widget build(BuildContext context) {
-    final argId =
-        (ModalRoute.of(context)?.settings.arguments
-                as Map<String, dynamic>?)?['childId']
-            as String?;
-    final id = argId ?? childId;
+    final arguments = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+    final id = arguments?['childId'] as String? ?? childId;
+    final fId = arguments?['fruitId'] as String? ?? fruitId;
+    final start = arguments?['startTime'] as DateTime? ?? startTime; // ⭐️ startTime 가져오기
+
 
     return _WritingAnimalPage(
       childId: id,
+      fruitId: fId, // ⭐️ 넘기기
+      startTime: start, // ⭐️ 넘기기
       illustPath: 'assets/img/contents/studyWrite/duck.png',
       previewPath: 'assets/img/contents/studyWrite/duck_preview.png',
       tracePath: 'assets/img/contents/studyWrite/duck_trace.png',
@@ -617,20 +752,29 @@ class Writing3_4Page extends StatelessWidget {
 
 // 거북이
 class Writing3_5Page extends StatelessWidget {
-  const Writing3_5Page({super.key, required this.childId});
+  const Writing3_5Page
+    ({super.key, 
+      required this.childId, 
+      required this.fruitId, // ⭐️ 추가
+      required this.startTime,});
+
   static const routeName = '/study/write/writing_3_5';
   final String childId;
+  final String fruitId; // ⭐️ 추가
+  final DateTime startTime; // ⭐️ 추가
 
   @override
   Widget build(BuildContext context) {
-    final argId =
-        (ModalRoute.of(context)?.settings.arguments
-                as Map<String, dynamic>?)?['childId']
-            as String?;
-    final id = argId ?? childId;
+    final arguments = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+    final id = arguments?['childId'] as String? ?? childId;
+    final fId = arguments?['fruitId'] as String? ?? fruitId;
+    final start = arguments?['startTime'] as DateTime? ?? startTime; // ⭐️ startTime 가져오기
+
 
     return _WritingAnimalPage(
       childId: id,
+      fruitId: fId, // ⭐️ 넘기기
+      startTime: start, // ⭐️ 넘기기
       illustPath: 'assets/img/contents/studyWrite/turtle.png',
       previewPath: 'assets/img/contents/studyWrite/turtle_preview.png',
       tracePath: 'assets/img/contents/studyWrite/turtle_trace.png',
@@ -644,20 +788,29 @@ class Writing3_5Page extends StatelessWidget {
 
 // 개구리
 class Writing3_6Page extends StatelessWidget {
-  const Writing3_6Page({super.key, required this.childId});
+  const Writing3_6Page({
+    super.key,
+    required this.childId,
+    required this.fruitId, // ⭐️ 추가
+    required this.startTime, // ⭐️ 추가
+  });
+
   static const routeName = '/study/write/writing_3_6';
   final String childId;
+  final String fruitId; // ⭐️ 추가
+  final DateTime startTime; // ⭐️ 추가
 
   @override
   Widget build(BuildContext context) {
-    final argId =
-        (ModalRoute.of(context)?.settings.arguments
-                as Map<String, dynamic>?)?['childId']
-            as String?;
-    final id = argId ?? childId;
+    final arguments = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+    final id = arguments?['childId'] as String? ?? childId;
+    final fId = arguments?['fruitId'] as String? ?? fruitId;
+    final start = arguments?['startTime'] as DateTime? ?? startTime; // ⭐️ startTime 가져오기
 
     return _WritingAnimalPage(
       childId: id,
+      fruitId: fId, // ⭐️ 넘기기
+      startTime: start, // ⭐️ 넘기기
       illustPath: 'assets/img/contents/studyWrite/frog.png',
       previewPath: 'assets/img/contents/studyWrite/frog_preview.png',
       tracePath: 'assets/img/contents/studyWrite/frog_trace.png',
@@ -665,6 +818,7 @@ class Writing3_6Page extends StatelessWidget {
       columns: 3,
       expectedWord: '개구리',
       acceptedWords: const ['개구리', '개굴이', '개구니', '개구뤼'],
+      isLastPage: true,
     );
   }
 }
