@@ -397,7 +397,7 @@ final blackLesson = ColorLessonData(
 // -----------------------------------------------------------------------------
 final orangeLesson = ColorLessonData(
   name: '주황',
-  primaryColor: const Color(0xFFFF8A4B),
+  primaryColor: const Color(0xFFFF9D00),
   characterImagePath:
       'assets/img/contents/studyListen/level1/colors/orange_character.png',
   magicWandImagePath:
@@ -471,7 +471,7 @@ final orangeLesson = ColorLessonData(
 // -----------------------------------------------------------------------------
 final greenLesson = ColorLessonData(
   name: '초록',
-  primaryColor: const Color(0xFF53DA69),
+  primaryColor: const Color(0xFF28E03D),
   characterImagePath:
       'assets/img/contents/studyListen/level1/colors/green_character.png',
   magicWandImagePath:
@@ -693,7 +693,7 @@ final purpleLesson = ColorLessonData(
 // -----------------------------------------------------------------------------
 final pinkLesson = ColorLessonData(
   name: '분홍',
-  primaryColor: const Color(0xFFFFC0CB),
+  primaryColor: const Color(0xFFFFAACD),
   characterImagePath:
       'assets/img/contents/studyListen/level1/colors/pink_character.png',
   magicWandImagePath:

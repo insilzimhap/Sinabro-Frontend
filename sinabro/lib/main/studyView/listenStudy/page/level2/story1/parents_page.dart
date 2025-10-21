@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'models.dart';
-import 'siblings_page.dart';
+import 'package:sinabro/main/studyView/listenStudy/page/level2/story1/siblings_page.dart';
 
 class ParentsPage extends StatelessWidget {
   final Gender selectedGender;

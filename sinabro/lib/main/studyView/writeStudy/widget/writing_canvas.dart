@@ -1,6 +1,6 @@
 // lib/main/studyView/writeStudy/widget/writing_canvas.dart
 import 'package:flutter/material.dart';
-import 'package:sinabro/selvy_example_view/selvy_service.dart';
+import 'package:sinabro/selvy_example_view/selvy_recognizer.dart';
 
 typedef RecognizeCallback = void Function(String result);
 
@@ -186,12 +186,10 @@ class _HandwritingPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final paint =
-        Paint()
-          ..color = Colors.black
-          ..strokeWidth =
-              penWidth // changed
-          ..strokeCap = StrokeCap.round;
+    final paint = Paint()
+      ..color = Colors.black
+      ..strokeWidth = penWidth // changed
+      ..strokeCap = StrokeCap.round;
 
     for (final stroke in strokes) {
       for (int i = 0; i < stroke.length - 1; i++) {

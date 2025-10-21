@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'models.dart';
-import 'quiz_page.dart';
+import 'package:sinabro/main/studyView/listenStudy/page/level2/story1/models.dart';
+import 'package:sinabro/main/studyView/listenStudy/page/level2/story1/quiz_page.dart';
 
 class SiblingsPage extends StatelessWidget {
   final Gender selectedGender;
@@ -9,7 +9,7 @@ class SiblingsPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final siblings = selectedGender == Gender.female
-       ? [
+        ? [
             FamilyMember(
               role: "언니",
               description: "언니는 나랑 그림을 그려",

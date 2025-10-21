@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 class AppStyle {
   // ===== 색상 =====
   static const Color background = Color(0xFFFFF3E5); // 배경
-  static const Color text = Color(0xFF626262);       // 기본 텍스트
-  static const Color accent = Color(0xFFE1D1C0);     // 포인트 배경
+  static const Color text = Color(0xFF626262); // 기본 텍스트
+  static const Color accent = Color(0xFFE1D1C0); // 포인트 배경
   static const Color strongText = Color(0xFF7C685F); // 강조 텍스트
 
   // ===== 텍스트 스타일 =====
@@ -61,8 +61,6 @@ class AppStyle {
     );
   }
 
-
-
   // ===== MainTopicPage =====
   static double mainTopicImageHeight(BuildContext context) {
     // 이미지 크기 키움 (0.25 → 0.35)
@@ -77,47 +75,45 @@ class AppStyle {
   static TextStyle mainTopicTitle(BuildContext context) {
     final w = MediaQuery.of(context).size.width;
     return title(context).copyWith(
-      fontSize: w * 0.09,   // 텍스트 조금 더 키움
+      fontSize: w * 0.09, // 텍스트 조금 더 키움
       color: strongText,
-      height: 1.0,          // 줄 간격 여유
+      height: 1.0, // 줄 간격 여유
     );
   }
 
+  // ===== MainKeywordPage =====
+  static double keywordImageHeight(BuildContext context) {
+    return MediaQuery.of(context).size.height * 0.58; // 키워드 이미지 크기
+  }
 
-    // ===== MainKeywordPage =====
-    static double keywordImageHeight(BuildContext context) {
-      return MediaQuery.of(context).size.height * 0.58; // 키워드 이미지 크기
-    }
+  static double keywordSpacing(BuildContext context) {
+    return MediaQuery.of(context).size.height * 0.04; // 이미지-텍스트 간격
+  }
 
-    static double keywordSpacing(BuildContext context) {
-      return MediaQuery.of(context).size.height * 0.04; // 이미지-텍스트 간격
-    }
+  static TextStyle keywordTitle(BuildContext context) {
+    final w = MediaQuery.of(context).size.width;
+    return TextStyle(
+      fontSize: w * 0.08, // 텍스트 크게
+      fontWeight: FontWeight.bold,
+      color: strongText,
+    );
+  }
 
-    static TextStyle keywordTitle(BuildContext context) {
-      final w = MediaQuery.of(context).size.width;
-      return TextStyle(
-        fontSize: w * 0.08, // 텍스트 크게
-        fontWeight: FontWeight.bold,
-        color: strongText,
-      );
-    }
+  // ===== StoryPage =====
+  static double storyImageHeight(BuildContext context) {
+    return MediaQuery.of(context).size.height * 0.6; // 스토리 이미지 크기
+  }
 
+  static double storySpacing(BuildContext context) {
+    return MediaQuery.of(context).size.height * 0.04; // 이미지-텍스트 간격
+  }
 
-    // ===== StoryPage =====
-    static double storyImageHeight(BuildContext context) {
-      return MediaQuery.of(context).size.height * 0.6; // 스토리 이미지 크기
-    }
-
-    static double storySpacing(BuildContext context) {
-      return MediaQuery.of(context).size.height * 0.04; // 이미지-텍스트 간격
-    }
-
-    static TextStyle storyTitle(BuildContext context) {
-      final w = MediaQuery.of(context).size.width;
-      return TextStyle(
-        fontSize: w * 0.07, // 화면 폭 기준 반응형 크기
-        fontWeight: FontWeight.bold,
-        color: strongText,
-      );
-    }
+  static TextStyle storyTitle(BuildContext context) {
+    final w = MediaQuery.of(context).size.width;
+    return TextStyle(
+      fontSize: w * 0.06, // 화면 폭 기준 반응형 크기
+      fontWeight: FontWeight.bold,
+      color: strongText,
+    );
+  }
 }

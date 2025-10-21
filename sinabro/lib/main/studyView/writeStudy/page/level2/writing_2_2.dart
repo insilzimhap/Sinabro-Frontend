@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:sinabro/main/studyView/writeStudy/page/main_apple_tree.dart';
 import 'package:sinabro/main/studyView/writeStudy/widget/writing_canvas.dart';
-import 'package:sinabro/selvy_example_view/selvy_service.dart'; // ★ SelvyRecognizer 사용
+import 'package:sinabro/selvy_example_view/selvy_recognizer.dart';
 import 'dart:async';
 
 // 인트로 이미지(twin2)
@@ -290,12 +290,11 @@ class _Writing22PageState extends State<Writing22Page> {
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
-          builder:
-              (_) => Writing22Page(
-                childId: widget.childId,
-                lesson: nextKey,
-                showIntro: false,
-              ),
+          builder: (_) => Writing22Page(
+            childId: widget.childId,
+            lesson: nextKey,
+            showIntro: false,
+          ),
         ),
       );
     }
@@ -403,18 +402,16 @@ class _Writing22PageState extends State<Writing22Page> {
           onPressed: _goBackToAppleTree,
         ),
       ),
-      body:
-          _showIntro
-              ? _buildIntro(context)
-              : SafeArea(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  child:
-                      step == 0
-                          ? _buildWriteStep(context)
-                          : _buildCompleteStep(context),
-                ),
+      body: _showIntro
+          ? _buildIntro(context)
+          : SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: step == 0
+                    ? _buildWriteStep(context)
+                    : _buildCompleteStep(context),
               ),
+            ),
 
       // FAB은 항상 두고 가시성만 토글
       floatingActionButton: Padding(
@@ -603,14 +600,12 @@ class _Writing22PageState extends State<Writing22Page> {
                                   ...List.generate(spec.traceAssets.length, (
                                     i,
                                   ) {
-                                    final offs =
-                                        (i < spec.traceOffsets.length)
-                                            ? spec.traceOffsets[i]
-                                            : const Offset(0, -2);
-                                    final scale =
-                                        (i < spec.traceScales.length)
-                                            ? spec.traceScales[i]
-                                            : 1.0;
+                                    final offs = (i < spec.traceOffsets.length)
+                                        ? spec.traceOffsets[i]
+                                        : const Offset(0, -2);
+                                    final scale = (i < spec.traceScales.length)
+                                        ? spec.traceScales[i]
+                                        : 1.0;
                                     return SizedBox(
                                       width: baseTraceW * scale,
                                       child: Transform.translate(
@@ -666,10 +661,8 @@ class _Writing22PageState extends State<Writing22Page> {
                             width: 200, // 버튼 폭
                             height: 42, // 버튼 높이
                             child: ElevatedButton(
-                              onPressed:
-                                  () =>
-                                      _canvasKey.currentState
-                                          ?.recognizeAndCheckText(),
+                              onPressed: () => _canvasKey.currentState
+                                  ?.recognizeAndCheckText(),
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: const Color(0xFFFFD966),
                                 foregroundColor: Colors.black87,
