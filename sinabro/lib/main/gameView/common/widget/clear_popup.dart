@@ -1,16 +1,23 @@
 import 'package:flutter/material.dart';
 
+// 각 레벨별 테마 선택 페이지 import
+import '../../listenGame/page/level1/level1_theme_select.dart';
+import '../../listenGame/page/level2/level2_theme_select.dart';
+import '../../listenGame/page/level3/level3_theme_select.dart';
+
 /// 🎉 일반 클리어 팝업
-/// - 5초 후 현재 레벨의 테마 선택 페이지로 이동
-Future<void> showClearPopup(BuildContext context, Widget themeSelectPage) async {
+/// - 5초 후 현재 레벨의 테마 선택 페이지로 자동 이동
+Future<void> showClearPopup(BuildContext context, int level) async {
   showGeneralDialog(
     context: context,
     barrierDismissible: false,
     barrierColor: Colors.black38,
     transitionDuration: const Duration(milliseconds: 300),
-    pageBuilder: (context, animation, secondaryAnimation) => const SizedBox.shrink(),
+    pageBuilder: (context, animation, secondaryAnimation) =>
+        const SizedBox.shrink(),
     transitionBuilder: (context, animation, secondaryAnimation, child) {
-      final curved = CurvedAnimation(parent: animation, curve: Curves.easeOutBack);
+      final curved =
+          CurvedAnimation(parent: animation, curve: Curves.easeOutBack);
 
       return FadeTransition(
         opacity: curved,
@@ -19,7 +26,8 @@ Future<void> showClearPopup(BuildContext context, Widget themeSelectPage) async 
           child: Center(
             child: Container(
               width: MediaQuery.of(context).size.width * 0.8,
-              padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 20),
+              padding:
+                  const EdgeInsets.symmetric(vertical: 32, horizontal: 20),
               decoration: BoxDecoration(
                 color: const Color(0xFFFFF8E1),
                 borderRadius: BorderRadius.circular(20),
@@ -63,12 +71,28 @@ Future<void> showClearPopup(BuildContext context, Widget themeSelectPage) async 
   // ⏱ 5초 후 테마 선택 페이지로 이동
   await Future.delayed(const Duration(seconds: 5));
 
-  if (context.mounted) {
-    Navigator.of(context, rootNavigator: true).pop(); // 팝업 닫기
-    Navigator.pushAndRemoveUntil(
-      context,
-      MaterialPageRoute(builder: (_) => themeSelectPage),
-      (route) => route.isFirst,
-    );
+  if (!context.mounted) return;
+
+  Navigator.of(context, rootNavigator: true).pop(); // 팝업 닫기
+
+  Widget nextPage;
+  switch (level) {
+    case 1:
+      nextPage = const Level1ThemeSelectPage();
+      break;
+    case 2:
+      nextPage = const Level2ThemeSelectPage();
+      break;
+    case 3:
+      nextPage = const Level3ThemeSelectPage();
+      break;
+    default:
+      nextPage = const Placeholder();
   }
+
+  Navigator.pushAndRemoveUntil(
+    context,
+    MaterialPageRoute(builder: (_) => nextPage),
+    (route) => route.isFirst,
+  );
 }

@@ -28,10 +28,11 @@ class _ListenGameChapterPageState extends State<ListenGameChapterPage>
   final List<Offset> _footsteps = [];
 
   final List<Offset> stagePositions = const [
-    Offset(0.20, 0.80),
-    Offset(0.55, 0.45),
-    Offset(0.85, 0.70),
+    Offset(0.18, 0.83), // 🏠 1단계 — 왼쪽 아래 (시작 근처)
+    Offset(0.50, 0.38), // 🏠 2단계 — 중간 꼭대기
+    Offset(0.84, 0.68), // 🏠 3단계 — 오른쪽 언덕 끝
   ];
+
 
   final List<String> stageImages = const [
     'assets/img/contents/gameListen/chapter/house_1.png',

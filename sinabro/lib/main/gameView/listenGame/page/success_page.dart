@@ -42,7 +42,7 @@ class _ListenGameSuccessPageState extends State<ListenGameSuccessPage> {
     }
 
     // 🎉 클리어 팝업 띄우기
-    await showClearPopup(context, themePage);
+    await showClearPopup(context, widget.level);
   }
 
   @override

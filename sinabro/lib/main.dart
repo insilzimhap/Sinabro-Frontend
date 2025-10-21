@@ -8,6 +8,7 @@ import 'package:kakao_flutter_sdk_common/kakao_flutter_sdk_common.dart';
 // 듣기게임 테스트용
 import 'main/gameView/listenGame/chapter_page.dart';
 
+
 void main() {
   
   // ✅ 네이티브 앱 키로 초기화 (Kakao Developers 콘솔의 "네이티브 앱 키")
@@ -28,8 +29,9 @@ class MyApp extends StatelessWidget {
       //home: const HandwritingScreen(),
       //home: ListenStudyPage(),
       //home: WriteStudyPage(),
-      // home: const ListenAppleSelect(childId: "test_child"), ✔️ 듣기학습용
-      home: ListenGameChapterPage(),
+      // home: const ListenAppleSelect(childId: "test_child"), // ✔️ 듣기학습 열매
+      home: ListenGameChapterPage(), // ✔️ 듣기게임 챕터
+      //home: , 
     );
   }
 }
