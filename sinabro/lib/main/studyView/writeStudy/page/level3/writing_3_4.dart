@@ -4,6 +4,10 @@ import 'package:flutter/material.dart';
 import 'package:sinabro/main/studyView/writeStudy/page/main_apple_tree.dart';
 import 'package:sinabro/main/studyView/writeStudy/widget/writing_canvas.dart';
 
+import 'package:http/http.dart' as http; // http 패키지
+import 'dart:convert';                   // json 변환용
+import 'package:sinabro/config.dart';    // baseUrl 사용
+
 const String kMainAppleTreeRoute = '/apple_garden';
 
 /// 항상 나무 화면으로 복귀
@@ -24,7 +28,42 @@ void _goToGarden(BuildContext context, String childId) {
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
-// 공용 이동 유틸: 네임드 라우트 시도 → 실패하면 fallback 위젯으로 이동
+// 라우트 문자열 → 페이지 위젯( childId, fruitId, startTime 포함 ) 매퍼 (⭐️ 수정됨)
+// ──────────────────────────────────────────────────────────────────────────────
+Widget? _routeFallbackWithChild(
+  String name,
+  String childId,
+  String? fruitId,
+  DateTime? startTime,
+) {
+  final safeFruitId = fruitId ?? 'unknown_fruit_3_4'; // 기본값 설정
+  final safeStartTime = startTime ?? DateTime.now(); // Intro 페이지 경우 startTime null 가능
+
+  switch (name) {
+    case Writing3_4_IntroPage.routeName:
+      return Writing3_4_IntroPage(childId: childId, fruitId: safeFruitId);
+    case Writing3_4_1Page.routeName: // 첫 페이지는 startTime 필요 없음
+      return Writing3_4_1Page(childId: childId, fruitId: safeFruitId);
+    case Writing3_4_2Page.routeName:
+      return Writing3_4_2Page(childId: childId, fruitId: safeFruitId, startTime: safeStartTime);
+    case Writing3_4_3Page.routeName:
+      return Writing3_4_3Page(childId: childId, fruitId: safeFruitId, startTime: safeStartTime);
+    case Writing3_4_4Page.routeName:
+      return Writing3_4_4Page(childId: childId, fruitId: safeFruitId, startTime: safeStartTime);
+    case Writing3_4_5Page.routeName:
+      return Writing3_4_5Page(childId: childId, fruitId: safeFruitId, startTime: safeStartTime);
+    case Writing3_4_6Page.routeName: // 마지막 페이지
+      return Writing3_4_6Page(childId: childId, fruitId: safeFruitId, startTime: safeStartTime);
+    case Writing3_4_DonePage.routeName:
+      return Writing3_4_DonePage(childId: childId);
+    default:
+      debugPrint('Fallback route not found for: $name');
+      return null;
+  }
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+// 공용 이동 유틸: 네임드 라우트 시도 → 실패하면 fallback 위젯으로 이동 (⭐️ 수정됨)
 // ──────────────────────────────────────────────────────────────────────────────
 void _pushNamedOrFallback(
   BuildContext context,
@@ -35,13 +74,24 @@ void _pushNamedOrFallback(
   final nav = Navigator.of(context, rootNavigator: true);
   try {
     nav.pushNamed(routeName, arguments: arguments);
-  } catch (_) {
+  } catch (e) {
+    debugPrint('pushNamed failed for $routeName: $e. Trying fallback...');
     if (fallback != null) {
       nav.push(MaterialPageRoute(builder: (_) => fallback));
     } else {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Route not found: $routeName')));
+      final argsMap = arguments as Map<String, dynamic>?;
+      final childId = argsMap?['childId'] as String? ?? 'unknown_child';
+      final fruitId = argsMap?['fruitId'] as String?;
+      final startTime = argsMap?['startTime'] as DateTime?;
+      final fallbackWidget = _routeFallbackWithChild(routeName, childId, fruitId, startTime);
+
+      if (fallbackWidget != null) {
+         nav.push(MaterialPageRoute(builder: (_) => fallbackWidget));
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Fallback Route not found: $routeName')),
+        );
+      }
     }
   }
 }
@@ -55,48 +105,41 @@ void _replaceNamedOrFallback(
   final nav = Navigator.of(context, rootNavigator: true);
   try {
     nav.pushReplacementNamed(routeName, arguments: arguments);
-  } catch (_) {
+  } catch (e) {
+    debugPrint('pushReplacementNamed failed for $routeName: $e. Trying fallback...');
     if (fallback != null) {
       nav.pushReplacement(MaterialPageRoute(builder: (_) => fallback));
     } else {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Route not found: $routeName')));
+      final argsMap = arguments as Map<String, dynamic>?;
+      final childId = argsMap?['childId'] as String? ?? 'unknown_child';
+      final fruitId = argsMap?['fruitId'] as String?;
+      final startTime = argsMap?['startTime'] as DateTime?;
+      final fallbackWidget = _routeFallbackWithChild(routeName, childId, fruitId, startTime);
+
+      if (fallbackWidget != null) {
+         nav.pushReplacement(MaterialPageRoute(builder: (_) => fallbackWidget));
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Fallback Route not found: $routeName')),
+        );
+      }
     }
   }
 }
 
-// 라우트 문자열 → 위젯( childId 포함 ) 매퍼
-Widget? _routeFallbackWithChild(String name, String childId) {
-  switch (name) {
-    case Writing3_4_IntroPage.routeName:
-      return Writing3_4_IntroPage(childId: childId);
-    case Writing3_4_1Page.routeName:
-      return Writing3_4_1Page(childId: childId);
-    case Writing3_4_2Page.routeName:
-      return Writing3_4_2Page(childId: childId);
-    case Writing3_4_3Page.routeName:
-      return Writing3_4_3Page(childId: childId);
-    case Writing3_4_4Page.routeName:
-      return Writing3_4_4Page(childId: childId);
-    case Writing3_4_5Page.routeName:
-      return Writing3_4_5Page(childId: childId);
-    case Writing3_4_6Page.routeName:
-      return Writing3_4_6Page(childId: childId);
-    case Writing3_4_DonePage.routeName:
-      return Writing3_4_DonePage(childId: childId);
-    default:
-      return null;
-  }
-}
 
 // ──────────────────────────────────────────────────────────────────────────────
-// 인트로: 카드 섞인 이미지 + 안내 텍스트 → 3초 뒤 1번(눈)으로 자동 이동
+// 인트로 화면 (⭐️ 수정됨: fruitId 받고 넘기기)
 // ──────────────────────────────────────────────────────────────────────────────
 class Writing3_4_IntroPage extends StatefulWidget {
-  const Writing3_4_IntroPage({super.key, required this.childId});
+  const Writing3_4_IntroPage({
+    super.key,
+    required this.childId,
+    required this.fruitId, // ⭐️ 받기
+  });
   static const routeName = '/study/write/writing_3_4_intro';
   final String childId;
+  final String fruitId; // ⭐️ 필드 추가
 
   @override
   State<Writing3_4_IntroPage> createState() => _Writing3_4_IntroPageState();
@@ -111,20 +154,19 @@ class _Writing3_4_IntroPageState extends State<Writing3_4_IntroPage> {
     Future<void>(() async {
       await Future.delayed(const Duration(seconds: 3));
       if (!mounted) return;
-      _pushNamedOrFallback(
+      // ⭐️ fallback 호출 시에도 fruitId 전달하도록 수정
+      _replaceNamedOrFallback( // Intro -> Page1은 pushNamed 대신 replaceNamed 사용 가능
         context,
         Writing3_4_1Page.routeName,
-        arguments: {'childId': widget.childId},
-        fallback: _routeFallbackWithChild(
-          Writing3_4_1Page.routeName,
-          widget.childId,
-        ),
+        arguments: {'childId': widget.childId, 'fruitId': widget.fruitId}, // ⭐️ fruitId 넘기기
+        fallback: Writing3_4_1Page(childId: widget.childId, fruitId: widget.fruitId), // ⭐️ fallback에도 넘기기
       );
     });
   }
 
   @override
   Widget build(BuildContext context) {
+    // UI 코드는 수정 없음
     final theme = Theme.of(context);
     return Scaffold(
       backgroundColor: const Color(0xFFFEF5F6),
@@ -187,31 +229,36 @@ class _Writing3_4_IntroPageState extends State<Writing3_4_IntroPage> {
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
-/* 재사용 카드(일러스트 + 하단 프리뷰/트레이스 + 쓰기/판별)
-   columns: 1/2/3 (1칸이면 전체 폭 1/3만 사용해서 칸 크기 유지)
-   - requiredStrokes/타이머 제거
-   - 수동 ‘채점하기’ 버튼으로 인식 */
+// 재사용 카드 위젯 (⭐️ 수정됨: fruitId, startTime, isFirstPage, isLastPage 추가 + API 호출 로직)
 // ──────────────────────────────────────────────────────────────────────────────
 class _WritingItemPage extends StatefulWidget {
   const _WritingItemPage({
+    super.key,
     required this.childId,
+    required this.fruitId,       // ⭐️ 추가!
+    this.startTime,       // ⭐️ 추가! (첫 페이지 제외하고 받음)
+    this.isFirstPage = false, // ⭐️ 추가!
+    this.isLastPage = false,  // ⭐️ 추가!
     required this.illustPath,
     required this.previewPath,
     required this.tracePath,
     required this.nextRouteName,
     required this.columns,
-    required this.expectedWord, // 예: '눈'
-    required this.acceptedWords, // 예: ['눈','뉸'...]
+    required this.expectedWord,
+    required this.acceptedWords,
     this.titleColor = const Color(0xFFFEF5F6),
-    super.key,
   });
 
   final String childId;
+  final String fruitId;      // ⭐️ 추가!
+  final DateTime? startTime; // ⭐️ 추가!
+  final bool isFirstPage;    // ⭐️ 추가!
+  final bool isLastPage;     // ⭐️ 추가!
   final String illustPath;
   final String previewPath;
   final String tracePath;
   final String nextRouteName;
-  final int columns; // 1~3
+  final int columns;
   final String expectedWord;
   final List<String> acceptedWords;
   final Color titleColor;
@@ -222,9 +269,41 @@ class _WritingItemPage extends StatefulWidget {
 
 class _WritingItemPageState extends State<_WritingItemPage> {
   final _canvasKey = GlobalKey<WritingCanvasState>();
+  late DateTime _startTime; // ⭐️ API용 시작 시간 기록
+  bool _apiCallSent = false; // ⭐️ API 중복 호출 방지
 
+  @override
+  void initState() {
+    super.initState();
+    _startTime = widget.isFirstPage ? DateTime.now() : widget.startTime!;
+  }
+
+  /// ⭐️ (신규) 학습 완료 API 호출 함수 - JWT 없이
+  Future<void> _uploadStudyResult() async {
+    final timeSpentSecs = DateTime.now().difference(_startTime).inSeconds;
+    final url = Uri.parse('$baseUrl/api/study/writing/complete');
+    final body = json.encode({
+      'childId': widget.childId,
+      'fruitId': widget.fruitId,
+      'isCompleted': true,
+      'timeSpentSecs': timeSpentSecs,
+    });
+    final headers = {'Content-Type': 'application/json'};
+
+    try {
+      final response = await http.post(url, headers: headers, body: body);
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        debugPrint('[Writing3_4] API 연동 성공: fruitId ${widget.fruitId} 완료!');
+      } else {
+        debugPrint('[Writing3_4] API 연동 실패: ${response.statusCode} ${response.body}');
+      }
+    } catch (e) {
+      debugPrint('[Writing3_4] API 연동 중 예외 발생: $e');
+    }
+  }
+
+  /// 정답 판별 함수
   bool _isCorrect(String raw) {
-    // 1) 첫 줄만 취득 → 2) 한글만 이어붙여 비교
     final top1Line = raw.split('\n').first;
     final buffer = StringBuffer();
     for (final rune in top1Line.runes) {
@@ -236,12 +315,26 @@ class _WritingItemPageState extends State<_WritingItemPage> {
     return widget.acceptedWords.contains(cleaned);
   }
 
+  /// ⭐️ (수정됨) 다음 페이지 이동 + 마지막 페이지면 API 호출!
   void _goNext(BuildContext context) {
-    _pushNamedOrFallback(
+    if (widget.isLastPage && !_apiCallSent) {
+      _apiCallSent = true;
+      _uploadStudyResult(); // API 호출!
+    }
+
+    // 다음 페이지로 교체하며 이동 (뒤로가기 방지)
+    _replaceNamedOrFallback(
       context,
       widget.nextRouteName,
-      arguments: {'childId': widget.childId},
-      fallback: _routeFallbackWithChild(widget.nextRouteName, widget.childId),
+      // arguments에 startTime도 포함해서 전달
+      arguments: {'childId': widget.childId, 'fruitId': widget.fruitId, 'startTime': _startTime},
+      // fallback 호출 시에도 모든 파라미터 전달!
+      fallback: _routeFallbackWithChild(
+        widget.nextRouteName,
+        widget.childId,
+        widget.fruitId,
+        _startTime,
+      ),
     );
   }
 
@@ -280,8 +373,7 @@ class _WritingItemPageState extends State<_WritingItemPage> {
                       vertical: 16,
                     ),
                     child: Row(
-                      crossAxisAlignment:
-                          CrossAxisAlignment.center, // ✨ 이 줄을 추가했습니다.
+                      crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
                         // 프리뷰
                         Expanded(
@@ -299,8 +391,7 @@ class _WritingItemPageState extends State<_WritingItemPage> {
                         // 트레이스 + 쓰기 + 채점
                         Expanded(
                           child: Column(
-                            mainAxisAlignment:
-                                MainAxisAlignment.center, // ✨ 이 줄을 추가했습니다.
+                            mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               _TileStrip(
                                 columns: cols,
@@ -327,10 +418,13 @@ class _WritingItemPageState extends State<_WritingItemPage> {
                                             candidateSet: widget.acceptedWords,
                                             targetType: 'word',
                                             autoRecognizeOnEnd: false, // 수동 채점
+                                            // ⭐️ onRecognize 콜백 수정!
                                             onRecognize: (result) async {
                                               if (_isCorrect(result)) {
+                                                // ✅ 정답이면 _goNext 호출!
                                                 _goNext(context);
                                               } else {
+                                                // ❌ 오답 처리
                                                 if (mounted) {
                                                   ScaffoldMessenger.of(
                                                     context,
@@ -408,7 +502,9 @@ class _WritingItemPageState extends State<_WritingItemPage> {
   }
 }
 
-/// 하단 네모 박스(1/2/3칸) — 칸 수에 따라 전체 폭을 1/3, 2/3, 3/3로 조절(칸 크기 유지)
+// ──────────────────────────────────────────────────────────────────────────────
+// _TileStrip, _GridSplitPainter
+// ──────────────────────────────────────────────────────────────────────────────
 class _TileStrip extends StatelessWidget {
   const _TileStrip({required this.child, this.columns = 3});
   final Widget child;
@@ -421,9 +517,9 @@ class _TileStrip extends StatelessWidget {
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        final fullW = constraints.maxWidth; // 3칸 기준 가용폭
-        final targetW = fullW * (cols / 3.0); // 1칸 → 1/3만 사용
-        final targetH = fullW / 3.6; // 높이는 3칸 기준 유지
+        final fullW = constraints.maxWidth;
+        final targetW = fullW * (cols / 3.0);
+        final targetH = fullW / 3.6;
 
         return Align(
           alignment: Alignment.center,
@@ -471,7 +567,7 @@ class _GridSplitPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    if (columns <= 1) return; // 1칸이면 분할선 없음
+    if (columns <= 1) return;
     final p =
         Paint()
           ..color = color
@@ -487,26 +583,32 @@ class _GridSplitPainter extends CustomPainter {
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 
+
 // ──────────────────────────────────────────────────────────────────────────────
-// 실제 페이지들(눈→코→입→귀→손→발→완료)
+// 실제 페이지들 정의 (⭐️ 생성자 수정 완료)
 // ──────────────────────────────────────────────────────────────────────────────
 
-// 눈
+// 눈 (3-4-1)
 class Writing3_4_1Page extends StatelessWidget {
-  const Writing3_4_1Page({super.key, required this.childId});
+  const Writing3_4_1Page({
+    super.key,
+    required this.childId,
+    required this.fruitId, // ⭐️ 받기
+  });
   static const routeName = '/study/write/writing_3_4_1';
   final String childId;
+  final String fruitId; // ⭐️ 필드 추가
 
   @override
   Widget build(BuildContext context) {
-    final argId =
-        (ModalRoute.of(context)?.settings.arguments
-                as Map<String, dynamic>?)?['childId']
-            as String?;
-    final id = argId ?? childId;
+    final arguments = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+    final id = arguments?['childId'] as String? ?? childId;
+    final fId = arguments?['fruitId'] as String? ?? fruitId;
 
     return _WritingItemPage(
       childId: id,
+      fruitId: fId,     // ⭐️ 넘기기
+      isFirstPage: true, // ⭐️ 첫 페이지임을 표시
       illustPath: 'assets/img/contents/studyWrite/eye.png',
       previewPath: 'assets/img/contents/studyWrite/eye_preview.png',
       tracePath: 'assets/img/contents/studyWrite/eye_trace.png',
@@ -518,22 +620,30 @@ class Writing3_4_1Page extends StatelessWidget {
   }
 }
 
-// 코
+// 코 (3-4-2)
 class Writing3_4_2Page extends StatelessWidget {
-  const Writing3_4_2Page({super.key, required this.childId});
+  const Writing3_4_2Page({
+    super.key,
+    required this.childId,
+    required this.fruitId,   // ⭐️ 받기
+    required this.startTime, // ⭐️ 받기
+  });
   static const routeName = '/study/write/writing_3_4_2';
   final String childId;
+  final String fruitId;   // ⭐️ 필드 추가
+  final DateTime startTime; // ⭐️ 필드 추가
 
   @override
   Widget build(BuildContext context) {
-    final argId =
-        (ModalRoute.of(context)?.settings.arguments
-                as Map<String, dynamic>?)?['childId']
-            as String?;
-    final id = argId ?? childId;
+    final arguments = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+    final id = arguments?['childId'] as String? ?? childId;
+    final fId = arguments?['fruitId'] as String? ?? fruitId;
+    final start = arguments?['startTime'] as DateTime? ?? startTime;
 
     return _WritingItemPage(
       childId: id,
+      fruitId: fId,     // ⭐️ 넘기기
+      startTime: start, // ⭐️ 넘기기
       illustPath: 'assets/img/contents/studyWrite/nose.png',
       previewPath: 'assets/img/contents/studyWrite/nose_preview.png',
       tracePath: 'assets/img/contents/studyWrite/nose_trace.png',
@@ -545,22 +655,30 @@ class Writing3_4_2Page extends StatelessWidget {
   }
 }
 
-// 입
+// 입 (3-4-3)
 class Writing3_4_3Page extends StatelessWidget {
-  const Writing3_4_3Page({super.key, required this.childId});
+  const Writing3_4_3Page({
+    super.key,
+    required this.childId,
+    required this.fruitId,
+    required this.startTime,
+  });
   static const routeName = '/study/write/writing_3_4_3';
   final String childId;
+  final String fruitId;
+  final DateTime startTime;
 
   @override
   Widget build(BuildContext context) {
-    final argId =
-        (ModalRoute.of(context)?.settings.arguments
-                as Map<String, dynamic>?)?['childId']
-            as String?;
-    final id = argId ?? childId;
+    final arguments = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+    final id = arguments?['childId'] as String? ?? childId;
+    final fId = arguments?['fruitId'] as String? ?? fruitId;
+    final start = arguments?['startTime'] as DateTime? ?? startTime;
 
     return _WritingItemPage(
       childId: id,
+      fruitId: fId,
+      startTime: start,
       illustPath: 'assets/img/contents/studyWrite/mouth.png',
       previewPath: 'assets/img/contents/studyWrite/mouth_preview.png',
       tracePath: 'assets/img/contents/studyWrite/mouth_trace.png',
@@ -572,22 +690,30 @@ class Writing3_4_3Page extends StatelessWidget {
   }
 }
 
-// 귀
+// 귀 (3-4-4)
 class Writing3_4_4Page extends StatelessWidget {
-  const Writing3_4_4Page({super.key, required this.childId});
+  const Writing3_4_4Page({
+    super.key,
+    required this.childId,
+    required this.fruitId,
+    required this.startTime,
+  });
   static const routeName = '/study/write/writing_3_4_4';
   final String childId;
+  final String fruitId;
+  final DateTime startTime;
 
   @override
   Widget build(BuildContext context) {
-    final argId =
-        (ModalRoute.of(context)?.settings.arguments
-                as Map<String, dynamic>?)?['childId']
-            as String?;
-    final id = argId ?? childId;
+    final arguments = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+    final id = arguments?['childId'] as String? ?? childId;
+    final fId = arguments?['fruitId'] as String? ?? fruitId;
+    final start = arguments?['startTime'] as DateTime? ?? startTime;
 
     return _WritingItemPage(
       childId: id,
+      fruitId: fId,
+      startTime: start,
       illustPath: 'assets/img/contents/studyWrite/ear.png',
       previewPath: 'assets/img/contents/studyWrite/ear_preview.png',
       tracePath: 'assets/img/contents/studyWrite/ear_trace.png',
@@ -599,22 +725,30 @@ class Writing3_4_4Page extends StatelessWidget {
   }
 }
 
-// 손
+// 손 (3-4-5)
 class Writing3_4_5Page extends StatelessWidget {
-  const Writing3_4_5Page({super.key, required this.childId});
+  const Writing3_4_5Page({
+    super.key,
+    required this.childId,
+    required this.fruitId,
+    required this.startTime,
+  });
   static const routeName = '/study/write/writing_3_4_5';
   final String childId;
+  final String fruitId;
+  final DateTime startTime;
 
   @override
   Widget build(BuildContext context) {
-    final argId =
-        (ModalRoute.of(context)?.settings.arguments
-                as Map<String, dynamic>?)?['childId']
-            as String?;
-    final id = argId ?? childId;
+    final arguments = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+    final id = arguments?['childId'] as String? ?? childId;
+    final fId = arguments?['fruitId'] as String? ?? fruitId;
+    final start = arguments?['startTime'] as DateTime? ?? startTime;
 
     return _WritingItemPage(
       childId: id,
+      fruitId: fId,
+      startTime: start,
       illustPath: 'assets/img/contents/studyWrite/hand.png',
       previewPath: 'assets/img/contents/studyWrite/hand_preview.png',
       tracePath: 'assets/img/contents/studyWrite/hand_trace.png',
@@ -626,35 +760,44 @@ class Writing3_4_5Page extends StatelessWidget {
   }
 }
 
-// 발
+// 발 (3-4-6) - 마지막!
 class Writing3_4_6Page extends StatelessWidget {
-  const Writing3_4_6Page({super.key, required this.childId});
+  const Writing3_4_6Page({
+    super.key,
+    required this.childId,
+    required this.fruitId,
+    required this.startTime,
+  });
   static const routeName = '/study/write/writing_3_4_6';
   final String childId;
+  final String fruitId;
+  final DateTime startTime;
 
   @override
   Widget build(BuildContext context) {
-    final argId =
-        (ModalRoute.of(context)?.settings.arguments
-                as Map<String, dynamic>?)?['childId']
-            as String?;
-    final id = argId ?? childId;
+    final arguments = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+    final id = arguments?['childId'] as String? ?? childId;
+    final fId = arguments?['fruitId'] as String? ?? fruitId;
+    final start = arguments?['startTime'] as DateTime? ?? startTime;
 
     return _WritingItemPage(
       childId: id,
+      fruitId: fId,
+      startTime: start,
+      isLastPage: true, // ⭐️ 마지막 페이지임을 표시!
       illustPath: 'assets/img/contents/studyWrite/foot.png',
       previewPath: 'assets/img/contents/studyWrite/foot_preview.png',
       tracePath: 'assets/img/contents/studyWrite/foot_trace.png',
-      nextRouteName: Writing3_4_DonePage.routeName,
+      nextRouteName: Writing3_4_DonePage.routeName, // 다음은 완료 페이지
       columns: 1,
       expectedWord: '발',
-      acceptedWords: const ['발', '발 '],
+      acceptedWords: const ['발', '발 '], // '발 '도 허용?
     );
   }
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
-// 완료 화면: 박수 → 3초 팝업(황금사과) → 나무로 이동
+// 완료 화면 (⭐️ API 호출 없음, UI만 표시 후 나무로 복귀)
 // ──────────────────────────────────────────────────────────────────────────────
 class Writing3_4_DonePage extends StatefulWidget {
   const Writing3_4_DonePage({super.key, required this.childId});
@@ -682,27 +825,12 @@ class _Writing3_4_DonePageState extends State<Writing3_4_DonePage> {
           Future.delayed(const Duration(seconds: 3), () {
             if (Navigator.of(ctx).canPop()) Navigator.of(ctx).pop();
           });
-          return const _AppleRewardDialog();
+          return const _AppleRewardDialog(); // 리워드 팝업
         },
       );
 
       if (!mounted) return;
-
-      final nav = Navigator.of(context, rootNavigator: true);
-      try {
-        nav.pushNamedAndRemoveUntil(
-          kMainAppleTreeRoute,
-          (_) => false,
-          arguments: {'childId': widget.childId},
-        );
-      } catch (_) {
-        nav.pushAndRemoveUntil(
-          MaterialPageRoute(
-            builder: (_) => AppleGarden(childId: widget.childId),
-          ),
-          (route) => false,
-        );
-      }
+      _goToGarden(context, widget.childId); // 나무로 복귀
     });
   }
 
@@ -739,6 +867,7 @@ class _Writing3_4_DonePageState extends State<Writing3_4_DonePage> {
   }
 }
 
+// 리워드 팝업
 class _AppleRewardDialog extends StatelessWidget {
   const _AppleRewardDialog();
 
@@ -780,4 +909,4 @@ class _AppleRewardDialog extends StatelessWidget {
       ),
     );
   }
-}
+} // End of file

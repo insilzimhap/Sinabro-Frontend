@@ -1,9 +1,15 @@
+// 레벨 1 열매 1 별(직선) 서버 연결 완료
 import 'dart:math';
 import 'package:flutter/material.dart';
+import 'dart:convert'; // http 사용을 위해 추가
+import 'package:http/http.dart' as http; // http 사용을 위해 추가
+import 'package:sinabro/config.dart'; // baseUrl 사용을 위해 추가
 
 /// 별-잇기: 인트로(별들을 이어봐요!) -> 플레이 -> 완료(배너/별들/보상)
 class ConstellationDrawPage extends StatefulWidget {
-  const ConstellationDrawPage({super.key});
+    final String childId;
+    const ConstellationDrawPage({super.key, required this.childId});
+
   @override
   State<ConstellationDrawPage> createState() => _ConstellationDrawPageState();
 }
@@ -32,6 +38,9 @@ class _ConstellationDrawPageState extends State<ConstellationDrawPage> {
   final List<Offset> _stroke = []; // 진행 중 빨간 선
   final List<List<Offset>> _confirmed = []; // 확정된 노란 선
   _FlowPhase _phase = _FlowPhase.intro; // 인트로부터 시작
+
+  // ✅ 학습 시작 시간 기록 변수
+  DateTime? _startTime;
 
   // ------------------ 제스처 ------------------
   bool get _gesturesEnabled => _phase == _FlowPhase.play;
@@ -80,6 +89,41 @@ class _ConstellationDrawPageState extends State<ConstellationDrawPage> {
     }
   }
 
+  // ------------------ API 호출 함수 ------------------
+  // ✅ API 호출 함수 추가
+  Future<void> _uploadStudyWritingResult() async {
+    // 실제 이 학습에 해당하는 정확한 fruit_id로 바꿔주세요!
+    const String fruitIdForThisStudy = 'FR_WR_001'; 
+
+    // ✅ 학습 시간 계산
+    int timeSpentSeconds = 0;
+    if (_startTime != null) {
+      timeSpentSeconds = DateTime.now().difference(_startTime!).inSeconds;
+    }
+
+    final body = jsonEncode({
+      'childId': widget.childId,
+      'fruitId': fruitIdForThisStudy,
+      'timeSpentSecs': timeSpentSeconds,
+      'isCompleted': true, // 끝까지 완료했으므로 true
+    });
+
+    try {
+      final res = await http.post(
+        Uri.parse('$baseUrl/api/study/writing/complete'), // 쓰기 학습 API 주소
+        headers: {'Content-Type': 'application/json'},
+        body: body,
+      );
+      if (res.statusCode == 200) {
+        debugPrint('✅ 쓰기 학습(별자리) 결과 업로드 성공!');
+      } else {
+        debugPrint('❌ 쓰기 학습(별자리) 결과 업로드 실패: ${res.body}');
+      }
+    } catch (e) {
+      debugPrint('❌ 쓰기 학습(별자리) 결과 업로드 중 에러 발생: $e');
+    }
+  }
+
   // ------------------ 완료 시퀀스 ------------------
   void _startFinishFlow() async {
     if (!mounted) return;
@@ -92,6 +136,9 @@ class _ConstellationDrawPageState extends State<ConstellationDrawPage> {
     await Future.delayed(const Duration(milliseconds: 1100));
     if (!mounted) return;
     setState(() => _phase = _FlowPhase.reward); // 3) 보상 팝업
+
+    // ⭐ API 호출! (팝업 표시 후, 화면 전환 전)
+    await _uploadStudyWritingResult();
 
     await Future.delayed(const Duration(seconds: 2)); // 자동 복귀
     if (!mounted) return;
@@ -164,7 +211,13 @@ class _ConstellationDrawPageState extends State<ConstellationDrawPage> {
     });
   }
 
-  void _goPlay() => setState(() => _phase = _FlowPhase.play);
+  // ✅ 시작 함수 수정: 시간 기록 추가
+  void _goPlay() {
+    setState(() {
+      _phase = _FlowPhase.play;
+      _startTime = DateTime.now(); // ⭐ 학습 시작 시간 기록!
+    });
+  }
 
   // ------------------ UI ------------------
   @override

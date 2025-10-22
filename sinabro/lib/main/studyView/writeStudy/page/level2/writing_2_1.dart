@@ -1,5 +1,5 @@
 // lib/main/studyView/writeStudy/page/writing_2_1.dart (예시 경로)
-// ↑ 네가 쓰던 파일 경로대로 저장해줘
+// 레벨 2 열매 1 자음/쌍자음 서버 연결 완료
 
 import 'package:flutter/material.dart';
 import 'package:sinabro/main/studyView/writeStudy/page/main_apple_tree.dart';
@@ -7,6 +7,10 @@ import 'package:sinabro/main/studyView/writeStudy/widget/writing_canvas.dart';
 import 'package:sinabro/selvy_example_view/selvy_service.dart'; // ★ SelvyRecognizer 통일
 import 'dart:async';
 import 'dart:math' as math;
+
+import 'package:http/http.dart' as http; // ⭐️ http 패키지
+import 'dart:convert';                   // ⭐️ json 변환용
+import 'package:sinabro/config.dart';    // ⭐️ baseUrl 사용
 
 // 인트로 이미지
 const _twin1 = 'assets/img/contents/studyWrite/twin1.png';
@@ -213,12 +217,14 @@ class Writing21Page extends StatefulWidget {
   final String childId;
   final String lesson;
   final bool showIntro;
+  final String fruitId; // ⭐️ fruitId 변수 추가됨
 
   const Writing21Page({
     super.key,
     required this.childId,
     this.lesson = 'giyeok',
     this.showIntro = true,
+    required this.fruitId, // ⭐️ 생성자에 fruitId 추가됨
   });
 
   @override
@@ -235,6 +241,10 @@ class _Writing21PageState extends State<Writing21Page> {
   Timer? _finalPopupTimer;
   bool _finalPopupScheduled = false;
 
+  // ⭐️ API 연동을 위한 변수 2개 추가
+  late DateTime _startTime; // 학습 시작 시간
+  bool _apiCallSent = false;  // API 중복 호출 방지 플래그
+
   LessonSpec get spec => LESSONS[widget.lesson] ?? LESSONS['giyeok']!;
 
   @override
@@ -242,6 +252,8 @@ class _Writing21PageState extends State<Writing21Page> {
     super.initState();
     _showIntro = widget.showIntro;
     _setLessonCandidate(spec.bigChar); // ✅ 네이티브 후보셋 제한
+
+    _startTime = DateTime.now(); // ⭐️ 페이지 시작과 동시에 시간 측정 시작!
   }
 
   @override
@@ -283,6 +295,39 @@ class _Writing21PageState extends State<Writing21Page> {
     return map[t] ?? t;
   }
 
+  /// ⭐️ (수정됨) 학습 완료 API 호출 함수 - JWT 토큰 처리 제거
+  Future<void> _uploadStudyResult() async {
+    // 1. 걸린 시간 계산
+    final timeSpentSecs = DateTime.now().difference(_startTime).inSeconds;
+
+    // 2. API 엔드포인트
+    final url = Uri.parse('$baseUrl/api/study/writing/complete');
+
+    // 3. 전송할 데이터 (StudyCompletionDto)
+    final body = json.encode({
+      'childId': widget.childId,
+      'fruitId': widget.fruitId, // ⭐️ 생성자로 받은 fruitId 사용!
+      'isCompleted': true,
+      'timeSpentSecs': timeSpentSecs,
+    });
+
+    final headers = {
+      'Content-Type': 'application/json',
+    };
+
+    try {
+      final response = await http.post(url, headers: headers, body: body);
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        debugPrint('[Writing21] API 연동 성공: fruitId ${widget.fruitId} 완료!');
+      } else {
+        debugPrint('[Writing21] API 연동 실패: ${response.statusCode} ${response.body}');
+      }
+    } catch (e) {
+      debugPrint('[Writing21] API 연동 중 예외 발생: $e');
+    }
+  }
+
   /// 🔁 인식 콜백: top1 줄만 쓰고 [n] 토큰 제거 후 정규화 비교
   void _onRecognizeFromSelvy(String recognized) {
     final top1Line = recognized.split('\n').first;
@@ -292,8 +337,16 @@ class _Writing21PageState extends State<Writing21Page> {
     final target = _normalizeKoreanLabel(spec.bigChar);
 
     if (norm.isNotEmpty && norm == target) {
+      // 1. 인식 성공! 완료 단계(step 1)로 UI 변경
       setState(() => step = 1);
 
+      // ⭐️ 2. (핵심!) 이게 마지막 레슨인지, API를 아직 안 보냈는지 확인!
+      if (_isFinalLesson && !_apiCallSent) {
+        _apiCallSent = true; // ⭐️ 중복 호출 방지!
+        _uploadStudyResult();  // ⭐️ API 호출 함수 실행!
+      }
+
+      // 3. (기존 로직) 마지막 레슨이면 리워드 팝업 예약
       if (_isFinalLesson && !_rewardShown && !_finalPopupScheduled) {
         _finalPopupScheduled = true;
         WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -333,11 +386,11 @@ class _Writing21PageState extends State<Writing21Page> {
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
-          builder:
-              (_) => Writing21Page(
+          builder: (_) => Writing21Page(
                 childId: widget.childId,
                 lesson: nextKey,
                 showIntro: false,
+                fruitId: widget.fruitId, // ⭐️ fruitId 계속 넘겨주기
               ),
         ),
       );

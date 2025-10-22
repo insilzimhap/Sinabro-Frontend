@@ -1,8 +1,13 @@
+// 레벨 2 열매 2 자음 서버 연결 완료
 import 'package:flutter/material.dart';
 import 'package:sinabro/main/studyView/writeStudy/page/main_apple_tree.dart';
 import 'package:sinabro/main/studyView/writeStudy/widget/writing_canvas.dart';
 import 'package:sinabro/selvy_example_view/selvy_service.dart'; // ★ SelvyRecognizer 사용
 import 'dart:async';
+
+import 'package:http/http.dart' as http; // ⭐️ 1. http 패키지
+import 'dart:convert';                   // ⭐️ 2. json 변환용
+import 'package:sinabro/config.dart';    // ⭐️ 3. baseUrl 사용
 
 // 인트로 이미지(twin2)
 const _twin2 = 'assets/img/contents/studyWrite/twin2.png';
@@ -164,6 +169,7 @@ const List<String> LESSON2_ORDER = [
 class Writing22Page extends StatefulWidget {
   final String childId;
   final String lesson;
+  final String fruitId; // ⭐️ fruitId 변수 추가!
 
   /// 첫 진입에서만 인트로 보여주고, 다음 레슨부터는 false로 넘기면 인트로 생략
   final bool showIntro;
@@ -173,6 +179,7 @@ class Writing22Page extends StatefulWidget {
     required this.childId,
     this.lesson = 'nieun',
     this.showIntro = true,
+    required this.fruitId,
   });
 
   @override
@@ -190,6 +197,10 @@ class _Writing22PageState extends State<Writing22Page> {
   Timer? _finalPopupTimer;
   bool _finalPopupScheduled = false;
 
+  // ⭐️ API 연동 변수 추가
+  late DateTime _startTime; // 학습 시작 시간
+  bool _apiCallSent = false;  // API 중복 호출 방지 플래그
+
   LessonSpec2 get spec => LESSONS2[widget.lesson] ?? LESSONS2['nieun']!;
 
   @override
@@ -199,6 +210,7 @@ class _Writing22PageState extends State<Writing22Page> {
 
     // 후보셋을 현재 레슨 글자로 강하게 제한 (엔진 레벨)
     _setLessonCandidate(spec.bigChar);
+    _startTime = DateTime.now(); // ⭐️ 시간 측정 시작!
   }
 
   @override
@@ -243,6 +255,41 @@ class _Writing22PageState extends State<Writing22Page> {
     return map[t] ?? t;
   }
 
+  /// ⭐️ (신규) 학습 완료 API 호출 함수 - JWT 없이
+  Future<void> _uploadStudyResult() async {
+    // 1. 걸린 시간 계산
+    final timeSpentSecs = DateTime.now().difference(_startTime).inSeconds;
+
+    // 2. API 엔드포인트
+    final url = Uri.parse('$baseUrl/api/study/writing/complete');
+
+    // 3. 전송할 데이터
+    final body = json.encode({
+      'childId': widget.childId,
+      'fruitId': widget.fruitId, // ⭐️ 생성자로 받은 fruitId 사용!
+      'isCompleted': true,
+      'timeSpentSecs': timeSpentSecs,
+    });
+
+    // 4. 헤더 (Content-Type만)
+    final headers = {
+      'Content-Type': 'application/json',
+    };
+
+    try {
+      // 5. API 호출
+      final response = await http.post(url, headers: headers, body: body);
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        debugPrint('[Writing22] API 연동 성공: fruitId ${widget.fruitId} 완료!');
+      } else {
+        debugPrint('[Writing22] API 연동 실패: ${response.statusCode} ${response.body}');
+      }
+    } catch (e) {
+      debugPrint('[Writing22] API 연동 중 예외 발생: $e');
+    }
+  }
+
   /// 인식 콜백: top1 라인만 사용 + [n] 토큰 제거 후 정규화 비교
   void _onRecognize(String recognized) {
     final top1Line = recognized.split('\n').first;
@@ -254,7 +301,13 @@ class _Writing22PageState extends State<Writing22Page> {
     if (got.isNotEmpty && got == target) {
       setState(() => step = 1);
 
-      // 마지막 레슨이면 완료화면 렌더 직후 3초 뒤 리워드 팝업
+      // ⭐️ 2. 마지막 레슨이고, API를 아직 안 보냈다면 호출!
+      if (_isFinalLesson && !_apiCallSent) {
+        _apiCallSent = true; // 중복 방지
+        _uploadStudyResult();  // API 호출!
+      }
+
+      // 3. (기존 로직) 마지막 레슨이면 리워드 팝업 예약
       if (_isFinalLesson && !_rewardShown && !_finalPopupScheduled) {
         _finalPopupScheduled = true;
         WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -295,6 +348,7 @@ class _Writing22PageState extends State<Writing22Page> {
                 childId: widget.childId,
                 lesson: nextKey,
                 showIntro: false,
+                fruitId: widget.fruitId,
               ),
         ),
       );
