@@ -1,247 +1,127 @@
-// lib/main/studyView/writeStudy/page/main_apple_tree.dart
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:audioplayers/audioplayers.dart';
 
-// ⭐ 별잇기 — 프리픽스 제거, show만 사용
-import 'package:sinabro/main/studyView/writeStudy/page/level1/star_write.dart'
-    show ConstellationDrawPage;
+import 'package:sinabro/main/studyView/writeStudy/controller/write_study_controller.dart';
+import 'package:sinabro/main/studyView/writeStudy/widget/write_study_widget.dart';
+import 'package:sinabro/main/studyView/writeStudy/widget/writing_canvas.dart';
 
-// 🍓🍇🥝 잼
-import 'package:sinabro/main/studyView/writeStudy/page/level1/jam_write.dart'
-    as jam;
-
-// ✈️ 비행기
-import 'package:sinabro/main/studyView/writeStudy/page/level1/plane_write.dart'
-    as plane;
-
-// 🍭 달고나/캔디
-import 'package:sinabro/main/studyView/writeStudy/page/level1/candy_write.dart';
-
-// ─ level2
-import 'package:sinabro/main/studyView/writeStudy/page/level2/writing_2_1.dart';
-import 'package:sinabro/main/studyView/writeStudy/page/level2/writing_2_2.dart';
-import 'package:sinabro/main/studyView/writeStudy/page/level2/writing_2_3.dart';
-import 'package:sinabro/main/studyView/writeStudy/page/level2/writing_2_4.dart';
-
-// ─ level3
-import 'package:sinabro/main/studyView/writeStudy/page/level3/writing_3_1.dart';
-import 'package:sinabro/main/studyView/writeStudy/page/level3/writing_3_2.dart';
-import 'package:sinabro/main/studyView/writeStudy/page/level3/writing_3_3.dart';
-import 'package:sinabro/main/studyView/writeStudy/page/level3/writing_3_4.dart'
-    as w34
-    show Writing3_4_IntroPage;
-
-enum ContentStatus { locked, available, done }
-
-class AppleGarden extends StatefulWidget {
+/// 최상위 쓰기 학습 페이지
+class WriteStudyPage extends StatelessWidget {
   final String childId;
-  const AppleGarden({super.key, required this.childId});
-
-  @override
-  State<AppleGarden> createState() => _AppleGardenState();
-}
-
-class _AppleGardenState extends State<AppleGarden> {
-  // 모든 사과 사용 가능(임시)
-  final List<ContentStatus> status = List.generate(
-    12,
-    (i) => ContentStatus.available,
-  );
-
-  // 배경 기준 비율 좌표
-  final List<Offset> spots = const [
-    // Tree 1 (왼쪽)
-    Offset(0.16, 0.36), // 0:1 (별잇기)
-    Offset(0.26, 0.36), // 1:2 (잼 플로우)
-    Offset(0.17, 0.50), // 2:3 (비행기)
-    Offset(0.28, 0.49), // 3:4 (gold)
-    // Tree 2 (가운데)
-    Offset(0.47, 0.36), // 4:1
-    Offset(0.57, 0.36), // 5:2
-    Offset(0.47, 0.50), // 6:3
-    Offset(0.58, 0.49), // 7:4 (gold)
-    // Tree 3 (오른쪽)
-    Offset(0.78, 0.36), // 8:1
-    Offset(0.88, 0.36), // 9:2
-    Offset(0.78, 0.50), // 10:3
-    Offset(0.89, 0.49), // 11:4 (gold)
-  ];
-
-  Future<void> _tap(int index) async {
-    if (status[index] == ContentStatus.locked) return;
-
-    late final Widget page;
-    switch (index) {
-      case 0: // ⭐ 별잇기
-        page = ConstellationDrawPage();
-        break;
-
-      case 1: // 🍓 잼
-        page = jam.JamSpreadFlowPage();
-        break;
-
-      case 2: // ✈️ 비행기
-        page = plane.PlaneWritePage();
-        break;
-
-      case 3: // 🍭 달고나(골드)
-        page = CandyWritePage(childId: widget.childId);
-        break;
-
-      // ─────────────── level2 ───────────────
-      case 4:
-        page = Writing21Page(childId: widget.childId);
-        break;
-      case 5:
-        page = Writing22Page(childId: widget.childId);
-        break;
-      case 6:
-        page = Writing23Page(childId: widget.childId);
-        break;
-      case 7:
-        page = Writing24Page(childId: widget.childId);
-        break;
-
-      // ─────────────── level3 ───────────────
-      case 8:
-        page = Writing3_IntroPage(childId: widget.childId); // ✅ 동물 인트로
-        break;
-      case 9:
-        page = Writing3_2_IntroPage(childId: widget.childId); // ✅ 과일 인트로
-        break;
-      case 10:
-        page = Writing3_3_IntroPage(childId: widget.childId); // ✅ 채소 인트로
-        break;
-      case 11:
-        page = w34.Writing3_4_IntroPage(childId: widget.childId); // ✅ 신체 인트로
-        break;
-
-      default:
-        return;
-    }
-
-    await Navigator.of(context).push(MaterialPageRoute(builder: (_) => page));
-  }
+  const WriteStudyPage({super.key, this.childId = ""});
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.white,
-      body: LayoutBuilder(
-        builder: (context, c) {
-          final size = Size(c.maxWidth, c.maxHeight);
-          final dpr = MediaQuery.of(context).devicePixelRatio;
-          final appleSize = size.width * 0.065;
-
-          return Stack(
-            fit: StackFit.expand,
-            children: [
-              // 배경
-              Positioned.fill(
-                child: Image(
-                  image: ResizeImage(
-                    const AssetImage(
-                      'assets/img/contents/studyWrite/apple_tree.png',
-                    ),
-                    width: (size.width * dpr).clamp(0, 4096).toInt(),
-                    height: (size.height * dpr).clamp(0, 4096).toInt(),
-                  ),
-                  fit: BoxFit.cover,
-                  filterQuality: FilterQuality.medium,
-                ),
-              ),
-
-              // 사과들
-              for (int i = 0; i < spots.length; i++)
-                Positioned(
-                  left: spots[i].dx * size.width - appleSize / 2,
-                  top: spots[i].dy * size.height - appleSize / 2,
-                  child: _Apple(
-                    index: i,
-                    size: appleSize,
-                    status: status[i],
-                    onTap: () => _tap(i),
-                  ),
-                ),
-            ],
-          );
-        },
-      ),
+    return ChangeNotifierProvider(
+      create: (_) => WriteStudyController(),
+      child: _WriteStudyView(childId: childId),
     );
   }
 }
 
-class _Apple extends StatefulWidget {
-  final int index;
-  final double size;
-  final ContentStatus status;
-  final VoidCallback onTap;
-
-  const _Apple({
-    required this.index,
-    required this.size,
-    required this.status,
-    required this.onTap,
-    super.key,
-  });
+/// 내부 위젯: 학습 단계 관리 + 채점/초기화 버튼
+class _WriteStudyView extends StatefulWidget {
+  final String childId;
+  const _WriteStudyView({super.key, this.childId = ""});
 
   @override
-  State<_Apple> createState() => _AppleState();
+  State<_WriteStudyView> createState() => _WriteStudyViewState();
 }
 
-class _AppleState extends State<_Apple> {
-  bool _pressed = false;
+class _WriteStudyViewState extends State<_WriteStudyView> {
+  final AudioPlayer _audioPlayer = AudioPlayer();
+  // ✅ WritingCanvas 에 접근하기 위한 GlobalKey (recognize / clear 등)
+  final GlobalKey<WritingCanvasState> canvasKey =
+      GlobalKey<WritingCanvasState>();
+
+  /// 단계별 TTS(예시)
+  final List<String> ttsPaths = <String>[
+    'audio/tts/studyWrite/test/leeul.mp3',
+    'audio/tts/studyWrite/test/apple.mp3',
+    'audio/tts/studyWrite/test/hello.mp3',
+  ];
+
+  int _lastPlayedStep = -1;
+
+  @override
+  void dispose() {
+    _audioPlayer.dispose();
+    super.dispose();
+  }
+
+  /// 🎧 현재 단계 TTS 1회 재생
+  Future<void> _playCurrentStepTTS(BuildContext context) async {
+    final controller = context.read<WriteStudyController>();
+    final step = controller.currentStep;
+
+    if (step != _lastPlayedStep && step >= 0 && step < ttsPaths.length) {
+      _lastPlayedStep = step;
+      try {
+        await _audioPlayer.stop();
+        await _audioPlayer.play(AssetSource(ttsPaths[step]));
+      } catch (e) {
+        debugPrint('🔊 TTS 재생 실패: $e');
+      }
+    }
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // 첫 렌더 후 1회 호출
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _playCurrentStepTTS(context);
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
-    final isGold = (widget.index % 4) == 3; // 4번째 사과
-    final asset =
-        isGold
-            ? 'assets/img/contents/studyWrite/gold_apple.png'
-            : 'assets/img/contents/studyWrite/apple.png';
+    final controller = context.watch<WriteStudyController>();
 
-    return GestureDetector(
-      onTapDown: (_) => setState(() => _pressed = true),
-      onTapCancel: () => setState(() => _pressed = false),
-      onTapUp: (_) => setState(() => _pressed = false),
-      onTap: widget.onTap,
-      child: AnimatedScale(
-        duration: const Duration(milliseconds: 120),
-        scale: _pressed ? 0.95 : 1.0,
-        child: Stack(
-          alignment: Alignment.center,
-          clipBehavior: Clip.none,
+    // 단계가 변하면 TTS 갱신
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _playCurrentStepTTS(context);
+    });
+
+    return Scaffold(
+      backgroundColor: const Color(0xFFFDFCF7),
+      appBar: AppBar(
+        title: Text('쓰기 학습 (${controller.currentStep + 1}/3)'),
+        backgroundColor: Colors.orange[100],
+        elevation: 0,
+      ),
+      body: Stack(
+        alignment: Alignment.center,
+        children: [
+          // 실제 학습 화면 (내부에서 WritingCanvas를 canvasKey로 생성해야 함)
+          WriteStudyWidget(canvasKey: canvasKey, childId: widget.childId),
+        ],
+      ),
+      bottomNavigationBar: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
+        child: Row(
           children: [
-            Image.asset(
-              asset,
-              width: widget.size,
-              height: widget.size,
-              fit: BoxFit.contain,
-            ),
-            Text(
-              '${(widget.index % 4) + 1}',
-              style: TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.w900,
-                fontSize: widget.size * 0.45,
-                shadows: const [
-                  Shadow(
-                    blurRadius: 4,
-                    color: Colors.black26,
-                    offset: Offset(0, 2),
-                  ),
-                ],
+            // 채점하기: 캔버스의 하위호환 API 호출
+            Expanded(
+              child: ElevatedButton(
+                onPressed: () {
+                  canvasKey.currentState?.recognizeAndCheckText();
+                },
+                child: const Text('채점하기'),
               ),
             ),
-            if (isGold)
-              Positioned(
-                right: -widget.size * 0.12,
-                bottom: -widget.size * 0.10,
-                child: Icon(
-                  Icons.auto_awesome,
-                  size: widget.size * 0.35,
-                  color: Colors.amberAccent,
-                ),
+            const SizedBox(width: 12),
+            // 지우기: 컨트롤러 리셋 + 캔버스 초기화
+            Expanded(
+              child: ElevatedButton(
+                onPressed: () {
+                  controller.reset();
+                  canvasKey.currentState?.clearCanvas();
+                },
+                child: const Text('지우기'),
               ),
+            ),
           ],
         ),
       ),
