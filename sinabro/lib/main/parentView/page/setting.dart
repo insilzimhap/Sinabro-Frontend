@@ -2,14 +2,10 @@
  * 파일: lib/main/parentView/page/setting.dart (SettingsPage)
  * 개요: 부모용 ‘설정’ 화면. ParentLayout 하위에서 수신동의/언어 등 앱 환경설정을
  *      구성하고 로그아웃·회원탈퇴 플로우(커스텀 다이얼로그)까지 제공한다.
- *      로그아웃 → UserSelectScreen, 탈퇴 → HomeScreen
- * @ 채영: JWT+api 연결 완료
  */
 import 'package:flutter/material.dart';
 import 'package:sinabro/main/parentView/layout/parent_layout.dart';
 import 'package:sinabro/main/mainView/page/home_screen.dart';
-import 'package:sinabro/main/parentView/api/parent_api.dart';
-import 'package:sinabro/main/mainView/page/user_select_screen.dart';
 
 class SettingsPage extends StatefulWidget {
   static const String routeName = '/parent/settings';
@@ -28,127 +24,37 @@ class _SettingsPageState extends State<SettingsPage> {
   // 언어설정
   final List<String> languages = const [
     '한국어',
-    'English',
-    '日本語',
-    'Tiếng Việt',
     '中文',
     'ไทย',
+    'English',
+    'Tiếng Việt',
   ];
   String selectedLang = '한국어';
 
-  bool _loading = false;
-  bool _saving = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _loadSettings(); //서버 프리필
-  }
-
-  // 부모 설정 불러오기: GET /api/app/mypage/parent/{userId}/settings
-  Future<void> _loadSettings() async {
-    if ((widget.parentUserId ?? '').isEmpty) return;
-    setState(() => _loading = true);
-    try {
-      final s = await ParentApi.fetchSettings(widget.parentUserId!);
-      setState(() {
-        agreeEmail = s.emailSubscription;
-        agreePush = s.allowNotifications;
-        selectedLang = _reverseMapLang(s.userLanguage); //언어 매핑 적용
-      });
-      print('[설정 불러오기 성공] allow=$agreePush, email=$agreeEmail, lang=$selectedLang'); 
-    } catch (e) {
-      if (mounted) {
-        print('[설정 불러오기 실패] $e'); 
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('설정 불러오기 실패: $e')),
-        );
-      }
-    } finally {
-      if (mounted) setState(() => _loading = false);
-    }
-  }
-
-  // 부모 설정 저장: PATCH /api/app/mypage/parent/{userId}/settings
-  Future<void> _save() async {
-    if ((widget.parentUserId ?? '').isEmpty) return;
-    setState(() => _saving = true);
-    try {
-      await ParentApi.updateSettings(
-        userId: widget.parentUserId!,
-        allowNotifications: agreePush,
-        emailSubscription: agreeEmail,
-        userLanguage: _mapLang(selectedLang), // 언어 매핑
-      );
-      if (!mounted) return;
-      print('[설정 저장 성공]'); 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('설정이 저장되었습니다.')),
-      );
-    } catch (e) {
-      if (mounted) {
-        print('[설정 저장 실패] $e'); 
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('설정 저장 실패: $e')),
-        );
-      }
-    } finally {
-      if (mounted) setState(() => _saving = false);
-    }
-  }
-
-  // 언어 매핑 (프론트 → 서버) 
-  String _mapLang(String v) {
-    switch (v) {
-      case '한국어': return 'Korea';
-      case 'English': return 'English';
-      case '日本語': return 'Japanese';
-      case 'Tiếng Việt': return 'Vietnamese';
-      case '中文': return 'Chinese';
-      case 'ไทย': return 'Thai';
-      default: return 'Korea';
-    }
-  }
-
-  // 언어 매핑 (서버 → 프론트) 
-  String _reverseMapLang(String v) {
-    switch (v) {
-      case 'Korea': return '한국어';
-      case 'English': return 'English';
-      case 'Japanese': return '日本語';
-      case 'Vietnamese': return 'Tiếng Việt';
-      case 'Chinese': return '中文';
-      case 'Thai': return 'ไทย';
-      default: return '한국어';
-    }
-  }
-
   // ================= Actions =================
+  Future<void> _save() async {
+    // TODO: 서버 저장 API 연동
+    await Future.delayed(const Duration(milliseconds: 400));
+    if (!mounted) return;
+    _showSuccessDialog(); // ✅ 저장 성공 팝업
+  }
 
-  // 로그아웃: POST /api/users/logout
   Future<void> _logout() async {
-    try {
-      await ParentApi.logout();
-      print('[로그아웃 성공]');
-    } catch (e) {
-      print('[로그아웃 실패] $e');
-    }
+    // TODO: 토큰/세션 정리
     if (!mounted) return;
     Navigator.of(context).pushAndRemoveUntil(
-      MaterialPageRoute(builder: (_) => const UserSelectScreen()),
+      MaterialPageRoute(builder: (_) => CloudAnimationScreen()),
       (route) => false,
     );
   }
 
-  // 회원 탈퇴 플로우
   Future<void> _withdrawFlow() async {
-    final pw = await _askCurrentPassword();
-    if (pw == null || pw.isEmpty) return;
+    final pw = await _askCurrentPassword(); // ✅ 여기서 X 누르면 바로 홈으로 이동하도록 수정됨
+    if (pw == null) return;
 
-    // 1단계: 비밀번호 검증
-    try {
-      await ParentApi.verifyDelete(widget.parentUserId!, pw);
-    } catch (e) {
+    // TODO: 실제 비밀번호 검증 API
+    final verified = pw.isNotEmpty;
+    if (!verified) {
       await _showFailureDialog(
         titleImage: 'assets/img/dialog/fail.png',
         message: '현재 비밀번호가 올바르지 않습니다!',
@@ -156,7 +62,6 @@ class _SettingsPageState extends State<SettingsPage> {
       return;
     }
 
-    // 2단계: 정말 탈퇴하시겠습니까?
     final ok = await _showConfirmDialog(
       titleImage: 'assets/img/dialog/warn.png',
       message: '정말 탈퇴하시겠습니까?',
@@ -165,24 +70,91 @@ class _SettingsPageState extends State<SettingsPage> {
     );
     if (ok != true) return;
 
-    // 3단계: 탈퇴 API 호출
-    try {
-      await ParentApi.deleteParent(widget.parentUserId!, pw);
-      await _showSuccessGoHome(message: '탈퇴되었습니다!\n메인 화면으로 돌아갑니다');
-      if (!mounted) return;
-      Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute(builder: (_) => CloudAnimationScreen()),
-        (route) => false,
-      );
-    } catch (e) {
-      await _showFailureDialog(
-        titleImage: 'assets/img/dialog/fail.png',
-        message: '탈퇴 실패: $e',
-      );
-    }
+    // TODO: 실제 탈퇴 API 호출
+    await Future.delayed(const Duration(milliseconds: 350));
+
+    await _showSuccessGoHome(message: '탈퇴되었습니다!\n메인 화면으로 돌아갑니다');
+    if (!mounted) return;
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(builder: (_) => CloudAnimationScreen()),
+      (route) => false,
+    );
   }
 
-  // -------- 공통 다이얼로그들 --------
+  // ================= Dialogs =================
+
+  /// ✅ 저장 성공 팝업 (초록 테마)
+  void _showSuccessDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: true,
+      builder:
+          (_) => Dialog(
+            elevation: 0,
+            insetPadding: const EdgeInsets.symmetric(
+              horizontal: 40,
+              vertical: 24,
+            ),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Container(
+              decoration: BoxDecoration(
+                color: const Color(0xFFDFF3DC), // 연한 초록 배경
+                border: Border.all(color: const Color(0xFF4CAF50), width: 3),
+                borderRadius: BorderRadius.circular(16),
+              ),
+              padding: const EdgeInsets.fromLTRB(20, 18, 20, 24),
+              child: Stack(
+                children: [
+                  Positioned(
+                    right: 0,
+                    top: 0,
+                    child: IconButton(
+                      icon: const Icon(Icons.close, color: Color(0xFF388E3C)),
+                      onPressed: () => Navigator.pop(context),
+                    ),
+                  ),
+                  Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: const [
+                      SizedBox(height: 20),
+                      Icon(
+                        Icons.check_circle,
+                        size: 60,
+                        color: Color(0xFF388E3C),
+                      ),
+                      SizedBox(height: 16),
+                      Text(
+                        '수정 성공',
+                        style: TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.w800,
+                          color: Color(0xFF388E3C),
+                        ),
+                      ),
+                      SizedBox(height: 12),
+                      Text(
+                        '정보가 성공적으로 수정되었습니다!',
+                        style: TextStyle(
+                          fontSize: 17,
+                          color: Color(0xFF5A4E4E),
+                          fontWeight: FontWeight.w700,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                      SizedBox(height: 8),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+    );
+  }
+
+  /// ✅ 현재 비밀번호 입력 팝업
+  /// X 버튼을 누르면 **즉시 첫 화면으로 이동**하도록 수정
   Future<String?> _askCurrentPassword() async {
     final controller = TextEditingController();
     return showDialog<String?>(
@@ -206,12 +178,21 @@ class _SettingsPageState extends State<SettingsPage> {
               padding: const EdgeInsets.fromLTRB(20, 18, 20, 24),
               child: Stack(
                 children: [
+                  // ✅ X 누르면 바로 홈으로 이동
                   Positioned(
                     right: 0,
                     top: 0,
                     child: IconButton(
                       icon: const Icon(Icons.close, color: Color(0xFF2E7D32)),
-                      onPressed: () => Navigator.pop(context, null),
+                      onPressed: () {
+                        Navigator.pop(context, null);
+                        Navigator.of(context).pushAndRemoveUntil(
+                          MaterialPageRoute(
+                            builder: (_) => CloudAnimationScreen(),
+                          ),
+                          (route) => false,
+                        );
+                      },
                     ),
                   ),
                   Column(
@@ -377,86 +358,74 @@ class _SettingsPageState extends State<SettingsPage> {
                 borderRadius: BorderRadius.circular(16),
               ),
               padding: const EdgeInsets.fromLTRB(20, 18, 20, 24),
-              child: Stack(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  Positioned(
-                    right: 0,
-                    top: 0,
-                    child: IconButton(
-                      icon: const Icon(Icons.close, color: Color(0xFF2E7D32)),
-                      onPressed: () => Navigator.pop(context, false),
+                  const SizedBox(height: 6),
+                  Container(
+                    width: 240,
+                    height: 120,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFDDE6D6),
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    alignment: Alignment.center,
+                    child:
+                        (titleImage == null)
+                            ? const Text(
+                              '주의',
+                              style: TextStyle(
+                                fontSize: 24,
+                                fontWeight: FontWeight.w800,
+                                color: Color(0xFF6B5A51),
+                              ),
+                            )
+                            : Image.asset(titleImage, fit: BoxFit.contain),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    message,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.w900,
+                      color: Color(0xFF6B5A51),
                     ),
                   ),
-                  Column(
-                    mainAxisSize: MainAxisSize.min,
+                  const SizedBox(height: 18),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const SizedBox(height: 6),
-                      Container(
-                        width: 240,
-                        height: 120,
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFDDE6D6),
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        alignment: Alignment.center,
-                        child:
-                            (titleImage == null)
-                                ? const Text(
-                                  '주의',
-                                  style: TextStyle(
-                                    fontSize: 24,
-                                    fontWeight: FontWeight.w800,
-                                    color: Color(0xFF6B5A51),
-                                  ),
-                                )
-                                : Image.asset(titleImage, fit: BoxFit.contain),
-                      ),
-                      const SizedBox(height: 16),
-                      Text(
-                        message,
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(
-                          fontSize: 22,
-                          fontWeight: FontWeight.w900,
-                          color: Color(0xFF6B5A51),
-                        ),
-                      ),
-                      const SizedBox(height: 18),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          SizedBox(
-                            width: 140,
-                            height: 44,
-                            child: ElevatedButton(
-                              onPressed: () => Navigator.pop(context, true),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFF6DBF73),
-                                foregroundColor: Colors.white,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(22),
-                                ),
-                              ),
-                              child: Text(yesText),
+                      SizedBox(
+                        width: 140,
+                        height: 44,
+                        child: ElevatedButton(
+                          onPressed: () => Navigator.pop(context, true),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF6DBF73),
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(22),
                             ),
                           ),
-                          const SizedBox(width: 16),
-                          SizedBox(
-                            width: 140,
-                            height: 44,
-                            child: ElevatedButton(
-                              onPressed: () => Navigator.pop(context, false),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFF6DBF73),
-                                foregroundColor: Colors.white,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(22),
-                                ),
-                              ),
-                              child: Text(noText),
+                          child: Text(yesText),
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      SizedBox(
+                        width: 140,
+                        height: 44,
+                        child: ElevatedButton(
+                          onPressed: () => Navigator.pop(context, false),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF6DBF73),
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(22),
                             ),
                           ),
-                        ],
+                          child: Text(noText),
+                        ),
                       ),
                     ],
                   ),
@@ -487,38 +456,20 @@ class _SettingsPageState extends State<SettingsPage> {
                 borderRadius: BorderRadius.circular(16),
               ),
               padding: const EdgeInsets.fromLTRB(20, 18, 20, 24),
-              child: Stack(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  Positioned(
-                    right: 0,
-                    top: 0,
-                    child: IconButton(
-                      icon: const Icon(Icons.close, color: Color(0xFF2E7D32)),
-                      onPressed: () {
-                          Navigator.pop(context); 
-                          Navigator.of(context).pushAndRemoveUntil(
-                            MaterialPageRoute(builder: (_) => CloudAnimationScreen()),
-                            (route) => false,
-                          );
-                      } 
+                  const SizedBox(height: 6),
+                  Text(
+                    message,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.w800,
+                      color: Color(0xFF6B5A51),
                     ),
                   ),
-                  Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const SizedBox(height: 6),
-                      Text(
-                        message,
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(
-                          fontSize: 22,
-                          fontWeight: FontWeight.w800,
-                          color: Color(0xFF6B5A51),
-                        ),
-                      ),
-                      const SizedBox(height: 6),
-                    ],
-                  ),
+                  const SizedBox(height: 6),
                 ],
               ),
             ),
@@ -591,17 +542,16 @@ class _SettingsPageState extends State<SettingsPage> {
                           _sectionTitle('언어설정'),
                           const SizedBox(height: 8),
                           _langDropdown(),
-                          const SizedBox(height: 8),
                         ],
                       ),
                     ),
                   ),
                   const SizedBox(height: 18),
 
-                  // 하단 버튼들: 좌측 로그아웃 / 우측 탈퇴·저장
+                  // 하단 버튼
                   Row(
                     children: [
-                      // 좌측 로그아웃
+                      // 좌측: 로그아웃
                       SizedBox(
                         height: 46,
                         child: FilledButton(
@@ -622,7 +572,7 @@ class _SettingsPageState extends State<SettingsPage> {
                         ),
                       ),
                       const Spacer(),
-                      // 우측 탈퇴
+                      // 우측: 탈퇴 / 저장
                       SizedBox(
                         height: 46,
                         child: FilledButton(
@@ -643,7 +593,6 @@ class _SettingsPageState extends State<SettingsPage> {
                         ),
                       ),
                       const SizedBox(width: 12),
-                      // 저장하기
                       SizedBox(
                         height: 46,
                         child: FilledButton(
@@ -675,16 +624,14 @@ class _SettingsPageState extends State<SettingsPage> {
   }
 
   // ============= 공용 위젯 =============
-  Widget _sectionTitle(String text) {
-    return Text(
-      text,
-      style: const TextStyle(
-        fontSize: 18,
-        fontWeight: FontWeight.w900,
-        color: Color(0xFF6A5C53),
-      ),
-    );
-  }
+  Widget _sectionTitle(String text) => Text(
+    text,
+    style: const TextStyle(
+      fontSize: 18,
+      fontWeight: FontWeight.w900,
+      color: Color(0xFF6A5C53),
+    ),
+  );
 
   Widget _checkRow({
     required String label,
@@ -698,7 +645,7 @@ class _SettingsPageState extends State<SettingsPage> {
           Checkbox(
             value: value,
             onChanged: onChanged,
-            shape: const CircleBorder(), // ◯ 스크린샷 느낌
+            shape: const CircleBorder(), // ◯ 느낌
           ),
           const SizedBox(width: 6),
           Text(

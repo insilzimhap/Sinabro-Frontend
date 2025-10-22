@@ -2,19 +2,29 @@
  * 파일: lib/main/parentView/page/mypage_edit_page.dart (MyInfoEditPage)
  * 개요: 부모 계정 정보 수정 화면. ParentLayout(사이드바/헤더) 하위에서
  *      프로필 요약(좌측)과 계정 정보 입력 폼(우측)을 카드 형태로 제공한다.
- * @ 채영: JWT+api 연결 완료
  */
 
 import 'package:flutter/material.dart';
 import 'package:sinabro/main/parentView/layout/parent_layout.dart';
-import 'package:sinabro/main/parentView/api/parent_api.dart';
-import 'package:sinabro/main/parentView/page/notice_page.dart';
-
 
 class MyInfoEditPage extends StatefulWidget {
   /// 동적 사이드바/헤더에 쓰일 parentUserId (없어도 동작)
   final String? parentUserId;
-  const MyInfoEditPage({super.key, this.parentUserId});
+
+  /// 초기 표시용 값들 (서버 연동 전까지 더미/프리필)
+  final String initialName;
+  final String initialUserId;
+  final String initialEmail;
+  final String initialPhone;
+
+  const MyInfoEditPage({
+    super.key,
+    this.parentUserId,
+    this.initialName = '박성민',
+    this.initialUserId = 'Sungminpark',
+    this.initialEmail = 'Sungminpark@Gmail.Com',
+    this.initialPhone = '010-0000-1111',
+  });
 
   @override
   State<MyInfoEditPage> createState() => _MyInfoEditPageState();
@@ -30,42 +40,18 @@ class _MyInfoEditPageState extends State<MyInfoEditPage> {
 
   bool _saving = false;
   bool _pwMismatch = false;
-  bool _loading = false;
-  String? _err;
-
 
   @override
   void initState() {
     super.initState();
-    _name = TextEditingController();
-    _userId = TextEditingController();
-    _email = TextEditingController();
-    _phone = TextEditingController();
+    _name = TextEditingController(text: widget.initialName);
+    _userId = TextEditingController(text: widget.initialUserId);
+    _email = TextEditingController(text: widget.initialEmail);
+    _phone = TextEditingController(text: widget.initialPhone);
 
     _pw.addListener(_validatePw);
     _pw2.addListener(_validatePw);
-
-    if ((widget.parentUserId ?? '').isNotEmpty) {
-    _loadProfile();
-    }
-
   }
-
-  Future<void> _loadProfile() async {
-    setState(() { _loading = true; _err = null; });
-    try {
-      final p = await ParentApi.fetchParentProfile(widget.parentUserId!);
-      _name.text  = p.userName;
-      _userId.text = p.userId;
-      _email.text = p.userEmail ?? '';
-      _phone.text = p.userPhoneNum ?? '';
-    } catch (e) {
-      _err = e.toString();
-    } finally {
-      if (mounted) setState(() => _loading = false);
-    }
-  }
-
 
   @override
   void dispose() {
@@ -100,35 +86,21 @@ class _MyInfoEditPageState extends State<MyInfoEditPage> {
 
     setState(() => _saving = true);
 
-    try {
-      final uid = widget.parentUserId ?? _userId.text; // 보통 parentUserId 사용
-      await ParentApi.updateParentProfile(
-        userId: uid,
-        userEmail: _email.text.trim(),
-        userPhoneNum: _phone.text.trim(),
-        newPassword: _pw.text.isEmpty ? null : _pw.text,
-        newPasswordConfirm: _pw2.text.isEmpty ? null : _pw2.text,
-      );
-    } catch (e) {
-      if (mounted) {
-        setState(() => _saving = false);
-        _showSnack(e.toString());
-      }
-      return;
-  }
+    // TODO: 서버 연동 (/api/users/update 등) — payload 생성 후 요청
+    await Future.delayed(const Duration(milliseconds: 450));
 
     if (!mounted) return;
     setState(() => _saving = false);
 
-    _showSuccessDialogAndGoHome(); // 시안과 유사한 녹색 성공 박스, 이동 페이지(공지사항으로) 수정
+    _showSuccessDialog(); // 시안과 유사한 녹색 성공 박스
   }
 
   void _showSnack(String msg) {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
   }
 
-  Future<void> _showSuccessDialogAndGoHome() async {
-    await showDialog<void>(
+  void _showSuccessDialog() {
+    showDialog(
       context: context,
       barrierDismissible: true,
       builder:
@@ -196,18 +168,6 @@ class _MyInfoEditPageState extends State<MyInfoEditPage> {
             ),
           ),
     );
-
-
-    // ✅ 다이얼로그가 닫히면 “공지사항(첫 화면)”으로 이동 (스택 초기화)
-    if (!mounted) return;
-      Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute(builder: (_) => NoticePage(parentUserId: widget.parentUserId)),
-        (_) => false,
-      );
-
-    // 만약 “마이페이지(비번 게이트)”로만 돌아가고 싶다면 위 대신 아래 2줄 사용:
-    // Navigator.of(context).pop(); // 다이얼로그
-    // Navigator.of(context).pop(); // 수정 화면 → 마이페이지 게이트
   }
 
   @override
@@ -222,172 +182,177 @@ class _MyInfoEditPageState extends State<MyInfoEditPage> {
             constraints: const BoxConstraints(maxWidth: 980),
             child: Padding(
               padding: const EdgeInsets.fromLTRB(16, 20, 16, 16),
-              child: Column(
-                children: [
-                  // 상단 녹색 헤더바
-                  Container(
-                    height: 72,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF6DBF73),
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    alignment: Alignment.centerLeft,
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
-                    child: const Text(
-                      '마이 페이지',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 28,
-                        fontWeight: FontWeight.w900,
+              child: SingleChildScrollView(
+                // ✅ ← 추가
+                physics: const AlwaysScrollableScrollPhysics(),
+                child: Column(
+                  children: [
+                    // 상단 녹색 헤더바
+                    Container(
+                      height: 72,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF6DBF73),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      alignment: Alignment.centerLeft,
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      child: const Text(
+                        '마이 페이지',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 28,
+                          fontWeight: FontWeight.w900,
+                        ),
                       ),
                     ),
-                  ),
-                  const SizedBox(height: 16),
+                    const SizedBox(height: 16),
 
-                  // 본문 카드
-                  Card(
-                    elevation: 1,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                      side: const BorderSide(color: Color(0xFFE0E0E0)),
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(24),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // 왼쪽 프로필 블럭
-                          Column(
-                            children: [
-                              CircleAvatar(
-                                radius: 64,
-                                backgroundColor: Color(0xFFE0E0E0),
-                                child: Icon(
-                                  Icons.person,
-                                  size: 64,
+                    // 본문 카드
+                    Card(
+                      elevation: 1,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        side: const BorderSide(color: Color(0xFFE0E0E0)),
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.all(24),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // 왼쪽 프로필 블럭
+                            Column(
+                              children: const [
+                                CircleAvatar(
+                                  radius: 64,
+                                  backgroundColor: Color(0xFFE0E0E0),
+                                  child: Icon(
+                                    Icons.person,
+                                    size: 64,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                                SizedBox(height: 12),
+                                Text(
+                                  '부모 회원',
+                                  style: TextStyle(
+                                    color: Colors.black54,
+                                    fontSize: 13,
+                                  ),
+                                ),
+                                SizedBox(height: 6),
+                                Text(
+                                  '박성민 님',
+                                  style: TextStyle(
+                                    fontSize: 22,
+                                    fontWeight: FontWeight.w900,
+                                  ),
+                                ),
+                              ],
+                            ),
+
+                            const SizedBox(width: 28),
+
+                            // 오른쪽 입력 폼
+                            Expanded(
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 22,
+                                  vertical: 10,
+                                ),
+                                decoration: BoxDecoration(
+                                  border: Border.all(
+                                    color: const Color(0xFFDFDFDF),
+                                  ),
+                                  borderRadius: BorderRadius.circular(16),
                                   color: Colors.white,
                                 ),
-                              ),
-                              SizedBox(height: 12),
-                              Text(
-                                '부모 회원',
-                                style: TextStyle(
-                                  color: Colors.black54,
-                                  fontSize: 13,
-                                ),
-                              ),
-                              SizedBox(height: 6),
-                              Text(
-                                '${_name.text.trim().isEmpty ? '회원' : _name.text.trim()} 님',
-                                style: TextStyle(
-                                  fontSize: 22,
-                                  fontWeight: FontWeight.w900,
-                                ),
-                              ),
-                            ],
-                          ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    // 이름
+                                    _row('이름', _name, readOnly: true),
+                                    const SizedBox(height: 14),
 
-                          const SizedBox(width: 28),
+                                    // 아이디
+                                    _row('아이디', _userId, readOnly: true),
 
-                          // 오른쪽 입력 폼
-                          Expanded(
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 22,
-                                vertical: 10,
-                              ),
-                              decoration: BoxDecoration(
-                                border: Border.all(
-                                  color: const Color(0xFFDFDFDF),
-                                ),
-                                borderRadius: BorderRadius.circular(16),
-                                color: Colors.white,
-                              ),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  // 이름
-                                  _row('이름', _name, readOnly: true),
-                                  const SizedBox(height: 14),
-
-                                  // 아이디
-                                  _row('아이디', _userId, readOnly: true),
-
-                                  const SizedBox(height: 14),
-                                  _row(
-                                    '이메일',
-                                    _email,
-                                    keyboard: TextInputType.emailAddress,
-                                  ),
-                                  const SizedBox(height: 14),
-                                  _row(
-                                    '전화번호',
-                                    _phone,
-                                    keyboard: TextInputType.phone,
-                                  ),
-                                  const SizedBox(height: 14),
-                                  _row(
-                                    '비밀번호',
-                                    _pw,
-                                    obscure: true,
-                                    hint: '변경 시에만 입력해주세요.',
-                                    helper: '8자 이상 16자 이상',
-                                  ),
-                                  const SizedBox(height: 14),
-                                  _row(
-                                    '재입력',
-                                    _pw2,
-                                    obscure: true,
-                                    errorText: _pwMismatch ? '비밀번호가 달라요' : null,
-                                  ),
-                                  const SizedBox(height: 18),
-                                  Align(
-                                    alignment: Alignment.centerRight,
-                                    child: SizedBox(
-                                      width: 160,
-                                      height: 44,
-                                      child: ElevatedButton(
-                                        onPressed:
-                                            (_saving || _pwMismatch)
-                                                ? null
-                                                : _save,
-                                        style: ElevatedButton.styleFrom(
-                                          backgroundColor: const Color(
-                                            0xFF6DBF73,
-                                          ),
-                                          foregroundColor: Colors.white,
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(
-                                              10,
+                                    const SizedBox(height: 14),
+                                    _row(
+                                      '이메일',
+                                      _email,
+                                      keyboard: TextInputType.emailAddress,
+                                    ),
+                                    const SizedBox(height: 14),
+                                    _row(
+                                      '전화번호',
+                                      _phone,
+                                      keyboard: TextInputType.phone,
+                                    ),
+                                    const SizedBox(height: 14),
+                                    _row(
+                                      '비밀번호',
+                                      _pw,
+                                      obscure: true,
+                                      hint: '변경 시에만 입력해주세요.',
+                                      helper: '8자 이상 16자 이상',
+                                    ),
+                                    const SizedBox(height: 14),
+                                    _row(
+                                      '재입력',
+                                      _pw2,
+                                      obscure: true,
+                                      errorText:
+                                          _pwMismatch ? '비밀번호가 달라요' : null,
+                                    ),
+                                    const SizedBox(height: 18),
+                                    Align(
+                                      alignment: Alignment.centerRight,
+                                      child: SizedBox(
+                                        width: 160,
+                                        height: 44,
+                                        child: ElevatedButton(
+                                          onPressed:
+                                              (_saving || _pwMismatch)
+                                                  ? null
+                                                  : _save,
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor: const Color(
+                                              0xFF6DBF73,
+                                            ),
+                                            foregroundColor: Colors.white,
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(10),
                                             ),
                                           ),
+                                          child:
+                                              _saving
+                                                  ? const SizedBox(
+                                                    width: 18,
+                                                    height: 18,
+                                                    child: CircularProgressIndicator(
+                                                      strokeWidth: 2,
+                                                      valueColor:
+                                                          AlwaysStoppedAnimation(
+                                                            Colors.white,
+                                                          ),
+                                                    ),
+                                                  )
+                                                  : const Text('수정 완료'),
                                         ),
-                                        child:
-                                            _saving
-                                                ? const SizedBox(
-                                                  width: 18,
-                                                  height: 18,
-                                                  child: CircularProgressIndicator(
-                                                    strokeWidth: 2,
-                                                    valueColor:
-                                                        AlwaysStoppedAnimation(
-                                                          Colors.white,
-                                                        ),
-                                                  ),
-                                                )
-                                                : const Text('수정 완료'),
                                       ),
                                     ),
-                                  ),
-                                ],
+                                  ],
+                                ),
                               ),
                             ),
-                          ),
-                        ],
+                            const SizedBox(height: 40),
+                          ],
+                        ),
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),

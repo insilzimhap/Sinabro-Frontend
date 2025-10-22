@@ -1,22 +1,19 @@
-/**
- * @file lib/main/parentView/page/add_child_form.dart
- * 역할: 자녀 추가 화면. 
- *    - 아이디 중복 확인(permitAll).
- *    - 자녀 등록 요청 (JWT 필요, 부모 userId 포함).
- *    - 성공 시 다이얼로그 → "첫 로그인 안내 팝업" → 자녀 로그인 페이지로 이동.
- * @ 채영: JWT+api 연결 완료
+// lib/main/parentView/page/add_child_form.dart
+/*
+ * 파일: lib/main/parentView/page/add_child_form.dart
+ * 개요: 부모가 자녀 계정을 새로 등록하는 입력 폼 화면.
  */
-///
 
 import 'package:flutter/material.dart';
 import 'package:sinabro/main/parentView/layout/parent_layout.dart';
-import 'package:sinabro/common/auth_client.dart';  
-import 'package:sinabro/main/auth/authChild/login_child.dart';
 
 // ▼ 서버 호출용
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:sinabro/config.dart'; // baseUrl
+
+// ✅ 아이 로그인 페이지 (실제 위젯명이 다르면 아래 auth.LoginChild()만 바꿔주세요)
+import 'package:sinabro/main/auth/authChild/login_child.dart' as auth;
 
 class AddChildFormPage extends StatefulWidget {
   final String parentUserId; // 서버 연동에 사용
@@ -37,14 +34,11 @@ class _AddChildFormPageState extends State<AddChildFormPage> {
   bool _idChecked = false; // 아이디 중복 확인 완료 여부
   bool _isSaving = false; // 저장 로딩
 
-  String _dupMessage = '';
-  Color _dupColor = Colors.grey;
-
   // 생년월일 / 제한시간
   int _year = DateTime.now().year; // ← 기본값 즉시 설정
   int _month = 1;
   int _day = 1;
-  int _limitMinutes = 0; // 기본은 "제한 없음"
+  int _limitMinutes = 30;
 
   // 비밀번호 유효성
   bool get _pwValidLength => _pw.text.length >= 8 && _pw.text.length <= 16;
@@ -86,19 +80,17 @@ class _AddChildFormPageState extends State<AddChildFormPage> {
     }
 
     try {
-      // rest api
-      final uri = Uri.parse('$baseUrl/api/child/check-id')
-          .replace(queryParameters: {'childId': id});
-      final res = await AuthClient().get(uri); // permitAll → 토큰 스킵
+      // 예시: GET /api/children/check-id?childId={id}
+      final uri = Uri.parse(
+        '$baseUrl/api/children/check-id',
+      ).replace(queryParameters: {'childId': id});
+      final res = await http.get(uri);
 
       if (res.statusCode == 200) {
         final body = json.decode(res.body) as Map<String, dynamic>;
         final ok = (body['available'] == true);
         _idChecked = ok;
-        setState(() {
-          _dupMessage = ok ? '사용 가능한 아이디입니다.' : '이미 사용 중인 아이디입니다.';
-          _dupColor = ok ? Colors.green : Colors.red;
-        });
+        _toast(ok ? '사용 가능한 아이디입니다.' : '이미 사용 중인 아이디입니다.');
       } else {
         _idChecked = false;
         _toast('중복 확인 실패: ${res.statusCode}');
@@ -110,36 +102,30 @@ class _AddChildFormPageState extends State<AddChildFormPage> {
     setState(() {});
   }
 
-  // (서버) 자녀 생성
+  /// (서버) 자녀 생성
   Future<void> _submit() async {
     if (!_canSubmit) return;
     setState(() => _isSaving = true);
 
     try {
-      final uri = Uri.parse('$baseUrl/api/child/register');
+      // 예시: POST /api/parents/{parentUserId}/children
+      final uri = Uri.parse(
+        '$baseUrl/api/parents/${widget.parentUserId}/children',
+      );
 
       final birth =
           '${_year.toString().padLeft(4, '0')}-${_month.toString().padLeft(2, '0')}-${_day.toString().padLeft(2, '0')}';
 
-      // ✅ 현재 연도 기준 나이 계산
-      final now = DateTime.now();
-      int age = now.year - _year;
-      if (now.month < _month || (now.month == _month && now.day < _day)) {
-        age -= 1;
-      }
-
       final payload = {
         'childId': _id.text.trim(),
-        'childPw': _pw.text.trim(),
-        'childName': _name.text.trim(),
-        'childNickname': _nick.text.trim(),
-        'childBirth': birth, // "YYYY-MM-DD"
-        'childAge': age,
-        'timeLimitMinutes': _limitMinutes, // 30, 60, 90, 120
-        'userId': widget.parentUserId, // 부모 ID 필수
+        'password': _pw.text.trim(),
+        'name': _name.text.trim(),
+        'nickname': _nick.text.trim(),
+        'birthDate': birth, // "YYYY-MM-DD"
+        'limitMinutes': _limitMinutes, // 30, 60, 90, 120
       };
 
-      final res = await AuthClient().post(                     // ✅ http.post → AuthClient().post
+      final res = await http.post(
         uri,
         headers: {'Content-Type': 'application/json'},
         body: json.encode(payload),
@@ -147,15 +133,9 @@ class _AddChildFormPageState extends State<AddChildFormPage> {
 
       if (res.statusCode == 200 || res.statusCode == 201) {
         if (!mounted) return;
-        await _showSuccessDialog(childName: _name.text.trim());
-        if (!mounted) return;
-        // ① 첫 로그인 안내 팝업
-        await _showFirstLoginNotice();
-        // ② 자녀 로그인 페이지로 이동
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (_) => const LoginChildScreen()),
-        );
+        // ✅ 성공 팝업 → 2초 뒤 주의 팝업 자동 표출
+        await _showSuccessThenCaution(childName: _name.text.trim());
+        return; // 여기서 목록 pop 안함. 로그인 화면으로 이동
       } else {
         String msg = '등록 실패: ${res.statusCode}';
         try {
@@ -184,28 +164,6 @@ class _AddChildFormPageState extends State<AddChildFormPage> {
 
   void _toast(String msg) =>
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
-
-
-  /// "아이 첫 로그인 안내" 팝업 -> css 제대로 적용 필요
-  Future<void> _showFirstLoginNotice() {
-    return showDialog<void>(
-      context: context,
-      barrierDismissible: true,
-      builder: (_) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text('안내', style: TextStyle(fontWeight: FontWeight.bold)),
-        content: const Text(
-          '아이 첫 로그인은 부모가 옆에서 도와줘야 해요!\n레벨테스트가 있습니다!',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('확인'),
-          ),
-        ],
-      ),
-    );
-  }
 
   // ---------------- UI ----------------
 
@@ -253,18 +211,7 @@ class _AddChildFormPageState extends State<AddChildFormPage> {
                         ),
                         child: const Text('중복 확인'),
                       ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          _input(_id, hint: '아이 아이디를 입력하세요'),
-                          const SizedBox(height: 6), // ✅ 간격
-                          if (_dupMessage.isNotEmpty)
-                            Text(
-                              _dupMessage,
-                              style: TextStyle(fontSize: 12, color: _dupColor),
-                            ),
-                        ],
-                      ),
+                      child: _input(_id, hint: '아이 아이디를 입력하세요'),
                     ),
 
                     // 비밀번호
@@ -338,7 +285,7 @@ class _AddChildFormPageState extends State<AddChildFormPage> {
                                       color: Colors.white,
                                     ),
                                   )
-                                  : const Text('저장하기'),
+                                  : const Text('추가하기'),
                         ),
                       ),
                     ),
@@ -493,30 +440,25 @@ class _AddChildFormPageState extends State<AddChildFormPage> {
   }
 
   Widget _limitDropdown() {
-    final options = const [
-      {'label': '제한 없음', 'value': 0},
-      {'label': '30분', 'value': 30},
-      {'label': '1시간', 'value': 60},
-      {'label': '1시간 30분', 'value': 90},
-    ];
-
+    const options = [30, 60, 90, 120];
     return DropdownButtonFormField<int>(
       value: _limitMinutes,
-      items: options
-          .map(
-            (opt) => DropdownMenuItem<int>(
-              value: opt['value'] as int,
-              child: Text(opt['label'] as String),
-            ),
-          )
-          .toList(),
+      items:
+          options
+              .map((m) => DropdownMenuItem(value: m, child: Text('${m}분')))
+              .toList(),
       decoration: _fieldDecoration,
       onChanged: (v) => setState(() => _limitMinutes = v ?? _limitMinutes),
     );
   }
 
-  Future<void> _showSuccessDialog({required String childName}) {
-    return showDialog<void>(
+  // ---------- Dialogs ----------
+
+  /// 1) 추가 성공 팝업을 띄우고
+  /// 2) 2초 뒤 자동으로 '주의' 팝업 띄우기
+  Future<void> _showSuccessThenCaution({required String childName}) async {
+    // 성공 다이얼로그 표시
+    showDialog<void>(
       context: context,
       barrierDismissible: true,
       builder:
@@ -542,7 +484,9 @@ class _AddChildFormPageState extends State<AddChildFormPage> {
                     top: 0,
                     child: IconButton(
                       icon: const Icon(Icons.close, color: Color(0xFF2E7D32)),
-                      onPressed: () => Navigator.pop(context),
+                      onPressed:
+                          () =>
+                              Navigator.of(context, rootNavigator: true).pop(),
                     ),
                   ),
                   Column(
@@ -584,13 +528,104 @@ class _AddChildFormPageState extends State<AddChildFormPage> {
             ),
           ),
     );
+
+    // 2초 대기 후 '주의' 팝업
+    await Future<void>.delayed(const Duration(seconds: 2));
+    if (!mounted) return;
+    _showCautionDialog();
+  }
+
+  /// '주의' 팝업: 예 → 아이 로그인 화면으로 이동
+  void _showCautionDialog() {
+    showDialog<void>(
+      context: context,
+      barrierDismissible: true, // 바깥 탭으로 닫기 허용
+      builder:
+          (_) => Dialog(
+            insetPadding: const EdgeInsets.symmetric(
+              horizontal: 32,
+              vertical: 24,
+            ),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Container(
+              decoration: BoxDecoration(
+                color: const Color(0xFFE7F6E9),
+                border: Border.all(color: const Color(0xFF53A866), width: 3),
+                borderRadius: BorderRadius.circular(16),
+              ),
+              padding: const EdgeInsets.fromLTRB(20, 18, 20, 24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // 상단 이미지 자리(회색 박스)
+                  Container(
+                    width: 260,
+                    height: 120,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFDDE6D6),
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    alignment: Alignment.center,
+                    child: const Text(
+                      '주의\n이미지',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: Color(0xFF6B5A51),
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  const Text(
+                    '이 이후부터는 아이의 레벨테스트입니다\n부모가 도와주어 레벨테스트를 끝낼 수 있도록 해주세요',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: Color(0xFF6B5A51),
+                      height: 1.5,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  SizedBox(
+                    width: 120,
+                    height: 44,
+                    child: ElevatedButton(
+                      onPressed: () {
+                        // 모든 다이얼로그 닫기
+                        Navigator.of(context, rootNavigator: true).pop();
+                        Navigator.of(context, rootNavigator: true).maybePop();
+
+                        // ✅ 아이 로그인 화면으로 이동
+                        Navigator.pushReplacement(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const auth.LoginChildScreen(),
+                          ),
+                        );
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF59B35A),
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(22),
+                        ),
+                      ),
+                      child: const Text('예'),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+    );
   }
 }
 
-// 섹션 타이틀
 class _SectionTitle extends StatelessWidget {
   final String text;
-  const _SectionTitle(this.text);
+  const _SectionTitle(this.text, {super.key});
 
   @override
   Widget build(BuildContext context) {

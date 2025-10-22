@@ -87,7 +87,7 @@ class _AppleGardenState extends State<AppleGarden> {
         page = CandyWritePage(childId: widget.childId);
         break;
 
-      // level2
+      // ─────────────── level2 ───────────────
       case 4:
         page = Writing21Page(childId: widget.childId);
         break;
@@ -101,18 +101,18 @@ class _AppleGardenState extends State<AppleGarden> {
         page = Writing24Page(childId: widget.childId);
         break;
 
-      // level3
+      // ─────────────── level3 ───────────────
       case 8:
-        page = Writing3_IntroPage(childId: widget.childId);
+        page = Writing3_IntroPage(childId: widget.childId); // ✅ 동물 인트로
         break;
       case 9:
-        page = Writing3_2_IntroPage(childId: widget.childId);
+        page = Writing3_2_IntroPage(childId: widget.childId); // ✅ 과일 인트로
         break;
       case 10:
-        page = Writing3_3_IntroPage(childId: widget.childId);
+        page = Writing3_3_IntroPage(childId: widget.childId); // ✅ 채소 인트로
         break;
       case 11:
-        page = w34.Writing3_4_IntroPage(childId: widget.childId);
+        page = w34.Writing3_4_IntroPage(childId: widget.childId); // ✅ 신체 인트로
         break;
 
       default:
