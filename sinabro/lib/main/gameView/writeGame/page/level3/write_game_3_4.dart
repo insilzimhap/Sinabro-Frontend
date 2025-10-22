@@ -7,6 +7,11 @@ import 'package:sinabro/main/gameView/writeGame/page/write_game_main3.dart';
 import 'package:sinabro/selvy_example_view/selvy_service.dart'
     show SelvyRecognizer;
 
+// 매핑
+import 'package:sinabro/main/gameView/writeGame/data/wg_question_map.dart';
+// API 자리(백엔드 구현 후 주석 해제)
+// import 'package:sinabro/main/studyView/writeGame/api/write_game_api.dart';
+
 const _IMG_DIR = 'assets/img/contents/gameWrite/';
 
 // 아웃트로 배경
@@ -20,7 +25,7 @@ const _BALLOON = '${_IMG_DIR}text_balloon1.png';
 
 class _BodyItem {
   final String key;
-  final String nameKo;
+  final String nameKo; // 매핑 key로 사용
   final String image;
   final List<String> syllables;
   final String? audio;
@@ -31,6 +36,8 @@ class _BodyItem {
     required this.syllables,
     this.audio,
   });
+
+  String get word => syllables.join();
 }
 
 const List<_BodyItem> _POOL = [
@@ -160,6 +167,32 @@ class _WriteGameLevel3_4PageState extends State<WriteGameLevel3_4Page> {
         break;
       }
     }
+
+    // 매핑에서 wg_question_id 조회
+    String questionId;
+    try {
+      questionId = requireWgQuestionId(
+        bodyQuestionMap,
+        current.nameKo,
+        ctx: '3-4',
+      );
+    } catch (e) {
+      debugPrint('[3-4] mapping not found for "${current.nameKo}": $e');
+      questionId = 'UNKNOWN';
+    }
+
+    // API 연동은 백엔드 파일 완성 후 주석 해제
+    // try {
+    //   await WriteGameApi.sendChoice(
+    //     resultId: '<result-id-from-your-flow>',
+    //     questionId: questionId,
+    //     childWrittenText: results.join(),
+    //     isCorrect: isCorrect,
+    //   );
+    // } catch (e) {
+    //   debugPrint('[3-4] sendChoice error: $e');
+    // }
+
     _results.add(isCorrect);
     if (!mounted) return;
 
@@ -190,7 +223,6 @@ class _WriteGameLevel3_4PageState extends State<WriteGameLevel3_4Page> {
     final success = correctCount >= 3;
 
     if (success) {
-      // 1) 성공 배경 먼저
       showDialog<void>(
         context: context,
         barrierDismissible: false,
@@ -200,7 +232,6 @@ class _WriteGameLevel3_4PageState extends State<WriteGameLevel3_4Page> {
       if (!mounted) return;
       Navigator.of(context, rootNavigator: true).pop();
 
-      // 2) 성공 팝업
       showDialog<void>(
         context: context,
         barrierDismissible: false,
@@ -220,7 +251,6 @@ class _WriteGameLevel3_4PageState extends State<WriteGameLevel3_4Page> {
         ),
       );
     } else {
-      // 실패
       await showDialog<void>(
         context: context,
         barrierDismissible: false,
@@ -233,7 +263,12 @@ class _WriteGameLevel3_4PageState extends State<WriteGameLevel3_4Page> {
                 child: ElevatedButton(
                   onPressed: () {
                     Navigator.of(context, rootNavigator: true).pop();
-                    _resetGame();
+                    Navigator.of(context).pushReplacement(
+                      MaterialPageRoute(
+                        builder:
+                            (_) => WriteGameMain3Page(childId: widget.childId),
+                      ),
+                    );
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFFE7D3A6),

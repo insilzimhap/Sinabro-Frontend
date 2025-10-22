@@ -7,9 +7,14 @@ import 'package:sinabro/main/gameView/writeGame/page/write_game_main3.dart';
 import 'package:sinabro/selvy_example_view/selvy_service.dart'
     show SelvyRecognizer;
 
+// 매핑
+import 'package:sinabro/main/gameView/writeGame/data/wg_question_map.dart';
+// API 자리(백엔드에서 구현 예정이므로 호출은 주석 처리)
+// import 'package:sinabro/main/studyView/writeGame/api/write_game_api.dart';
+
 const _IMG_DIR = 'assets/img/contents/gameWrite/';
 
-// ✅ 아웃트로 리소스 (3-1과 동일)
+// ✅ 아웃트로 리소스
 const _OUTRO_SUCCESS_BG = '${_IMG_DIR}outro_success.png';
 const _OUTRO_FAIL_BG = '${_IMG_DIR}outro_fail.png';
 const _CLAP = '${_IMG_DIR}clap.png';
@@ -129,6 +134,33 @@ class _WriteGameLevel3_3PageState extends State<WriteGameLevel3_3Page> {
   void _onRecognizeWord(String recognized) async {
     final mine = _normalize(recognized);
     final isCorrect = mine == _targetWord;
+
+    // 매핑에서 wg_question_id 조회
+    // 예: vegetableQuestionMap['감자'] -> WG_Q10_01
+    String questionId;
+    try {
+      questionId = requireWgQuestionId(
+        vegetableQuestionMap,
+        _targetWord,
+        ctx: '3-3',
+      );
+    } catch (e) {
+      // 매핑 누락 시에도 게임은 계속 흘러가게만 처리
+      debugPrint('[3-3] mapping not found for "$_targetWord": $e');
+      questionId = 'UNKNOWN';
+    }
+
+    // API 연동은 백엔드 파일 완성 후 주석 해제
+    // try {
+    //   await WriteGameApi.sendChoice(
+    //     resultId: '<result-id-from-your-flow>',
+    //     questionId: questionId,
+    //     childWrittenText: mine,
+    //     isCorrect: isCorrect,
+    //   );
+    // } catch (e) {
+    //   debugPrint('[3-3] sendChoice error: $e');
+    // }
 
     _results.add(isCorrect);
     if (!mounted) return;
