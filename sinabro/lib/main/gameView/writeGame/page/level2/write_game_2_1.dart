@@ -7,7 +7,8 @@ import 'package:sinabro/selvy_example_view/selvy_service.dart'
     show SelvyRecognizer;
 
 // ▼ 추가: 매핑/API
-import 'package:sinabro/main/studyView/writeGame/data/wg_question_map.dart';
+import 'package:sinabro/main/gameView/writeGame/data/wg_question_map.dart'
+    as WG;
 import 'package:sinabro/main/gameView/writeGame/api/write_game_api.dart';
 
 /// 에셋 경로
@@ -289,8 +290,8 @@ class _WriteGameLevel2_1PageState extends State<WriteGameLevel2_1Page> {
     required bool isCorrect,
   }) async {
     if (_resultId == null) return; // 방어
-    final questionId = requireWgQuestionId(
-      consonantQuestionMap,
+    final questionId = WG.requireWgQuestionId(
+      WG.consonantQuestionMap,
       shownChar,
       ctx: 'Stage2-1',
     );

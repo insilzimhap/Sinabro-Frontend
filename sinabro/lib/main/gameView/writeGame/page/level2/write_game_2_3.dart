@@ -7,7 +7,8 @@ import 'package:sinabro/selvy_example_view/selvy_service.dart'
     show SelvyRecognizer;
 
 // ▼ 추가: 매핑/API
-import 'package:sinabro/main/studyView/writeGame/data/wg_question_map.dart';
+import 'package:sinabro/main/gameView/writeGame/data/wg_question_map.dart'
+    as WG;
 import 'package:sinabro/main/gameView/writeGame/api/write_game_api.dart';
 
 /// 고정 사운드 아이콘 경로
@@ -433,8 +434,10 @@ class _WriteGameLevel2_3PageState extends State<WriteGameLevel2_3Page> {
   }) async {
     if (_resultId == null) return;
     final map =
-        type == _TargetType.consonant ? consonantQuestionMap : vowelQuestionMap;
-    final qid = requireWgQuestionId(map, shownChar, ctx: 'Stage2-3');
+        type == _TargetType.consonant
+            ? WG.consonantQuestionMap
+            : WG.vowelQuestionMap;
+    final qid = WG.requireWgQuestionId(map, shownChar, ctx: 'Stage2-3');
 
     try {
       await WriteGameApi.sendChoice(
