@@ -89,6 +89,7 @@ class WriteGameLevel3_1Page extends StatefulWidget {
 }
 
 class _WriteGameLevel3_1PageState extends State<WriteGameLevel3_1Page> {
+  final _sw = Stopwatch();
   final _canvasKey = GlobalKey<WritingCanvasState>();
   late List<_AnimalItem> _problems;
   int _index = 0;
@@ -113,6 +114,7 @@ class _WriteGameLevel3_1PageState extends State<WriteGameLevel3_1Page> {
         childId: widget.childId,
         stageCode: 'FR_WG_008',
       );
+      _sw.start();
       _resetGame();
     } catch (_) {
       if (mounted) Navigator.of(context).pop();
@@ -163,7 +165,12 @@ class _WriteGameLevel3_1PageState extends State<WriteGameLevel3_1Page> {
   Future<bool> _completeAndGetSuccess() async {
     if (_resultId == null) return false;
     try {
-      final res = await WriteGameApi.complete(resultId: _resultId!);
+      final secs = _sw.elapsed.inSeconds; // ✅ 경과시간
+      final res = await WriteGameApi.complete(
+        resultId: _resultId!,
+        totalQuestions: _problems.length, // ✅ 4 문항
+        timeSpentSecs: secs, // ✅ 소요시간
+      );
       return res.success == true;
     } catch (_) {
       return false;

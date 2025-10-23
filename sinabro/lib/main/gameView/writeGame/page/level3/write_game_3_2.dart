@@ -173,8 +173,12 @@ class _WriteGameLevel3_2PageState extends State<WriteGameLevel3_2Page> {
           await WriteGameApi.complete(resultId: _resultId!);
         }
       } catch (_) {}
-      final correct = _results.where((e) => e).length;
-      await _showEndSequence(correct);
+      final apiRes =
+          (_resultId != null)
+              ? await WriteGameApi.complete(resultId: _resultId!)
+              : null;
+      final success = apiRes?.success ?? (_results.where((e) => e).length >= 3);
+      await _showEndSequence(success ? 4 : 0); // 기존 시그니처 유지용
     }
   }
 

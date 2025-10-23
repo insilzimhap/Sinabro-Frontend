@@ -2,10 +2,27 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-// 메인 이동은 지금 멈춰두므로 import 유지만
 import 'package:sinabro/main/gameView/writeGame/page/write_game_main.dart';
+import 'package:sinabro/main/gameView/writeGame/api/write_game_api.dart';
 
 enum _Scene { swim, balloon, outro }
+
+// ───────────────────────── 레이아웃/튜닝 상수 ─────────────────────────
+const double kSwimmersWidth = 350;
+const double kSwimmersTop = 80;
+const double kSwimmersBottom = 40;
+
+const double kGuideYOffset = 200;
+const double kSwimLengthRatio = 0.78;
+const double kSwimRowGap = 190.0;
+
+const double kBalloonImageTop = 130;
+const double kBalloonImageHeight = 270;
+
+const double kStringTopOffset = 8;
+const double kStringBottomPad = 120;
+
+const List<double> kBalloonRatios = [0.10, 0.30, 0.50, 0.70, 0.90];
 
 class WriteGameLevel1_2Page extends StatefulWidget {
   const WriteGameLevel1_2Page({super.key, required this.childId});
@@ -14,29 +31,6 @@ class WriteGameLevel1_2Page extends StatefulWidget {
   @override
   State<WriteGameLevel1_2Page> createState() => _WriteGameLevel1_2PageState();
 }
-
-// ───────────────────────── 레이아웃/튜닝 상수 ─────────────────────────
-
-// (씬 A) 수영선수 이미지 영역
-const double kSwimmersWidth = 350;
-const double kSwimmersTop = 80;
-const double kSwimmersBottom = 40;
-
-// (씬 A) 물결(회색선) 전체 아래로 내리는 오프셋 + 길이 비율 + 줄 간격
-const double kGuideYOffset = 200;
-const double kSwimLengthRatio = 0.78;
-const double kSwimRowGap = 190.0;
-
-// (씬 B) 풍선 이미지 위치/크기
-const double kBalloonImageTop = 130;
-const double kBalloonImageHeight = 270;
-
-// (씬 B) 풍선 끈(회색선) 세로 범위
-const double kStringTopOffset = 8;
-const double kStringBottomPad = 120;
-
-// (씬 B) 풍선 X 위치(비율)
-const List<double> kBalloonRatios = [0.10, 0.30, 0.50, 0.70, 0.90];
 
 class _WriteGameLevel1_2PageState extends State<WriteGameLevel1_2Page> {
   _Scene scene = _Scene.swim;
@@ -52,6 +46,11 @@ class _WriteGameLevel1_2PageState extends State<WriteGameLevel1_2Page> {
   static const double hitRatio = 0.70;
   static const double coverageRatio = 0.70;
 
+  // API/시간
+  String? _resultId;
+  final _sw = Stopwatch();
+  bool _completing = false;
+
   int get _lineCount =>
       scene == _Scene.swim ? 3 : (scene == _Scene.balloon ? 5 : 0);
   bool get _allPassed => passed.every((e) => e);
@@ -60,17 +59,42 @@ class _WriteGameLevel1_2PageState extends State<WriteGameLevel1_2Page> {
   void initState() {
     super.initState();
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+    _startGame();
   }
 
   @override
   void dispose() {
+    _sw.stop();
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
     super.dispose();
   }
 
-  // ───────────── 가이드 생성 (폴리라인) ─────────────
+  Future<void> _startGame() async {
+    try {
+      _resultId = await WriteGameApi.start(
+        childId: widget.childId,
+        stageCode: 'FR_WG_002', // Level1-2 코드
+      );
+    } catch (_) {
+      _resultId = null;
+    }
+    _sw.start();
+  }
 
-  // (씬 A) 수영 지그재그 3줄
+  Future<void> _completeGame() async {
+    if (_resultId == null || _completing) return;
+    _completing = true;
+    _sw.stop();
+    try {
+      await WriteGameApi.complete(
+        resultId: _resultId!,
+        totalQuestions: 3 + 5,
+        timeSpentSecs: _sw.elapsed.inSeconds,
+      );
+    } catch (_) {}
+  }
+
+  // ───────────── 가이드 생성 (폴리라인) ─────────────
   List<_GuidePath> _buildSwimGuides(Size size) {
     const double left = 140.0;
     const double right = 24.0;
@@ -86,11 +110,8 @@ class _WriteGameLevel1_2PageState extends State<WriteGameLevel1_2Page> {
     final out = <_GuidePath>[];
     for (int i = 0; i < 3; i++) {
       final double yBase = top0 + i * kSwimRowGap + kGuideYOffset;
-
-      // 지그재그 톱니 개수/높이(줄마다 살짝 다르게 변주)
-      final int teeth = 8 + i; // 좌→우로 꼭짓점 개수
+      final int teeth = 8 + i;
       final double amp = 50.0;
-
       final pts = _buildZigZag(
         startX: startX,
         endX: endX,
@@ -103,7 +124,6 @@ class _WriteGameLevel1_2PageState extends State<WriteGameLevel1_2Page> {
     return out;
   }
 
-  /// 지그재그 폴리라인 생성
   List<Offset> _buildZigZag({
     required double startX,
     required double endX,
@@ -123,10 +143,8 @@ class _WriteGameLevel1_2PageState extends State<WriteGameLevel1_2Page> {
     return pts;
   }
 
-  // (씬 B) 풍선 끈 5줄
   List<_GuidePath> _buildBalloonGuides(Size size) {
     final double imgBottom = kBalloonImageTop + kBalloonImageHeight;
-
     final double stringStartY = imgBottom + kStringTopOffset;
     final double stringEndY = size.height - kStringBottomPad;
 
@@ -156,7 +174,6 @@ class _WriteGameLevel1_2PageState extends State<WriteGameLevel1_2Page> {
   }
 
   // ───────────── 입력 처리 ─────────────
-
   void _onPanStart(DragStartDetails d, Size size) {
     if (_allPassed || scene == _Scene.outro) return;
 
@@ -187,7 +204,7 @@ class _WriteGameLevel1_2PageState extends State<WriteGameLevel1_2Page> {
     setState(() {});
   }
 
-  void _onPanEnd(Size size) {
+  Future<void> _onPanEnd(Size size) async {
     if (activeLine == null || _allPassed || scene == _Scene.outro) return;
 
     final guides =
@@ -204,7 +221,6 @@ class _WriteGameLevel1_2PageState extends State<WriteGameLevel1_2Page> {
       setState(() {});
       if (_allPassed) {
         if (scene == _Scene.swim) {
-          // 수영 → 풍선
           Future.delayed(const Duration(milliseconds: 350), () {
             if (!mounted) return;
             setState(() {
@@ -213,7 +229,9 @@ class _WriteGameLevel1_2PageState extends State<WriteGameLevel1_2Page> {
             });
           });
         } else {
-          // 풍선까지 완료 → 아웃트로로 전환(팝업/이동 멈춤)
+          // 풍선 완료 → 서버 완료 기록 후 아웃트로
+          await _completeGame();
+          if (!mounted) return;
           setState(() => scene = _Scene.outro);
         }
       }
@@ -224,7 +242,6 @@ class _WriteGameLevel1_2PageState extends State<WriteGameLevel1_2Page> {
     }
   }
 
-  // 폴리라인 채점
   bool _gradeStroke(List<Offset> pts, _GuidePath guide) {
     if (pts.length < 6) return false;
 
@@ -268,18 +285,15 @@ class _WriteGameLevel1_2PageState extends State<WriteGameLevel1_2Page> {
                 if (scene == _Scene.swim) _buildSceneSwim(size),
                 if (scene == _Scene.balloon) _buildSceneBalloon(size),
 
-                // 아웃트로: 애니메이션만 실행하고 그대로 멈춤
-                // 아웃트로: 애니메이션 끝 → 팝업 → 메인 이동
                 if (scene == _Scene.outro)
                   Positioned.fill(
                     child: OutroOverlay(
-                      autoFinish: true, // ✅ 완료 시 onFinished 호출
-                      onFinished: () => _showClearPopup(context), // ✅ 팝업 호출
+                      autoFinish: true,
+                      onFinished: () => _showClearPopup(context),
                       config: OutroConfig(
                         noteWidthRatio: 0.86,
                         noteAspect: 0.72,
                         backgroundColor: Colors.white,
-                        // row1/row2 설정 그대로…
                         row1: const OutroRowConfig(
                           strikeUseAngle: true,
                           strikeCenterPct: Offset(0.36, 0.33),
@@ -320,7 +334,6 @@ class _WriteGameLevel1_2PageState extends State<WriteGameLevel1_2Page> {
                     ),
                   ),
 
-                // 현재 스트로크
                 if (stroke.isNotEmpty && scene != _Scene.outro)
                   CustomPaint(
                     size: size,
@@ -374,7 +387,7 @@ class _WriteGameLevel1_2PageState extends State<WriteGameLevel1_2Page> {
           top: kBalloonImageTop,
           height: kBalloonImageHeight,
           child: Transform.scale(
-            scaleX: 1.18, // 가로 살짝 넓게
+            scaleX: 1.18,
             child: Image.asset(
               'assets/img/contents/gameWrite/balloon.png',
               fit: BoxFit.contain,
@@ -390,7 +403,6 @@ class _WriteGameLevel1_2PageState extends State<WriteGameLevel1_2Page> {
     );
   }
 
-  // 완료 팝업(2초 유지 후 메인 허브로 이동)
   void _showClearPopup(BuildContext context) {
     showDialog(
       context: context,
@@ -415,7 +427,7 @@ class _WriteGameLevel1_2PageState extends State<WriteGameLevel1_2Page> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Image.asset(
-                    'assets/img/contents/gameWrite/stamp.png', // 스탬프 이미지
+                    'assets/img/contents/gameWrite/stamp.png',
                     width: 84,
                     fit: BoxFit.contain,
                   ),
@@ -437,7 +449,7 @@ class _WriteGameLevel1_2PageState extends State<WriteGameLevel1_2Page> {
 
     Future.delayed(const Duration(seconds: 2), () {
       if (!mounted) return;
-      Navigator.of(context).pop(); // 팝업 닫기
+      Navigator.of(context).pop();
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(
           builder: (_) => WriteGameMainPage(childId: widget.childId),
@@ -448,40 +460,31 @@ class _WriteGameLevel1_2PageState extends State<WriteGameLevel1_2Page> {
 }
 
 // ───────────────────── Outro Config ─────────────────────
-
 class OutroRowConfig {
   const OutroRowConfig({
-    // 취소선
     this.strikeColor = const Color(0xFFD92B2B),
     this.strikeWidth = 8.0,
-    // A) 시작/끝 좌표 모드
     this.strikeStartPct = const Offset(0.23, 0.31),
     this.strikeEndPct = const Offset(0.82, 0.31),
-    // B) 각도/길이 모드
     this.strikeUseAngle = false,
     this.strikeCenterPct = const Offset(0.52, 0.36),
     this.strikeAngleDeg = -18,
     this.strikeLengthRatio = 0.65,
-
-    // 체크
     this.checkColor = const Color(0xFFD92B2B),
     this.checkStrokeWidth = 6.0,
     this.checkCenterPct = const Offset(0.195, 0.445),
     this.checkSizePx = 34.0,
     this.checkRotationDeg = 0.0,
-
-    // 도장
     this.stampAsset = 'assets/img/contents/gameWrite/stamp.png',
     this.stampPosPct = const Offset(0.705, 0.14),
     this.stampDropPx = const Offset(120, -140),
     this.stampStartScale = 0.10,
     this.stampFinalScale = 1.00,
     this.stampRotationDeg = 0.0,
-    this.stampWidthRatio, // noteW * ratio (우선)
-    this.stampSizePx, // px로 강제 지정하고 싶으면 사용
+    this.stampWidthRatio,
+    this.stampSizePx,
   });
 
-  // 취소선
   final Color strikeColor;
   final double strikeWidth;
   final Offset strikeStartPct;
@@ -491,14 +494,12 @@ class OutroRowConfig {
   final double strikeAngleDeg;
   final double strikeLengthRatio;
 
-  // 체크
   final Color checkColor;
   final double checkStrokeWidth;
   final Offset checkCenterPct;
   final double checkSizePx;
   final double checkRotationDeg;
 
-  // 도장
   final String stampAsset;
   final Offset stampPosPct;
   final Offset stampDropPx;
@@ -554,11 +555,10 @@ class OutroOverlay extends StatefulWidget {
 
 class _OutroOverlayState extends State<OutroOverlay>
     with TickerProviderStateMixin {
-  late final AnimationController _fadeCtrl; // 배경/노트 페이드
-  late final AnimationController _seqCtrl; // 순차 애니메이션
+  late final AnimationController _fadeCtrl;
+  late final AnimationController _seqCtrl;
   late final Animation<double> _fade;
 
-  // Row1: 0.00~0.50, Row2: 0.50~1.00
   late final Animation<double> _tStrike1;
   late final Animation<double> _tCheck1;
   late final Animation<double> _tStamp1;
@@ -638,7 +638,6 @@ class _OutroOverlayState extends State<OutroOverlay>
               final noteH = noteW * cfg.noteAspect;
               final noteSize = Size(noteW, noteH);
 
-              // 유틸: 취소선 좌표 계산
               OffsetPair _strikePoints(OutroRowConfig rc) {
                 if (rc.strikeUseAngle) {
                   final center = cfg._toNoteXY(noteSize, rc.strikeCenterPct);
@@ -653,13 +652,11 @@ class _OutroOverlayState extends State<OutroOverlay>
                 );
               }
 
-              // row1 좌표
               final r1 = cfg.row1;
               final r1Strike = _strikePoints(r1);
               final r1CheckCenter = cfg._toNoteXY(noteSize, r1.checkCenterPct);
               final r1StampPos = cfg._toNoteXY(noteSize, r1.stampPosPct);
 
-              // row2 좌표
               final r2 = cfg.row2;
               final r2Strike = _strikePoints(r2);
               final r2CheckCenter = cfg._toNoteXY(noteSize, r2.checkCenterPct);
@@ -671,12 +668,11 @@ class _OutroOverlayState extends State<OutroOverlay>
                 child: Stack(
                   clipBehavior: Clip.none,
                   children: [
-                    // 노트 배경
                     Positioned.fill(
                       child: Image.asset(cfg.noteAsset, fit: BoxFit.contain),
                     ),
 
-                    // ─ Row1: 취소선 → 체크 → 도장
+                    // Row1
                     AnimatedBuilder(
                       animation: _tStrike1,
                       builder:
@@ -717,7 +713,6 @@ class _OutroOverlayState extends State<OutroOverlay>
                         ).transform(_tStamp1.value);
                         final rot = r1.stampRotationDeg * math.pi / 180.0;
 
-                        // ← 여기만 변경
                         final double? w1 =
                             r1.stampSizePx ??
                             (r1.stampWidthRatio != null
@@ -726,7 +721,7 @@ class _OutroOverlayState extends State<OutroOverlay>
 
                         final img = Image.asset(
                           r1.stampAsset,
-                          width: w1, // null이면 원본 크기 사용
+                          width: w1,
                           fit: BoxFit.contain,
                         );
 
@@ -744,7 +739,7 @@ class _OutroOverlayState extends State<OutroOverlay>
                       },
                     ),
 
-                    // ─ Row2: 취소선 → 체크 → 도장
+                    // Row2
                     AnimatedBuilder(
                       animation: _tStrike2,
                       builder:
@@ -772,7 +767,6 @@ class _OutroOverlayState extends State<OutroOverlay>
                             ),
                           ),
                     ),
-                    // ─ Row2: 취소선 → 체크 → 도장
                     AnimatedBuilder(
                       animation: _tStamp2,
                       builder: (_, __) {
@@ -786,7 +780,6 @@ class _OutroOverlayState extends State<OutroOverlay>
                         ).transform(_tStamp2.value);
                         final rot = r2.stampRotationDeg * math.pi / 180.0;
 
-                        // ✅ 폭 보장: px → ratio → 기본값(20%) 순
                         final double w2 =
                             r2.stampSizePx ??
                             (r2.stampWidthRatio != null
@@ -807,11 +800,7 @@ class _OutroOverlayState extends State<OutroOverlay>
                               angle: rot,
                               child: Transform.scale(
                                 scale: scale,
-                                child: SizedBox(
-                                  // ✅ 레이아웃 상 사이즈를 확실히 잡아줌
-                                  width: w2,
-                                  child: img,
-                                ),
+                                child: SizedBox(width: w2, child: img),
                               ),
                             ),
                           ),
@@ -835,7 +824,6 @@ class OffsetPair {
 }
 
 // ───────────────────── 유틸/페인터 ─────────────────────
-
 class _StrikePainter extends CustomPainter {
   _StrikePainter({
     required this.start,
@@ -901,12 +889,10 @@ class _CheckPainter extends CustomPainter {
           ..strokeCap = StrokeCap.round
           ..strokeJoin = StrokeJoin.round;
 
-    // 기본(미회전) 상대 좌표
     final ra = Offset(-0.24 * size, 0.06 * size);
     final rb = Offset(-0.06 * size, 0.35 * size);
     final rc = Offset(0.47 * size, -0.24 * size);
 
-    // 회전 적용
     final rad = rotationDeg * math.pi / 180.0;
     Offset rot(Offset v) => Offset(
       v.dx * math.cos(rad) - v.dy * math.sin(rad),
@@ -1054,9 +1040,7 @@ class _GuidePainter extends CustomPainter {
       while (t < segLen) {
         final len = (draw ? dash : gap) - remain;
         final step = math.min(len, segLen - t);
-        if (draw) {
-          c.drawLine(a + dir * t, a + dir * (t + step), p);
-        }
+        if (draw) c.drawLine(a + dir * t, a + dir * (t + step), p);
         t += step;
         remain = 0;
         if (step >= len) draw = !draw;

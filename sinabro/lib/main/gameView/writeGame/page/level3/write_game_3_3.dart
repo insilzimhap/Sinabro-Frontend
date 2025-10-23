@@ -10,7 +10,7 @@ import 'package:sinabro/selvy_example_view/selvy_service.dart'
 // 매핑
 import 'package:sinabro/main/gameView/writeGame/data/wg_question_map.dart';
 // API 자리(백엔드에서 구현 예정이므로 호출은 주석 처리)
-// import 'package:sinabro/main/studyView/writeGame/api/write_game_api.dart';
+import 'package:sinabro/main/gameView/writeGame/api/write_game_api.dart';
 
 const _IMG_DIR = 'assets/img/contents/gameWrite/';
 
@@ -96,6 +96,7 @@ class _WriteGameLevel3_3PageState extends State<WriteGameLevel3_3Page> {
   late List<_VegItem> _problems;
   int _index = 0;
   final List<bool> _results = [];
+  String? _resultId;
 
   _VegItem get current => _problems[_index];
   String get _targetWord => current.word;
@@ -103,6 +104,18 @@ class _WriteGameLevel3_3PageState extends State<WriteGameLevel3_3Page> {
   @override
   void initState() {
     super.initState();
+    _startGame();
+  }
+
+  Future<void> _startGame() async {
+    try {
+      _resultId = await WriteGameApi.start(
+        childId: widget.childId,
+        stageCode: 'FR_WG_010', // 채소 스테이지 코드
+      );
+    } catch (_) {
+      _resultId = null; // 오프라인이어도 진행은 하게 둠
+    }
     _resetGame();
   }
 
@@ -136,31 +149,31 @@ class _WriteGameLevel3_3PageState extends State<WriteGameLevel3_3Page> {
     final isCorrect = mine == _targetWord;
 
     // 매핑에서 wg_question_id 조회
-    // 예: vegetableQuestionMap['감자'] -> WG_Q10_01
     String questionId;
     try {
       questionId = requireWgQuestionId(
         vegetableQuestionMap,
         _targetWord,
-        ctx: '3-3',
+        ctx: 'Stage3-3',
       );
     } catch (e) {
-      // 매핑 누락 시에도 게임은 계속 흘러가게만 처리
       debugPrint('[3-3] mapping not found for "$_targetWord": $e');
       questionId = 'UNKNOWN';
     }
 
-    // API 연동은 백엔드 파일 완성 후 주석 해제
-    // try {
-    //   await WriteGameApi.sendChoice(
-    //     resultId: '<result-id-from-your-flow>',
-    //     questionId: questionId,
-    //     childWrittenText: mine,
-    //     isCorrect: isCorrect,
-    //   );
-    // } catch (e) {
-    //   debugPrint('[3-3] sendChoice error: $e');
-    // }
+    // ✅ 서버로 선택 결과 전송
+    try {
+      if (_resultId != null && questionId != 'UNKNOWN') {
+        await WriteGameApi.sendChoice(
+          resultId: _resultId!,
+          questionId: questionId,
+          childWrittenText: mine,
+          isCorrect: isCorrect,
+        );
+      }
+    } catch (e) {
+      debugPrint('[3-3] sendChoice error: $e');
+    }
 
     _results.add(isCorrect);
     if (!mounted) return;
@@ -169,8 +182,18 @@ class _WriteGameLevel3_3PageState extends State<WriteGameLevel3_3Page> {
       setState(() => _index += 1);
       await _prepareProblem();
     } else {
-      final correct = _results.where((e) => e).length;
-      await _showEndSequence(correct);
+      // ✅ 마지막 문제: complete로 성공 여부 우선 확인
+      bool apiSuccess = false;
+      try {
+        if (_resultId != null) {
+          final res = await WriteGameApi.complete(resultId: _resultId!);
+          apiSuccess = res.success;
+        }
+      } catch (_) {}
+
+      // 로컬 백업 판정도 병행
+      final localSuccess = _results.where((e) => e).length >= 3;
+      await _showEndSequence(apiSuccess || localSuccess ? 4 : 0);
     }
   }
 
