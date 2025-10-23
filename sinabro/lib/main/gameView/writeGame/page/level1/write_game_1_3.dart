@@ -6,6 +6,7 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:sinabro/main/gameView/writeGame/page/write_game_main.dart';
+import 'package:sinabro/main/gameView/writeGame/api/write_game_api.dart';
 
 enum _Scene { birds, snail, outro }
 
@@ -19,30 +20,26 @@ const double kPassedStrokeWidth = 10.0;
 const double kTitleTopGap = 12;
 
 /* ======================= Scene A: Birds (이미지 마스크 3줄) ======================= */
-// 오른쪽 새 PNG(보기용)
 const int kBirdLines = 3;
 const double kBirdTop = 160;
 const double kBirdRowGap = 155;
 const double kBirdImgRight = 24;
 const double kBirdImgSize = 100;
 
-// 마스크(plane3) 배치/판정
 const String kBirdGuideAsset = 'assets/img/contents/studyWrite/plane3.png';
 
-// 첫 줄 기준 배치(정규화). 두번째/세번째 줄은 화면 높이 대비 kBirdRowGap만큼 아래로.
-const double kBirdGuideLeftNorm = 0.10; // 왼쪽에서 10%
-const double kBirdGuideTopNorm = 0.22; // 첫 줄 top 비율(대략 새 첫 줄 높이와 맞춤)
-const double kBirdGuideWidthNorm = 0.80; // 화면 너비의 80%
+const double kBirdGuideLeftNorm = 0.10;
+const double kBirdGuideTopNorm = 0.22;
+const double kBirdGuideWidthNorm = 0.80;
 const double kBirdGuideOpacity = 1.0;
-const Color kBirdGuideTint = Color(0xFFB3B3B3); // 항상 회색으로 보이게
+const Color kBirdGuideTint = Color(0xFFB3B3B3);
 
-// 각 줄(0,1,2)의 마스크 배치를 개별로 덮어쓰기 위한 설정
 class BirdRowLayout {
-  final double? leftNorm; // 0..1 (null이면 기본값 사용)
-  final double? topNorm; // 0..1 (null이면 기본값 + 줄간격 사용)
-  final double? widthNorm; // 0..1 (null이면 기본값 사용)
-  final double dxPx; // 픽셀 이동(+우측/-좌측)
-  final double dyPx; // 픽셀 이동(+아래/-위)
+  final double? leftNorm;
+  final double? topNorm;
+  final double? widthNorm;
+  final double dxPx;
+  final double dyPx;
   const BirdRowLayout({
     this.leftNorm,
     this.topNorm,
@@ -52,32 +49,12 @@ class BirdRowLayout {
   });
 }
 
-// ★ 여기서 숫자만 바꿔서 각 줄을 따로 조절하세요.
 const List<BirdRowLayout> kBirdRowOverrides = <BirdRowLayout>[
-  BirdRowLayout(
-    // 예) 첫 줄을 살짝 왼쪽으로 8px, 위로 6px 올리기
-    widthNorm: 0.4,
-    dxPx: -8,
-    dyPx: -50,
-    // widthNorm: 0.78,
-  ),
-  BirdRowLayout(
-    // 예) 가운데 줄만 좀 더 좁게
-    // widthNorm: 0.76,
-    widthNorm: 0.4,
-    dxPx: 500,
-    dyPx: -50,
-  ),
-  BirdRowLayout(
-    // 예) 세 번째 줄을 오른쪽으로 12px, 아래로 10px
-    // dxPx: 12, dyPx: 10,
-    widthNorm: 0.4,
-    dxPx: -8,
-    dyPx: -50,
-  ),
+  BirdRowLayout(widthNorm: 0.4, dxPx: -8, dyPx: -50),
+  BirdRowLayout(widthNorm: 0.4, dxPx: 500, dyPx: -50),
+  BirdRowLayout(widthNorm: 0.4, dxPx: -8, dyPx: -50),
 ];
 
-// 판정/드로잉
 const double kBirdTargetCoverage = 0.70;
 const double kBirdSnapRadiusPx = 26;
 const int kBirdStampRadiusPx = 8;
@@ -95,9 +72,9 @@ const double kSnailImgHeight = 650;
 const double kSpiralCxRatio = 0.70;
 const double kSpiralCyRatio = 0.50;
 const Offset kSpiralCenterOffset = Offset(0, 0);
-const double kSpiralStartR = 10.0; // a
-const double kSpiralGrowth = 15.5; // b
-const double kSpiralTurns = 2.5; // 회전수
+const double kSpiralStartR = 10.0;
+const double kSpiralGrowth = 15.5;
+const double kSpiralTurns = 2.5;
 const int kSpiralSteps = 240;
 
 const double kSpiralDash = 16;
@@ -115,18 +92,23 @@ class WriteGameLevel1_3Page extends StatefulWidget {
 class _WriteGameLevel1_3PageState extends State<WriteGameLevel1_3Page> {
   _Scene scene = _Scene.birds;
 
-  // 씬 B(달팽이) 판정용
+  // 씬 B
   late List<bool> passed = List.filled(_lineCount, false);
   int? activeLine;
   List<Offset> stroke = [];
 
-  // 씬 A(새) 3줄 완료 여부
+  // 씬 A
   List<bool> birdsPassed = List<bool>.filled(kBirdLines, false);
 
   static const double tol = 22.0;
   static const double startPickTol = 64.0;
   static const double hitRatio = 0.72;
   static const double coverageRatio = 0.72;
+
+  // API/시간
+  String? _resultId;
+  final _sw = Stopwatch();
+  bool _completed = false;
 
   int get _lineCount => scene == _Scene.snail ? 1 : 0;
   bool get _allPassed => passed.every((e) => e);
@@ -135,12 +117,41 @@ class _WriteGameLevel1_3PageState extends State<WriteGameLevel1_3Page> {
   void initState() {
     super.initState();
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+    _startGame();
   }
 
   @override
   void dispose() {
+    _sw.stop();
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
     super.dispose();
+  }
+
+  Future<void> _startGame() async {
+    try {
+      _resultId = await WriteGameApi.start(
+        childId: widget.childId,
+        stageCode: 'FR_WG_003', // Level1-3
+      );
+    } catch (_) {
+      _resultId = null;
+    }
+    _sw.start();
+  }
+
+  Future<void> _completeGame() async {
+    if (_completed) return;
+    _completed = true;
+    _sw.stop();
+    try {
+      if (_resultId != null) {
+        await WriteGameApi.complete(
+          resultId: _resultId!,
+          totalQuestions: 4, // 새 3 + 달팽이 1
+          timeSpentSecs: _sw.elapsed.inSeconds,
+        );
+      }
+    } catch (_) {}
   }
 
   /* ───────────────── guides (씬 B) ───────────────── */
@@ -191,7 +202,7 @@ class _WriteGameLevel1_3PageState extends State<WriteGameLevel1_3Page> {
     setState(() {});
   }
 
-  void _onPanEnd(Size size) {
+  Future<void> _onPanEnd(Size size) async {
     if (activeLine == null || scene != _Scene.snail) return;
 
     final guides = _buildSnailGuide(size);
@@ -203,6 +214,8 @@ class _WriteGameLevel1_3PageState extends State<WriteGameLevel1_3Page> {
       activeLine = null;
       setState(() {});
       if (_allPassed) {
+        await _completeGame();
+        if (!mounted) return;
         setState(() => scene = _Scene.outro);
       }
     } else {
@@ -243,15 +256,11 @@ class _WriteGameLevel1_3PageState extends State<WriteGameLevel1_3Page> {
         builder: (context, c) {
           final size = Size(c.maxWidth, c.maxHeight);
 
-          // ===== Scene A: 새 3줄(plane3 마스크 3개) =====
           if (scene == _Scene.birds) {
             return Stack(
               children: [
                 const _TitleBanner(text: '따라그려봐요!'),
-
                 _buildSceneBirdsImageGuide(size),
-
-                // 오른쪽 새 PNG 3개(장식)
                 ...List.generate(kBirdLines, (i) {
                   final top = kBirdTop - 10 + i * kBirdRowGap;
                   return Positioned(
@@ -269,7 +278,6 @@ class _WriteGameLevel1_3PageState extends State<WriteGameLevel1_3Page> {
             );
           }
 
-          // ===== Scene B / Outro =====
           return GestureDetector(
             onPanStart: (d) => _onPanStart(d, size),
             onPanUpdate: _onPanUpdate,
@@ -364,17 +372,13 @@ class _WriteGameLevel1_3PageState extends State<WriteGameLevel1_3Page> {
     );
   }
 
-  // ── 씬 A: plane3 마스크 3줄(참새 높이 정렬) ──
-  // ── 씬 A: plane3 마스크 3줄(참새 높이 정렬 + 개별 오버라이드) ──
+  // 씬 A: plane3 마스크 3줄(개별 오버라이드)
   Widget _buildSceneBirdsImageGuide(Size size) {
-    // 기본: 첫줄은 kBirdGuideTopNorm, 2/3줄은 화면높이 대비 kBirdRowGap 만큼 아래
     final rowGapNorm = kBirdRowGap / size.height;
 
     return Stack(
       children: List.generate(kBirdLines, (i) {
         final baseTopNorm = kBirdGuideTopNorm + rowGapNorm * i;
-
-        // 줄별 오버라이드 적용
         final ov =
             (i < kBirdRowOverrides.length)
                 ? kBirdRowOverrides[i]
@@ -395,7 +399,7 @@ class _WriteGameLevel1_3PageState extends State<WriteGameLevel1_3Page> {
           topNorm: topNorm.clamp(0.0, 1.0),
           widthNorm: widthNorm.clamp(0.0, 1.0),
           guideOpacity: kBirdGuideOpacity,
-          guideTint: kBirdGuideTint, // 회색 틴트
+          guideTint: kBirdGuideTint,
           targetCoverage: kBirdTargetCoverage,
           snapRadiusPx: kBirdSnapRadiusPx,
           stampRadiusPx: kBirdStampRadiusPx,
@@ -418,7 +422,7 @@ class _WriteGameLevel1_3PageState extends State<WriteGameLevel1_3Page> {
     );
   }
 
-  // ── 씬 B: 달팽이 ──
+  // 씬 B: 달팽이
   Widget _buildSceneSnail(Size size) {
     final guides = _buildSnailGuide(size);
     return Stack(
@@ -513,24 +517,19 @@ class _WriteGameLevel1_3PageState extends State<WriteGameLevel1_3Page> {
 /* ───────────────── Outro: 3 rows configurable ───────────────── */
 class OutroRowConfig {
   const OutroRowConfig({
-    // strike
     this.strikeColor = const Color(0xFFD92B2B),
     this.strikeWidth = 8.0,
-    // (A) direct
     this.strikeStartPct = const Offset(0.23, 0.31),
     this.strikeEndPct = const Offset(0.82, 0.31),
-    // (B) angle/length
     this.strikeUseAngle = false,
     this.strikeCenterPct = const Offset(0.52, 0.36),
     this.strikeAngleDeg = -18,
     this.strikeLengthRatio = 0.65,
-    // check
     this.checkColor = const Color(0xFFD92B2B),
     this.checkStrokeWidth = 6.0,
     this.checkCenterPct = const Offset(0.195, 0.445),
     this.checkSizePx = 34.0,
     this.checkRotationDeg = 0.0,
-    // stamp
     this.stampAsset = 'assets/img/contents/gameWrite/stamp.png',
     this.stampPosPct = const Offset(0.705, 0.14),
     this.stampDropPx = const Offset(120, -140),
@@ -713,7 +712,6 @@ class _OutroOverlayState extends State<OutroOverlay>
               final noteH = noteW * cfg.noteAspect;
               final noteSize = Size(noteW, noteH);
 
-              // rows
               final r1 = cfg.row1;
               final r1Strike = _strikePoints(noteSize, noteW, r1);
               final r1CheckC = cfg._toNoteXY(noteSize, r1.checkCenterPct);
@@ -1285,7 +1283,7 @@ class ImageMaskGuideLayer extends StatefulWidget {
 
   final String guideAsset;
   final double leftNorm, topNorm, widthNorm, guideOpacity;
-  final Color guideTint; // 알파가 있는 부분을 이 색으로 표시
+  final Color guideTint;
   final double targetCoverage, snapRadiusPx;
   final int stampRadiusPx, sampleStridePx;
   final ValueChanged<double> onProgress;
@@ -1531,7 +1529,6 @@ class _ImageMaskGuideLayerState extends State<ImageMaskGuideLayer> {
 
     return Stack(
       children: [
-        // 회색 틴트로 가이드 확실히 보이게
         Positioned.fromRect(
           rect: _guideRect,
           child: Opacity(
@@ -1542,8 +1539,6 @@ class _ImageMaskGuideLayerState extends State<ImageMaskGuideLayer> {
             ),
           ),
         ),
-
-        // 제스처 + 스트로크
         Positioned.fill(
           child: IgnorePointer(
             ignoring: !widget.enabled,
