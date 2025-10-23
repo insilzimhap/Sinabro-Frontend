@@ -3,18 +3,20 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:audioplayers/audioplayers.dart';
-import 'package:sinabro/main/studyView/listenStudy/page/level2/story3/model/routine_content.dart';
+import 'package:sinabro/main/studyView/listenStudy/page/level2/story3/model/number_story_item.dart';
 
 class SortPage extends StatefulWidget {
-  final List<RoutineContent> stories; // 숫자, 손, 과일 3개
+  final List<NumberStoryItem> stories; // 숫자, 손, 과일 3개
   final int number; // 현재 숫자 (1~10)
   final VoidCallback onNext; // 다음 루틴으로 이동
+  final String childId;
 
   const SortPage({
     super.key,
     required this.stories,
     required this.number,
     required this.onNext,
+    required this.childId,
   });
 
   @override

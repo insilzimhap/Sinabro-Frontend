@@ -6,7 +6,13 @@ import 'models.dart';
 
 class GenderSelectPage extends StatefulWidget {
   final ValueChanged<Gender> onSelected;
-  const GenderSelectPage({super.key, required this.onSelected});
+  final String childId; // 자녀 아이디
+
+  const GenderSelectPage({
+    super.key,
+    required this.onSelected,
+    required this.childId,
+  });
 
   @override
   State<GenderSelectPage> createState() => _GenderSelectPageState();

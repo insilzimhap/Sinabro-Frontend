@@ -11,12 +11,13 @@ import 'package:sinabro/main/studyView/listenStudy/page/level2/story2/model/rout
 class StoryPage extends StatefulWidget {
   final List<RoutineContent> data; // 3개의 스토리
   final VoidCallback onFinished; // 다음 감정으로 이동
+  final String childId; // 자녀 아이디
 
-  const StoryPage({
-    super.key,
-    required this.data,
-    required this.onFinished,
-  });
+  const StoryPage(
+      {super.key,
+      required this.data,
+      required this.onFinished,
+      required this.childId});
 
   @override
   State<StoryPage> createState() => _StoryPageState();

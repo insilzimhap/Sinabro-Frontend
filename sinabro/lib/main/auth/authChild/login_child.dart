@@ -17,6 +17,7 @@ import 'dart:convert';
 import 'package:sinabro/main/childView/page/lobby_child.dart';
 import 'package:sinabro/main/childView/page/level_test_page.dart';
 import 'package:sinabro/config.dart';
+import 'package:sinabro/main/studyView/listenStudy/page/listen_study_apple.dart';
 
 class LoginChildScreen extends StatefulWidget {
   const LoginChildScreen({super.key});
@@ -166,7 +167,7 @@ class _LoginChildScreenState extends State<LoginChildScreen> {
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(
-              builder: (_) => LobbyChildScreen(childId: childId),
+              builder: (_) => ListenAppleSelect(childId: childId),
             ),
           );
         } else {

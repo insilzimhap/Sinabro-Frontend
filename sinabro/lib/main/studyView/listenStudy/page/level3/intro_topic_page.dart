@@ -9,12 +9,14 @@ class IntroTopicPage extends StatefulWidget {
   final String imagePath;
   final String title;
   final VoidCallback onTap;
+  final String childId;
 
   const IntroTopicPage({
     super.key,
     required this.imagePath,
     required this.title,
     required this.onTap,
+    required this.childId,
   });
 
   @override

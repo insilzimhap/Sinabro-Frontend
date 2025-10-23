@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
 
 class QuizPage extends StatelessWidget {
-  const QuizPage({super.key});
+  final String childId; // 자녀 아이디
+  const QuizPage({
+    super.key,
+    required this.childId,
+  });
 
   @override
   Widget build(BuildContext context) {

@@ -5,7 +5,13 @@ import 'package:audioplayers/audioplayers.dart';
 
 class Level2IntroPage extends StatefulWidget {
   final VoidCallback onFinished;
-  const Level2IntroPage({super.key, required this.onFinished});
+  final String childId; // 자녀 아이디
+
+  const Level2IntroPage({
+    super.key,
+    required this.onFinished,
+    required this.childId,
+  });
 
   @override
   State<Level2IntroPage> createState() => _Level2IntroPageState();

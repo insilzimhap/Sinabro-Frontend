@@ -9,7 +9,9 @@ import 'package:audioplayers/audioplayers.dart';
 /// 탭하면 감정 토픽(예: 좋아요, 배고파요)으로 이동.
 class Story2IntroPage extends StatefulWidget {
   final VoidCallback onNext;
-  const Story2IntroPage({super.key, required this.onNext});
+  final String childId; // 자녀 아이디
+  const Story2IntroPage(
+      {super.key, required this.onNext, required this.childId});
 
   @override
   State<Story2IntroPage> createState() => _Story2IntroPageState();

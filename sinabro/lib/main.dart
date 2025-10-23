@@ -13,6 +13,9 @@ import 'package:sinabro/main/studyView/listenStudy/page/level1/animals/animal_st
 import 'package:sinabro/main/studyView/listenStudy/page/level1/colors/color_entry_page.dart';
 import 'package:sinabro/main/studyView/listenStudy/page/level1/colors/models/color_lesson_model.dart';
 
+// 듣기 학습 라우터 임포트
+import 'package:sinabro/main/studyView/listenStudy/navigation/listen_study_router.dart';
+
 //  ListenAppleSelect 페이지를 import 합니다.
 import 'package:sinabro/main/studyView/listenStudy/page/listen_study_apple.dart';
 
@@ -39,93 +42,114 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: '시나브로',
-      debugShowCheckedModeBanner: false, // 앱 화면 오른쪽 위 debug 배너 제거!
+      debugShowCheckedModeBanner: false, // 디버그 배너 숨김
 
-      // 앱의 첫 화면을 ListenAppleSelect로 변경합니다.
-      // 테스트를 위해 임시 childId를 전달합니다.
-      home: const ListenAppleSelect(childId: 'test-child'),
+      // 앱 시작 화면 설정
+      home: CloudAnimationScreen(),
+      /* 듣기 학습 테스트용
+      home: const ListenAppleSelect(
+          childId: 'test-child'), // TODO: 실제 로그인/자녀 선택 로직 연결
+      */
 
+      // Named Route 생성 로직 정의
       onGenerateRoute: (settings) {
-        final args = settings.arguments as Map<String, dynamic>?;
+        // arguments를 Map<String, dynamic> 타입으로 안전하게 캐스팅
+        final args = settings.arguments as Map<String, dynamic>? ??
+            {}; // null일 경우 빈 맵 사용
 
+        // 오류 발생 시 표시할 기본 에러 페이지 생성 함수
         MaterialPageRoute error(String msg) => MaterialPageRoute(
               builder: (_) => Scaffold(
-                body: Center(child: Text('라우팅 오류: $msg')),
+                appBar: AppBar(title: const Text('오류')),
+                body: Center(
+                    child: Text('라우팅 오류: $msg\nRoute: ${settings.name}')),
               ),
-              settings: settings,
+              settings: settings, // 디버깅 위해 settings 전달
             );
 
+        // 요청된 route 이름(settings.name)에 따라 분기
         switch (settings.name) {
-          // ✨ [추가] ListenAppleSelect 페이지의 routeName을 등록합니다.
+          // --- ListenAppleSelect ---
+          // listen_study_apple.dart 에 정의된 routeName 사용
           case ListenAppleSelect.routeName:
             {
-              // ListenAppleSelect는 home에서 직접 호출되거나
-              // 다른 페이지에서 arguments 없이 이름으로만 호출될 수 있습니다.
-              // 만약 childId를 arguments로 받아야 한다면 로직 추가가 필요합니다.
-              // 지금은 ListenAppleSelect.routeName을 인식하는 것이 주목적이므로,
-              // home에서 설정된 childId를 사용하도록 기본 빌더만 반환합니다.
-              // (실제로는 popUntil을 위한 '이름표' 역할이 더 큽니다.)
-
-              // 만약 arguments로 childId를 받아야 한다면:
-              // final childId = args?['childId'];
-              // if (childId is String) {
-              //   return MaterialPageRoute(
-              //     builder: (_) => ListenAppleSelect(childId: childId),
-              //     settings: settings,
-              //   );
-              // }
-              // return error('ListenAppleSelect: childId가 전달되지 않았습니다.');
-
-              // 지금 당장 popUntil을 위해 필요한 최소한의 코드:
-              // (home에서 이미 ListenAppleSelect를 로드했으므로,
-              // popUntil은 이 이름표(settings)를 보고 멈출 수 있습니다.)
-              // 이 케이스가 직접 호출될 일은 거의 없지만, 완전성을 위해 추가합니다.
+              // popUntil 등에서 이름으로 참조하기 위한 케이스.
+              // home에서 이미 생성되므로, 여기서 직접 생성할 일은 거의 없음.
+              // 만약 arguments로 childId를 받아야 한다면 아래 주석 해제 및 수정.
+              final childId =
+                  args['childId'] as String? ?? 'default-pop-child'; // 기본값 설정
               return MaterialPageRoute(
-                builder: (_) =>
-                    const ListenAppleSelect(childId: 'default-test-child'),
+                builder: (_) => ListenAppleSelect(childId: childId),
                 settings: settings,
               );
             }
-          case ColorEntryPage.routeName:
-            {
-              final list = args?['lessonsToShow'];
-              final isGold = args?['isGold'];
 
-              if (list is List<ColorLessonData> && isGold is bool) {
+          // --- ColorEntryPage ---
+          // listen_study_router.dart 에 정의된 routeName 상수 사용 (또는 ColorEntryPage.routeName)
+          case routeNameColorEntry: // ColorEntryPage.routeName
+            {
+              // arguments에서 필요한 데이터 추출 및 타입 확인
+              final list = args['lessonsToShow'];
+              final isGold = args['isGold'];
+              final childId = args['childId']; // ✅ childId 추출
+
+              // 데이터 타입이 모두 맞는지 확인
+              if (list is List<ColorLessonData> &&
+                  isGold is bool &&
+                  childId is String) {
+                // ColorEntryPage 생성 및 반환
                 return MaterialPageRoute(
                   builder: (_) => ColorEntryPage(
                     lessonsToShow: list,
                     isGold: isGold,
+                    childId: childId, // ✅ 생성자에 childId 전달
                   ),
                   settings: settings,
                 );
               }
-              return error('lessonsToShow 누락/타입 오류');
+              // 데이터가 없거나 타입이 틀리면 에러 페이지 반환
+              return error(
+                  'ColorEntryPage: arguments (lessonsToShow, isGold, childId) 누락 또는 타입 오류');
             }
-          case AnimalStudyEntry.routeName:
-            {
-              final fruitId = args?['fruitId'];
-              final isGold = args?['isGold'];
 
-              if (fruitId is String && isGold is bool) {
+          // --- AnimalStudyEntry ---
+          // listen_study_router.dart 에 정의된 routeName 상수 사용 (또는 AnimalStudyEntry.routeName)
+          case routeNameAnimalEntry: // AnimalStudyEntry.routeName
+            {
+              // arguments에서 필요한 데이터 추출 및 타입 확인
+              final fruitId = args['fruitId'];
+              final isGold = args['isGold'];
+              final childId = args['childId']; // ✅ childId 추출
+
+              // 데이터 타입이 모두 맞는지 확인
+              if (fruitId is String && isGold is bool && childId is String) {
+                // AnimalStudyEntry 생성 및 반환
                 return MaterialPageRoute(
                   builder: (_) => AnimalStudyEntry(
                     fruitId: fruitId,
                     isGold: isGold,
+                    childId: childId, // ✅ 생성자에 childId 전달
                   ),
                   settings: settings,
                 );
               }
-              return error('AnimalStudyEntry: 데이터 전달 오류');
+              // 데이터가 없거나 타입이 틀리면 에러 페이지 반환
+              return error(
+                  'AnimalStudyEntry: arguments (fruitId, isGold, childId) 누락 또는 타입 오류');
             }
+
+          // --- 기타 정의되지 않은 Route 처리 ---
           default:
+            // 일치하는 routeName이 없으면 '페이지 없음' 화면 표시
             return MaterialPageRoute(
-              builder: (_) =>
-                  const Scaffold(body: Center(child: Text('페이지를 찾을 수 없습니다.'))),
+              builder: (_) => Scaffold(
+                  appBar: AppBar(),
+                  body:
+                      Center(child: Text('페이지를 찾을 수 없습니다: ${settings.name}'))),
               settings: settings,
             );
         }
-      },
-    );
-  }
-}
+      }, // onGenerateRoute 끝
+    ); // MaterialApp 끝
+  } // build 끝
+} // MyApp 끝

@@ -18,11 +18,13 @@ class AnimalStudyEntry extends StatefulWidget {
   const AnimalStudyEntry({
     super.key,
     required this.fruitId,
-    required this.isGold, // 마지막 사과 황금 사과인지 확인하기 위한
+    required this.isGold,
+    required this.childId, // ✅ childId 받기
   });
 
   final String fruitId;
-  final bool isGold; //
+  final bool isGold;
+  final String childId; // ✅ childId 멤버 변수
 
   @override
   State<AnimalStudyEntry> createState() => _AnimalStudyEntryState();
@@ -42,7 +44,9 @@ class _AnimalStudyEntryState extends State<AnimalStudyEntry> {
     });
   }
 
+  // fruitId에 따라 동물 그룹 데이터 로드
   void _loadGroupData() {
+    // ... (switch 문 로직 동일)
     switch (widget.fruitId) {
       case 'FR_LS_003':
         _groupData = animalGroup1;
@@ -55,66 +59,89 @@ class _AnimalStudyEntryState extends State<AnimalStudyEntry> {
         break;
       default:
         debugPrint("Error: Invalid fruitId '${widget.fruitId}'");
-        Navigator.of(context).pop();
+        if (mounted) Navigator.of(context).pop();
         return;
     }
-    setState(() => _isLoading = false);
+    if (mounted) setState(() => _isLoading = false);
   }
 
-  void _onIntroCompleted() =>
-      setState(() => _currentPhase = _AnimalStudyPhase.reveal);
-  void _onRevealCompleted() =>
-      setState(() => _currentPhase = _AnimalStudyPhase.story);
-  void _onStoryCompleted() =>
-      setState(() => _currentPhase = _AnimalStudyPhase.outro);
+  // --- 페이지 전환 콜백 함수들 ---
+  void _onIntroCompleted() {
+    if (!mounted) return;
+    setState(() => _currentPhase = _AnimalStudyPhase.reveal);
+  }
 
+  void _onRevealCompleted() {
+    if (!mounted) return;
+    setState(() => _currentPhase = _AnimalStudyPhase.story);
+  }
+
+  void _onStoryCompleted() {
+    if (!mounted) return;
+    setState(() => _currentPhase = _AnimalStudyPhase.outro);
+  }
+
+  // ✅ [수정] _onOutroCompleted 함수 시그니처 변경 (파라미터 제거)
   void _onOutroCompleted() {
+    if (!mounted) return;
+    // 다음 동물이 있으면 다음 동물로, 없으면 완료 팝업
     if (_currentAnimalIndex < _groupData.animals.length - 1) {
       setState(() {
         _currentAnimalIndex++;
-        _currentPhase = _AnimalStudyPhase.reveal;
+        _currentPhase = _AnimalStudyPhase.reveal; // 다음 동물 Reveal부터 시작
       });
     } else {
-      // 모든 학습이 끝나면 Navigator.pop() 대신 팝업 호출
-      showApplePopup(context, isGold: widget.isGold);
+      // 모든 동물 학습 완료 -> 팝업 호출
+      // ✅ [수정] 파라미터 대신 widget.childId 사용
+      showApplePopup(context, isGold: widget.isGold, childId: widget.childId);
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    // StudyBackLayout으로 감싸서 뒤로가기 버튼 제공
     return StudyBackLayout(
-      onBack: () => Navigator.of(context).pop(),
+      onBack: () => Navigator.of(context).pop(), // 뒤로가기 시 현재 학습 종료
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : _buildCurrentPhaseWidget(),
+          ? const Center(child: CircularProgressIndicator()) // 로딩 중 표시
+          : _buildCurrentPhaseWidget(), // 현재 단계에 맞는 위젯 표시
     );
   }
 
+  /// 현재 학습 단계(_currentPhase)에 맞는 위젯을 생성하고 반환
   Widget _buildCurrentPhaseWidget() {
+    // 현재 보여줄 동물 데이터
     final currentAnimal = _groupData.animals[_currentAnimalIndex];
+    // 현재 동물이 그룹의 마지막 동물인지 여부
     final isFinalAnimal = _currentAnimalIndex == _groupData.animals.length - 1;
 
+    // 현재 단계(_currentPhase)에 따라 다른 페이지 위젯 반환
     switch (_currentPhase) {
       case _AnimalStudyPhase.intro:
         return AnimalIntroPage(
+          childId: widget.childId, // ✅ childId 전달
           groupData: _groupData,
           onIntroCompleted: _onIntroCompleted,
         );
       case _AnimalStudyPhase.reveal:
         return AnimalRevealPage(
+          childId: widget.childId, // ✅ childId 전달
           animalData: currentAnimal,
           onRevealCompleted: _onRevealCompleted,
         );
       case _AnimalStudyPhase.story:
         return AnimalStoryPage(
+          childId: widget.childId, // ✅ childId 전달
           animalData: currentAnimal,
           onStoryCompleted: _onStoryCompleted,
         );
       case _AnimalStudyPhase.outro:
         return AnimalOutroPage(
+          childId: widget.childId, // ✅ childId 전달
           groupData: _groupData,
           animalData: currentAnimal,
           isFinalAnimalInGroup: isFinalAnimal,
+          // ✅ [수정] onOutroCompleted 콜백 전달 (파라미터 없는 VoidCallback)
           onOutroCompleted: _onOutroCompleted,
         );
     }

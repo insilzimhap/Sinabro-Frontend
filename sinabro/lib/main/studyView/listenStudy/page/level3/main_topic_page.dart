@@ -9,6 +9,7 @@ class MainTopicPage extends StatefulWidget {
   final String title;
   final String? audioPath; // 오디오 경로 추가
   final VoidCallback onTap;
+  final String childId;
 
   const MainTopicPage({
     super.key,
@@ -16,6 +17,7 @@ class MainTopicPage extends StatefulWidget {
     required this.title,
     this.audioPath,
     required this.onTap,
+    required this.childId,
   });
 
   @override

@@ -4,7 +4,13 @@ import 'package:sinabro/main/studyView/listenStudy/page/level2/story1/siblings_p
 
 class ParentsPage extends StatelessWidget {
   final Gender selectedGender;
-  const ParentsPage({super.key, required this.selectedGender});
+  final String childId; // 자녀 아이디
+
+  const ParentsPage({
+    super.key,
+    required this.selectedGender,
+    required this.childId,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -43,7 +49,10 @@ class ParentsPage extends StatelessWidget {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (_) => SiblingsPage(selectedGender: selectedGender),
+              builder: (_) => SiblingsPage(
+                selectedGender: selectedGender,
+                childId: childId,
+              ),
             ),
           );
         },

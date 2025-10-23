@@ -15,12 +15,14 @@ class StoryPage extends StatefulWidget {
   final int index;
   final Gender gender;
   final VoidCallback onFinished;
+  final String childId; // 자녀 아이디
 
   const StoryPage({
     super.key,
     required this.index,
     required this.gender,
     required this.onFinished,
+    required this.childId,
   });
 
   @override

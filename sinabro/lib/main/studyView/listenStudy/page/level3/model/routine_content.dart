@@ -9,7 +9,7 @@ class RoutineContent {
   final String imagePath; // 키워드 대표 이미지 (메인 키워드 페이지용)
   final List<StoryItem> stories; // 스토리 3개
   final String? topicAudioPath; // 주제 오디오 경로
-  final String? titleAudioPath; // 키워드 제목 오디오 경로
+  final String? titleAudioPath;
 
   RoutineContent({
     required this.id,

@@ -8,12 +8,12 @@ import 'package:sinabro/main/studyView/listenStudy/page/level2/story2/model/rout
 class KeywordPage extends StatefulWidget {
   final RoutineContent keyword;
   final VoidCallback onNext;
-
-  const KeywordPage({
-    super.key,
-    required this.keyword,
-    required this.onNext,
-  });
+  final String childId; // 자녀 아이디
+  const KeywordPage(
+      {super.key,
+      required this.keyword,
+      required this.onNext,
+      required this.childId});
 
   @override
   State<KeywordPage> createState() => _KeywordPageState();

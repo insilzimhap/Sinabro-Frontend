@@ -8,12 +8,14 @@ class MainKeywordPage extends StatefulWidget {
   final int index; // 1~6
   final Gender gender;
   final VoidCallback onNext;
+  final String childId; // 자녀 아이디
 
   const MainKeywordPage({
     super.key,
     required this.index,
     required this.gender,
     required this.onNext,
+    required this.childId,
   });
 
   @override

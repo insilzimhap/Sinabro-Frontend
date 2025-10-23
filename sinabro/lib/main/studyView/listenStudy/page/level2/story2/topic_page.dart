@@ -13,11 +13,13 @@ import 'package:sinabro/main/studyView/listenStudy/page/level2/story2/model/rout
 class TopicPage extends StatefulWidget {
   final RoutineContent topic;
   final VoidCallback onNext;
+  final String childId; // 자녀 아이디
 
   const TopicPage({
     super.key,
     required this.topic,
     required this.onNext,
+    required this.childId,
   });
 
   @override

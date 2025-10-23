@@ -11,10 +11,12 @@ class AnimalRevealPage extends StatefulWidget {
     super.key,
     required this.animalData,
     required this.onRevealCompleted,
+    required this.childId,
   });
 
   final AnimalContentData animalData;
   final VoidCallback onRevealCompleted;
+  final String childId;
 
   @override
   State<AnimalRevealPage> createState() => _AnimalRevealPageState();

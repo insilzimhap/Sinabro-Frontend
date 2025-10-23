@@ -10,10 +10,12 @@ class AnimalStoryPage extends StatefulWidget {
     super.key,
     required this.animalData,
     required this.onStoryCompleted,
+    required this.childId,
   });
 
   final AnimalContentData animalData;
   final VoidCallback onStoryCompleted;
+  final String childId;
 
   @override
   State<AnimalStoryPage> createState() => _AnimalStoryPageState();

@@ -11,11 +11,13 @@ class ColorTransformPage extends StatefulWidget {
     required this.lessonData,
     required this.isLastLesson,
     required this.onTransformCompleted, // ✨ [추가] 과정 완료 후 호출될 콜백 함수
+    required this.childId,
   });
 
   final ColorLessonData lessonData;
   final bool isLastLesson;
   final VoidCallback onTransformCompleted; // ✨ [추가]
+  final String childId;
 
   @override
   State<ColorTransformPage> createState() => _ColorTransformPageState();

@@ -14,11 +14,13 @@ class ColorLessonHostPage extends StatefulWidget {
     required this.fromColor,
     required this.lessonData,
     required this.isLastLesson,
+    required this.childId,
   });
 
   final Color fromColor;
   final ColorLessonData lessonData;
   final bool isLastLesson;
+  final String childId;
 
   @override
   State<ColorLessonHostPage> createState() => _ColorLessonHostPageState();
@@ -92,30 +94,35 @@ class _ColorLessonHostPageState extends State<ColorLessonHostPage> {
           fromColor: widget.fromColor,
           lessonData: widget.lessonData,
           onRevealCompleted: _onRevealCompleted,
+          childId: widget.childId,
         );
       case _LessonPhase.intro:
         return ColorIntroPage(
           lessonData: widget.lessonData,
           isLastLesson: widget.isLastLesson, // IntroPage가 이 파라미터를 필요로 할 수 있음
           onIntroCompleted: _onIntroCompleted,
+          childId: widget.childId,
         );
       case _LessonPhase.transform:
         return ColorTransformPage(
           lessonData: widget.lessonData,
           isLastLesson: widget.isLastLesson,
           onTransformCompleted: _onTransformCompleted,
+          childId: widget.childId,
         );
       case _LessonPhase.summary:
         return ColorSummaryPage(
           lessonData: widget.lessonData,
           isLastLesson: widget.isLastLesson,
           onSummaryCompleted: _onSummaryCompleted,
+          childId: widget.childId,
         );
       case _LessonPhase.outro:
         return ColorOutroPage(
           lessonData: widget.lessonData,
           isLastLesson: widget.isLastLesson,
           onOutroCompleted: _onOutroCompleted,
+          childId: widget.childId,
         );
     }
   }

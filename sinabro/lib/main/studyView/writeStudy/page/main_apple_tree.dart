@@ -27,8 +27,7 @@ import 'package:sinabro/main/studyView/writeStudy/page/level3/writing_3_1.dart';
 import 'package:sinabro/main/studyView/writeStudy/page/level3/writing_3_2.dart';
 import 'package:sinabro/main/studyView/writeStudy/page/level3/writing_3_3.dart';
 import 'package:sinabro/main/studyView/writeStudy/page/level3/writing_3_4.dart'
-    as w34
-    show Writing3_4_IntroPage;
+    as w34 show Writing3_4_IntroPage;
 
 enum ContentStatus { locked, available, done }
 
@@ -194,10 +193,9 @@ class _AppleState extends State<_Apple> {
   @override
   Widget build(BuildContext context) {
     final isGold = (widget.index % 4) == 3; // 4번째 사과
-    final asset =
-        isGold
-            ? 'assets/img/contents/studyWrite/gold_apple.png'
-            : 'assets/img/contents/studyWrite/apple.png';
+    final asset = isGold
+        ? 'assets/img/contents/studyWrite/gold_apple.png'
+        : 'assets/img/contents/studyWrite/apple.png';
 
     return GestureDetector(
       onTapDown: (_) => setState(() => _pressed = true),

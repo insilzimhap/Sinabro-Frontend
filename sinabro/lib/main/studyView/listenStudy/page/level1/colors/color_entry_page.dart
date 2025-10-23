@@ -13,11 +13,13 @@ import 'package:sinabro/main/studyView/common/widget/apple_popup.dart';
 class ColorEntryPage extends StatefulWidget {
   final List<ColorLessonData> lessonsToShow;
   final bool isGold;
+  final String childId;
 
   const ColorEntryPage({
     super.key,
     required this.lessonsToShow,
     required this.isGold,
+    required this.childId,
   });
 
   static const routeName = '/study/listen/color-entry';
@@ -71,7 +73,7 @@ class _ColorEntryPageState extends State<ColorEntryPage>
       debugPrint("[Entry] All lessons completed. Popping EntryPage now.");
       debugPrint("==================================================");
       // 모든 학습 완료 시 팝업 호출 (안전장치)
-      showApplePopup(context, isGold: widget.isGold);
+      showApplePopup(context, isGold: widget.isGold, childId: widget.childId);
       return;
     }
 
@@ -91,6 +93,7 @@ class _ColorEntryPageState extends State<ColorEntryPage>
           fromColor: fromColor,
           lessonData: lesson,
           isLastLesson: isLast,
+          childId: widget.childId,
         ),
       ),
     )
@@ -111,7 +114,7 @@ class _ColorEntryPageState extends State<ColorEntryPage>
         // 마지막 색 완료
         debugPrint('[Entry] last color finished → showApplePopup.');
         // 마지막 학습 완료 시 Navigator.pop() 대신 팝업 호출
-        showApplePopup(context, isGold: widget.isGold);
+        showApplePopup(context, isGold: widget.isGold, childId: widget.childId);
       } else {
         // 중간에 뒤로가기로 종료
         debugPrint('[Entry][오류] result==null 수신. 라우팅 실패/중복내비 가능성 → 흐름 중단');

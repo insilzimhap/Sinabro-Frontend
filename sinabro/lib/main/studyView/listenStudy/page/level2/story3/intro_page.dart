@@ -12,11 +12,13 @@ import 'package:sinabro/main/studyView/listenStudy/page/level2/story3/data/routi
 class Story3IntroPage extends StatefulWidget {
   final int routineIndex; // 0: 데이터1, 1: 데이터2
   final VoidCallback onNext;
+  final String childId;
 
   const Story3IntroPage({
     super.key,
     required this.routineIndex,
     required this.onNext,
+    required this.childId,
   });
 
   @override

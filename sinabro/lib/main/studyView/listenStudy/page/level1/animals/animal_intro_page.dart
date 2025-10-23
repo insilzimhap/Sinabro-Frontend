@@ -11,10 +11,12 @@ class AnimalIntroPage extends StatefulWidget {
     super.key,
     required this.groupData,
     required this.onIntroCompleted,
+    required this.childId,
   });
 
   final AnimalGroupData groupData;
   final VoidCallback onIntroCompleted;
+  final String childId;
 
   @override
   State<AnimalIntroPage> createState() => _AnimalIntroPageState();

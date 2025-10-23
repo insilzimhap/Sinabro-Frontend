@@ -11,11 +11,13 @@ class ColorSummaryPage extends StatefulWidget {
     required this.lessonData,
     required this.isLastLesson,
     required this.onSummaryCompleted,
+    required this.childId,
   });
 
   final ColorLessonData lessonData;
   final bool isLastLesson;
   final VoidCallback onSummaryCompleted;
+  final String childId;
 
   @override
   State<ColorSummaryPage> createState() => _ColorSummaryPageState();

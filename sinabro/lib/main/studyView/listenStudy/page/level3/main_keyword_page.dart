@@ -9,6 +9,7 @@ class MainKeywordPage extends StatefulWidget {
   final String title;
   final String? audioPath;
   final VoidCallback onTap;
+  final String childId;
 
   const MainKeywordPage({
     super.key,
@@ -16,6 +17,7 @@ class MainKeywordPage extends StatefulWidget {
     required this.title,
     this.audioPath,
     required this.onTap,
+    required this.childId,
   });
 
   @override

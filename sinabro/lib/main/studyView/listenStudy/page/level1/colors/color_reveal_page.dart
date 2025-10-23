@@ -10,11 +10,13 @@ class ColorRevealPage extends StatefulWidget {
     required this.fromColor,
     required this.lessonData,
     required this.onRevealCompleted, // ✨ [추가] 애니메이션 완료 후 호출될 콜백 함수
+    required this.childId,
   });
 
   final Color fromColor;
   final ColorLessonData lessonData;
   final VoidCallback onRevealCompleted; // ✨ [추가]
+  final String childId;
 
   @override
   State<ColorRevealPage> createState() => _ColorRevealPageState();

@@ -11,11 +11,13 @@ class StoryPage extends StatefulWidget {
   // ✨ 4. String 대신 StoryItem 객체를 받도록 수정
   final StoryItem story;
   final VoidCallback onFinished;
+  final String childId;
 
   const StoryPage({
     super.key,
     required this.story,
     required this.onFinished,
+    required this.childId,
   });
 
   @override

@@ -11,11 +11,13 @@ class ColorOutroPage extends StatefulWidget {
     required this.lessonData,
     required this.isLastLesson,
     required this.onOutroCompleted, // ✨ [추가] 과정 완료 후 호출될 콜백 함수
+    required this.childId,
   });
 
   final ColorLessonData lessonData;
   final bool isLastLesson;
   final VoidCallback onOutroCompleted; // ✨ [추가]
+  final String childId;
 
   @override
   State<ColorOutroPage> createState() => _ColorOutroPageState();

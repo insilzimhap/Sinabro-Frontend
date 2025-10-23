@@ -1,11 +1,11 @@
-// lib/main/studyView/listenStudy/level2/story/model/routine_content.dart
+// lib/main/studyView/listenStudy/level2/story/model/number_story_item.dart
 
-class RoutineContent {
+class NumberStoryItem {
   final String text;
   final String? imagePath;
   final String? audioPath;
 
-  const RoutineContent({
+  const NumberStoryItem({
     required this.text,
     this.imagePath,
     this.audioPath,

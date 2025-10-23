@@ -3,19 +3,21 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:audioplayers/audioplayers.dart';
-import 'package:sinabro/main/studyView/listenStudy/page/level2/story3/model/routine_content.dart';
+import 'package:sinabro/main/studyView/listenStudy/page/level2/story3/model/number_story_item.dart';
 
 /// 레벨2 스토리 (가족 구성원별 단일 페이지) -> 숫자 학습 페이지
 /// - stories: 숫자-손-과일 순서의 스토리 목록
 /// - onFinished: 모든 스토리가 끝나면 호출되는 콜백
 class StoryPage extends StatefulWidget {
-  final List<RoutineContent> stories; // 숫자-손-과일 순
+  final List<NumberStoryItem> stories; // 숫자-손-과일 순
   final VoidCallback onFinished;
+  final String childId;
 
   const StoryPage({
     super.key,
     required this.stories,
     required this.onFinished,
+    required this.childId,
   });
 
   @override

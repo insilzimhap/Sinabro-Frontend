@@ -13,12 +13,14 @@ class AnimalOutroPage extends StatefulWidget {
     required this.groupData,
     required this.isFinalAnimalInGroup,
     required this.onOutroCompleted,
+    required this.childId,
   });
 
   final AnimalGroupData groupData;
   final AnimalContentData animalData;
   final bool isFinalAnimalInGroup;
   final VoidCallback onOutroCompleted;
+  final String childId;
 
   @override
   State<AnimalOutroPage> createState() => _AnimalOutroPageState();
