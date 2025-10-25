@@ -1,8 +1,10 @@
+// lib/main/parentView/page/child/child_report_page.dart
 /*
- * 파일: lib/main/parentView/page/child_report_page.dart
- * 개요: 자녀의 학습 리포트를 보여주는 화면(뷰 전용, 서버 미연동).
+ * 파일: lib/main/parentView/page/child/child_report_page.dart
+ * 개요: 자녀의 학습 리포트 개요 화면. API 연동 및 언어팩 지원.
  * @ 채영: 자녀 이름, 나이, 레벨 등 띄울 수 있는 부분은 수정 해놓음.
- * @ 연수: 언어팩 지원을 위한 코드 수정 완료
+ * @ 정화: AI 리포트 버튼 추가 및 진행 상황 요약 API 연동 (모델 수정 완료).
+ * @ 연수 (Gemini 병합): 언어팩 지원 (TranslatedText 위젯 적용)
  */
 
 import 'package:flutter/material.dart';
@@ -11,27 +13,57 @@ import 'dart:convert';
 import 'dart:developer';
 import 'package:sinabro/common/auth_client.dart';
 import 'package:sinabro/config.dart';
+import 'package:sinabro/main/parentView/page/child/child_profile_edit.dart';
+import 'package:sinabro/main/parentView/page/child/child_AIreport_page.dart';
 import 'package:sinabro/main/parentView/widget/translated_text.dart'; // ✨
 
-// ✅ 프로필 수정 페이지 import
-import 'package:sinabro/main/parentView/page/child/child_profile_edit.dart';
+// API 응답 데이터를 담을 모델 클래스 (V1)
+class ProgressSummary {
+  final double progressToNextLevel;
+  final String? listeningStudyRecent;
+  final String? listeningStudyBest;
+  final String? writingStudyRecent;
+  final String? writingStudyBest;
+  final String? listeningGameRecent;
+  final String? listeningGameBest;
+  final String? writingGameRecent;
+  final String? writingGameBest;
 
-/// 자녀 학습 리포트 페이지
+  ProgressSummary({
+    required this.progressToNextLevel,
+    this.listeningStudyRecent,
+    this.listeningStudyBest,
+    this.writingStudyRecent,
+    this.writingStudyBest,
+    this.listeningGameRecent,
+    this.listeningGameBest,
+    this.writingGameRecent,
+    this.writingGameBest,
+  });
+
+  // JSON 데이터를 ProgressSummary 객체로 변환
+  factory ProgressSummary.fromJson(Map<String, dynamic> json) {
+    return ProgressSummary(
+      progressToNextLevel:
+          (json['progressToNextLevel'] as num?)?.toDouble() ?? 0.0,
+      listeningStudyRecent: json['listeningStudyRecent'] as String?,
+      listeningStudyBest: json['listeningStudyBest'] as String?,
+      writingStudyRecent: json['writingStudyRecent'] as String?,
+      writingStudyBest: json['writingStudyBest'] as String?,
+      listeningGameRecent: json['listeningGameRecent'] as String?,
+      listeningGameBest: json['listeningGameBest'] as String?,
+      writingGameRecent: json['writingGameRecent'] as String?,
+      writingGameBest: json['writingGameBest'] as String?,
+    );
+  }
+}
+
 class ChildReportPage extends StatefulWidget {
   final String? parentUserId;
-
-  // 화면에 표시할 정보들
-  final String childId; //자녀 아이디
-  final String childName; // 예: 박쑥일
-  final int childAge; // 예: 7
-  final int level; // 예: 2
-  final double progressToNext; // 0.0 ~ 1.0 (예: 0.57 -> 57%)
-
-  // 카드에 보여줄 텍스트(데모)
-  final String studyRecent; // 최근 학습 기록
-  final String studyBest; // 최고 학습 기록
-  final String gameRecent; // 최근 게임 기록
-  final String gameBest; // 최고 게임 기록
+  final String childId;
+  final String childName; // 초기값
+  final int childAge; // 초기값
+  final int level; // 초기값
 
   const ChildReportPage({
     super.key,
@@ -40,11 +72,6 @@ class ChildReportPage extends StatefulWidget {
     required this.childName,
     required this.childAge,
     required this.level,
-    required this.progressToNext,
-    this.studyRecent = '1나무 5열매',
-    this.studyBest = '1나무 3열매',
-    this.gameRecent = '1나무 5열매',
-    this.gameBest = '1나무 3열매',
   });
 
   @override
@@ -52,11 +79,18 @@ class ChildReportPage extends StatefulWidget {
 }
 
 class _ChildReportPageState extends State<ChildReportPage> {
+  // 프로필 정보 상태
   String? _childName;
   int? _childAge;
-  dynamic _childLevel; // null → "?" 표시
+  dynamic _childLevel;
 
-  bool loading = true;
+  // 진행 상황 요약 데이터 상태 변수
+  ProgressSummary? _progressSummary;
+  String? _summaryErrorMessage;
+
+  // 로딩 상태
+  bool _isLoadingProfile = true;
+  bool _isLoadingSummary = true;
   bool _dirty = false;
 
   @override
@@ -64,50 +98,90 @@ class _ChildReportPageState extends State<ChildReportPage> {
     super.initState();
     _childName = widget.childName;
     _childAge = widget.childAge;
-    _childLevel = widget.level;
-    // ✅ 수정: 프레임 끝난 뒤 실행
+    _childLevel = widget.level == 0 ? "?" : widget.level;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _fetchProfile();
+      _fetchProgressSummary();
     });
   }
 
+  // 자녀 프로필 정보 가져오기 (V1)
   Future<void> _fetchProfile() async {
+    if (!_isLoadingProfile) setState(() => _isLoadingProfile = true);
     try {
       final uri =
           Uri.parse("$baseUrl/api/app/mypage/children/${widget.childId}");
       final res = await AuthClient().get(uri);
+      if (!mounted) return;
       if (res.statusCode == 200) {
-        final data = jsonDecode(res.body);
+        final data = jsonDecode(utf8.decode(res.bodyBytes));
         setState(() {
           _childName = data["childName"] ?? widget.childName;
-          // 나이는 DB에는 없으니 기존 값 사용
           _childAge = (data["childAge"] as int?) ?? widget.childAge;
-          _childLevel = data["childLevel"] ?? "?"; // 없으면 "?"
-          loading = false;
+          _childLevel = (data["childLevel"] == null || data["childLevel"] == 0)
+              ? "?"
+              : data["childLevel"];
         });
-        log("[리포트] 성공 childId=${widget.childId}");
+        log("[리포트-프로필] 성공 childId=${widget.childId}");
       } else {
-        log("[리포트] 실패 code=${res.statusCode}");
-        setState(() => loading = false);
+        log("[리포트-프로필] 실패 code=${res.statusCode}, body=${res.body}");
       }
     } catch (e) {
-      log("[리포트] 예외 $e");
-      setState(() => loading = false);
+      log("[리포트-프로필] 예외 $e");
+    } finally {
+      if (mounted) setState(() => _isLoadingProfile = false);
+    }
+  }
+
+  // 진행 상황 요약 API 호출 함수 (V1)
+  Future<void> _fetchProgressSummary() async {
+    if (!_isLoadingSummary) setState(() => _isLoadingSummary = true);
+    _summaryErrorMessage = null;
+    try {
+      final uri = Uri.parse(
+          "$baseUrl/api/app/child/${widget.childId}/progress-summary");
+      final res = await AuthClient().get(uri);
+      if (!mounted) return;
+      if (res.statusCode == 200) {
+        final data = jsonDecode(utf8.decode(res.bodyBytes));
+        setState(() {
+          _progressSummary = ProgressSummary.fromJson(data);
+        });
+        log("[리포트-요약] 성공 childId=${widget.childId}");
+      } else {
+        log("[리포트-요약] 실패 code=${res.statusCode}, body=${res.body}");
+        setState(() {
+          _summaryErrorMessage = "학습/게임 기록 요약을 불러오는데 실패했습니다.";
+        });
+      }
+    } catch (e) {
+      log("[리포트-요약] 예외 $e");
+      if (mounted) {
+        setState(() {
+          _summaryErrorMessage = "오류가 발생했습니다: $e";
+        });
+      }
+    } finally {
+      if (mounted) setState(() => _isLoadingSummary = false);
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    if (loading) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    final bool stillLoading = _isLoadingProfile || _isLoadingSummary;
+
+    if (stillLoading) {
+      return const ParentLayout(
+        activeMenu: '자녀페이지',
+        content: Center(child: CircularProgressIndicator()),
+      );
     }
 
     final childName = _childName ?? widget.childName;
     final childAge = _childAge ?? widget.childAge;
     final level = _childLevel ?? "?";
-    final prog = widget.progressToNext;
+    final progressToNext = _progressSummary?.progressToNextLevel ?? 0.0;
 
-    // ★ 추가: 뒤로 갈 때 updated 여부를 부모(ChildrenPage)로 넘김
     return WillPopScope(
       onWillPop: () async {
         Navigator.pop(context, _dirty);
@@ -126,11 +200,13 @@ class _ChildReportPageState extends State<ChildReportPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    _headerBar(),
+                    _headerBar(), // ✨
                     const SizedBox(height: 16),
-                    _childHeadline(context, childName, childAge, level, prog),
+                    _childHeadline(context, widget.childId, childName, childAge,
+                        level, progressToNext), // ✨
                     const SizedBox(height: 18),
-                    _cardsArea(context, level, prog),
+                    _cardsArea(context, widget.childId, level, _progressSummary,
+                        _summaryErrorMessage), // ✨
                   ],
                 ),
               ),
@@ -141,7 +217,7 @@ class _ChildReportPageState extends State<ChildReportPage> {
     );
   }
 
-  /// 상단 큰 녹색 바
+  // 상단 큰 녹색 바 (V2 적용)
   Widget _headerBar() {
     return Container(
       height: 72,
@@ -163,9 +239,9 @@ class _ChildReportPageState extends State<ChildReportPage> {
     );
   }
 
-  /// 이름/나이/레벨/프로필수정 버튼 / 진행도
-  Widget _childHeadline(BuildContext context, String childName, int childAge,
-      dynamic level, double progressToNext) {
+  // 이름/나이/레벨/프로필수정/AI리포트 버튼/진행도 (V1 + V2 병합)
+  Widget _childHeadline(BuildContext context, String childId, String childName,
+      int childAge, dynamic level, double progressToNext) {
     final percent = (progressToNext * 100).clamp(0, 100).toStringAsFixed(0);
 
     return Card(
@@ -179,10 +255,10 @@ class _ChildReportPageState extends State<ChildReportPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // 7세 · lv.2  |  프로필 수정
             Row(
+              // 나이/레벨 | 프로필 수정 버튼
               children: [
-                // ✨ 동적 텍스트 분리 적용
+                // ✨ V2 구조 적용
                 Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -208,22 +284,21 @@ class _ChildReportPageState extends State<ChildReportPage> {
                   height: 36,
                   child: OutlinedButton(
                     onPressed: () async {
-                      // ✅ 프로필 편집으로 이동 (데모 값 사용)
+                      // V1 로직 유지
                       final updated = await Navigator.push<bool>(
                         context,
                         MaterialPageRoute(
                           builder: (_) => ChildProfileEditPage(
                             parentUserId: widget.parentUserId,
-                            childId: widget.childId,
+                            childId: childId,
                             childName: childName,
                           ),
                         ),
                       );
-                      // ✅ 수정 완료 후 돌아오면 다시 프로필 불러오기
                       if (updated == true && mounted) {
                         WidgetsBinding.instance.addPostFrameCallback((_) {
                           _dirty = true;
-                          _fetchProfile();
+                          _fetchProfile(); // 프로필 정보 새로고침
                         });
                       }
                     },
@@ -239,32 +314,67 @@ class _ChildReportPageState extends State<ChildReportPage> {
                 ),
               ],
             ),
-            const SizedBox(height: 6),
-            // ✨ 동적 텍스트 분리 적용
-            Wrap(
-              crossAxisAlignment: WrapCrossAlignment.center,
-              children: [
-                Text(
-                  '$childName ',
-                  style: const TextStyle(
-                      fontSize: 24, fontWeight: FontWeight.w900),
+            const SizedBox(height: 10),
+            ElevatedButton(
+              // AI 리포트 버튼 (V1 기능 유지)
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => ChildAIReportPage(
+                      childId: childId,
+                      childName: childName,
+                    ),
+                  ),
+                );
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.white,
+                foregroundColor: Colors.black,
+                elevation: 0,
+                padding: EdgeInsets.zero,
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(4),
                 ),
-                const TranslatedText(
-                  '님의 학습 리포트',
-                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.w900),
-                ),
-              ],
+                minimumSize: const Size(0, 30), // 버튼 높이 최소값
+              ).copyWith(
+                overlayColor: MaterialStateProperty.all(Colors.transparent),
+              ),
+              // ✨ V2 구조 적용 (Wrap)
+              child: Wrap(
+                crossAxisAlignment: WrapCrossAlignment.center,
+                // V1의 스타일을 하위 텍스트에 적용
+                textDirection: TextDirection.ltr, // Wrap 내부 Text 정렬을 위해
+                children: [
+                  Text(
+                    '$childName ',
+                    style: const TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.w900,
+                      color: Colors.black,
+                    ),
+                  ),
+                  const TranslatedText(
+                    '님의 학습 리포트',
+                    style: TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.w900,
+                      color: Colors.black,
+                    ),
+                  ),
+                ],
+              ),
             ),
             const SizedBox(height: 12),
-
-            // 진행도
             Row(
+              // 진행도 바
               children: [
                 Expanded(
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(6),
                     child: LinearProgressIndicator(
-                      value: progressToNext.clamp(0.0, 1.0).toDouble(),
+                      value: progressToNext.clamp(0.0, 1.0),
                       minHeight: 10,
                       backgroundColor: const Color(0xFFECECEC),
                       color: const Color(0xFF6DBF73),
@@ -272,7 +382,7 @@ class _ChildReportPageState extends State<ChildReportPage> {
                   ),
                 ),
                 const SizedBox(width: 12),
-                // ✨ 동적 텍스트 분리 적용
+                // ✨ V2 구조 적용
                 Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -288,26 +398,46 @@ class _ChildReportPageState extends State<ChildReportPage> {
     );
   }
 
-  /// 좌측: 학습 / 우측: 게임 카드
-  Widget _cardsArea(
-      BuildContext context, dynamic level, double progressToNext) {
+  // 좌측: 학습 / 우측: 게임 카드 (V1 + V2 병합)
+  Widget _cardsArea(BuildContext context, String childId, dynamic level,
+      ProgressSummary? summary, String? errorMessage) {
+    if (errorMessage != null) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Text(errorMessage, style: TextStyle(color: Colors.red[700])),
+        ),
+      );
+    }
+
+    // V1의 API 응답 데이터 사용 로직
+    final progressLabelText = (summary == null)
+        ? "$level 레벨의 ?% 완료!"
+        : "$level 레벨의 ${(summary.progressToNextLevel * 100).toStringAsFixed(0)}% 완료!";
+    final studyRecentText =
+        summary?.writingStudyRecent ?? summary?.listeningStudyRecent ?? '기록 없음';
+    final studyBestText =
+        summary?.writingStudyBest ?? summary?.listeningStudyBest ?? '기록 없음';
+    final gameRecentText =
+        summary?.writingGameRecent ?? summary?.listeningGameRecent ?? '기록 없음';
+    final gameBestText =
+        summary?.writingGameBest ?? summary?.listeningGameBest ?? '기록 없음';
+
     return LayoutBuilder(
       builder: (_, c) {
         final isNarrow = c.maxWidth < 860;
         final cards = [
           _statCard(
-            titleWidget: const TranslatedText('학습'), // ✨ String -> Widget으로 변경
-            progressLabel:
-                '$level 레벨의 ${(progressToNext * 100).toStringAsFixed(0)}% 완료!',
-            recent: widget.studyRecent,
-            best: widget.studyBest,
+            titleWidget: const TranslatedText('학습'), // ✨ V2 방식 적용
+            progressLabel: progressLabelText,
+            recent: studyRecentText, // V1 데이터
+            best: studyBestText, // V1 데이터
           ),
           _statCard(
-            titleWidget: const TranslatedText('게임'), // ✨ String -> Widget으로 변경
-            progressLabel:
-                '$level 레벨의 ${(progressToNext * 100).toStringAsFixed(0)}% 완료!',
-            recent: widget.gameRecent,
-            best: widget.gameBest,
+            titleWidget: const TranslatedText('게임'), // ✨ V2 방식 적용
+            progressLabel: progressLabelText,
+            recent: gameRecentText, // V1 데이터
+            best: gameBestText, // V1 데이터
           ),
         ];
 
@@ -315,21 +445,19 @@ class _ChildReportPageState extends State<ChildReportPage> {
           spacing: 16,
           runSpacing: 16,
           children: cards
-              .map(
-                (w) => SizedBox(
-                  width: isNarrow ? c.maxWidth : (c.maxWidth - 16) / 2,
-                  child: w,
-                ),
-              )
+              .map((w) => SizedBox(
+                    width: isNarrow ? c.maxWidth : (c.maxWidth - 16) / 2,
+                    child: w,
+                  ))
               .toList(),
         );
       },
     );
   }
 
-  // ✨ String title -> Widget titleWidget으로 변경
+  // 학습/게임 기록 카드 위젯 (V1 + V2 병합)
   Widget _statCard({
-    required Widget titleWidget,
+    required Widget titleWidget, // ✨ V2 방식 (String title -> Widget titleWidget)
     required String progressLabel,
     required String recent,
     required String best,
@@ -345,19 +473,16 @@ class _ChildReportPageState extends State<ChildReportPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // 탭처럼 보이는 머릿글 + 우측 진행도 텍스트
             Row(
               children: [
                 Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 6,
-                  ),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                   decoration: BoxDecoration(
                     color: const Color(0xFFE6EDE6),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  // ✨
+                  // ✨ V2 방식 적용
                   child: DefaultTextStyle(
                     style: const TextStyle(
                       fontWeight: FontWeight.w900,
@@ -374,8 +499,6 @@ class _ChildReportPageState extends State<ChildReportPage> {
               ],
             ),
             const SizedBox(height: 18),
-
-            // 최근 기록
             const TranslatedText('최근 학습 기록',
                 style: TextStyle(color: Colors.black54)), // ✨
             const SizedBox(height: 6),
@@ -388,8 +511,6 @@ class _ChildReportPageState extends State<ChildReportPage> {
               ),
             ),
             const SizedBox(height: 14),
-
-            // 최고 기록
             const TranslatedText('최고 학습 기록',
                 style: TextStyle(color: Colors.black54)), // ✨
             const SizedBox(height: 6),
@@ -406,4 +527,4 @@ class _ChildReportPageState extends State<ChildReportPage> {
       ),
     );
   }
-}
+} // End of _ChildReportPageState

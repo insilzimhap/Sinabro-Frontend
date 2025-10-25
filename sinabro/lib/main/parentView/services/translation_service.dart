@@ -105,4 +105,11 @@ class TranslationService extends ChangeNotifier {
         return 'ko';
     }
   }
+
+  // 동기 조회. 캐시에 없으면 원문 반환.
+  String get(String key) {
+    if (_targetLanguageCode == 'ko') return key == 'no_record' ? '기록 없음' : key;
+    final cached = _translationCache[key];
+    return cached ?? key;
+  }
 }
