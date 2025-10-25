@@ -96,8 +96,9 @@ class _SettingsPageState extends State<SettingsPage> {
 
       if (!mounted) return;
       print('[설정 저장 성공]');
-      // ✅ [병합] 파일 1의 SnackBar 대신, 파일 2의 Success Dialog를 띄웁니다.
-      _showSuccessDialog();
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('설정이 저장되었습니다.'))); // TODO: 번역
     } catch (e) {
       if (mounted) {
         print('[설정 저장 실패] $e');
@@ -110,7 +111,7 @@ class _SettingsPageState extends State<SettingsPage> {
     }
   }
 
-  // 언어 매핑 (프론트 → 서버) - 파일 1 기준
+  // 언어 매핑 (프론트 → 서버)
   String _mapLang(String v) {
     switch (v) {
       case '한국어':
@@ -130,7 +131,7 @@ class _SettingsPageState extends State<SettingsPage> {
     }
   }
 
-  // 언어 매핑 (서버 → 프론트) - 파일 1 기준
+  // 언어 매핑 (서버 → 프론트)
   String _reverseMapLang(String v) {
     switch (v) {
       case 'Korea':
@@ -150,7 +151,7 @@ class _SettingsPageState extends State<SettingsPage> {
     }
   }
 
-  // ================= Actions (파일 1 기준) =================
+  // ================= Actions =================
 
   // 로그아웃: POST /api/users/logout
   Future<void> _logout() async {
@@ -161,7 +162,6 @@ class _SettingsPageState extends State<SettingsPage> {
       print('[로그아웃 실패] $e');
     }
     if (!mounted) return;
-    // ✅ 파일 1의 기준인 UserSelectScreen으로 이동
     Navigator.of(context).pushAndRemoveUntil(
       MaterialPageRoute(builder: (_) => const UserSelectScreen()),
       (route) => false,
@@ -178,25 +178,25 @@ class _SettingsPageState extends State<SettingsPage> {
       await ParentApi.verifyDelete(widget.parentUserId!, pw);
     } catch (e) {
       await _showFailureDialog(
-        title: '실패', // TODO: 번역
-        message: '현재 비밀번호가 올바르지 않습니다!', // TODO: 번역
+        title: '실패',
+        message: '현재 비밀번호가 올바르지 않습니다!',
       );
       return;
     }
 
     // 2단계: 정말 탈퇴하시겠습니까?
     final ok = await _showConfirmDialog(
-      title: '주의', // TODO: 번역
-      message: '정말 탈퇴하시겠습니까?', // TODO: 번역
-      yesText: '예', // TODO: 번역
-      noText: '아니요', // TODO: 번역
+      title: '주의',
+      message: '정말 탈퇴하시겠습니까?',
+      yesText: '예',
+      noText: '아니요',
     );
     if (ok != true) return;
 
     // 3단계: 탈퇴 API 호출
     try {
       await ParentApi.deleteParent(widget.parentUserId!, pw);
-      await _showSuccessGoHome(message: '탈퇴되었습니다!\n메인 화면으로 돌아갑니다'); // TODO: 번역
+      await _showSuccessGoHome(message: '탈퇴되었습니다!\n메인 화면으로 돌아갑니다');
       if (!mounted) return;
       Navigator.of(context).pushAndRemoveUntil(
         MaterialPageRoute(builder: (_) => CloudAnimationScreen()),
@@ -204,87 +204,13 @@ class _SettingsPageState extends State<SettingsPage> {
       );
     } catch (e) {
       await _showFailureDialog(
-        title: '실패', // TODO: 번역
-        message: '탈퇴 실패: $e', // TODO: 번역
+        title: '실패',
+        message: '탈퇴 실패: $e',
       );
     }
   }
 
-  // -------- 다이얼로그들 (파일 1 기준 + 파일 2의 _showSuccessDialog) --------
-
-  // ✅ [신규] 파일 2에서 가져온 '저장 성공' 다이얼로그
-  // (내부 Text -> TranslatedText로 수정)
-  void _showSuccessDialog() {
-    showDialog(
-      context: context,
-      barrierDismissible: true,
-      builder: (_) => Dialog(
-        elevation: 0,
-        insetPadding: const EdgeInsets.symmetric(
-          horizontal: 40,
-          vertical: 24,
-        ),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
-        child: Container(
-          decoration: BoxDecoration(
-            color: const Color(0xFFDFF3DC), // 연한 초록 배경
-            border: Border.all(color: const Color(0xFF4CAF50), width: 3),
-            borderRadius: BorderRadius.circular(16),
-          ),
-          padding: const EdgeInsets.fromLTRB(20, 18, 20, 24),
-          child: Stack(
-            children: [
-              Positioned(
-                right: 0,
-                top: 0,
-                child: IconButton(
-                  icon: const Icon(Icons.close, color: Color(0xFF388E3C)),
-                  onPressed: () => Navigator.pop(context),
-                ),
-              ),
-              Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const SizedBox(height: 20),
-                  const Icon(
-                    Icons.check_circle,
-                    size: 60,
-                    color: Color(0xFF388E3C),
-                  ),
-                  const SizedBox(height: 16),
-                  const TranslatedText(
-                    // ✅ 번역 처리
-                    '수정 성공',
-                    style: TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.w800,
-                      color: Color(0xFF388E3C),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  const TranslatedText(
-                    // ✅ 번역 처리
-                    '정보가 성공적으로 수정되었습니다!',
-                    style: TextStyle(
-                      fontSize: 17,
-                      color: Color(0xFF5A4E4E),
-                      fontWeight: FontWeight.w700,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 8),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  // (파일 1의 기존 다이얼로그)
+  // -------- 공통 다이얼로그들 --------
   Future<String?> _askCurrentPassword() async {
     final controller = TextEditingController();
     return showDialog<String?>(
@@ -375,7 +301,6 @@ class _SettingsPageState extends State<SettingsPage> {
     );
   }
 
-  // (파일 1의 기존 다이얼로그)
   Future<void> _showFailureDialog(
       {required String title, required String message}) async {
     await showDialog<void>(
@@ -779,7 +704,7 @@ class _SettingsPageState extends State<SettingsPage> {
     );
   }
 
-  // ============= 공용 위젯 (파일 1 기준) =============
+  // ============= 공용 위젯 =============
   Widget _sectionTitle(Widget child) {
     return DefaultTextStyle(
       style: const TextStyle(

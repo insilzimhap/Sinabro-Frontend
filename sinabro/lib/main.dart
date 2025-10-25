@@ -4,29 +4,39 @@ import 'package:sinabro/config.dart'; //추가
 import 'package:sinabro/login/social_info_page.dart'; // 네 SocialExtraInfoPage 파일 경로 맞게 수정! 테스트용
 import 'package:kakao_flutter_sdk_common/kakao_flutter_sdk_common.dart';
 
-// Provider와 TranslationService import 추가
+// Provider와 TranslationService import 추가 (1번 파일에서 가져옴)
 import 'package:provider/provider.dart';
 import 'package:sinabro/main/parentView/services/translation_service.dart';
-import 'package:sinabro/main/studyView/listenStudy/page/level1/animals/animal_study_entry.dart';
 
-// 색상 임포트
+// 듣기 학습 페이지 import (1번 파일에서 가져옴)
+import 'package:sinabro/main/studyView/listenStudy/page/level1/animals/animal_study_entry.dart';
 import 'package:sinabro/main/studyView/listenStudy/page/level1/colors/color_entry_page.dart';
 import 'package:sinabro/main/studyView/listenStudy/page/level1/colors/models/color_lesson_model.dart';
-
-// 듣기 학습 라우터 임포트
 import 'package:sinabro/main/studyView/listenStudy/navigation/listen_study_router.dart';
-
-//  ListenAppleSelect 페이지를 import 합니다.
 import 'package:sinabro/main/studyView/listenStudy/page/listen_study_apple.dart';
 
-void main() {
-  // ✅ 네이티브 앱 키로 초기화 (Kakao Developers 콘솔의 "네이티브 앱 키")
+// ✅ JWT 자동부착 클라이언트 (2번 파일에서 가져옴)
+import 'package:sinabro/common/auth_client.dart';
+
+/// 앱 시작점 (⭐️ 1번과 2번 파일의 main 함수를 합침)
+Future<void> main() async {
+  // 1) ⭐️ 플러터 엔진-플랫폼 채널 준비 (2번 파일에서 가져옴)
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // 2) ✅ 네이티브 앱 키로 초기화 (공통)
   KakaoSdk.init(
     nativeAppKey: 'ca5d66d22c4255e3dced6bc1a2d4fdcd',
   );
 
-  // runApp(MyApp()); // 기존 코드
-  // Provider를 유지하여 앱 전체에서 상태 관리가 가능하도록 합니다.
+  // 3) ⭐️ 부팅 시 저장돼 있던 JWT를 메모리로 복구 (2번 파일에서 가져옴)
+  try {
+    await AuthClient.hydrateFromPrefs();
+    print('[main] 부팅 토큰 복구 완료');
+  } catch (e) {
+    print('[main][경고] 토큰 복구 중 오류: $e');
+  }
+
+  // 4) ⭐️ Provider를 포함하여 앱 실행 (1번 파일 방식)
   runApp(
     ChangeNotifierProvider(
       create: (_) => TranslationService.instance,
@@ -51,7 +61,7 @@ class MyApp extends StatelessWidget {
           childId: 'test-child'), // TODO: 실제 로그인/자녀 선택 로직 연결
       */
 
-      // Named Route 생성 로직 정의
+      // ⭐️ Named Route 생성 로직 정의 (1번 파일에서 가져옴 - 매우 중요!)
       onGenerateRoute: (settings) {
         // arguments를 Map<String, dynamic> 타입으로 안전하게 캐스팅
         final args = settings.arguments as Map<String, dynamic>? ??
