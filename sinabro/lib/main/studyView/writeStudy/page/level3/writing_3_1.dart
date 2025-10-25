@@ -150,14 +150,14 @@ Widget? _routeFallbackWithChild(
 // ──────────────────────────────────────────────────────────────────────────────
 // 오디오 정의
 // ──────────────────────────────────────────────────────────────────────────────
-const _audioDirL3 = 'assets/audio/contents/studyWrite/level3/'; // 5세 오디오 경로
-const _audioIntro1 = '${_audioDirL3}write5_study_intro_1.mp3'; // 1단계 인트로
-const _audioFinish1 = '${_audioDirL3}write5_study_finish_1.mp3'; // 1단계 완료
+const _audioDir = 'audio/tts/studyWrite/level3/';
+const _audioIntro1 = '${_audioDir}write5_study_intro_1.mp3'; // 1단계 인트로
+const _audioFinish1 = '${_audioDir}write5_study_finish_1.mp3'; // 1단계 완료
 
 // ✅ 단어 오디오 파일명 헬퍼 (예시, 실제 파일명 규칙에 맞게 조정 필요)
 String _getAnimalWordAudio(String wordKey) {
   // wordKey 예시: 'dog', 'cat', 'rabbit' ...
-  return '${_audioDirL3}animal_$wordKey.mp3';
+  return '${_audioDir}animal_$wordKey.mp3';
 }
 
 // ──────────────────────────────────────────────────────────────────────────────

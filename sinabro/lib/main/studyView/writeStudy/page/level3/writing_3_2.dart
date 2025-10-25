@@ -141,15 +141,15 @@ void _replaceNamedOrFallback(
 // ──────────────────────────────────────────────────────────────────────────────
 // 오디오 정의
 // ──────────────────────────────────────────────────────────────────────────────
-const _audioDirL3 = 'assets/audio/contents/studyWrite/level3/'; // ✅ 5세 오디오 경로
+const _audioDir = 'audio/tts/studyWrite/level3/';
 const _audioIntro2 =
-    '${_audioDirL3}write5_study_intro_2.mp3'; // ✅ 2단계 인트로 (달콤한 카드)
-const _audioFinish2 = '${_audioDirL3}write5_study_finish_2.mp3'; // ✅ 2단계 완료
+    '${_audioDir}write5_study_intro_2.mp3'; // ✅ 2단계 인트로 (달콤한 카드)
+const _audioFinish2 = '${_audioDir}write5_study_finish_2.mp3'; // ✅ 2단계 완료
 
 // ✅ 과일 단어 오디오 파일명 헬퍼
 String _getFruitWordAudio(String wordKey) {
   // wordKey 예시: 'apple', 'banana', ...
-  return '${_audioDirL3}fruit_$wordKey.mp3';
+  return '${_audioDir}fruit_$wordKey.mp3';
 }
 
 // ──────────────────────────────────────────────────────────────────────────────

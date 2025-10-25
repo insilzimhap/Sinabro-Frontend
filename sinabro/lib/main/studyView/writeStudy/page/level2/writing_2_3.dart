@@ -11,7 +11,7 @@ import 'package:sinabro/config.dart'; // ⭐️ 3. baseUrl 사용
 import 'package:audioplayers/audioplayers.dart'; // 오디오 재생용 패키지
 
 // 오디오 경로 및 파일명 정의
-const _audioDir = 'assets/audio/contents/studyWrite/level2/';
+const _audioDir = 'audio/tts/studyWrite/level2/';
 const _audioIntroVowel = '${_audioDir}write4_study_intro_03.mp3'; // 모음 친구들 인트로
 const _audioRepeat = '${_audioDir}write4_repeat.mp3'; // 따라 써봐요!
 

@@ -140,15 +140,14 @@ void _replaceNamedOrFallback(
 // ──────────────────────────────────────────────────────────────────────────────
 // ✅ 오디오 정의 추가
 // ──────────────────────────────────────────────────────────────────────────────
-const _audioDirL3 = 'assets/audio/contents/studyWrite/level3/'; // ✅ 5세 오디오 경로
-const _audioIntro4 =
-    '${_audioDirL3}write5_study_intro_4.mp3'; // ✅ 4단계 인트로 (으라차차)
-const _audioFinish4 = '${_audioDirL3}write5_study_finish_4.mp3'; // ✅ 4단계 완료
+const _audioDir = 'audio/tts/studyWrite/level3/';
+const _audioIntro4 = '${_audioDir}write5_study_intro_4.mp3'; // ✅ 4단계 인트로 (으라차차)
+const _audioFinish4 = '${_audioDir}write5_study_finish_4.mp3'; // ✅ 4단계 완료
 
 // ✅ 신체 단어 오디오 파일명 헬퍼
 String _getBodyWordAudio(String wordKey) {
   // wordKey 예시: 'eye', 'nose', ...
-  return '${_audioDirL3}body_$wordKey.mp3';
+  return '${_audioDir}body_$wordKey.mp3';
 }
 
 // ──────────────────────────────────────────────────────────────────────────────

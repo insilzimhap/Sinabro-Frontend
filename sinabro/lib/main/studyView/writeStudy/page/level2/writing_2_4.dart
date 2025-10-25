@@ -57,7 +57,7 @@ const String _base = 'assets/img/contents/studyWrite/';
 const String _introImg = '${_base}twin4.png'; // ✅ 인트로 이미지
 
 // 오디오 경로 및 파일명 매핑
-const _audioDir = 'assets/audio/contents/studyWrite/level2/';
+const _audioDir = 'audio/tts/studyWrite/level2/';
 const _audioIntroVowel2 = '${_audioDir}write4_study_intro_04.mp3'; // 모음 쌍둥이 인트로
 const _audioRepeat = '${_audioDir}write4_repeat.mp3'; // 따라 써봐요!
 

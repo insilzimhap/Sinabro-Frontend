@@ -141,15 +141,14 @@ void _replaceNamedOrFallback(
 // ──────────────────────────────────────────────────────────────────────────────
 // ✅ 오디오 정의 추가
 // ──────────────────────────────────────────────────────────────────────────────
-const _audioDirL3 = 'assets/audio/contents/studyWrite/level3/'; // ✅ 5세 오디오 경로
-const _audioIntro3 =
-    '${_audioDirL3}write5_study_intro_3.mp3'; // ✅ 3단계 인트로 (아삭아삭)
-const _audioFinish3 = '${_audioDirL3}write5_study_finish_3.mp3'; // ✅ 3단계 완료
+const _audioDir = 'audio/tts/studyWrite/level3/';
+const _audioIntro3 = '${_audioDir}write5_study_intro_3.mp3'; // ✅ 3단계 인트로 (아삭아삭)
+const _audioFinish3 = '${_audioDir}write5_study_finish_3.mp3'; // ✅ 3단계 완료
 
 // ✅ 채소 단어 오디오 파일명 헬퍼
 String _getVegeWordAudio(String wordKey) {
   // wordKey 예시: 'potato', 'sweetpotato', ...
-  return '${_audioDirL3}vege_$wordKey.mp3';
+  return '${_audioDir}vege_$wordKey.mp3';
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
