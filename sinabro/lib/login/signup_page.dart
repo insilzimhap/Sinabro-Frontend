@@ -3,16 +3,15 @@
  * 역할: 부모 회원가입. 응답에 토큰이 있으면 저장.
  * @채영: JWT+api 연결 완료
  */
-///
 
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
 import 'package:sinabro/config.dart';
-import 'package:sinabro/main/auth/authParent/login_parent.dart'; //가입 후 로그인 화면 이동
+import 'package:sinabro/main/auth/authParent/login_parent.dart';
 import 'package:sinabro/main/parentView/page/child/children_state.dart';
-import 'package:flutter/services.dart'; // TextInputFormatter 전화번호 양식 유지
+import 'package:flutter/services.dart'; // TextInputFormatter, rootBundle
 
 class SignUpPage extends StatefulWidget {
   final String role; // 'parent' 등
@@ -24,12 +23,12 @@ class SignUpPage extends StatefulWidget {
 
 class _SignUpPageState extends State<SignUpPage> {
   // Controllers
-  final _userIdController = TextEditingController(); // 아이디
-  final _emailController = TextEditingController(); // 이메일
-  final _pwController = TextEditingController(); // 비밀번호
-  final _pwConfirmController = TextEditingController(); // 비밀번호 재입력
-  final _nameController = TextEditingController(); // 이름
-  final _phoneController = TextEditingController(); // 전화번호
+  final _userIdController = TextEditingController();
+  final _emailController = TextEditingController();
+  final _pwController = TextEditingController();
+  final _pwConfirmController = TextEditingController();
+  final _nameController = TextEditingController();
+  final _phoneController = TextEditingController();
 
   // State
   bool _isLoading = false;
@@ -41,9 +40,9 @@ class _SignUpPageState extends State<SignUpPage> {
   String _idCheckMsg = '';
 
   // 동의/설정 (UI만)
-  bool _agreePrivacy = false; // 개인정보 수집 동의
-  bool _agreeEmail = false; // 이메일 수신
-  bool _agreePush = false; // 알림 수신
+  bool _agreePrivacy = false;
+  bool _agreeEmail = false;
+  bool _agreePush = false;
   String _lang = '한국어';
 
   // ───────────────── helpers ─────────────────
@@ -63,7 +62,6 @@ class _SignUpPageState extends State<SignUpPage> {
     }
   }
 
-  // 언어값 서버 매핑(화이트리스트)
   String _mapLang(String v) {
     switch (v) {
       case '한국어':
@@ -83,7 +81,6 @@ class _SignUpPageState extends State<SignUpPage> {
     }
   }
 
-  // 전화번호 양식 고정 helper
   bool _isPhoneValid(String v) => RegExp(r'^010-\d{4}-\d{4}$').hasMatch(v);
 
   // ───────────────── 아이디 중복 확인 ─────────────────
@@ -137,7 +134,6 @@ class _SignUpPageState extends State<SignUpPage> {
     final userPw = _pwController.text;
     final confirmPw = _pwConfirmController.text;
 
-    // 클라이언트 검증
     if (userId.isEmpty) return _showSnack('아이디를 입력하세요.');
     if (_idAvailable == false || _idAvailable == null) {
       return _showSnack('아이디 중복 확인을 완료해 주세요.');
@@ -167,7 +163,6 @@ class _SignUpPageState extends State<SignUpPage> {
     });
 
     try {
-      // ✅ 서버가 요구하는 settings 포함
       final payload = {
         'userId': userId,
         'userPw': userPw,
@@ -199,17 +194,11 @@ class _SignUpPageState extends State<SignUpPage> {
         final parentUserName =
             (body['userName'] ?? _nameController.text.trim()).toString();
 
-        // 세션 저장 (SharedPreferences 포함)
         await ChildrenState.instance.setSession(
           userId: parentUserId,
           userName: parentUserName.isEmpty ? null : parentUserName,
         );
 
-        // (선택) 즉시 목록 프리페치 하고 싶으면 주석 해제
-        // await ChildrenState.instance.setParent(parentUserId);
-        // await ChildrenState.instance.refresh();
-
-        // 로그인으로 이동
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (_) => const LoginParentScreen()),
@@ -230,6 +219,18 @@ class _SignUpPageState extends State<SignUpPage> {
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
+  }
+
+  // ───────────────── 개인정보 처리방침 모달 ─────────────────
+  Future<void> _showPrivacyPolicy() async {
+    // 에셋 텍스트 로드. pubspec.yaml에 등록 필요:
+    // flutter: assets: - assets/policy/privacy_ko.txt
+    final body = await rootBundle.loadString(
+      'assets/img/auth/privacy_ko.txt',
+      cache: true,
+    );
+    if (!mounted) return;
+    await showScrollableDocDialog(context, title: '개인정보 처리방침', body: body);
   }
 
   // ───────────────── UI ─────────────────
@@ -449,15 +450,14 @@ class _SignUpPageState extends State<SignUpPage> {
             TextField(
               controller: _phoneController,
               keyboardType: TextInputType.phone,
-              onChanged: (_) => setState(() {}), // 입력 시 즉시 검증 문구 갱신
+              onChanged: (_) => setState(() {}),
               inputFormatters: [
-                FilteringTextInputFormatter.allow(RegExp(r'[0-9-]')), // 숫자/하이픈만
+                FilteringTextInputFormatter.allow(RegExp(r'[0-9-]')),
               ],
-              maxLength: 13, // 010-0000-0000
-              decoration: _input('전화번호').copyWith(
-                hintText: '010-0000-0000',
-                counterText: '', // 길이 카운터 숨김
-              ),
+              maxLength: 13,
+              decoration: _input(
+                '전화번호',
+              ).copyWith(hintText: '010-0000-0000', counterText: ''),
             ),
             if (_phoneController.text.isNotEmpty &&
                 !_isPhoneValid(_phoneController.text.trim()))
@@ -473,7 +473,7 @@ class _SignUpPageState extends State<SignUpPage> {
               ),
             const SizedBox(height: 12),
 
-            // 개인정보 수집 동의 (UI만)
+            // 개인정보 수집 동의
             Row(
               children: [
                 Checkbox(
@@ -486,7 +486,7 @@ class _SignUpPageState extends State<SignUpPage> {
                 const Text('개인정보 수집 동의'),
                 const SizedBox(width: 8),
                 OutlinedButton(
-                  onPressed: () => _showSnack('개인정보 처리 방침 모달은 추후 연결 예정'),
+                  onPressed: _showPrivacyPolicy, // ← 모달 연결
                   child: const Text('전문 읽기'),
                 ),
               ],
@@ -579,7 +579,7 @@ class _SignUpPageState extends State<SignUpPage> {
     );
   }
 
-  // 하단: 가입하기 애니메이션 박스 (자리만)
+  // 하단: 가입하기 애니메이션 박스
   Widget _animationBox(Color cardColor) {
     return Card(
       color: const Color(0xFFBDBDBD),
@@ -613,4 +613,81 @@ class _SignUpPageState extends State<SignUpPage> {
       ),
     );
   }
+}
+
+// ───────────────── 공용 스크롤 다이얼로그 ─────────────────
+Future<void> showScrollableDocDialog(
+  BuildContext context, {
+  required String title,
+  required String body,
+}) async {
+  await showDialog<void>(
+    context: context,
+    barrierDismissible: true,
+    builder: (_) {
+      final w = MediaQuery.of(context).size.width;
+      final h = MediaQuery.of(context).size.height;
+      final maxW = w > 600 ? 600.0 : w * 0.92;
+      final maxH = h * 0.8;
+
+      return Dialog(
+        insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+        child: ConstrainedBox(
+          constraints: BoxConstraints(maxWidth: maxW, maxHeight: maxH),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 14, 8, 8),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        title,
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ),
+                    IconButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      icon: const Icon(Icons.close_rounded),
+                    ),
+                  ],
+                ),
+              ),
+              const Divider(height: 1),
+              Expanded(
+                child: Scrollbar(
+                  thumbVisibility: true,
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
+                    child: SelectableText(
+                      body,
+                      style: const TextStyle(fontSize: 14, height: 1.5),
+                    ),
+                  ),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                child: Align(
+                  alignment: Alignment.centerRight,
+                  child: TextButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    child: const Text('닫기'),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    },
+  );
 }

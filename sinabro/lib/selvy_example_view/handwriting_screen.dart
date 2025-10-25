@@ -1,255 +1,285 @@
-/*
- * @file lib/selvy_example_view/handwriting_screen.dart
- * @author 문채영
- * 
- * 필기 입력 화면을 구성하는 위젯. 사용자의 손글씨를 캔버스에 그려주고,
- * SelvyRecognizer 클래스를 통해 네이티브(Android)의 Selvy SDK에 필기 인식을 요청한다.
- *
- * 주요 기능:
- * - 손글씨 입력 좌표 기록
- * - Flutter ↔ Android MethodChannel 통신으로 인식 요청
- * - 인식 결과 화면 출력
- */
+// /*
+//  * @file lib/selvy_example_view/handwriting_screen.dart
+//  * 필기 입력 화면(데모). 배치 전송/캔버스 크기 전달/세트 제한/타겟 전달 반영.
+//  */
 
-import 'package:flutter/material.dart';
-import 'package:sinabro/selvy_example_view//selvy_recognizer.dart';
+// import 'package:flutter/material.dart';
+// import 'package:sinabro/selvy_example_view/selvy_service.dart';
 
-/// 하나의 획을 구성하는 좌표(x, y)와 타임스탬프(t)
-/// t는 현재 시간(ms)으로, 필요 시 시간 흐름 추적용으로 사용 가능
-class _StrokePoint {
-  final int x, y, t;
-  _StrokePoint({required this.x, required this.y, required this.t});
-}
+// /// 하나의 획을 구성하는 좌표(x, y)와 타임스탬프(t)
+// class _StrokePoint {
+//   final int x, y, t;
+//   _StrokePoint({required this.x, required this.y, required this.t});
+// }
 
-/// 여러 개의 점으로 구성된 획
-class _Stroke {
-  final List<_StrokePoint> points;
-  _Stroke({required this.points});
-}
+// /// 여러 점으로 구성된 획
+// class _Stroke {
+//   final List<_StrokePoint> points;
+//   _Stroke({required this.points});
+// }
 
-/// 필기 입력 화면 (WritingView 역할)
-/// GestureDetector로 입력 이벤트를 처리하고, CustomPaint로 획을 그린다.
-class HandwritingScreen extends StatefulWidget {
-  const HandwritingScreen({Key? key}) : super(key: key);
+// class HandwritingScreen extends StatefulWidget {
+//   const HandwritingScreen({Key? key}) : super(key: key);
 
-  @override
-  State<HandwritingScreen> createState() => _HandwritingScreenState();
-}
+//   @override
+//   State<HandwritingScreen> createState() => _HandwritingScreenState();
+// }
 
-class _HandwritingScreenState extends State<HandwritingScreen> {
-  final List<Offset> _currentPoints = []; // 현재 그리는 획
-  final List<_Stroke> _finishedStrokes = []; // 이전 획들 저장
-  String _recognizedText = ''; // 인식 결과
-  bool _isRecognizing = false; // 인식 중 여부
+// class _HandwritingScreenState extends State<HandwritingScreen> {
+//   // 화면 타겟/세트 — 실제 페이지에서 주입 가능
+//   static const _candidateSet = [
+//     'ㄱ',
+//     'ㄲ',
+//     'ㄷ',
+//     'ㄸ',
+//     'ㅅ',
+//     'ㅆ',
+//     'ㅈ',
+//     'ㅉ',
+//     'ㅂ',
+//     'ㅃ',
+//   ];
+//   final String _targetChar = 'ㄱ';
 
-  /// 새 획 시작
-  /// 1. 현재 점 목록 초기화
-  /// 2. 시작 좌표 기록 및 네이티브로 전달
-  void _onPanStart(DragStartDetails details) {
-    final pos = details.localPosition;
-    final time = DateTime.now().millisecondsSinceEpoch;
+//   final List<Offset> _currentPoints = []; // 현재 그리는 획
+//   final List<_Stroke> _finishedStrokes = []; // 완료된 획들
+//   final List<Offset> _batch = []; // 네이티브 전송용 배치 버퍼
 
-    setState(() {
-      _currentPoints.clear();
-      _currentPoints.add(pos);
-    });
+//   String _recognizedText = '';
+//   bool _isRecognizing = false;
+//   bool _begun = false; // beginInk 호출 여부
 
-    SelvyRecognizer.addPoint(pos.dx.toInt(), pos.dy.toInt());
-  }
+//   // ----- Gesture handlers -----
 
-  /// 획 그리는 중
-  /// 1. 현재 좌표를 계속 기록
-  /// 2. 좌표 변화마다 네이티브에도 전달
-  void _onPanUpdate(DragUpdateDetails details) {
-    final pos = details.localPosition;
-    final time = DateTime.now().millisecondsSinceEpoch;
+//   void _ensureBeginInk(BoxConstraints c) {
+//     if (_begun) return;
+//     final dpr = MediaQuery.of(context).devicePixelRatio;
+//     SelvyRecognizer.beginInk(
+//       width: c.maxWidth,
+//       height: c.maxHeight,
+//       devicePixelRatio: dpr,
+//     );
+//     _begun = true;
+//   }
 
-    setState(() {
-      _currentPoints.add(pos);
-    });
+//   void _onPanStart(DragStartDetails details, BoxConstraints c) {
+//     _ensureBeginInk(c);
+//     final pos = details.localPosition;
 
-    SelvyRecognizer.addPoint(pos.dx.toInt(), pos.dy.toInt());
-  }
+//     setState(() {
+//       _currentPoints.clear();
+//       _currentPoints.add(pos);
+//     });
 
-  /// 획 종료
-  /// 1. 하나의 획(_Stroke)으로 저장
-  /// 2. 현재 점 목록 초기화
-  /// 3. 네이티브에 획 종료 신호 전송
-  void _onPanEnd(DragEndDetails details) {
-    final time = DateTime.now().millisecondsSinceEpoch;
-    final stroke = _Stroke(
-      points:
-          _currentPoints.map((offset) {
-            return _StrokePoint(
-              x: offset.dx.toInt(),
-              y: offset.dy.toInt(),
-              t: time,
-            );
-          }).toList(),
-    );
+//     _batch
+//       ..clear()
+//       ..add(pos);
+//   }
 
-    setState(() {
-      _finishedStrokes.add(stroke);
-      _currentPoints.clear();
-    });
+//   void _onPanUpdate(DragUpdateDetails details) {
+//     final pos = details.localPosition;
 
-    SelvyRecognizer.endStroke();
-  }
+//     setState(() => _currentPoints.add(pos));
+//     _batch.add(pos);
 
-  /// 인식 버튼
-  /// - 인식 중 상태 표시(_isRecognizing)
-  /// - SelvyRecognizer.recognize() 호출하여 결과 수신
-  /// - 결과를 화면에 출력
-  Future<void> _onRecognizePressed() async {
-    print('🔍 [Flutter] 인식 버튼 눌림');
+//     // 포인트 6개마다 배치 전송
+//     if (_batch.length >= 6) {
+//       SelvyRecognizer.addPoints(
+//         _batch
+//             .map(
+//               (p) => {
+//                 'x': p.dx,
+//                 'y': p.dy,
+//                 // 필요하면 't': DateTime.now().millisecondsSinceEpoch,
+//               },
+//             )
+//             .toList(),
+//       );
+//       _batch.clear();
+//     }
+//   }
 
-    if (_finishedStrokes.isEmpty) {
-      setState(() {
-        _recognizedText = '먼저 손글씨를 입력해주세요.';
-      });
-      return;
-    }
+//   void _flushBatch() {
+//     if (_batch.isEmpty) return;
+//     SelvyRecognizer.addPoints(
+//       _batch.map((p) => {'x': p.dx, 'y': p.dy}).toList(),
+//     );
+//     _batch.clear();
+//   }
 
-    setState(() {
-      _isRecognizing = true;
-    });
+//   void _onPanEnd(DragEndDetails details) {
+//     _flushBatch();
 
-    try {
-      final result = await SelvyRecognizer.recognize();
+//     final now = DateTime.now().millisecondsSinceEpoch;
+//     final stroke = _Stroke(
+//       points:
+//           _currentPoints
+//               .map(
+//                 (o) => _StrokePoint(x: o.dx.toInt(), y: o.dy.toInt(), t: now),
+//               )
+//               .toList(),
+//     );
 
-      print('🎯 [Flutter] 네이티브에서 받은 결과: $result');
+//     setState(() {
+//       _finishedStrokes.add(stroke);
+//       _currentPoints.clear();
+//     });
 
-      setState(() {
-        _recognizedText = result;
-      });
-    } catch (e) {
-      setState(() {
-        _recognizedText = '인식 실패: $e';
-      });
-    } finally {
-      setState(() {
-        _isRecognizing = false;
-      });
-    }
-  }
+//     SelvyRecognizer.endStroke();
+//   }
 
-  /// 지우기 버튼
-  /// - 입력된 모든 획 제거, 화면 리셋
-  /// - SelvyRecognizer.clearInk() 호출로 네이티브에서도 초기화
-  void _onClearPressed() {
-    setState(() {
-      _finishedStrokes.clear();
-      _currentPoints.clear();
-      _recognizedText = '';
-    });
+//   void _onPanCancel() {
+//     _flushBatch();
+//     _currentPoints.clear();
+//     SelvyRecognizer.endStroke();
+//     setState(() {});
+//   }
 
-    SelvyRecognizer.clearInk();
-  }
+//   // ----- Actions -----
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Selvy Pen 필기 인식')),
-      body: Column(
-        children: [
-          // 필기 영역
-          Expanded(
-            child: GestureDetector(
-              onPanStart: _onPanStart,
-              onPanUpdate: _onPanUpdate,
-              onPanEnd: _onPanEnd,
-              child: Container(
-                color: Colors.white,
-                child: SizedBox.expand(
-                  child: CustomPaint(
-                    painter: _HandwritingPainter(
-                      strokes: _finishedStrokes,
-                      currentPoints: _currentPoints,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ),
+//   Future<void> _onRecognizePressed() async {
+//     if (_finishedStrokes.isEmpty && _currentPoints.isEmpty) {
+//       setState(() => _recognizedText = '먼저 손글씨를 입력해주세요.');
+//       return;
+//     }
 
-          const SizedBox(height: 12),
+//     setState(() => _isRecognizing = true);
 
-          // 인식 결과
-          if (_isRecognizing)
-            const Text('⏳ 인식 중...', style: TextStyle(color: Colors.orange)),
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 4.0),
-            child: Text(
-              _recognizedText,
-              style: const TextStyle(fontSize: 16, color: Colors.black),
-            ),
-          ),
+//     try {
+//       await SelvyRecognizer.setCandidateSet(_candidateSet);
+//       final result = await SelvyRecognizer.recognize(target: _targetChar);
 
-          // 버튼
-          Row(
-            children: [
-              Expanded(
-                child: ElevatedButton(
-                  onPressed: _isRecognizing ? null : _onRecognizePressed,
-                  child: const Text('인식'),
-                ),
-              ),
-              Expanded(
-                child: ElevatedButton(
-                  onPressed: _onClearPressed,
-                  child: const Text('지우기'),
-                ),
-              ),
-            ],
-          ),
+//       setState(() => _recognizedText = result);
+//     } catch (e) {
+//       setState(() => _recognizedText = '인식 실패: $e');
+//     } finally {
+//       setState(() => _isRecognizing = false);
+//     }
+//   }
 
-          const SizedBox(height: 16),
-        ],
-      ),
-    );
-  }
-}
+//   void _onClearPressed() {
+//     setState(() {
+//       _finishedStrokes.clear();
+//       _currentPoints.clear();
+//       _recognizedText = '';
+//     });
+//     SelvyRecognizer.clearInk();
+//   }
 
-/// 캔버스에 획을 그림 (CustomPainter)
-/// 완료된 획 + 현재 입력 중인 획을 동시에 그림
-class _HandwritingPainter extends CustomPainter {
-  final List<_Stroke> strokes;
-  final List<Offset> currentPoints;
+//   // ----- UI -----
 
-  const _HandwritingPainter({
-    required this.strokes,
-    required this.currentPoints,
-  });
+//   @override
+//   Widget build(BuildContext context) {
+//     return Scaffold(
+//       appBar: AppBar(title: const Text('Selvy Pen 필기 인식')),
+//       body: LayoutBuilder(
+//         builder: (context, c) {
+//           // 첫 build 때 1회 beginInk
+//           _ensureBeginInk(c);
 
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint =
-        Paint()
-          ..color = Colors.black
-          ..strokeWidth = 4.0
-          ..strokeCap = StrokeCap.round;
+//           return Column(
+//             children: [
+//               // 필기 영역
+//               Expanded(
+//                 child: GestureDetector(
+//                   onPanStart: (d) => _onPanStart(d, c),
+//                   onPanUpdate: _onPanUpdate,
+//                   onPanEnd: _onPanEnd,
+//                   onPanCancel: _onPanCancel,
+//                   child: Container(
+//                     color: Colors.white,
+//                     child: SizedBox.expand(
+//                       child: CustomPaint(
+//                         painter: _HandwritingPainter(
+//                           strokes: _finishedStrokes,
+//                           currentPoints: _currentPoints,
+//                         ),
+//                       ),
+//                     ),
+//                   ),
+//                 ),
+//               ),
 
-    // 완료된 획
-    for (final stroke in strokes) {
-      for (int i = 0; i < stroke.points.length - 1; i++) {
-        final p1 = Offset(
-          stroke.points[i].x.toDouble(),
-          stroke.points[i].y.toDouble(),
-        );
-        final p2 = Offset(
-          stroke.points[i + 1].x.toDouble(),
-          stroke.points[i + 1].y.toDouble(),
-        );
-        canvas.drawLine(p1, p2, paint);
-      }
-    }
+//               const SizedBox(height: 12),
 
-    // 현재 그리고 있는 획
-    for (int i = 0; i < currentPoints.length - 1; i++) {
-      canvas.drawLine(currentPoints[i], currentPoints[i + 1], paint);
-    }
-  }
+//               // 인식 결과
+//               if (_isRecognizing)
+//                 const Text('⏳ 인식 중...', style: TextStyle(color: Colors.orange)),
+//               Padding(
+//                 padding: const EdgeInsets.symmetric(vertical: 4.0),
+//                 child: Text(
+//                   _recognizedText,
+//                   style: const TextStyle(fontSize: 16, color: Colors.black),
+//                 ),
+//               ),
 
-  @override
-  bool shouldRepaint(_HandwritingPainter oldDelegate) => true;
-}
+//               // 버튼
+//               Row(
+//                 children: [
+//                   Expanded(
+//                     child: ElevatedButton(
+//                       onPressed: _isRecognizing ? null : _onRecognizePressed,
+//                       child: const Text('인식'),
+//                     ),
+//                   ),
+//                   Expanded(
+//                     child: ElevatedButton(
+//                       onPressed: _onClearPressed,
+//                       child: const Text('지우기'),
+//                     ),
+//                   ),
+//                 ],
+//               ),
+
+//               const SizedBox(height: 16),
+//             ],
+//           );
+//         },
+//       ),
+//     );
+//   }
+// }
+
+// // ----- Painter -----
+
+// class _HandwritingPainter extends CustomPainter {
+//   final List<_Stroke> strokes;
+//   final List<Offset> currentPoints;
+
+//   const _HandwritingPainter({
+//     required this.strokes,
+//     required this.currentPoints,
+//   });
+
+//   @override
+//   void paint(Canvas canvas, Size size) {
+//     final paint =
+//         Paint()
+//           ..color = Colors.black
+//           ..strokeWidth = 4.0
+//           ..strokeCap = StrokeCap.round;
+
+//     // 완료된 획
+//     for (final stroke in strokes) {
+//       for (int i = 0; i < stroke.points.length - 1; i++) {
+//         final p1 = Offset(
+//           stroke.points[i].x.toDouble(),
+//           stroke.points[i].y.toDouble(),
+//         );
+//         final p2 = Offset(
+//           stroke.points[i + 1].x.toDouble(),
+//           stroke.points[i + 1].y.toDouble(),
+//         );
+//         canvas.drawLine(p1, p2, paint);
+//       }
+//     }
+
+//     // 현재 그리는 획
+//     for (int i = 0; i < currentPoints.length - 1; i++) {
+//       canvas.drawLine(currentPoints[i], currentPoints[i + 1], paint);
+//     }
+//   }
+
+//   @override
+//   bool shouldRepaint(_HandwritingPainter oldDelegate) => true;
+// }

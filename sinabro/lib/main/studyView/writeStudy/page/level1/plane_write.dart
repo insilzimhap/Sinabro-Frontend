@@ -1,12 +1,19 @@
+// 레벨1 열매 3 비행기 그리기(곡선2) 서버 연결 완료
+
 import 'dart:math';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
+import 'dart:convert'; // http 사용을 위해 추가
+import 'package:http/http.dart' as http; // http 사용을 위해 추가
+import 'package:sinabro/config.dart'; // baseUrl 사용을 위해 추가
+
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart'; // rootBundle
 
 class PlaneWritePage extends StatefulWidget {
-  const PlaneWritePage({super.key});
+  final String childId;
+  const PlaneWritePage({super.key, required this.childId});
 
   @override
   State<PlaneWritePage> createState() => _PlaneWritePageState();
@@ -56,6 +63,9 @@ class _PlaneWritePageState extends State<PlaneWritePage> {
   static const double _introPlaneRightFactor = 0.07; // 오른쪽에서 4% 지점(→ left로 환산)
   static const double _introPlaneTopFactor = 0.16; // 위에서 16% 지점
 
+  // ✅ 학습 시작 시간 기록 변수
+  DateTime? _startTime;
+
   void _startWriting() {
     if (!_showIntro) return;
     setState(() => _showIntro = false);
@@ -70,30 +80,78 @@ class _PlaneWritePageState extends State<PlaneWritePage> {
     });
   }
 
-  void _onStageDone() {
+  // ✅ API 호출 함수 추가
+  Future<void> _uploadStudyWritingResult() async {
+    // 실제 이 학습에 해당하는 정확한 fruit_id로 바꿔주세요!
+    const String fruitIdForThisStudy = 'FR_WR_003';
+    
+    // ✅ 학습 시간 계산
+    int timeSpentSeconds = 0; 
+    if (_startTime != null) {
+      timeSpentSeconds = DateTime.now().difference(_startTime!).inSeconds;
+    }
+
+    // 서버에 보낼 데이터 구성
+    final body = jsonEncode({
+      'childId': widget.childId, // State 위젯의 childId 사용
+      'fruitId': fruitIdForThisStudy,
+      'timeSpentSecs': timeSpentSeconds, // 계산된 시간 사용
+      'isCompleted': true,  // 학습을 정상적으로 완료했으므로 true
+    });
+
+    try {
+      // 백엔드 API 호출 (POST 요청)
+      final res = await http.post(
+        Uri.parse('$baseUrl/api/study/writing/complete'), // 백엔드 API 주소
+        headers: {'Content-Type': 'application/json'},
+        body: body,
+      );
+
+      // 응답 상태 코드 확인
+      if (res.statusCode == 200) {
+        debugPrint('✅ 쓰기 학습 결과 업로드 성공!');
+      } else {
+        debugPrint('❌ 쓰기 학습 결과 업로드 실패: ${res.body}');
+      }
+    } catch (e) {
+      // 네트워크 오류 등 예외 처리
+      debugPrint('❌ 쓰기 학습 결과 업로드 중 에러 발생: $e');
+    }
+  }
+
+  void _onStageDone() async { // ⭐ async 키워드 추가
     if (_isCorrect || _busyAdvancing) return;
     setState(() => _isCorrect = true);
     _busyAdvancing = true;
 
+    // 아직 다음 스테이지가 남았을 때
     if (_stage < 2) {
-      Future.delayed(const Duration(seconds: 1), () {
-        if (!mounted) return;
-        _advanceToNextStage();
-      });
-    } else {
-      // 마지막 단계
+      // 1초 기다렸다가 다음 스테이지로
+      await Future.delayed(const Duration(seconds: 1)); // ⭐ await 사용
+      if (!mounted) return;
+      _advanceToNextStage();
+    }
+    // 마지막 스테이지 완료 시
+    else {
+      // "완벽해요" 표시
       setState(() => _showPerfect = true);
-      Future.delayed(const Duration(seconds: 1), () {
-        if (!mounted) return;
-        setState(() {
-          _showPerfect = false;
-          _showFinishPopup = true;
-        });
-        Future.delayed(const Duration(seconds: 2), () {
-          if (!mounted) return;
-          Navigator.of(context).maybePop(); // AppleGarden 로 복귀
-        });
+      // 1초 기다리기
+      await Future.delayed(const Duration(seconds: 1)); // ⭐ await 사용
+      if (!mounted) return;
+      // 완료 팝업 표시
+      setState(() {
+        _showPerfect = false;
+        _showFinishPopup = true;
       });
+      // 2초 더 기다리기 (팝업 보여주는 시간)
+      await Future.delayed(const Duration(seconds: 2)); // ⭐ await 사용
+      if (!mounted) return;
+
+      // ⭐ API 호출! (팝업 후, 화면 전환 전)
+      await _uploadStudyWritingResult();
+
+      if (!mounted) return;
+      Navigator.of(context).maybePop(); // 임시로 pop 처리
     }
   }
 

@@ -29,6 +29,9 @@ class WritingCanvas extends StatefulWidget {
 
   final String targetType; // changed: 'consonant' | 'vowel' | 'word'
 
+  // ✅ controller 옵션 추가
+  final WritingCanvasController? controller;
+
   const WritingCanvas({
     super.key,
     required this.onRecognize,
@@ -39,6 +42,7 @@ class WritingCanvas extends StatefulWidget {
     this.penWidth = 20.0, // 기본값
     this.onStrokeEnd,
     this.targetType = "word", // changed: 기본값 단어 모드
+    this.controller, // changed
   });
 
   @override
@@ -56,7 +60,14 @@ class WritingCanvasState extends State<WritingCanvas> {
   @override
   void initState() {
     super.initState();
+    widget.controller?._bind(this); // changed
     _initializeSelvy();
+  }
+
+  @override
+  void dispose() {
+    widget.controller?._unbind(); // changed
+    super.dispose();
   }
 
   // --- WritingCanvasState: _initializeSelvy 교체 ---
@@ -133,7 +144,7 @@ class WritingCanvasState extends State<WritingCanvas> {
               : (widget.targetChar != null ? [widget.targetChar!] : const []);
       if (effectiveSet.isNotEmpty) {
         await SelvyRecognizer.setCandidateSet(effectiveSet); // changed
-        debugPrint('🎯 setCandidateSet($effectiveSet)'); // changed
+        debugPrint('📥 허용 답 리스트 전달 ($effectiveSet)'); // changed
       }
 
       final raw = await SelvyRecognizer.recognize(
@@ -141,10 +152,10 @@ class WritingCanvasState extends State<WritingCanvas> {
       ); // changed
 
       // 후보 1~3 로그
-      final lines = raw.split("\n");
-      for (int i = 0; i < lines.length && i < 3; i++) {
-        debugPrint("🎯 후보${i + 1}: ${lines[i]}"); // changed
-      }
+      // final lines = raw.split("\n");
+      // for (int i = 0; i < lines.length && i < 3; i++) {
+      //   debugPrint("🎯 후보${i + 1}: ${lines[i]}"); // changed
+      // }
 
       widget.onRecognize(raw); // raw 그대로 전달
     } catch (e) {
@@ -203,4 +214,24 @@ class _HandwritingPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
+}
+
+class WritingCanvasController {
+  WritingCanvasState? _state;
+
+  void _bind(WritingCanvasState state) {
+    _state = state;
+  }
+
+  void _unbind() {
+    _state = null;
+  }
+
+  Future<void> recognizeAndCheckText() async {
+    await _state?.recognizeAndCheckText();
+  }
+
+  Future<void> clearCanvas() async {
+    await _state?.clearCanvas();
+  }
 }

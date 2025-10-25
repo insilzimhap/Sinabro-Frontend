@@ -1,8 +1,8 @@
+// lib/main/parentView/page/child_report_page.dart
 /*
  * 파일: lib/main/parentView/page/child_report_page.dart
  * 개요: 자녀의 학습 리포트를 보여주는 화면(뷰 전용, 서버 미연동).
  * @ 채영: 자녀 이름, 나이, 레벨 등 띄울 수 있는 부분은 수정 해놓음.
- * @ 연수: 언어팩 지원을 위한 코드 수정 완료
  */
 
 import 'package:flutter/material.dart';
@@ -11,12 +11,11 @@ import 'dart:convert';
 import 'dart:developer';
 import 'package:sinabro/common/auth_client.dart';
 import 'package:sinabro/config.dart';
-import 'package:sinabro/main/parentView/widget/translated_text.dart'; // ✨
 
 // ✅ 프로필 수정 페이지 import
 import 'package:sinabro/main/parentView/page/child/child_profile_edit.dart';
 
-/// 자녀 학습 리포트 페이지
+/// 자녀 학습 리포트 페이지 (뷰 전용 / 서버 미연동)
 class ChildReportPage extends StatefulWidget {
   final String? parentUserId;
 
@@ -151,8 +150,7 @@ class _ChildReportPageState extends State<ChildReportPage> {
       ),
       alignment: Alignment.centerLeft,
       padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: const TranslatedText(
-        // ✨
+      child: const Text(
         '자녀 페이지',
         style: TextStyle(
           color: Colors.white,
@@ -182,26 +180,12 @@ class _ChildReportPageState extends State<ChildReportPage> {
             // 7세 · lv.2  |  프로필 수정
             Row(
               children: [
-                // ✨ 동적 텍스트 분리 적용
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      '$childAge',
-                      style: const TextStyle(
-                          color: Colors.black54, fontWeight: FontWeight.w700),
-                    ),
-                    const TranslatedText(
-                      '세',
-                      style: TextStyle(
-                          color: Colors.black54, fontWeight: FontWeight.w700),
-                    ),
-                    Text(
-                      '  ·  lv.$level',
-                      style: const TextStyle(
-                          color: Colors.black54, fontWeight: FontWeight.w700),
-                    ),
-                  ],
+                Text(
+                  '$childAge세  ·  lv.$level',
+                  style: const TextStyle(
+                    color: Colors.black54,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
                 const Spacer(),
                 SizedBox(
@@ -234,26 +218,15 @@ class _ChildReportPageState extends State<ChildReportPage> {
                         borderRadius: BorderRadius.circular(10),
                       ),
                     ),
-                    child: const TranslatedText('프로필 수정'), // ✨
+                    child: const Text('프로필 수정'),
                   ),
                 ),
               ],
             ),
             const SizedBox(height: 6),
-            // ✨ 동적 텍스트 분리 적용
-            Wrap(
-              crossAxisAlignment: WrapCrossAlignment.center,
-              children: [
-                Text(
-                  '$childName ',
-                  style: const TextStyle(
-                      fontSize: 24, fontWeight: FontWeight.w900),
-                ),
-                const TranslatedText(
-                  '님의 학습 리포트',
-                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.w900),
-                ),
-              ],
+            Text(
+              '$childName 님의 학습 리포트',
+              style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w900),
             ),
             const SizedBox(height: 12),
 
@@ -272,14 +245,7 @@ class _ChildReportPageState extends State<ChildReportPage> {
                   ),
                 ),
                 const SizedBox(width: 12),
-                // ✨ 동적 텍스트 분리 적용
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const TranslatedText('다음 레벨까지'),
-                    Text(' $percent%'),
-                  ],
-                ),
+                Text('다음 레벨까지 $percent%'),
               ],
             ),
           ],
@@ -296,14 +262,14 @@ class _ChildReportPageState extends State<ChildReportPage> {
         final isNarrow = c.maxWidth < 860;
         final cards = [
           _statCard(
-            titleWidget: const TranslatedText('학습'), // ✨ String -> Widget으로 변경
+            title: '학습',
             progressLabel:
                 '$level 레벨의 ${(progressToNext * 100).toStringAsFixed(0)}% 완료!',
             recent: widget.studyRecent,
             best: widget.studyBest,
           ),
           _statCard(
-            titleWidget: const TranslatedText('게임'), // ✨ String -> Widget으로 변경
+            title: '게임',
             progressLabel:
                 '$level 레벨의 ${(progressToNext * 100).toStringAsFixed(0)}% 완료!',
             recent: widget.gameRecent,
@@ -327,9 +293,8 @@ class _ChildReportPageState extends State<ChildReportPage> {
     );
   }
 
-  // ✨ String title -> Widget titleWidget으로 변경
   Widget _statCard({
-    required Widget titleWidget,
+    required String title,
     required String progressLabel,
     required String recent,
     required String best,
@@ -357,13 +322,12 @@ class _ChildReportPageState extends State<ChildReportPage> {
                     color: const Color(0xFFE6EDE6),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  // ✨
-                  child: DefaultTextStyle(
+                  child: Text(
+                    title,
                     style: const TextStyle(
                       fontWeight: FontWeight.w900,
                       color: Color(0xFF2E7D32),
                     ),
-                    child: titleWidget,
                   ),
                 ),
                 const Spacer(),
@@ -376,8 +340,7 @@ class _ChildReportPageState extends State<ChildReportPage> {
             const SizedBox(height: 18),
 
             // 최근 기록
-            const TranslatedText('최근 학습 기록',
-                style: TextStyle(color: Colors.black54)), // ✨
+            const Text('최근 학습 기록', style: TextStyle(color: Colors.black54)),
             const SizedBox(height: 6),
             Text(
               recent,
@@ -390,8 +353,7 @@ class _ChildReportPageState extends State<ChildReportPage> {
             const SizedBox(height: 14),
 
             // 최고 기록
-            const TranslatedText('최고 학습 기록',
-                style: TextStyle(color: Colors.black54)), // ✨
+            const Text('최고 학습 기록', style: TextStyle(color: Colors.black54)),
             const SizedBox(height: 6),
             Text(
               best,

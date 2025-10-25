@@ -1,9 +1,14 @@
+// 레벨1 열매 2 잼 그리기(곡선) 서버 연결 완료
 import 'dart:math';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
+import 'dart:convert'; // http 사용을 위해 추가
+import 'package:http/http.dart' as http; // http 사용을 위해 추가
+import 'package:sinabro/config.dart'; // baseUrl 사용을 위해 추가
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show rootBundle;
+
 
 /* ───────── assets ───────── */
 const _dir = 'assets/img/contents/studyWrite/';
@@ -39,7 +44,8 @@ enum _Phase {
 }
 
 class JamSpreadFlowPage extends StatefulWidget {
-  const JamSpreadFlowPage({super.key});
+  final String childId;
+  const JamSpreadFlowPage({super.key, required this.childId});
 
   @override
   State<JamSpreadFlowPage> createState() => _JamSpreadFlowPageState();
@@ -53,11 +59,53 @@ class _JamSpreadFlowPageState extends State<JamSpreadFlowPage>
   int _nonce = 0; // 레이어 강제 리셋 키
   bool _preloaded = false;
 
+  // ✅ 학습 시작 시간 기록 변수
+  DateTime? _startTime;
+
   // 완성 전환(짜라란)
   late final AnimationController _revealCtrl = AnimationController(
     vsync: this,
     duration: const Duration(milliseconds: 1400),
   );
+
+  // ✅ API 호출 함수 추가
+  Future<void> _uploadStudyWritingResult() async {
+    // 실제 이 학습에 해당하는 정확한 fruit_id로 바꿔주세요!
+    const String fruitIdForThisStudy = 'FR_WR_002';
+    
+    // ✅ 학습 시간 계산
+    int timeSpentSeconds = 0; 
+    if (_startTime != null) {
+      timeSpentSeconds = DateTime.now().difference(_startTime!).inSeconds;
+    }
+
+    // 서버에 보낼 데이터 구성
+    final body = jsonEncode({
+      'childId': widget.childId, // State 위젯의 childId 사용
+      'fruitId': fruitIdForThisStudy,
+      'timeSpentSecs': timeSpentSeconds, // 계산된 시간 사용
+      'isCompleted': true,  // 학습을 정상적으로 완료했으므로 true
+    });
+
+    try {
+      // 백엔드 API 호출 (POST 요청)
+      final res = await http.post(
+        Uri.parse('$baseUrl/api/study/writing/complete'), // 백엔드 API 주소
+        headers: {'Content-Type': 'application/json'},
+        body: body,
+      );
+
+      // 응답 상태 코드 확인
+      if (res.statusCode == 200) {
+        debugPrint('✅ 쓰기 학습 결과 업로드 성공!');
+      } else {
+        debugPrint('❌ 쓰기 학습 결과 업로드 실패: ${res.body}');
+      }
+    } catch (e) {
+      // 네트워크 오류 등 예외 처리
+      debugPrint('❌ 쓰기 학습 결과 업로드 중 에러 발생: $e');
+    }
+  }
 
   @override
   void dispose() {
@@ -124,7 +172,13 @@ class _JamSpreadFlowPageState extends State<JamSpreadFlowPage>
   }
 
   /* ───────── flow helpers ───────── */
-  void _startDraw() => setState(() => _phase = _Phase.draw);
+  void _startDraw() {
+    setState(() {
+       _phase = _Phase.draw;
+       // ✅ 학습 시작 시간 기록
+       _startTime = DateTime.now(); 
+    });
+  }
 
   void _reset() {
     setState(() {
@@ -159,6 +213,8 @@ class _JamSpreadFlowPageState extends State<JamSpreadFlowPage>
       await Future.delayed(const Duration(seconds: 2));
       if (!mounted) return;
 
+      // ✅ API 호출 추가! (팝업 후, 화면 전환 전)
+      await _uploadStudyWritingResult();
       Navigator.of(context).maybePop();
       return;
     }

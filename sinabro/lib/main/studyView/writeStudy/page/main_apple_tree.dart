@@ -71,47 +71,48 @@ class _AppleGardenState extends State<AppleGarden> {
     late final Widget page;
     switch (index) {
       case 0: // ⭐ 별잇기
-        page = ConstellationDrawPage();
+        page = ConstellationDrawPage(childId: widget.childId);
         break;
 
       case 1: // 🍓 잼
-        page = jam.JamSpreadFlowPage();
+        page = jam.JamSpreadFlowPage(childId: widget.childId);
         break;
 
       case 2: // ✈️ 비행기
-        page = plane.PlaneWritePage();
+        page = plane.PlaneWritePage(childId: widget.childId);
         break;
 
       case 3: // 🍭 달고나(골드)
         page = CandyWritePage(childId: widget.childId);
         break;
 
-      // level2
+      // ─────────────── level2 ───────────────
       case 4:
-        page = Writing21Page(childId: widget.childId);
+        page = Writing21Page(childId: widget.childId, fruitId: 'FR_WR_005');
         break;
       case 5:
-        page = Writing22Page(childId: widget.childId);
+        page = Writing22Page(childId: widget.childId, fruitId: 'FR_WR_006');
         break;
       case 6:
-        page = Writing23Page(childId: widget.childId);
+        page = Writing23Page(childId: widget.childId, fruitId: 'FR_WR_007');
         break;
       case 7:
-        page = Writing24Page(childId: widget.childId);
+        page = Writing24Page(childId: widget.childId, fruitId: 'FR_WR_008');
         break;
 
-      // level3
+      // ─────────────── level3 ───────────────
       case 8:
-        page = Writing3_IntroPage(childId: widget.childId);
+        page = Writing3_IntroPage(childId: widget.childId,fruitId: 'FR_WR_009'); // ✅ 동물 인트로
         break;
       case 9:
-        page = Writing3_2_IntroPage(childId: widget.childId);
+        page = Writing3_2_IntroPage(childId: widget.childId, fruitId: 'FR_WR_010'); // ✅ 과일 인트로
         break;
       case 10:
-        page = Writing3_3_IntroPage(childId: widget.childId);
+        page = Writing3_3_IntroPage(childId: widget.childId, fruitId: 'FR_WR_011'); // ✅ 채소 인트로
         break;
       case 11:
-        page = w34.Writing3_4_IntroPage(childId: widget.childId);
+        page = w34.Writing3_4_IntroPage(childId: widget.childId, fruitId: 'FR_WR_012'); // ✅ 신체 인트로
+
         break;
 
       default:

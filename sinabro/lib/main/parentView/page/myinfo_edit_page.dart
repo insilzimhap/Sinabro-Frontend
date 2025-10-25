@@ -130,7 +130,7 @@ class _MyInfoEditPageState extends State<MyInfoEditPage> {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
   }
 
-  Future<void> _showSuccessDialogAndGoHome() async {
+  void _showSuccessDialogAndGoHome() async {
     await showDialog<void>(
       context: context,
       barrierDismissible: true,
@@ -152,6 +152,7 @@ class _MyInfoEditPageState extends State<MyInfoEditPage> {
           padding: const EdgeInsets.fromLTRB(20, 18, 20, 18),
           child: Stack(
             children: [
+              // 닫기 버튼 (오른쪽 위)
               Positioned(
                 right: 0,
                 top: 0,
@@ -160,6 +161,7 @@ class _MyInfoEditPageState extends State<MyInfoEditPage> {
                   onPressed: () => Navigator.pop(context),
                 ),
               ),
+              // 본문
               Column(
                 mainAxisSize: MainAxisSize.min,
                 children: const [
@@ -213,168 +215,187 @@ class _MyInfoEditPageState extends State<MyInfoEditPage> {
             constraints: const BoxConstraints(maxWidth: 980),
             child: Padding(
               padding: const EdgeInsets.fromLTRB(16, 20, 16, 16),
-              child: Column(
-                children: [
-                  Container(
-                    height: 72,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF6DBF73),
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    alignment: Alignment.centerLeft,
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
-                    child: const TranslatedText(
-                      '마이 페이지',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 28,
-                        fontWeight: FontWeight.w900,
+              child: SingleChildScrollView(
+                // ✅ ← 추가
+                physics: const AlwaysScrollableScrollPhysics(),
+                child: Column(
+                  children: [
+                    // 상단 녹색 헤더바
+                    Container(
+                      height: 72,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF6DBF73),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      alignment: Alignment.centerLeft,
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      child: const TranslatedText(
+                        '마이 페이지',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 28,
+                          fontWeight: FontWeight.w900,
+                        ),
                       ),
                     ),
-                  ),
-                  const SizedBox(height: 16),
-                  Card(
-                    elevation: 1,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                      side: const BorderSide(color: Color(0xFFE0E0E0)),
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(24),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Column(
-                            children: [
-                              const CircleAvatar(
-                                radius: 64,
-                                backgroundColor: Color(0xFFE0E0E0),
-                                child: Icon(Icons.person,
-                                    size: 64, color: Colors.white),
-                              ),
-                              const SizedBox(height: 12),
-                              const TranslatedText(
-                                '부모 회원',
-                                style: TextStyle(
-                                  color: Colors.black54,
-                                  fontSize: 13,
+                    const SizedBox(height: 16),
+
+                    // 본문 카드
+                    Card(
+                      elevation: 1,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        side: const BorderSide(color: Color(0xFFE0E0E0)),
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.all(24),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // 왼쪽 프로필 블럭
+                            Column(
+                              children: [
+                                const CircleAvatar(
+                                  radius: 64,
+                                  backgroundColor: Color(0xFFE0E0E0),
+                                  child: Icon(
+                                    Icons.person,
+                                    size: 64,
+                                    color: Colors.white,
+                                  ),
                                 ),
-                              ),
-                              const SizedBox(height: 6),
-                              Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Text(
-                                    '${_name.text.trim().isEmpty ? '회원' : _name.text.trim()} ',
-                                    style: const TextStyle(
-                                      fontSize: 22,
-                                      fontWeight: FontWeight.w900,
-                                    ),
+                                SizedBox(height: 12),
+                                const TranslatedText(
+                                  '부모 회원',
+                                  style: TextStyle(
+                                    color: Colors.black54,
+                                    fontSize: 13,
                                   ),
-                                  const TranslatedText(
-                                    '님',
-                                    style: TextStyle(
-                                      fontSize: 22,
-                                      fontWeight: FontWeight.w900,
-                                    ),
-                                  ),
-                                ],
-                              )
-                            ],
-                          ),
-                          const SizedBox(width: 28),
-                          Expanded(
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 22, vertical: 10),
-                              decoration: BoxDecoration(
-                                border:
-                                    Border.all(color: const Color(0xFFDFDFDF)),
-                                borderRadius: BorderRadius.circular(16),
-                                color: Colors.white,
-                              ),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  _row(const TranslatedText('이름'), _name,
-                                      readOnly: true),
-                                  const SizedBox(height: 14),
-                                  _row(const TranslatedText('아이디'), _userId,
-                                      readOnly: true),
-                                  const SizedBox(height: 14),
-                                  _row(
-                                    const TranslatedText('이메일'),
-                                    _email,
-                                    keyboard: TextInputType.emailAddress,
-                                  ),
-                                  const SizedBox(height: 14),
-                                  _row(
-                                    const TranslatedText('전화번호'),
-                                    _phone,
-                                    keyboard: TextInputType.phone,
-                                  ),
-                                  const SizedBox(height: 14),
-                                  _row(
-                                    const TranslatedText('비밀번호'),
-                                    _pw,
-                                    obscure: true,
-                                    hint: '변경 시에만 입력해주세요.',
-                                    helperWidget:
-                                        const TranslatedText('8자 이상 16자 이상'),
-                                  ),
-                                  const SizedBox(height: 14),
-                                  _row(
-                                    const TranslatedText('재입력'),
-                                    _pw2,
-                                    obscure: true,
-                                    errorText: _pwMismatch
-                                        ? '비밀번호가 달라요' // TODO: 번역
-                                        : null,
-                                  ),
-                                  const SizedBox(height: 18),
-                                  Align(
-                                    alignment: Alignment.centerRight,
-                                    child: SizedBox(
-                                      width: 160,
-                                      height: 44,
-                                      child: ElevatedButton(
-                                        onPressed: (_saving || _pwMismatch)
-                                            ? null
-                                            : _save,
-                                        style: ElevatedButton.styleFrom(
-                                          backgroundColor:
-                                              const Color(0xFF6DBF73),
-                                          foregroundColor: Colors.white,
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius:
-                                                BorderRadius.circular(10),
-                                          ),
-                                        ),
-                                        child: _saving
-                                            ? const SizedBox(
-                                                width: 18,
-                                                height: 18,
-                                                child:
-                                                    CircularProgressIndicator(
-                                                  strokeWidth: 2,
-                                                  valueColor:
-                                                      AlwaysStoppedAnimation(
-                                                          Colors.white),
-                                                ),
-                                              )
-                                            : const TranslatedText('수정 완료'),
+                                ),
+                                const SizedBox(height: 6),
+                                Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Text(
+                                      '${_name.text.trim().isEmpty ? '회원' : _name.text.trim()} ',
+                                      style: const TextStyle(
+                                        fontSize: 22,
+                                        fontWeight: FontWeight.w900,
                                       ),
                                     ),
+                                  ],
+                                ),
+                                const TranslatedText(
+                                  '님',
+                                  style: TextStyle(
+                                    fontSize: 22,
+                                    fontWeight: FontWeight.w900,
                                   ),
-                                ],
+                                ),
+                              ],
+                            ),
+
+                            const SizedBox(width: 28),
+
+                            // 오른쪽 입력 폼
+                            Expanded(
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 22,
+                                  vertical: 10,
+                                ),
+                                decoration: BoxDecoration(
+                                  border: Border.all(
+                                    color: const Color(0xFFDFDFDF),
+                                  ),
+                                  borderRadius: BorderRadius.circular(16),
+                                  color: Colors.white,
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    // 이름
+                                    _row(const TranslatedText('이름'), _name,
+                                        readOnly: true),
+                                    const SizedBox(height: 14),
+
+                                    _row(
+                                      const TranslatedText('이메일'),
+                                      _email,
+                                      keyboard: TextInputType.emailAddress,
+                                    ),
+                                    const SizedBox(height: 14),
+                                    _row(
+                                      const TranslatedText('전화번호'),
+                                      _phone,
+                                      keyboard: TextInputType.phone,
+                                    ),
+                                    const SizedBox(height: 14),
+                                    _row(
+                                      const TranslatedText('비밀번호'),
+                                      _pw,
+                                      obscure: true,
+                                      hint: '변경 시에만 입력해주세요.',
+                                      helperWidget:
+                                          const TranslatedText('8자 이상 16자 이상'),
+                                    ),
+                                    const SizedBox(height: 14),
+                                    _row(
+                                      const TranslatedText('재입력'),
+                                      _pw2,
+                                      obscure: true,
+                                      errorText: _pwMismatch
+                                          ? '비밀번호가 달라요' // TODO: 번역
+                                          : null,
+                                    ),
+                                    const SizedBox(height: 18),
+                                    Align(
+                                      alignment: Alignment.centerRight,
+                                      child: SizedBox(
+                                        width: 160,
+                                        height: 44,
+                                        child: ElevatedButton(
+                                          onPressed: (_saving || _pwMismatch)
+                                              ? null
+                                              : _save,
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor: const Color(
+                                              0xFF6DBF73,
+                                            ),
+                                            foregroundColor: Colors.white,
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(10),
+                                            ),
+                                          ),
+                                          child: _saving
+                                              ? const SizedBox(
+                                                  width: 18,
+                                                  height: 18,
+                                                  child:
+                                                      CircularProgressIndicator(
+                                                    strokeWidth: 2,
+                                                    valueColor:
+                                                        AlwaysStoppedAnimation(
+                                                      Colors.white,
+                                                    ),
+                                                  ),
+                                                )
+                                              : const TranslatedText('수정 완료'),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
                             ),
-                          ),
-                        ],
+                            const SizedBox(height: 40),
+                          ],
+                        ),
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),

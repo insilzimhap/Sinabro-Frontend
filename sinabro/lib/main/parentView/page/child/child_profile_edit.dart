@@ -1,25 +1,26 @@
 /**
- * @file lib/main/parentView/page/child_profile_edit.dart
+ * @file lib/main/parentView/page/child/child_profile_edit.dart
  * 역할: 자녀 프로필 수정 화면
- * - 서버 API 연동 (프리필 → PATCH 수정)
- * - JWT 자동 포함 (AuthClient 사용)
- * - 성공/실패 다이얼로그 한국어 메시지
+ *   - 서버 API 연동 (프리필 → PATCH 수정)
+ *   - JWT 자동 포함 (AuthClient 사용)
+ *   - 성공/실패 다이얼로그 한국어 메시지
  * @ 채영: JWT+api 연결 완료
- * @ 연수: 언어팩 지원을 위한 코드 수정 완료
  */
 ///
 
 import 'package:flutter/material.dart';
 import 'package:sinabro/main/parentView/layout/parent_layout.dart';
 import 'package:sinabro/main/parentView/page/notice/notice_page.dart';
+import 'package:sinabro/main/parentView/page/mypage.dart';
 import 'dart:convert';
 import 'package:sinabro/common/auth_client.dart';
 import 'package:sinabro/config.dart';
 import 'dart:developer';
-import 'package:sinabro/main/parentView/widget/translated_text.dart'; // ✨
 
 class ChildProfileEditPage extends StatefulWidget {
   final String? parentUserId;
+
+  // 프리필
   final String childId;
   final String childName;
 
@@ -46,6 +47,7 @@ class _ChildProfileEditPageState extends State<ChildProfileEditPage> {
   int _day = 1;
   int _limitMinutes = 30;
 
+  // --- 프리필 로딩 ---
   @override
   void initState() {
     super.initState();
@@ -94,6 +96,7 @@ class _ChildProfileEditPageState extends State<ChildProfileEditPage> {
     super.dispose();
   }
 
+  // 만나이 계산
   int _calcAge(DateTime birth) {
     final now = DateTime.now();
     int age = now.year - birth.year;
@@ -106,21 +109,23 @@ class _ChildProfileEditPageState extends State<ChildProfileEditPage> {
 
   // ───────── Actions ─────────
   Future<void> _save() async {
+    // --- 기본 유효성 검사 ---
     if (_nameCtl.text.trim().isEmpty) {
-      _toast('이름을 입력해 주세요.'); // TODO: 동적 메시지 번역
+      _toast('이름을 입력해 주세요.');
       return;
     }
     if (_pwCtl.text.isNotEmpty || _pw2Ctl.text.isNotEmpty) {
       if (_pwCtl.text.length < 8 || _pwCtl.text.length > 16) {
-        _toast('비밀번호는 8자 이상 16자 이하로 입력해 주세요.'); // TODO: 동적 메시지 번역
+        _toast('비밀번호는 8자 이상 16자 이하로 입력해 주세요.');
         return;
       }
       if (_pwCtl.text != _pw2Ctl.text) {
-        _toast('비밀번호가 서로 다릅니다.'); // TODO: 동적 메시지 번역
+        _toast('비밀번호가 서로 다릅니다.');
         return;
       }
     }
 
+    // --- 생년월일 YYYY-MM-DD 포맷 + 만나이 계산 ---
     final birth = '${_year.toString().padLeft(4, '0')}-'
         '${_month.toString().padLeft(2, '0')}-'
         '${_day.toString().padLeft(2, '0')}';
@@ -128,6 +133,7 @@ class _ChildProfileEditPageState extends State<ChildProfileEditPage> {
     final birthDate = DateTime(_year, _month, _day);
     final age = _calcAge(birthDate);
 
+    // --- 요청 payload 구성 ---
     final payload = {
       "childNickname": _nickCtl.text.trim(),
       "childBirth": birth,
@@ -138,15 +144,18 @@ class _ChildProfileEditPageState extends State<ChildProfileEditPage> {
     };
 
     try {
+      // 자녀 정보 수정 요청 rest api
       final uri =
           Uri.parse("$baseUrl/api/app/mypage/children/${widget.childId}");
 
+      // ✅ PATCH 요청 (JWT 자동 포함됨)
       final res = await AuthClient().patch(
         uri,
         headers: {"Content-Type": "application/json"},
         body: jsonEncode(payload),
       );
 
+      // 성공 처리
       if (res.statusCode == 200) {
         log("[자녀-수정] 성공 childId=${widget.childId}");
         await _showNiceDialog(
@@ -157,6 +166,7 @@ class _ChildProfileEditPageState extends State<ChildProfileEditPage> {
         if (!mounted) return;
         Navigator.pop(context, true);
       } else {
+        // --- 실패 처리 ---
         String msg = "수정 실패 (코드 ${res.statusCode})";
         try {
           final body = jsonDecode(res.body);
@@ -170,6 +180,7 @@ class _ChildProfileEditPageState extends State<ChildProfileEditPage> {
         );
       }
     } catch (e) {
+      // --- 예외 처리 ---
       log("[자녀-수정] 예외 발생: $e");
       await _showNiceDialog(
         title: "수정 실패",
@@ -179,10 +190,12 @@ class _ChildProfileEditPageState extends State<ChildProfileEditPage> {
     }
   }
 
+  // changed: 삭제 플로우를 서버 verify → confirm → delete API 구조로 맞춤
   Future<void> _deleteFlow() async {
     final parentPw = await _askParentPassword();
     if (parentPw == null || parentPw.isEmpty) return;
 
+    // [1단계] 부모 비밀번호 검증 (verify-delete)
     final verifyUri = Uri.parse(
       "$baseUrl/api/app/mypage/parent/${widget.parentUserId}/children/${widget.childId}/verify-delete",
     );
@@ -206,14 +219,16 @@ class _ChildProfileEditPageState extends State<ChildProfileEditPage> {
     final verifyData = jsonDecode(verifyRes.body);
     final childName = verifyData["childName"] ?? widget.childName;
 
+    // [2단계] 사용자에게 재차 확인
     final ok = await _confirmDialog(
       title: "주의",
-      childName: childName,
+      message: "($childName) 님을 삭제하시겠습니까?",
       yesText: "예",
       noText: "아니요",
     );
     if (ok != true) return;
 
+    // [3단계] 실제 삭제 요청
     final delUri = Uri.parse(
       "$baseUrl/api/app/mypage/parent/${widget.parentUserId}/children/${widget.childId}",
     );
@@ -233,6 +248,7 @@ class _ChildProfileEditPageState extends State<ChildProfileEditPage> {
       );
       if (!mounted) return;
 
+      // changed: 탈퇴 성공 시 NoticePage로 이동
       Navigator.of(context).pushAndRemoveUntil(
         MaterialPageRoute(
           builder: (_) => NoticePage(parentUserId: widget.parentUserId),
@@ -251,7 +267,7 @@ class _ChildProfileEditPageState extends State<ChildProfileEditPage> {
   void _toast(String msg) =>
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
 
-  // ───────── Dialog Helpers (번역 적용) ───────── // ✨
+  // ───────── Dialog Helpers ─────────
   Future<void> _showNiceDialog({
     required String title,
     required String message,
@@ -261,9 +277,13 @@ class _ChildProfileEditPageState extends State<ChildProfileEditPage> {
       context: context,
       barrierDismissible: true,
       builder: (_) => Dialog(
-        // ... (Dialog, Container, Stack 등 기존 구조 동일)
-        insetPadding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        insetPadding: const EdgeInsets.symmetric(
+          horizontal: 32,
+          vertical: 24,
+        ),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
         child: Container(
           decoration: BoxDecoration(
             color: const Color(0xFFE7F6E9),
@@ -288,8 +308,7 @@ class _ChildProfileEditPageState extends State<ChildProfileEditPage> {
                   Icon(icon, size: 48, color: const Color(0xFF2E7D32)),
                   const SizedBox(height: 14),
                   if (title.isNotEmpty)
-                    TranslatedText(
-                      // ✨
+                    Text(
                       title,
                       style: const TextStyle(
                         fontSize: 22,
@@ -298,8 +317,7 @@ class _ChildProfileEditPageState extends State<ChildProfileEditPage> {
                       ),
                     ),
                   if (title.isNotEmpty) const SizedBox(height: 10),
-                  TranslatedText(
-                    // ✨
+                  Text(
                     message,
                     textAlign: TextAlign.center,
                     style: const TextStyle(
@@ -323,9 +341,13 @@ class _ChildProfileEditPageState extends State<ChildProfileEditPage> {
       context: context,
       barrierDismissible: true,
       builder: (_) => Dialog(
-        // ... (Dialog, Container, Stack 등 기존 구조 동일)
-        insetPadding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        insetPadding: const EdgeInsets.symmetric(
+          horizontal: 32,
+          vertical: 24,
+        ),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
         child: Container(
           decoration: BoxDecoration(
             color: const Color(0xFFE7F6E9),
@@ -347,8 +369,7 @@ class _ChildProfileEditPageState extends State<ChildProfileEditPage> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   const SizedBox(height: 8),
-                  const TranslatedText(
-                    // ✨
+                  const Text(
                     '부모의 비밀번호를 입력해주십시오',
                     style: TextStyle(
                       fontSize: 20,
@@ -367,10 +388,14 @@ class _ChildProfileEditPageState extends State<ChildProfileEditPage> {
                         isDense: true,
                         filled: true,
                         fillColor: Colors.white,
-                        contentPadding:
-                            EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                        contentPadding: EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 14,
+                        ),
                         border: OutlineInputBorder(
-                          borderRadius: BorderRadius.all(Radius.circular(10)),
+                          borderRadius: BorderRadius.all(
+                            Radius.circular(10),
+                          ),
                         ),
                       ),
                     ),
@@ -388,7 +413,7 @@ class _ChildProfileEditPageState extends State<ChildProfileEditPage> {
                           borderRadius: BorderRadius.circular(22),
                         ),
                       ),
-                      child: const TranslatedText('확인'), // ✨
+                      child: const Text('확인'),
                     ),
                   ),
                 ],
@@ -402,7 +427,7 @@ class _ChildProfileEditPageState extends State<ChildProfileEditPage> {
 
   Future<bool?> _confirmDialog({
     required String title,
-    required String childName, // ✨ message -> childName으로 변경
+    required String message,
     String yesText = '예',
     String noText = '아니요',
   }) async {
@@ -410,9 +435,13 @@ class _ChildProfileEditPageState extends State<ChildProfileEditPage> {
       context: context,
       barrierDismissible: true,
       builder: (_) => Dialog(
-        // ... (Dialog, Container, Stack 등 기존 구조 동일)
-        insetPadding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        insetPadding: const EdgeInsets.symmetric(
+          horizontal: 32,
+          vertical: 24,
+        ),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
         child: Container(
           decoration: BoxDecoration(
             color: const Color(0xFFE7F6E9),
@@ -434,11 +463,13 @@ class _ChildProfileEditPageState extends State<ChildProfileEditPage> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   const SizedBox(height: 6),
-                  const Icon(Icons.warning_amber_rounded,
-                      size: 48, color: Color(0xFF2E7D32)),
+                  const Icon(
+                    Icons.warning_amber_rounded,
+                    size: 48,
+                    color: Color(0xFF2E7D32),
+                  ),
                   const SizedBox(height: 12),
-                  TranslatedText(
-                    // ✨
+                  Text(
                     title,
                     style: const TextStyle(
                       fontSize: 22,
@@ -447,21 +478,14 @@ class _ChildProfileEditPageState extends State<ChildProfileEditPage> {
                     ),
                   ),
                   const SizedBox(height: 12),
-                  // ✨ 동적 텍스트 번역 적용
-                  Wrap(
-                    alignment: WrapAlignment.center,
-                    children: [
-                      Text('($childName) '),
-                      const TranslatedText(
-                        '님을 삭제하시겠습니까?',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w800,
-                          color: Color(0xFF6B5A51),
-                        ),
-                      )
-                    ],
+                  Text(
+                    message,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w800,
+                      color: Color(0xFF6B5A51),
+                    ),
                   ),
                   const SizedBox(height: 18),
                   Row(
@@ -479,7 +503,7 @@ class _ChildProfileEditPageState extends State<ChildProfileEditPage> {
                               borderRadius: BorderRadius.circular(22),
                             ),
                           ),
-                          child: TranslatedText(yesText), // ✨
+                          child: Text(yesText),
                         ),
                       ),
                       const SizedBox(width: 16),
@@ -495,7 +519,7 @@ class _ChildProfileEditPageState extends State<ChildProfileEditPage> {
                               borderRadius: BorderRadius.circular(22),
                             ),
                           ),
-                          child: TranslatedText(noText), // ✨
+                          child: Text(noText),
                         ),
                       ),
                     ],
@@ -522,6 +546,7 @@ class _ChildProfileEditPageState extends State<ChildProfileEditPage> {
             constraints: const BoxConstraints(maxWidth: 1100),
             child: Padding(
               padding: const EdgeInsets.fromLTRB(16, 20, 16, 24),
+              // ✅ 스크롤 가능하도록 Column → ListView 변경
               child: ListView(
                 physics: const AlwaysScrollableScrollPhysics(),
                 children: [
@@ -547,8 +572,7 @@ class _ChildProfileEditPageState extends State<ChildProfileEditPage> {
       ),
       alignment: Alignment.centerLeft,
       padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: const TranslatedText(
-        // ✨
+      child: const Text(
         '자녀 페이지',
         style: TextStyle(
           color: Colors.white,
@@ -571,6 +595,7 @@ class _ChildProfileEditPageState extends State<ChildProfileEditPage> {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // 왼쪽 프로필
             Column(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
@@ -580,53 +605,36 @@ class _ChildProfileEditPageState extends State<ChildProfileEditPage> {
                   child: Icon(Icons.person, size: 60, color: Colors.white),
                 ),
                 const SizedBox(height: 10),
-                const TranslatedText('자녀 회원',
-                    style: TextStyle(color: Colors.black45)), // ✨
+                const Text('자녀 회원', style: TextStyle(color: Colors.black45)),
                 const SizedBox(height: 6),
-                // ✨ 동적 텍스트 번역 적용
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      '${widget.childName} ',
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w800,
-                        color: Color(0xFF6B564C),
-                      ),
-                    ),
-                    const TranslatedText(
-                      '님',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w800,
-                        color: Color(0xFF6B564C),
-                      ),
-                    ),
-                  ],
+                Text(
+                  '${widget.childName} 님',
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w800,
+                    color: Color(0xFF6B564C),
+                  ),
                 ),
               ],
             ),
             const SizedBox(width: 26),
+
+            // 오른쪽 폼
             Expanded(
               child: Column(
                 children: [
                   _row('이름', _input(_nameCtl)),
                   _row('아이디', _input(_idCtl, readOnly: true)),
-                  _row('닉네임',
-                      _input(_nickCtl, hint: '표시할 닉네임')), // TODO: Hint text 번역
+                  _row('닉네임', _input(_nickCtl, hint: '표시할 닉네임')),
                   _row('생일', _birthDropdowns()),
                   _row(
                     '비밀번호',
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        _input(_pwCtl,
-                            hint: '변경 시에만 입력해주십시오.',
-                            obscure: true), // TODO: Hint text 번역
+                        _input(_pwCtl, hint: '변경 시에만 입력해주십시오.', obscure: true),
                         const SizedBox(height: 6),
-                        const TranslatedText(
-                          // ✨
+                        const Text(
                           '8자 이상 16자 이하',
                           style: TextStyle(fontSize: 12, color: Colors.grey),
                         ),
@@ -651,8 +659,7 @@ class _ChildProfileEditPageState extends State<ChildProfileEditPage> {
                           ),
                           child: const Padding(
                             padding: EdgeInsets.symmetric(horizontal: 18),
-                            child: TranslatedText(
-                              // ✨
+                            child: Text(
                               '자녀 삭제',
                               style: TextStyle(color: Colors.white),
                             ),
@@ -672,8 +679,7 @@ class _ChildProfileEditPageState extends State<ChildProfileEditPage> {
                           ),
                           child: const Padding(
                             padding: EdgeInsets.symmetric(horizontal: 18),
-                            child: TranslatedText(
-                              // ✨
+                            child: Text(
                               '수정 완료',
                               style: TextStyle(color: Colors.white),
                             ),
@@ -699,8 +705,7 @@ class _ChildProfileEditPageState extends State<ChildProfileEditPage> {
         children: [
           SizedBox(
             width: 100,
-            child: TranslatedText(
-              // ✨
+            child: Text(
               label,
               style: const TextStyle(
                 fontWeight: FontWeight.w800,
@@ -768,7 +773,7 @@ class _ChildProfileEditPageState extends State<ChildProfileEditPage> {
       value: value,
       items: years
           .map((y) => DropdownMenuItem(value: y, child: Text('$y년')))
-          .toList(), // TODO: Dropdown 번역
+          .toList(),
       onChanged: (v) {
         if (v == null) return;
         final maxDay = _daysInMonth(v, _month);
@@ -785,10 +790,12 @@ class _ChildProfileEditPageState extends State<ChildProfileEditPage> {
     return DropdownButtonFormField<int>(
       value: _month,
       items: List<int>.generate(12, (i) => i + 1)
-          .map((m) => DropdownMenuItem(
+          .map(
+            (m) => DropdownMenuItem(
               value: m,
-              child: Text(
-                  '${m.toString().padLeft(2, '0')}월'))) // TODO: Dropdown 번역
+              child: Text('${m.toString().padLeft(2, '0')}월'),
+            ),
+          )
           .toList(),
       onChanged: (v) {
         if (v == null) return;
@@ -810,10 +817,12 @@ class _ChildProfileEditPageState extends State<ChildProfileEditPage> {
     return DropdownButtonFormField<int>(
       value: _day,
       items: days
-          .map((d) => DropdownMenuItem(
+          .map(
+            (d) => DropdownMenuItem(
               value: d,
-              child: Text(
-                  '${d.toString().padLeft(2, '0')}일'))) // TODO: Dropdown 번역
+              child: Text('${d.toString().padLeft(2, '0')}일'),
+            ),
+          )
           .toList(),
       onChanged: (v) => setState(() => _day = v ?? _day),
       decoration: _decoration,
@@ -834,7 +843,7 @@ class _ChildProfileEditPageState extends State<ChildProfileEditPage> {
           .map(
             (opt) => DropdownMenuItem<int>(
               value: opt['value'] as int,
-              child: TranslatedText(opt['label'] as String), // ✨
+              child: Text(opt['label'] as String),
             ),
           )
           .toList(),
