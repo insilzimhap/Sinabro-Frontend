@@ -5,8 +5,7 @@ import 'package:sinabro/main/gameView/writeGame/page/write_game_main.dart';
 import 'dart:convert';
 
 // ✅ 학습 페이지 import
-import 'package:sinabro/main/studyView/writeStudy/page/write_study_page.dart';
-import 'package:sinabro/main/studyView/listenStudy/page/listen_study_page.dart';
+import 'package:sinabro/main/studyView/listenStudy/page/listen_study_apple.dart';
 import 'package:sinabro/main/studyView/writeStudy/page/main_apple_tree.dart';
 
 // ✅ 한 곳에서 서버 주소 관리 (추가)
@@ -302,7 +301,8 @@ class _LobbyChildScreenState extends State<LobbyChildScreen> {
                                                 context,
                                                 MaterialPageRoute(
                                                   builder:
-                                                      (_) => ListenStudyPage(
+
+                                                      (_) => ListenAppleSelect(
                                                         childId: widget.childId,
                                                       ),
                                                 ),

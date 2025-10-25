@@ -103,16 +103,16 @@ class _AppleGardenState extends State<AppleGarden> {
 
       // ─────────────── level3 ───────────────
       case 8:
-        page = Writing3_IntroPage(childId: widget.childId,fruitId: 'FR_WR_009'); // ✅ 동물 인트로
+        page = Writing3_IntroPage(childId: widget.childId, fruitId: 'FR_WR_009');
         break;
       case 9:
-        page = Writing3_2_IntroPage(childId: widget.childId, fruitId: 'FR_WR_010'); // ✅ 과일 인트로
+        page = Writing3_2_IntroPage(childId: widget.childId, fruitId: 'FR_WR_010');
         break;
       case 10:
-        page = Writing3_3_IntroPage(childId: widget.childId, fruitId: 'FR_WR_011'); // ✅ 채소 인트로
+        page = Writing3_3_IntroPage(childId: widget.childId, fruitId: 'FR_WR_011');
         break;
       case 11:
-        page = w34.Writing3_4_IntroPage(childId: widget.childId, fruitId: 'FR_WR_012'); // ✅ 신체 인트로
+        page = w34.Writing3_4_IntroPage(childId: widget.childId, fruitId: 'FR_WR_012');
 
         break;
 
