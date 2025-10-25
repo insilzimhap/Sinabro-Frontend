@@ -9,7 +9,7 @@ import 'package:flutter/material.dart';
 import 'package:sinabro/common/auth_client.dart';
 import 'package:sinabro/config.dart';
 import 'package:sinabro/main/parentView/layout/parent_layout.dart';
-import 'package:sinabro/main/parentView/page/fap/faq_write.dart';
+import 'package:sinabro/main/parentView/page/faq/faq_write.dart';
 import 'package:sinabro/main/parentView/widget/translated_text.dart'; // ✨
 
 /* ---------------- 모델 ---------------- */
@@ -131,7 +131,7 @@ class _FaqPageState extends State<FaqPage> {
   Future<void> _loadMore() async {
     if (_isLoadingList || !_hasNext) return;
     if (widget.parentUserId == null || widget.parentUserId!.isEmpty) {
-      setState(() => _err = 'parentUserId가 없습니다.'); // TODO: 번역
+      setState(() => _err = 'parentUserId가 없습니다.');
       return;
     }
 

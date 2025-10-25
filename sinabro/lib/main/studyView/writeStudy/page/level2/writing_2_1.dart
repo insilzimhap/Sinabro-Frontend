@@ -1,19 +1,50 @@
-// lib/main/studyView/writeStudy/page/writing_2_1.dart (예시 경로)
+// lib/main/studyView/writeStud/page/level2/writing_2_1.dart
 // 레벨 2 열매 1 자음/쌍자음 서버 연결 완료
 
 import 'package:flutter/material.dart';
 import 'package:sinabro/main/studyView/writeStudy/page/main_apple_tree.dart';
 import 'package:sinabro/main/studyView/writeStudy/widget/writing_canvas.dart';
-import 'package:sinabro/selvy_example_view/selvy_recognizer.dart';
+import 'package:sinabro/selvy_example_view/selvy_service.dart';
 import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:http/http.dart' as http; // ⭐️ http 패키지
 import 'dart:convert'; // ⭐️ json 변환용
 import 'package:sinabro/config.dart'; // ⭐️ baseUrl 사용
+import 'package:audioplayers/audioplayers.dart'; // 오디오 패키지 import
 
 // 인트로 이미지
 const _twin1 = 'assets/img/contents/studyWrite/twin1.png';
+
+// 오디오 경로 및 파일명 정의
+const _audioDir = 'assets/audio/contents/studyWrite/level2/';
+const _audioIntro = '${_audioDir}write4_study_intro_01.mp3'; // 자음 쌍둥이 인트로
+const _audioRepeat = '${_audioDir}write4_repeat.mp3'; // 따라 써봐요!
+
+// ✅ 레슨 키 -> 오디오 파일명 중간 부분 매핑
+const Map<String, String> _audioKeyMap = {
+  // 4세 1번째 열매 자음 내용
+  'giyeok': 'giyeok',
+  'giyeokssang': 'ssang_giyeok',
+  'digeut': 'digeut',
+  'digeutssang': 'ssang_digeut',
+  'siot': 'siot',
+  'siotssang': 'ssang_siot',
+  'jieut': 'jieut',
+  'jieutssang': 'ssang_jieut',
+  'bieup': 'bieup',
+  'bieupssang': 'ssang_bieup',
+};
+
+// ✅ 오디오 파일명 가져오는 헬퍼 함수들
+String _getAudioBaseName(String lessonKey) =>
+    _audioKeyMap[lessonKey] ?? lessonKey;
+String _getLetterNameAudio(String key) =>
+    '${_audioDir}write4_${_getAudioBaseName(key)}_00.mp3'; // 자음 발음(기역)
+String _getWordAudio(String key) =>
+    '${_audioDir}write4_${_getAudioBaseName(key)}_01.mp3'; // 자음 연상 단어
+String _getCompletionAudio(String key) =>
+    '${_audioDir}write4_${_getAudioBaseName(key)}_02.mp3'; // 자음 완료 (~를 학습했어요!)
 
 /// ---------------------------------------------------------------------------
 /// 레슨 스펙
@@ -245,6 +276,10 @@ class _Writing21PageState extends State<Writing21Page> {
   late DateTime _startTime; // 학습 시작 시간
   bool _apiCallSent = false; // API 중복 호출 방지 플래그
 
+  // 오디오 플레이어 추가
+  final AudioPlayer _audioPlayer = AudioPlayer();
+  StreamSubscription? _playerCompleteSubscription; // 순차 재생용 구독
+
   LessonSpec get spec => LESSONS[widget.lesson] ?? LESSONS['giyeok']!;
 
   @override
@@ -254,13 +289,97 @@ class _Writing21PageState extends State<Writing21Page> {
     _setLessonCandidate(spec.bigChar); // ✅ 네이티브 후보셋 제한
 
     _startTime = DateTime.now(); // ⭐️ 페이지 시작과 동시에 시간 측정 시작!
+
+    // 오디오 재생 시작 (인트로 또는 바로 학습)
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_showIntro) {
+        _playAudio(_audioIntro);
+      } else {
+        _playWriteScreenSequence(); // 인트로 없으면 바로 글자 학습 오디오 시작
+      }
+    });
   }
 
   @override
   void dispose() {
     _finalPopupTimer?.cancel();
+    _playerCompleteSubscription?.cancel(); // 구독 취소
+    _audioPlayer.dispose(); // 오디오 플레이어 해제
     super.dispose();
   }
+
+  // ------------------ 오디오 재생 로직 ------------------
+
+  /// 오디오 재생 (기존 재생 중단)
+  void _playAudio(String assetPath, {bool isLooping = false}) {
+    if (!mounted) return;
+    _audioPlayer.stop();
+    _playerCompleteSubscription?.cancel(); // 이전 구독 취소
+    _audioPlayer
+        .setReleaseMode(isLooping ? ReleaseMode.loop : ReleaseMode.release);
+    _audioPlayer.play(AssetSource(assetPath));
+  }
+
+  /// 오디오 재생하고 끝나기를 기다림 (순차 재생용)
+  Future<void> _playAudioAndWait(String assetPath) {
+    if (!mounted) return Future.value(); // 위젯 종료 시 즉시 반환
+
+    final completer = Completer<void>();
+    _playerCompleteSubscription?.cancel(); // 이전 구독 취소
+
+    _playAudio(assetPath); // 재생 시작
+
+    _playerCompleteSubscription = _audioPlayer.onPlayerComplete.listen((_) {
+      if (!completer.isCompleted) {
+        completer.complete();
+      }
+      _playerCompleteSubscription?.cancel(); // 완료 후 구독 취소
+    });
+
+    // 타임아웃 추가 (예: 5초 후 완료 안되면 에러 처리)
+    Future.delayed(const Duration(seconds: 5), () {
+      if (!completer.isCompleted) {
+        _playerCompleteSubscription?.cancel();
+        if (mounted) {
+          // mounted 체크 추가
+          debugPrint('Audio playback timed out: $assetPath');
+          completer.complete(); // 타임아웃 시에도 완료 처리 (다음으로 넘어가게)
+        }
+      }
+    });
+
+    return completer.future;
+  }
+
+  /// 글자 학습 화면 오디오 순차 재생
+  Future<void> _playWriteScreenSequence() async {
+    if (!mounted) return; // ✅ 시작 전 체크
+
+    final lessonKey = widget.lesson;
+    final bool isFirstLesson = LESSON_ORDER.first == lessonKey;
+
+    try {
+      // 1. 글자 이름 재생
+      await _playAudioAndWait(_getLetterNameAudio(lessonKey));
+      if (!mounted) return; // ✅ 재생 후 체크
+
+      // 2. 단어 재생
+      await _playAudioAndWait(_getWordAudio(lessonKey));
+      if (!mounted) return; // ✅ 재생 후 체크
+
+      // 3. 첫 글자일 때만 "따라 써봐요!" 재생
+      if (isFirstLesson) {
+        await _playAudioAndWait(_audioRepeat);
+      }
+    } catch (e) {
+      debugPrint("Error playing write screen sequence: $e");
+    } finally {
+      if (mounted) {
+        _playerCompleteSubscription?.cancel(); // 혹시 모를 구독 정리
+      }
+    }
+  }
+  // --------------------------------------------------------
 
   String? _nextLessonKey() {
     final i = LESSON_ORDER.indexOf(widget.lesson);
@@ -338,16 +457,19 @@ class _Writing21PageState extends State<Writing21Page> {
     final target = _normalizeKoreanLabel(spec.bigChar);
 
     if (norm.isNotEmpty && norm == target) {
-      // 1. 인식 성공! 완료 단계(step 1)로 UI 변경
+      // 1. 완료 오디오 재생
+      _playAudio(_getCompletionAudio(widget.lesson));
+
+      // 2. 인식 성공! 완료 단계(step 1)로 UI 변경
       setState(() => step = 1);
 
-      // ⭐️ 2. (핵심!) 이게 마지막 레슨인지, API를 아직 안 보냈는지 확인!
+      // ⭐️ 3. (핵심!) 이게 마지막 레슨인지, API를 아직 안 보냈는지 확인!
       if (_isFinalLesson && !_apiCallSent) {
         _apiCallSent = true; // ⭐️ 중복 호출 방지!
         _uploadStudyResult(); // ⭐️ API 호출 함수 실행!
       }
 
-      // 3. (기존 로직) 마지막 레슨이면 리워드 팝업 예약
+      // 4. (기존 로직) 마지막 레슨이면 리워드 팝업 예약
       if (_isFinalLesson && !_rewardShown && !_finalPopupScheduled) {
         _finalPopupScheduled = true;
         WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -359,6 +481,8 @@ class _Writing21PageState extends State<Writing21Page> {
       }
     } else {
       _canvasKey.currentState?.clearCanvas();
+      // Next? : 실패 시 오디오 재생? 요구사항에는 없었지만 필요하면 추가
+      // _playAudio(_audioRepeat); // 예: "따라 써봐요!" 다시 재생
     }
   }
 
@@ -379,11 +503,18 @@ class _Writing21PageState extends State<Writing21Page> {
     );
   }
 
+  // 다음 레슨 이동 시 오디오 재생 추가
   void _goNext() {
     final nextKey = _nextLessonKey();
     if (nextKey == null) {
       _goBackToAppleTree();
     } else {
+      // 다음 레슨 오디오 재생 예약 (페이지 전환 후 재생되도록)
+      // 중요: 다음 페이지 initState에서 오디오가 재생되므로 여기서는 제거
+      // Future.delayed(Duration(milliseconds: 100), () {
+      //   _playWriteScreenSequenceFor(nextKey); // 다음 키로 오디오 재생
+      // });
+
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
@@ -401,7 +532,11 @@ class _Writing21PageState extends State<Writing21Page> {
   Widget _buildIntro(BuildContext context) {
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
-      onTap: () => setState(() => _showIntro = false),
+      onTap: () {
+        // 인트로 화면 탭 시 글자 학습 오디오 시작
+        _playWriteScreenSequence();
+        setState(() => _showIntro = false);
+      },
       child: Container(
         color: const Color(0xFFFFF4F3),
         child: SafeArea(
@@ -548,7 +683,7 @@ class _Writing21PageState extends State<Writing21Page> {
     );
   }
 
-  /// 1) 따라쓰기 화면
+  /// 1) 따라쓰기 화면(@ 연수 : 해당 영역 누를 때 tts 재생을 위해 전체적으롣 코드 수정함)
   Widget _buildWriteStep(BuildContext context) {
     return LayoutBuilder(
       builder: (context, c) {
@@ -573,47 +708,66 @@ class _Writing21PageState extends State<Writing21Page> {
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Text(
-                              spec.bigChar,
-                              style: TextStyle(
-                                fontSize: glyphSize,
-                                fontWeight: FontWeight.w900,
-                                height: 1.0,
+                            // ✅ 큰 글자 탭 -> 글자 이름 오디오 재생
+                            GestureDetector(
+                              onTap: () =>
+                                  _playAudio(_getLetterNameAudio(spec.key)),
+                              child: Text(
+                                spec.bigChar,
+                                style: TextStyle(
+                                  fontSize: glyphSize,
+                                  fontWeight: FontWeight.w900,
+                                  height: 1.0,
+                                ),
                               ),
                             ),
                             SizedBox(height: glyphSize * 0.06),
-                            Text(
-                              spec.nameKo,
-                              style: TextStyle(
-                                fontSize: wordSize,
-                                fontWeight: FontWeight.w800,
+                            // ✅ 글자 이름 탭 -> 글자 이름 오디오 재생
+                            GestureDetector(
+                              onTap: () =>
+                                  _playAudio(_getLetterNameAudio(spec.key)),
+                              child: Text(
+                                spec.nameKo,
+                                style: TextStyle(
+                                  fontSize: wordSize,
+                                  fontWeight: FontWeight.w800,
+                                ),
                               ),
                             ),
                             SizedBox(height: glyphSize * 0.14),
-                            Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Image.asset(
-                                  spec.wordIconAsset,
-                                  width: iconSize,
-                                  height: iconSize,
-                                  fit: BoxFit.contain,
-                                ),
-                                const SizedBox(width: 12),
-                                Text(
-                                  spec.wordLabel,
-                                  style: TextStyle(
-                                    fontSize: labelSize,
-                                    fontWeight: FontWeight.w700,
+                            // ✅ 단어 아이콘 + 이름 Row 탭 -> 단어 오디오 재생
+                            GestureDetector(
+                              onTap: () => _playAudio(_getWordAudio(spec.key)),
+                              behavior:
+                                  HitTestBehavior.opaque, // Row 빈 공간도 탭 되도록
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Image.asset(
+                                    spec.wordIconAsset,
+                                    width: iconSize,
+                                    height: iconSize,
+                                    fit: BoxFit.contain,
                                   ),
-                                ),
-                              ],
+                                  const SizedBox(width: 12),
+                                  Text(
+                                    spec.wordLabel,
+                                    style: TextStyle(
+                                      fontSize: labelSize,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
                           ],
                         ),
                       ),
+                      // NEXT TODO : 힌트 말풍선 위치 조정 (상대적 위치 사용 고려)
                       Positioned(
                         top: 5,
+                        // ⭐ left: 250 은 화면 크기에 따라 밀릴 수 있으니
+                        // ⭐ right: 10 또는 alignment 사용을 고려하세요.
                         left: 250,
                         child: Stack(
                           alignment: Alignment.centerLeft,
@@ -790,6 +944,7 @@ class _Writing21PageState extends State<Writing21Page> {
     );
   }
 
+  /// 리워드 팝업
   void _showRewardPopup() {
     if (_rewardShown || !mounted) return;
     _rewardShown = true;
@@ -825,6 +980,7 @@ class _Writing21PageState extends State<Writing21Page> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Image(
+                    // ⭐ 사과 이미지 경로 확인 필요 (apple1.png?)
                     image: AssetImage(
                       'assets/img/contents/studyWrite/apple1.png',
                     ),

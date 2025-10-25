@@ -5,9 +5,10 @@ import 'package:sinabro/main/studyView/writeStudy/page/main_apple_tree.dart';
 import 'package:sinabro/main/studyView/writeStudy/widget/writing_canvas.dart'; // ✅ Selvy 캔버스
 
 import 'package:http/http.dart' as http; // ⭐️ 1. http 패키지
-import 'dart:convert';                   // ⭐️ 2. json 변환용
-import 'package:sinabro/config.dart';    // ⭐️ 3. baseUrl 사용
+import 'dart:convert'; // ⭐️ 2. json 변환용
+import 'package:sinabro/config.dart'; // ⭐️ 3. baseUrl 사용
 
+import 'package:audioplayers/audioplayers.dart'; // 오디오 패키지
 
 /// ─────────────────────────────────────────────────────────────────────────
 /// 스펙: 모음(2-4) — mask / trace / preview를 자소별로 개별 조정
@@ -54,6 +55,31 @@ class VowelLessonSpec4 {
 // 공통 경로
 const String _base = 'assets/img/contents/studyWrite/';
 const String _introImg = '${_base}twin4.png'; // ✅ 인트로 이미지
+
+// 오디오 경로 및 파일명 매핑
+const _audioDir = 'assets/audio/contents/studyWrite/level2/';
+const _audioIntroVowel2 = '${_audioDir}write4_study_intro_04.mp3'; // 모음 쌍둥이 인트로
+const _audioRepeat = '${_audioDir}write4_repeat.mp3'; // 따라 써봐요!
+
+// 레슨 키 → 오디오 파일명 베이스
+const Map<String, String> _audioKeyMapVowel4 = {
+  'ya': 'ya',
+  'yae': 'yae',
+  'yeo': 'yeo',
+  'ye': 'ye',
+  'yo': 'yo',
+  'yu': 'yu',
+  'wa': 'wa',
+  'wae': 'wae',
+  'we': 'we',
+  'ui': 'ui',
+};
+
+// 오디오 파일 헬퍼
+String _audioBase(String k) => _audioKeyMapVowel4[k] ?? k;
+String _letterAudio(String k) => '${_audioDir}write4_${_audioBase(k)}_00.mp3';
+String _wordAudio(String k) => '${_audioDir}write4_${_audioBase(k)}_01.mp3';
+String _doneAudio(String k) => '${_audioDir}write4_${_audioBase(k)}_02.mp3';
 
 /// ★ 여기 숫자들만 수정하면 글자별로 개별 조정됩니다.
 const Map<String, VowelLessonSpec4> VOWEL_LESSONS4 = {
@@ -267,7 +293,11 @@ class _Writing24PageState extends State<Writing24Page> {
 
   // ⭐️ API 연동 변수 추가
   late DateTime _startTime; // 학습 시작 시간
-  bool _apiCallSent = false;  // API 중복 호출 방지 플래그
+  bool _apiCallSent = false; // API 중복 호출 방지 플래그
+
+  // 오디오 플레이어/구독
+  final AudioPlayer _audioPlayer = AudioPlayer();
+  StreamSubscription? _playerCompleteSub;
 
   @override
   void initState() {
@@ -276,11 +306,22 @@ class _Writing24PageState extends State<Writing24Page> {
 
     _startTime = DateTime.now(); // ⭐️ 시간 측정 시작!
 
+    // 인트로 또는 학습 시퀀스 재생
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_showIntro) {
+        _playAudio(_audioIntroVowel2);
+      } else {
+        _playWriteScreenSequence();
+      }
+    });
   }
 
   @override
   void dispose() {
     _finalPopupTimer?.cancel();
+    // 오디오 리소스 정리
+    _playerCompleteSub?.cancel();
+    _audioPlayer.dispose();
     super.dispose();
   }
 
@@ -342,7 +383,8 @@ class _Writing24PageState extends State<Writing24Page> {
       if (response.statusCode == 200 || response.statusCode == 201) {
         debugPrint('[Writing22] API 연동 성공: fruitId ${widget.fruitId} 완료!');
       } else {
-        debugPrint('[Writing22] API 연동 실패: ${response.statusCode} ${response.body}');
+        debugPrint(
+            '[Writing22] API 연동 실패: ${response.statusCode} ${response.body}');
       }
     } catch (e) {
       debugPrint('[Writing22] API 연동 중 예외 발생: $e');
@@ -360,6 +402,58 @@ class _Writing24PageState extends State<Writing24Page> {
       context,
       MaterialPageRoute(builder: (_) => AppleGarden(childId: widget.childId)),
     );
+  }
+
+  // 오디오 재생 유틸
+  void _playAudio(String assetPath, {bool loop = false}) {
+    if (!mounted) return;
+    _audioPlayer.stop();
+    _playerCompleteSub?.cancel();
+    _audioPlayer.setReleaseMode(loop ? ReleaseMode.loop : ReleaseMode.release);
+    _audioPlayer.play(AssetSource(assetPath));
+  }
+
+  // 순차 재생용 대기
+  Future<void> _playAudioAndWait(String assetPath) {
+    if (!mounted) return Future.value();
+    final c = Completer<void>();
+    _playerCompleteSub?.cancel();
+    _playAudio(assetPath);
+    _playerCompleteSub = _audioPlayer.onPlayerComplete.listen((_) {
+      if (!c.isCompleted) c.complete();
+      _playerCompleteSub?.cancel();
+    });
+    // 안전 타임아웃
+    Future.delayed(const Duration(seconds: 5), () {
+      if (!c.isCompleted) {
+        _playerCompleteSub?.cancel();
+        if (mounted) {
+          debugPrint('Audio playback timed out: $assetPath');
+          c.complete();
+        }
+      }
+    });
+    return c.future;
+  }
+
+  // 학습 화면 오디오 시퀀스: 글자→단어→(첫 레슨이면)따라써봐요
+  Future<void> _playWriteScreenSequence() async {
+    if (!mounted) return;
+    final lessonKey = widget.lesson;
+    final isFirst = VOWEL_ORDER4.first == lessonKey;
+    try {
+      await _playAudioAndWait(_letterAudio(lessonKey));
+      if (!mounted) return;
+      await _playAudioAndWait(_wordAudio(lessonKey));
+      if (!mounted) return;
+      if (isFirst) {
+        await _playAudioAndWait(_audioRepeat);
+      }
+    } catch (e) {
+      debugPrint('Write screen sequence error: $e');
+    } finally {
+      if (mounted) _playerCompleteSub?.cancel();
+    }
   }
 
   String _norm(String s) {
@@ -396,6 +490,9 @@ class _Writing24PageState extends State<Writing24Page> {
     final target = _norm(spec.bigChar);
 
     if (got.isNotEmpty && got == target) {
+      // 완료 오디오 재생
+      _playAudio(_doneAudio(widget.lesson));
+
       // 1. 인식 성공! 완료 단계로 UI 변경
       setState(() => step = 1);
 
@@ -403,7 +500,7 @@ class _Writing24PageState extends State<Writing24Page> {
       // 마지막 레슨('ui')이고, API를 아직 안 보냈다면 호출!
       if (_isFinalLesson && !_apiCallSent) {
         _apiCallSent = true; // 중복 호출 방지 플래그 설정
-        _uploadStudyResult();  // API 호출 함수 실행!
+        _uploadStudyResult(); // API 호출 함수 실행!
       }
       // ⭐️⭐️⭐️⭐️⭐️⭐️⭐️⭐️⭐️⭐️⭐️⭐️⭐️⭐️⭐️
 
@@ -429,62 +526,60 @@ class _Writing24PageState extends State<Writing24Page> {
     await showDialog<void>(
       context: context,
       barrierDismissible: false,
-      builder:
-          (_) => Center(
-            child: Material(
-              color: Colors.transparent,
-              child: Container(
-                width: 360,
-                padding: const EdgeInsets.fromLTRB(20, 22, 20, 16),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFFDF1C8),
-                  borderRadius: BorderRadius.circular(18),
-                  boxShadow: const [
-                    BoxShadow(
-                      color: Color(0x33000000),
-                      blurRadius: 16,
-                      offset: Offset(0, 8),
-                    ),
-                  ],
+      builder: (_) => Center(
+        child: Material(
+          color: Colors.transparent,
+          child: Container(
+            width: 360,
+            padding: const EdgeInsets.fromLTRB(20, 22, 20, 16),
+            decoration: BoxDecoration(
+              color: const Color(0xFFFDF1C8),
+              borderRadius: BorderRadius.circular(18),
+              boxShadow: const [
+                BoxShadow(
+                  color: Color(0x33000000),
+                  blurRadius: 16,
+                  offset: Offset(0, 8),
                 ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const SizedBox(height: 4),
-                    Image.asset(
-                      '${_base}apple_gold.png',
-                      height: 56,
-                      fit: BoxFit.contain,
-                    ),
-                    const SizedBox(height: 14),
-                    const Text(
-                      '이번 나무의 사과를 획득했어요!\n이번 나무의 황금사과까지 전부 모았어요!\n다음 나무의 사과도 부탁해~',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        color: Color(0xFF5A4032),
-                        fontWeight: FontWeight.w700,
-                        fontSize: 16,
-                        height: 1.4,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    TextButton(
-                      onPressed:
-                          () =>
-                              Navigator.of(context, rootNavigator: true).pop(),
-                      child: const Text(
-                        '확인',
-                        style: TextStyle(
-                          color: Color(0xFF5A4032),
-                          fontWeight: FontWeight.w800,
-                        ),
-                      ),
-                    ),
-                  ],
+              ],
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const SizedBox(height: 4),
+                Image.asset(
+                  '${_base}apple_gold.png',
+                  height: 56,
+                  fit: BoxFit.contain,
                 ),
-              ),
+                const SizedBox(height: 14),
+                const Text(
+                  '이번 나무의 사과를 획득했어요!\n이번 나무의 황금사과까지 전부 모았어요!\n다음 나무의 사과도 부탁해~',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: Color(0xFF5A4032),
+                    fontWeight: FontWeight.w700,
+                    fontSize: 16,
+                    height: 1.4,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextButton(
+                  onPressed: () =>
+                      Navigator.of(context, rootNavigator: true).pop(),
+                  child: const Text(
+                    '확인',
+                    style: TextStyle(
+                      color: Color(0xFF5A4032),
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
+        ),
+      ),
     );
 
     _rewardShowing = false;
@@ -503,13 +598,12 @@ class _Writing24PageState extends State<Writing24Page> {
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
-            builder:
-                (_) => Writing24Page(
-                  childId: widget.childId,
-                  fruitId: widget.fruitId,
-                  lesson: k,
-                  showIntro: false, // ✅ 다음 레슨은 인트로 없이
-                ),
+            builder: (_) => Writing24Page(
+              childId: widget.childId,
+              fruitId: widget.fruitId,
+              lesson: k,
+              showIntro: false, // ✅ 다음 레슨은 인트로 없이
+            ),
           ),
         );
       }
@@ -520,7 +614,11 @@ class _Writing24PageState extends State<Writing24Page> {
   Widget _buildIntro(BuildContext context) {
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
-      onTap: () => setState(() => _showIntro = false),
+      // 탭 시 학습 시퀀스 오디오 시작
+      onTap: () {
+        setState(() => _showIntro = false);
+        _playWriteScreenSequence();
+      },
       child: Container(
         color: const Color(0xFFFFF4F3),
         child: SafeArea(
@@ -619,15 +717,14 @@ class _Writing24PageState extends State<Writing24Page> {
           onPressed: _backToLobby,
         ),
       ),
-      body:
-          _showIntro
-              ? _buildIntro(context)
-              : SafeArea(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  child: step == 0 ? _buildWrite() : _buildComplete(),
-                ),
+      body: _showIntro
+          ? _buildIntro(context)
+          : SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: step == 0 ? _buildWrite() : _buildComplete(),
               ),
+            ),
       // ✅ FAB은 항상 깔고 보임만 제어(페이드)
       floatingActionButton: Padding(
         padding: const EdgeInsets.only(left: 10, bottom: 10),
@@ -692,41 +789,54 @@ class _Writing24PageState extends State<Writing24Page> {
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Text(
-                              spec.bigChar,
-                              style: TextStyle(
-                                fontSize: glyphSize,
-                                fontWeight: FontWeight.w900,
-                                height: 1.0,
+                            // ✅ 큰 글자 탭 → 글자 이름 오디오
+                            GestureDetector(
+                              onTap: () => _playAudio(_letterAudio(spec.key)),
+                              child: Text(
+                                spec.bigChar,
+                                style: TextStyle(
+                                  fontSize: glyphSize,
+                                  fontWeight: FontWeight.w900,
+                                  height: 1.0,
+                                ),
                               ),
                             ),
                             SizedBox(height: glyphSize * 0.06),
-                            Text(
-                              spec.nameKo,
-                              style: TextStyle(
-                                fontSize: wordSize,
-                                fontWeight: FontWeight.w800,
+                            // ✅ 글자 이름 탭 → 글자 이름 오디오
+                            GestureDetector(
+                              onTap: () => _playAudio(_letterAudio(spec.key)),
+                              child: Text(
+                                spec.nameKo,
+                                style: TextStyle(
+                                  fontSize: wordSize,
+                                  fontWeight: FontWeight.w800,
+                                ),
                               ),
                             ),
                             SizedBox(height: glyphSize * 0.14),
-                            Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Image.asset(
-                                  spec.wordIconAsset,
-                                  width: iconSize,
-                                  height: iconSize,
-                                  fit: BoxFit.contain,
-                                ),
-                                const SizedBox(width: 12),
-                                Text(
-                                  spec.wordLabel,
-                                  style: TextStyle(
-                                    fontSize: labelSize,
-                                    fontWeight: FontWeight.w700,
+                            // ✅ 단어 아이콘+라벨 탭 → 단어 오디오
+                            GestureDetector(
+                              onTap: () => _playAudio(_wordAudio(spec.key)),
+                              behavior: HitTestBehavior.opaque,
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Image.asset(
+                                    spec.wordIconAsset,
+                                    width: iconSize,
+                                    height: iconSize,
+                                    fit: BoxFit.contain,
                                   ),
-                                ),
-                              ],
+                                  const SizedBox(width: 12),
+                                  Text(
+                                    spec.wordLabel,
+                                    style: TextStyle(
+                                      fontSize: labelSize,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
                           ],
                         ),
@@ -813,14 +923,12 @@ class _Writing24PageState extends State<Writing24Page> {
                                   ...List.generate(spec.traceAssets.length, (
                                     i,
                                   ) {
-                                    final s =
-                                        (i < spec.traceScales.length)
-                                            ? spec.traceScales[i]
-                                            : 1.0;
-                                    final o =
-                                        (i < spec.traceOffsets.length)
-                                            ? spec.traceOffsets[i]
-                                            : const Offset(0, -2);
+                                    final s = (i < spec.traceScales.length)
+                                        ? spec.traceScales[i]
+                                        : 1.0;
+                                    final o = (i < spec.traceOffsets.length)
+                                        ? spec.traceOffsets[i]
+                                        : const Offset(0, -2);
                                     return SizedBox(
                                       width: traceBaseW * s,
                                       child: Transform.translate(
@@ -874,10 +982,8 @@ class _Writing24PageState extends State<Writing24Page> {
                             width: 200, // 버튼 폭 고정
                             height: 42, // 버튼 높이 고정
                             child: ElevatedButton(
-                              onPressed:
-                                  () =>
-                                      _canvasKey.currentState
-                                          ?.recognizeAndCheckText(),
+                              onPressed: () => _canvasKey.currentState
+                                  ?.recognizeAndCheckText(),
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: const Color(0xFFFFD966),
                                 foregroundColor: Colors.black87,

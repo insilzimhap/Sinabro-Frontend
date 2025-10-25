@@ -75,7 +75,14 @@ flutter:
     - assets/audio/effect/
     - assets/audio/tts/levelTest/
     - assets/audio/tts/gameListen/
+    - assets/audio/tts/gameListen/practice/
+    - assets/audio/tts/gameListen/level1/
+    - assets/audio/tts/gameListen/level2/
+    - assets/audio/tts/gameListen/level3/
     - assets/audio/tts/gameWrite/
+    - assets/audio/tts/gameWrite/level1/
+    - assets/audio/tts/gameWrite/level2/
+    - assets/audio/tts/gameWrite/level3/
     - assets/audio/tts/studyListen/
     - assets/audio/tts/studyListen/level1/animals/
     - assets/audio/tts/studyListen/level1/colors/
@@ -84,3 +91,6 @@ flutter:
     - assets/audio/tts/studyListen/level2/numbers/
     - assets/audio/tts/studyListen/level3/daily/
     - assets/audio/tts/studyWrite/
+    - assets/audio/tts/studyWrite/level1/
+    - assets/audio/tts/studyWrite/level2/
+    - assets/audio/tts/studyWrite/level3/

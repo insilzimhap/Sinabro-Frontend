@@ -1,14 +1,16 @@
 // 레벨 1 열매 1 별(직선) 서버 연결 완료
+// lib/main/studyView/writeStudy/page/level1/star_write.dart
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'dart:convert'; // http 사용을 위해 추가
 import 'package:http/http.dart' as http; // http 사용을 위해 추가
 import 'package:sinabro/config.dart'; // baseUrl 사용을 위해 추가
+import 'package:audioplayers/audioplayers.dart'; // 오디오 패키지 import
 
 /// 별-잇기: 인트로(별들을 이어봐요!) -> 플레이 -> 완료(배너/별들/보상)
 class ConstellationDrawPage extends StatefulWidget {
-    final String childId;
-    const ConstellationDrawPage({super.key, required this.childId});
+  final String childId;
+  const ConstellationDrawPage({super.key, required this.childId});
 
   @override
   State<ConstellationDrawPage> createState() => _ConstellationDrawPageState();
@@ -20,6 +22,12 @@ const _bgSky = '${_dir}bg_sky.png';
 const _starImg = '${_dir}star.png';
 const _celeStars = '${_dir}stars.png'; // ⭐ 세 개 별 이미지 (파일명: stars.png)
 const _appleImg = '${_dir}apple.png';
+
+// 오디오 에셋 경로
+const _audioDir = 'assets/audio/contents/studyWrite/level1/';
+const _audioIntro = '${_audioDir}write3_star_intro.mp3';
+const _audioDraw = '${_audioDir}write3_star_draw.mp3';
+const _audioPerfect = '${_audioDir}write3_star_perfect.mp3';
 
 enum _FlowPhase { intro, play, banner, celebrate, reward }
 
@@ -39,8 +47,34 @@ class _ConstellationDrawPageState extends State<ConstellationDrawPage> {
   final List<List<Offset>> _confirmed = []; // 확정된 노란 선
   _FlowPhase _phase = _FlowPhase.intro; // 인트로부터 시작
 
-  // ✅ 학습 시작 시간 기록 변수
+  // 오디오 플레이어 인스턴스 추가
+  final AudioPlayer _audioPlayer = AudioPlayer();
+
+  // 학습 시작 시간 기록 변수
   DateTime? _startTime;
+
+  // ------------------ ✅ 오디오 ------------------
+  @override
+  void initState() {
+    super.initState();
+    // 인트로 오디오 자동 재생
+    _playAudio(_audioIntro);
+  }
+
+  @override
+  void dispose() {
+    // 오디오 플레이어 리소스 해제
+    _audioPlayer.dispose();
+    super.dispose();
+  }
+
+  /// 오디오 재생 헬퍼 함수
+  void _playAudio(String assetPath, {bool isLooping = false}) {
+    _audioPlayer.stop(); // 기존 오디오가 있다면 중지
+    _audioPlayer
+        .setReleaseMode(isLooping ? ReleaseMode.loop : ReleaseMode.release);
+    _audioPlayer.play(AssetSource(assetPath));
+  }
 
   // ------------------ 제스처 ------------------
   bool get _gesturesEnabled => _phase == _FlowPhase.play;
@@ -93,7 +127,7 @@ class _ConstellationDrawPageState extends State<ConstellationDrawPage> {
   // ✅ API 호출 함수 추가
   Future<void> _uploadStudyWritingResult() async {
     // 실제 이 학습에 해당하는 정확한 fruit_id로 바꿔주세요!
-    const String fruitIdForThisStudy = 'FR_WR_001'; 
+    const String fruitIdForThisStudy = 'FR_WR_001';
 
     // ✅ 학습 시간 계산
     int timeSpentSeconds = 0;
@@ -127,6 +161,9 @@ class _ConstellationDrawPageState extends State<ConstellationDrawPage> {
   // ------------------ 완료 시퀀스 ------------------
   void _startFinishFlow() async {
     if (!mounted) return;
+
+    _playAudio(_audioPerfect); // ✅ "완벽해요!" 오디오 재생
+
     setState(() => _phase = _FlowPhase.banner); // 1) 완벽해요!
 
     await Future.delayed(const Duration(milliseconds: 1100));
@@ -211,8 +248,9 @@ class _ConstellationDrawPageState extends State<ConstellationDrawPage> {
     });
   }
 
-  // ✅ 시작 함수 수정: 시간 기록 추가
+  // ✅ 시작 함수 수정: 시간 기록 + 오디오 추가
   void _goPlay() {
+    _playAudio(_audioDraw); // ✅ "선을 따라그려봐요" 재생
     setState(() {
       _phase = _FlowPhase.play;
       _startTime = DateTime.now(); // ⭐ 학습 시작 시간 기록!
@@ -324,11 +362,10 @@ class _ConstellationDrawPageState extends State<ConstellationDrawPage> {
                       key: ValueKey('star-$i-$_progress'),
                       tween: Tween(begin: 0, end: 1),
                       duration: const Duration(milliseconds: 280),
-                      builder:
-                          (_, t, child) => Transform.scale(
-                            scale: 0.85 + 0.15 * t,
-                            child: Opacity(opacity: t, child: child),
-                          ),
+                      builder: (_, t, child) => Transform.scale(
+                        scale: 0.85 + 0.15 * t,
+                        child: Opacity(opacity: t, child: child),
+                      ),
                       child: Image.asset(_starImg, fit: BoxFit.contain),
                     ),
                   );
@@ -356,14 +393,13 @@ class _ConstellationDrawPageState extends State<ConstellationDrawPage> {
                     child: TweenAnimationBuilder<double>(
                       tween: Tween(begin: 0.0, end: 1.0),
                       duration: const Duration(milliseconds: 600),
-                      builder:
-                          (_, t, child) => Opacity(
-                            opacity: t,
-                            child: Transform.scale(
-                              scale: 0.85 + 0.15 * t,
-                              child: child,
-                            ),
-                          ),
+                      builder: (_, t, child) => Opacity(
+                        opacity: t,
+                        child: Transform.scale(
+                          scale: 0.85 + 0.15 * t,
+                          child: child,
+                        ),
+                      ),
                       child: Image.asset(
                         _celeStars,
                         width: size.shortestSide * 0.65,
@@ -399,29 +435,26 @@ class _PathPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final yellow =
-        Paint()
-          ..color = const Color(0xFFF6D648)
-          ..strokeWidth = max(6, size.shortestSide * 0.01)
-          ..style = PaintingStyle.stroke
-          ..strokeCap = StrokeCap.round
-          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2);
+    final yellow = Paint()
+      ..color = const Color(0xFFF6D648)
+      ..strokeWidth = max(6, size.shortestSide * 0.01)
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2);
 
     for (final seg in confirmed) {
-      final path =
-          Path()
-            ..moveTo(seg.first.dx, seg.first.dy)
-            ..lineTo(seg.last.dx, seg.last.dy);
+      final path = Path()
+        ..moveTo(seg.first.dx, seg.first.dy)
+        ..lineTo(seg.last.dx, seg.last.dy);
       canvas.drawPath(path, yellow);
     }
 
     if (liveStroke.length > 1) {
-      final red =
-          Paint()
-            ..color = liveColor
-            ..strokeWidth = max(5, size.shortestSide * 0.012)
-            ..style = PaintingStyle.stroke
-            ..strokeCap = StrokeCap.round;
+      final red = Paint()
+        ..color = liveColor
+        ..strokeWidth = max(5, size.shortestSide * 0.012)
+        ..style = PaintingStyle.stroke
+        ..strokeCap = StrokeCap.round;
 
       final path = Path()..moveTo(liveStroke.first.dx, liveStroke.first.dy);
       for (int i = 1; i < liveStroke.length; i++) {

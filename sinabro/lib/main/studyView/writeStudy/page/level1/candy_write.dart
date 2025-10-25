@@ -10,6 +10,7 @@ import 'package:sinabro/config.dart'; // baseUrl 사용을 위해 추가
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:sinabro/main/studyView/writeStudy/page/main_apple_tree.dart';
+import 'package:audioplayers/audioplayers.dart'; // 오디오 패키지 import
 
 /* ───────── assets ───────── */
 const _dir = 'assets/img/contents/studyWrite/';
@@ -29,6 +30,12 @@ const _finishRec = '${_dir}candy_rec.png';
 const _eatCandy = '${_dir}eat_candy.png'; // 먹는 장면
 const _appleGold = '${_dir}apple_gold.png'; // 팝업 아이콘
 const _dalgona = '${_dir}dalgona.png';
+
+// 오디오 에셋 경로
+const _audioDir = 'assets/audio/contents/studyWrite/level1/';
+const _audioIntro = '${_audioDir}write3_dalgona_intro.mp3';
+const _audioDone = '${_audioDir}write3_dalgona_done.mp3';
+const _audioFinish = '${_audioDir}write3_dalgona_finish.mp3';
 
 /* ───────── flow ───────── */
 enum _Phase { intro, draw, reveal, eat }
@@ -55,7 +62,10 @@ class _CandyWritePageState extends State<CandyWritePage>
   final List<String> _guides = const [_guide1, _guide2, _guide3];
   final List<double> _guideScale = const [0.80, 0.68, 0.80];
 
-  // ✅ 학습 시작 시간을 기록할 변수 추가
+  // 오디오 플레이어 인스턴스
+  final AudioPlayer _audioPlayer = AudioPlayer();
+
+  // 학습 시작 시간을 기록할 변수 추가
   DateTime? _startTime;
 
   int _stage = 0;
@@ -70,14 +80,13 @@ class _CandyWritePageState extends State<CandyWritePage>
     duration: const Duration(milliseconds: 1400),
   );
 
-
   // ✅ API 호출 함수 추가
   Future<void> _uploadStudyWritingResult() async {
     // 실제 이 학습에 해당하는 정확한 fruit_id로 바꿔주세요!
     const String fruitIdForThisStudy = 'FR_WR_004';
 
     // ✅ 학습 시간 계산
-    int timeSpentSeconds = 0; 
+    int timeSpentSeconds = 0;
     if (_startTime != null) {
       // 끝나는 시간과 시작 시간의 차이를 구해서 초 단위로 변환
       timeSpentSeconds = DateTime.now().difference(_startTime!).inSeconds;
@@ -89,7 +98,7 @@ class _CandyWritePageState extends State<CandyWritePage>
       'fruitId': fruitIdForThisStudy,
       // ✅ 계산된 시간 사용
       'timeSpentSecs': timeSpentSeconds,
-      'isCompleted': true,  // 학습을 정상적으로 완료했으므로 true
+      'isCompleted': true, // 학습을 정상적으로 완료했으므로 true
     });
 
     try {
@@ -112,15 +121,40 @@ class _CandyWritePageState extends State<CandyWritePage>
     }
   }
 
+  // ------------------ 오디오 ------------------
+  @override
+  void initState() {
+    super.initState();
+    // 인트로 오디오 자동 재생
+    _playAudio(_audioIntro);
+  }
 
   @override
   void dispose() {
     _revealCtrl.dispose();
+    // 오디오 플레이어 리소스 해제
+    _audioPlayer.dispose();
     super.dispose();
   }
 
+  /// 오디오 재생 헬퍼 함수
+  void _playAudio(String assetPath, {bool isLooping = false}) {
+    if (!mounted) return; // 위젯 종료 후 호출 방지
+    _audioPlayer.stop(); // 기존 오디오가 있다면 중지
+    _audioPlayer
+        .setReleaseMode(isLooping ? ReleaseMode.loop : ReleaseMode.release);
+    _audioPlayer.play(AssetSource(assetPath));
+  }
+  // ---------------------------------------------
+
   Future<void> _onStageDone() async {
     if (!mounted) return;
+
+    // 마지막 스테이지 완료 시에만 "완성되었어요" 재생
+    if (_stage >= _stages.length - 1) {
+      _playAudio(_audioDone); // "완성되었어요" 재생
+    }
+
     setState(() => _phase = _Phase.reveal);
     _revealCtrl
       ..reset()
@@ -130,8 +164,10 @@ class _CandyWritePageState extends State<CandyWritePage>
 
     // 다음 단계 또는 엔딩
     if (_stage < _stages.length - 1) {
+      // 아직 다음 스테이지 남음
       await Future.delayed(const Duration(milliseconds: 900));
       if (!mounted) return;
+      // 다음 단계 시작 시 별도 오디오 없음
       setState(() {
         _stage++;
         _progress = 0;
@@ -175,7 +211,9 @@ class _CandyWritePageState extends State<CandyWritePage>
         builder: (context, c) {
           final size = Size(c.maxWidth, c.maxHeight);
           final side = min(size.width, size.height) * 0.75;
+
           // ✅ 학습 시작 시점(_Phase.draw)에 시간 기록
+          // ⭐ 첫 번째 스테이지 시작 시에만 기록
           if (_phase == _Phase.draw && _startTime == null) {
             _startTime = DateTime.now();
           }
@@ -252,8 +290,7 @@ class _CandyWritePageState extends State<CandyWritePage>
 
                             // 하단 여백 + 안전 영역
                             SizedBox(
-                              height:
-                                  18 +
+                              height: 18 +
                                   kBottomNavigationBarHeight * 0.0 + // 필요시 조절
                                   0 +
                                   MediaQuery.of(context).padding.bottom,
@@ -284,8 +321,8 @@ class _CandyWritePageState extends State<CandyWritePage>
                     child: CandyGuideLayer(
                       guideAsset: _guides[_stage],
                       guideOpacity: 0.38,
-                      sizeScale:
-                          _guideScale[_stage], // ✅ 스테이지별 축소율 적용 (예: [0.80, 0.68, 0.80])
+                      sizeScale: _guideScale[
+                          _stage], // ✅ 스테이지별 축소율 적용 (예: [0.80, 0.68, 0.80])
                       targetCoverage: 0.50, // ✅ 80% 이상 채우기
                       snapRadiusPx: 30,
                       stampRadiusPx: 9,
@@ -297,6 +334,7 @@ class _CandyWritePageState extends State<CandyWritePage>
                       onProgress: (p) => setState(() => _progress = p),
                       onDone: _onStageDone,
                       onFail: () {
+                        // ⭐ 실패 시 별도 오디오 없음
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(
                             content: Text('다시 그려볼까요? 한 번에 이어서!'),
@@ -323,7 +361,8 @@ class _CandyWritePageState extends State<CandyWritePage>
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Text(
-                        '가이드 안을 한 번에 이어 그려요  ${(min(_progress, 1.0) * 100).round()}%',
+                        // ⭐ 안내 문구 변경 (달고나 맞춤)
+                        '모양 틀을 따라 한 번에 그려요  ${(min(_progress, 1.0) * 100).round()}%',
                         style: const TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.w700,
@@ -340,11 +379,10 @@ class _CandyWritePageState extends State<CandyWritePage>
                 AnimatedBuilder(
                   animation: _revealCtrl,
                   builder: (_, __) {
-                    final t =
-                        CurvedAnimation(
-                          parent: _revealCtrl,
-                          curve: Curves.easeInOutCubic,
-                        ).value;
+                    final t = CurvedAnimation(
+                      parent: _revealCtrl,
+                      curve: Curves.easeInOutCubic,
+                    ).value;
                     final scale = 0.90 + 0.10 * Curves.easeOutBack.transform(t);
                     return Center(
                       child: Transform.scale(
@@ -362,7 +400,7 @@ class _CandyWritePageState extends State<CandyWritePage>
                     );
                   },
                 ),
-                const _FinishBanner(),
+                const _FinishBanner(), // "완성되었어요~!" 텍스트 배너
               ],
 
               if (_phase == _Phase.eat) ...[
@@ -373,7 +411,7 @@ class _CandyWritePageState extends State<CandyWritePage>
                   left: 0,
                   right: 0,
                   bottom: 80 + MediaQuery.of(context).padding.bottom,
-                  child: const _EatBanner(),
+                  child: const _EatBanner(), // "맛있게 먹어봐요~!" 텍스트 배너
                 ),
               ],
 
@@ -461,7 +499,6 @@ class _CandyWritePageState extends State<CandyWritePage>
       },
     );
   }
-
 }
 
 /* ─────────────────────────────────────────────────────────────────────────────
@@ -642,21 +679,19 @@ class _CandyGuideLayerState extends State<CandyGuideLayer> {
 
   // 화면↔마스크
   Offset _toMask(Offset screenPt) => Offset(
-    (screenPt.dx - _guideRect.left) * _mx,
-    (screenPt.dy - _guideRect.top) * _my,
-  );
+        (screenPt.dx - _guideRect.left) * _mx,
+        (screenPt.dy - _guideRect.top) * _my,
+      );
 
   double _distanceToRect(Offset p, Rect r) {
-    final dx =
-        (p.dx < r.left)
-            ? (r.left - p.dx)
-            : (p.dx > r.right)
+    final dx = (p.dx < r.left)
+        ? (r.left - p.dx)
+        : (p.dx > r.right)
             ? (p.dx - r.right)
             : 0.0;
-    final dy =
-        (p.dy < r.top)
-            ? (r.top - p.dy)
-            : (p.dy > r.bottom)
+    final dy = (p.dy < r.top)
+        ? (r.top - p.dy)
+        : (p.dy > r.bottom)
             ? (p.dy - r.bottom)
             : 0.0;
     return sqrt(dx * dx + dy * dy);
@@ -787,8 +822,8 @@ class _CandyGuideLayerState extends State<CandyGuideLayer> {
                   }
                 },
                 onPanEnd: (_) {
-                  final covNeed = (widget.targetCoverage * _kCoverageGrace)
-                      .clamp(0.0, 1.0);
+                  final covNeed =
+                      (widget.targetCoverage * _kCoverageGrace).clamp(0.0, 1.0);
                   final cov = _coverage;
 
                   bool passByLoop = false;
@@ -820,9 +855,9 @@ class _CandyGuideLayerState extends State<CandyGuideLayer> {
 
                     if (_useHorizontal) {
                       final bandGX = (_gridW * _kEndBandPct).ceil().clamp(
-                        1,
-                        _gridW,
-                      );
+                            1,
+                            _gridW,
+                          );
                       final leftBandMaxX = (_minGXEdge + bandGX).clamp(
                         0,
                         _gridW - 1,
@@ -842,9 +877,9 @@ class _CandyGuideLayerState extends State<CandyGuideLayer> {
                       passByBand = (inLeftBand || inRightBand) && inYSlack;
                     } else {
                       final bandGY = (_gridH * _kEndBandPct).ceil().clamp(
-                        1,
-                        _gridH,
-                      );
+                            1,
+                            _gridH,
+                          );
                       final topBandMaxY = (_minGYEdge + bandGY).clamp(
                         0,
                         _gridH - 1,
@@ -939,13 +974,12 @@ class _MaskClippedStrokePainter extends CustomPainter {
     canvas.saveLayer(maskDstRect, Paint());
 
     // 3) 스트로크
-    final p =
-        Paint()
-          ..color = strokeColor
-          ..style = PaintingStyle.stroke
-          ..strokeCap = StrokeCap.round
-          ..strokeJoin = StrokeJoin.round
-          ..strokeWidth = strokeWidth;
+    final p = Paint()
+      ..color = strokeColor
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round
+      ..strokeWidth = strokeWidth;
     canvas.drawPath(path, p);
 
     // 4) 가이드 알파로 클립(dstIn)

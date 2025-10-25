@@ -264,7 +264,7 @@ class _MyInfoEditPageState extends State<MyInfoEditPage> {
                                     color: Colors.white,
                                   ),
                                 ),
-                                SizedBox(height: 12),
+                                const SizedBox(height: 12),
                                 const TranslatedText(
                                   '부모 회원',
                                   style: TextStyle(

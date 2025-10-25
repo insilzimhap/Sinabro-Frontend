@@ -1,15 +1,12 @@
 import 'package:flutter/material.dart';
 import 'dart:math';
 import 'package:http/http.dart' as http;
+import 'package:sinabro/main/gameView/writeGame/page/write_game_main.dart';
 import 'dart:convert';
 
 // ✅ 학습 페이지 import
-import 'package:sinabro/main/studyView/writeStudy/page/write_study_page.dart';
-import 'package:sinabro/main/studyView/listenStudy/page/listen_study_page.dart';
+import 'package:sinabro/main/studyView/listenStudy/page/listen_study_apple.dart';
 import 'package:sinabro/main/studyView/writeStudy/page/main_apple_tree.dart';
-
-// ✅ 게임 페이지 import
-import 'package:sinabro/main/gameView/writeGame/page/write_game_main.dart';
 
 // ✅ 한 곳에서 서버 주소 관리 (추가)
 import 'package:sinabro/config.dart';
@@ -70,7 +67,6 @@ class _LobbyChildScreenState extends State<LobbyChildScreen> {
 
   Future<void> _fetchChildInfo() async {
     final url = '$baseUrl/api/child/info?childId=${widget.childId}';
-
     try {
       final response = await http.get(Uri.parse(url));
       if (response.statusCode == 200) {
@@ -300,7 +296,8 @@ class _LobbyChildScreenState extends State<LobbyChildScreen> {
                                             Navigator.push(
                                               context,
                                               MaterialPageRoute(
-                                                builder: (_) => ListenStudyPage(
+                                                builder: (_) =>
+                                                    ListenAppleSelect(
                                                   childId: widget.childId,
                                                 ),
                                               ),

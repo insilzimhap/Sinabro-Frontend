@@ -1,12 +1,13 @@
 // lib/main/studyView/writeStudy/page/writing_3_4.dart
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:sinabro/main/studyView/writeStudy/page/main_apple_tree.dart';
+import 'package:sinabro/main/studyView/writeStudy/page/main_apple_tree.dart'; // AppleGarden(childId: ...)
 import 'package:sinabro/main/studyView/writeStudy/widget/writing_canvas.dart';
 
 import 'package:http/http.dart' as http; // http 패키지
-import 'dart:convert';                   // json 변환용
-import 'package:sinabro/config.dart';    // baseUrl 사용
+import 'dart:convert'; // json 변환용
+import 'package:sinabro/config.dart'; // baseUrl 사용
+import 'package:audioplayers/audioplayers.dart'; // ✅ 오디오 패키지 import 추가
 
 const String kMainAppleTreeRoute = '/apple_garden';
 
@@ -37,7 +38,8 @@ Widget? _routeFallbackWithChild(
   DateTime? startTime,
 ) {
   final safeFruitId = fruitId ?? 'unknown_fruit_3_4'; // 기본값 설정
-  final safeStartTime = startTime ?? DateTime.now(); // Intro 페이지 경우 startTime null 가능
+  final safeStartTime =
+      startTime ?? DateTime.now(); // Intro 페이지 경우 startTime null 가능
 
   switch (name) {
     case Writing3_4_IntroPage.routeName:
@@ -45,15 +47,20 @@ Widget? _routeFallbackWithChild(
     case Writing3_4_1Page.routeName: // 첫 페이지는 startTime 필요 없음
       return Writing3_4_1Page(childId: childId, fruitId: safeFruitId);
     case Writing3_4_2Page.routeName:
-      return Writing3_4_2Page(childId: childId, fruitId: safeFruitId, startTime: safeStartTime);
+      return Writing3_4_2Page(
+          childId: childId, fruitId: safeFruitId, startTime: safeStartTime);
     case Writing3_4_3Page.routeName:
-      return Writing3_4_3Page(childId: childId, fruitId: safeFruitId, startTime: safeStartTime);
+      return Writing3_4_3Page(
+          childId: childId, fruitId: safeFruitId, startTime: safeStartTime);
     case Writing3_4_4Page.routeName:
-      return Writing3_4_4Page(childId: childId, fruitId: safeFruitId, startTime: safeStartTime);
+      return Writing3_4_4Page(
+          childId: childId, fruitId: safeFruitId, startTime: safeStartTime);
     case Writing3_4_5Page.routeName:
-      return Writing3_4_5Page(childId: childId, fruitId: safeFruitId, startTime: safeStartTime);
+      return Writing3_4_5Page(
+          childId: childId, fruitId: safeFruitId, startTime: safeStartTime);
     case Writing3_4_6Page.routeName: // 마지막 페이지
-      return Writing3_4_6Page(childId: childId, fruitId: safeFruitId, startTime: safeStartTime);
+      return Writing3_4_6Page(
+          childId: childId, fruitId: safeFruitId, startTime: safeStartTime);
     case Writing3_4_DonePage.routeName:
       return Writing3_4_DonePage(childId: childId);
     default:
@@ -83,10 +90,11 @@ void _pushNamedOrFallback(
       final childId = argsMap?['childId'] as String? ?? 'unknown_child';
       final fruitId = argsMap?['fruitId'] as String?;
       final startTime = argsMap?['startTime'] as DateTime?;
-      final fallbackWidget = _routeFallbackWithChild(routeName, childId, fruitId, startTime);
+      final fallbackWidget =
+          _routeFallbackWithChild(routeName, childId, fruitId, startTime);
 
       if (fallbackWidget != null) {
-         nav.push(MaterialPageRoute(builder: (_) => fallbackWidget));
+        nav.push(MaterialPageRoute(builder: (_) => fallbackWidget));
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Fallback Route not found: $routeName')),
@@ -106,7 +114,8 @@ void _replaceNamedOrFallback(
   try {
     nav.pushReplacementNamed(routeName, arguments: arguments);
   } catch (e) {
-    debugPrint('pushReplacementNamed failed for $routeName: $e. Trying fallback...');
+    debugPrint(
+        'pushReplacementNamed failed for $routeName: $e. Trying fallback...');
     if (fallback != null) {
       nav.pushReplacement(MaterialPageRoute(builder: (_) => fallback));
     } else {
@@ -114,10 +123,11 @@ void _replaceNamedOrFallback(
       final childId = argsMap?['childId'] as String? ?? 'unknown_child';
       final fruitId = argsMap?['fruitId'] as String?;
       final startTime = argsMap?['startTime'] as DateTime?;
-      final fallbackWidget = _routeFallbackWithChild(routeName, childId, fruitId, startTime);
+      final fallbackWidget =
+          _routeFallbackWithChild(routeName, childId, fruitId, startTime);
 
       if (fallbackWidget != null) {
-         nav.pushReplacement(MaterialPageRoute(builder: (_) => fallbackWidget));
+        nav.pushReplacement(MaterialPageRoute(builder: (_) => fallbackWidget));
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Fallback Route not found: $routeName')),
@@ -127,9 +137,22 @@ void _replaceNamedOrFallback(
   }
 }
 
+// ──────────────────────────────────────────────────────────────────────────────
+// ✅ 오디오 정의 추가
+// ──────────────────────────────────────────────────────────────────────────────
+const _audioDirL3 = 'assets/audio/contents/studyWrite/level3/'; // ✅ 5세 오디오 경로
+const _audioIntro4 =
+    '${_audioDirL3}write5_study_intro_4.mp3'; // ✅ 4단계 인트로 (으라차차)
+const _audioFinish4 = '${_audioDirL3}write5_study_finish_4.mp3'; // ✅ 4단계 완료
+
+// ✅ 신체 단어 오디오 파일명 헬퍼
+String _getBodyWordAudio(String wordKey) {
+  // wordKey 예시: 'eye', 'nose', ...
+  return '${_audioDirL3}body_$wordKey.mp3';
+}
 
 // ──────────────────────────────────────────────────────────────────────────────
-// 인트로 화면 (⭐️ 수정됨: fruitId 받고 넘기기)
+// 인트로 화면 (⭐️ 수정됨: fruitId 받고 넘기기, ✅ 오디오 추가, ✅ 텍스트 수정)
 // ──────────────────────────────────────────────────────────────────────────────
 class Writing3_4_IntroPage extends StatefulWidget {
   const Writing3_4_IntroPage({
@@ -148,20 +171,50 @@ class Writing3_4_IntroPage extends StatefulWidget {
 class _Writing3_4_IntroPageState extends State<Writing3_4_IntroPage> {
   static const _cardMixed = 'assets/img/contents/studyWrite/card_mixed.png';
 
+  // ✅ 오디오 플레이어 추가
+  final AudioPlayer _audioPlayer = AudioPlayer();
+
+  // ✅ 오디오 재생 헬퍼 함수 추가
+  void _playAudio(String assetPath) {
+    if (!mounted) return;
+    _audioPlayer.stop();
+    _audioPlayer.setReleaseMode(ReleaseMode.release);
+    _audioPlayer.play(AssetSource(assetPath));
+  }
+
   @override
   void initState() {
     super.initState();
+
+    // ✅ 인트로 오디오 자동 재생
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _playAudio(_audioIntro4); // 4단계 인트로 재생
+    });
+
     Future<void>(() async {
       await Future.delayed(const Duration(seconds: 3));
       if (!mounted) return;
       // ⭐️ fallback 호출 시에도 fruitId 전달하도록 수정
-      _replaceNamedOrFallback( // Intro -> Page1은 pushNamed 대신 replaceNamed 사용 가능
+      _replaceNamedOrFallback(
+        // Intro -> Page1은 pushNamed 대신 replaceNamed 사용 가능
         context,
         Writing3_4_1Page.routeName,
-        arguments: {'childId': widget.childId, 'fruitId': widget.fruitId}, // ⭐️ fruitId 넘기기
-        fallback: Writing3_4_1Page(childId: widget.childId, fruitId: widget.fruitId), // ⭐️ fallback에도 넘기기
+        arguments: {
+          'childId': widget.childId,
+          'fruitId': widget.fruitId
+        }, // ⭐️ fruitId 넘기기
+        fallback: Writing3_4_1Page(
+            childId: widget.childId,
+            fruitId: widget.fruitId), // ⭐️ fallback에도 넘기기
       );
     });
+  }
+
+  // ✅ 오디오 리소스 해제 추가
+  @override
+  void dispose() {
+    _audioPlayer.dispose();
+    super.dispose();
   }
 
   @override
@@ -189,6 +242,7 @@ class _Writing3_4_IntroPageState extends State<Writing3_4_IntroPage> {
                           filterQuality: FilterQuality.high,
                         ),
                         const SizedBox(height: 24),
+                        // ✅ 텍스트 수정 (4단계 신체)
                         Text(
                           '으라차차 카드가 뒤섞여버렸어요...',
                           style: theme.textTheme.titleLarge?.copyWith(
@@ -229,16 +283,16 @@ class _Writing3_4_IntroPageState extends State<Writing3_4_IntroPage> {
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
-// 재사용 카드 위젯 (⭐️ 수정됨: fruitId, startTime, isFirstPage, isLastPage 추가 + API 호출 로직)
+// 재사용 카드 위젯 (⭐️ 수정됨: fruitId, startTime, isFirstPage, isLastPage 추가 + API 호출 로직 + ✅ 오디오 추가)
 // ──────────────────────────────────────────────────────────────────────────────
 class _WritingItemPage extends StatefulWidget {
   const _WritingItemPage({
     super.key,
     required this.childId,
-    required this.fruitId,       // ⭐️ 추가!
-    this.startTime,       // ⭐️ 추가! (첫 페이지 제외하고 받음)
+    required this.fruitId, // ⭐️ 추가!
+    this.startTime, // ⭐️ 추가! (첫 페이지 제외하고 받음)
     this.isFirstPage = false, // ⭐️ 추가!
-    this.isLastPage = false,  // ⭐️ 추가!
+    this.isLastPage = false, // ⭐️ 추가!
     required this.illustPath,
     required this.previewPath,
     required this.tracePath,
@@ -246,14 +300,15 @@ class _WritingItemPage extends StatefulWidget {
     required this.columns,
     required this.expectedWord,
     required this.acceptedWords,
+    required this.wordAudioKey, // ✅ 단어 오디오 키 추가
     this.titleColor = const Color(0xFFFEF5F6),
   });
 
   final String childId;
-  final String fruitId;      // ⭐️ 추가!
+  final String fruitId; // ⭐️ 추가!
   final DateTime? startTime; // ⭐️ 추가!
-  final bool isFirstPage;    // ⭐️ 추가!
-  final bool isLastPage;     // ⭐️ 추가!
+  final bool isFirstPage; // ⭐️ 추가!
+  final bool isLastPage; // ⭐️ 추가!
   final String illustPath;
   final String previewPath;
   final String tracePath;
@@ -262,6 +317,7 @@ class _WritingItemPage extends StatefulWidget {
   final String expectedWord;
   final List<String> acceptedWords;
   final Color titleColor;
+  final String wordAudioKey; // ✅ 필드 추가
 
   @override
   State<_WritingItemPage> createState() => _WritingItemPageState();
@@ -272,10 +328,34 @@ class _WritingItemPageState extends State<_WritingItemPage> {
   late DateTime _startTime; // ⭐️ API용 시작 시간 기록
   bool _apiCallSent = false; // ⭐️ API 중복 호출 방지
 
+  // ✅ 오디오 플레이어 추가
+  final AudioPlayer _audioPlayer = AudioPlayer();
+
+  // ✅ 오디오 재생 헬퍼 함수 추가
+  void _playAudio(String assetPath) {
+    if (!mounted) return;
+    _audioPlayer.stop();
+    _audioPlayer.setReleaseMode(ReleaseMode.release);
+    _audioPlayer.play(AssetSource(assetPath));
+  }
+
   @override
   void initState() {
     super.initState();
+    // ⭐️ 첫 페이지면 지금 시간 기록, 아니면 전달받은 시간 사용
     _startTime = widget.isFirstPage ? DateTime.now() : widget.startTime!;
+
+    // ✅ 단어 오디오 자동 재생 (첫 페이지 + 이후 페이지 모두)
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _playAudio(_getBodyWordAudio(widget.wordAudioKey));
+    });
+  }
+
+  // ✅ 오디오 리소스 해제 추가
+  @override
+  void dispose() {
+    _audioPlayer.dispose();
+    super.dispose();
   }
 
   /// ⭐️ (신규) 학습 완료 API 호출 함수 - JWT 없이
@@ -293,12 +373,14 @@ class _WritingItemPageState extends State<_WritingItemPage> {
     try {
       final response = await http.post(url, headers: headers, body: body);
       if (response.statusCode == 200 || response.statusCode == 201) {
-        debugPrint('[Writing3_4] API 연동 성공: fruitId ${widget.fruitId} 완료!');
+        debugPrint(
+            '[Writing3_4] API 연동 성공: fruitId ${widget.fruitId} 완료!'); // 페이지명 수정
       } else {
-        debugPrint('[Writing3_4] API 연동 실패: ${response.statusCode} ${response.body}');
+        debugPrint(
+            '[Writing3_4] API 연동 실패: ${response.statusCode} ${response.body}'); // 페이지명 수정
       }
     } catch (e) {
-      debugPrint('[Writing3_4] API 연동 중 예외 발생: $e');
+      debugPrint('[Writing3_4] API 연동 중 예외 발생: $e'); // 페이지명 수정
     }
   }
 
@@ -327,7 +409,11 @@ class _WritingItemPageState extends State<_WritingItemPage> {
       context,
       widget.nextRouteName,
       // arguments에 startTime도 포함해서 전달
-      arguments: {'childId': widget.childId, 'fruitId': widget.fruitId, 'startTime': _startTime},
+      arguments: {
+        'childId': widget.childId,
+        'fruitId': widget.fruitId,
+        'startTime': _startTime
+      },
       // fallback 호출 시에도 모든 파라미터 전달!
       fallback: _routeFallbackWithChild(
         widget.nextRouteName,
@@ -358,11 +444,16 @@ class _WritingItemPageState extends State<_WritingItemPage> {
                   const SizedBox(height: 48),
                   Expanded(
                     child: Center(
-                      child: Image.asset(
-                        widget.illustPath,
-                        width: 260,
-                        fit: BoxFit.contain,
-                        filterQuality: FilterQuality.high,
+                      // ✅ 일러스트 이미지 탭 -> 단어 오디오 재생
+                      child: GestureDetector(
+                        onTap: () =>
+                            _playAudio(_getBodyWordAudio(widget.wordAudioKey)),
+                        child: Image.asset(
+                          widget.illustPath,
+                          width: 260,
+                          fit: BoxFit.contain,
+                          filterQuality: FilterQuality.high,
+                        ),
                       ),
                     ),
                   ),
@@ -412,6 +503,7 @@ class _WritingItemPageState extends State<_WritingItemPage> {
                                         // 위: 쓰기 캔버스
                                         Positioned.fill(
                                           child: WritingCanvas(
+                                            // ✅ GestureDetector 불필요 (캔버스 자체가 터치됨)
                                             key: _canvasKey,
                                             penWidth: 15,
                                             targetChar: widget.expectedWord,
@@ -503,7 +595,7 @@ class _WritingItemPageState extends State<_WritingItemPage> {
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
-// _TileStrip, _GridSplitPainter
+// _TileStrip, _GridSplitPainter (기존과 동일)
 // ──────────────────────────────────────────────────────────────────────────────
 class _TileStrip extends StatelessWidget {
   const _TileStrip({required this.child, this.columns = 3});
@@ -513,7 +605,7 @@ class _TileStrip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     const borderColor = Color(0xFFE1E1E1);
-    final cols = columns.clamp(1, 3);
+    final cols = columns.clamp(1, 3); // ✅ 1~3으로 수정
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -568,10 +660,9 @@ class _GridSplitPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     if (columns <= 1) return;
-    final p =
-        Paint()
-          ..color = color
-          ..strokeWidth = 1;
+    final p = Paint()
+      ..color = color
+      ..strokeWidth = 1;
     final cellW = size.width / columns;
     for (int i = 1; i < columns; i++) {
       final x = cellW * i;
@@ -583,9 +674,8 @@ class _GridSplitPainter extends CustomPainter {
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 
-
 // ──────────────────────────────────────────────────────────────────────────────
-// 실제 페이지들 정의 (⭐️ 생성자 수정 완료)
+// 실제 페이지들 정의 (⭐️ 생성자 수정 완료, ✅ 오디오 키 추가)
 // ──────────────────────────────────────────────────────────────────────────────
 
 // 눈 (3-4-1)
@@ -601,13 +691,14 @@ class Writing3_4_1Page extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final arguments = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+    final arguments =
+        ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
     final id = arguments?['childId'] as String? ?? childId;
     final fId = arguments?['fruitId'] as String? ?? fruitId;
 
     return _WritingItemPage(
       childId: id,
-      fruitId: fId,     // ⭐️ 넘기기
+      fruitId: fId, // ⭐️ 넘기기
       isFirstPage: true, // ⭐️ 첫 페이지임을 표시
       illustPath: 'assets/img/contents/studyWrite/eye.png',
       previewPath: 'assets/img/contents/studyWrite/eye_preview.png',
@@ -616,6 +707,7 @@ class Writing3_4_1Page extends StatelessWidget {
       columns: 1,
       expectedWord: '눈',
       acceptedWords: const ['눈', '뉸'],
+      wordAudioKey: 'eye', // ✅ 단어 오디오 키 추가
     );
   }
 }
@@ -625,24 +717,25 @@ class Writing3_4_2Page extends StatelessWidget {
   const Writing3_4_2Page({
     super.key,
     required this.childId,
-    required this.fruitId,   // ⭐️ 받기
+    required this.fruitId, // ⭐️ 받기
     required this.startTime, // ⭐️ 받기
   });
   static const routeName = '/study/write/writing_3_4_2';
   final String childId;
-  final String fruitId;   // ⭐️ 필드 추가
+  final String fruitId; // ⭐️ 필드 추가
   final DateTime startTime; // ⭐️ 필드 추가
 
   @override
   Widget build(BuildContext context) {
-    final arguments = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+    final arguments =
+        ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
     final id = arguments?['childId'] as String? ?? childId;
     final fId = arguments?['fruitId'] as String? ?? fruitId;
     final start = arguments?['startTime'] as DateTime? ?? startTime;
 
     return _WritingItemPage(
       childId: id,
-      fruitId: fId,     // ⭐️ 넘기기
+      fruitId: fId, // ⭐️ 넘기기
       startTime: start, // ⭐️ 넘기기
       illustPath: 'assets/img/contents/studyWrite/nose.png',
       previewPath: 'assets/img/contents/studyWrite/nose_preview.png',
@@ -651,6 +744,7 @@ class Writing3_4_2Page extends StatelessWidget {
       columns: 1,
       expectedWord: '코',
       acceptedWords: const ['코', '꼬'],
+      wordAudioKey: 'nose', // ✅ 단어 오디오 키 추가
     );
   }
 }
@@ -670,7 +764,8 @@ class Writing3_4_3Page extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final arguments = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+    final arguments =
+        ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
     final id = arguments?['childId'] as String? ?? childId;
     final fId = arguments?['fruitId'] as String? ?? fruitId;
     final start = arguments?['startTime'] as DateTime? ?? startTime;
@@ -686,6 +781,7 @@ class Writing3_4_3Page extends StatelessWidget {
       columns: 1,
       expectedWord: '입',
       acceptedWords: const ['입', '잎'],
+      wordAudioKey: 'mouth', // ✅ 단어 오디오 키 추가
     );
   }
 }
@@ -705,7 +801,8 @@ class Writing3_4_4Page extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final arguments = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+    final arguments =
+        ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
     final id = arguments?['childId'] as String? ?? childId;
     final fId = arguments?['fruitId'] as String? ?? fruitId;
     final start = arguments?['startTime'] as DateTime? ?? startTime;
@@ -721,6 +818,7 @@ class Writing3_4_4Page extends StatelessWidget {
       columns: 1,
       expectedWord: '귀',
       acceptedWords: const ['귀', '뀌'],
+      wordAudioKey: 'ear', // ✅ 단어 오디오 키 추가
     );
   }
 }
@@ -740,7 +838,8 @@ class Writing3_4_5Page extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final arguments = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+    final arguments =
+        ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
     final id = arguments?['childId'] as String? ?? childId;
     final fId = arguments?['fruitId'] as String? ?? fruitId;
     final start = arguments?['startTime'] as DateTime? ?? startTime;
@@ -756,6 +855,7 @@ class Writing3_4_5Page extends StatelessWidget {
       columns: 1,
       expectedWord: '손',
       acceptedWords: const ['손', '쏜'],
+      wordAudioKey: 'hand', // ✅ 단어 오디오 키 추가
     );
   }
 }
@@ -775,7 +875,8 @@ class Writing3_4_6Page extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final arguments = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+    final arguments =
+        ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
     final id = arguments?['childId'] as String? ?? childId;
     final fId = arguments?['fruitId'] as String? ?? fruitId;
     final start = arguments?['startTime'] as DateTime? ?? startTime;
@@ -792,12 +893,13 @@ class Writing3_4_6Page extends StatelessWidget {
       columns: 1,
       expectedWord: '발',
       acceptedWords: const ['발', '발 '], // '발 '도 허용?
+      wordAudioKey: 'foot', // ✅ 단어 오디오 키 추가
     );
   }
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
-// 완료 화면 (⭐️ API 호출 없음, UI만 표시 후 나무로 복귀)
+// 완료 화면 (⭐️ API 호출 없음, UI만 표시 후 나무로 복귀, ✅ 오디오 추가)
 // ──────────────────────────────────────────────────────────────────────────────
 class Writing3_4_DonePage extends StatefulWidget {
   const Writing3_4_DonePage({super.key, required this.childId});
@@ -811,9 +913,26 @@ class Writing3_4_DonePage extends StatefulWidget {
 class _Writing3_4_DonePageState extends State<Writing3_4_DonePage> {
   static const _clapPath = 'assets/img/contents/studyWrite/clap.png';
 
+  // ✅ 오디오 플레이어 추가
+  final AudioPlayer _audioPlayer = AudioPlayer();
+
+  // ✅ 오디오 재생 헬퍼 함수 추가
+  void _playAudio(String assetPath) {
+    if (!mounted) return;
+    _audioPlayer.stop();
+    _audioPlayer.setReleaseMode(ReleaseMode.release);
+    _audioPlayer.play(AssetSource(assetPath));
+  }
+
   @override
   void initState() {
     super.initState();
+
+    // ✅ 단계 완료 오디오 자동 재생
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _playAudio(_audioFinish4); // 4단계 완료 오디오 재생
+    });
+
     Future<void>(() async {
       await Future.delayed(const Duration(seconds: 3));
       if (!mounted) return;
@@ -834,6 +953,13 @@ class _Writing3_4_DonePageState extends State<Writing3_4_DonePage> {
     });
   }
 
+  // ✅ 오디오 리소스 해제 추가
+  @override
+  void dispose() {
+    _audioPlayer.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -852,7 +978,7 @@ class _Writing3_4_DonePageState extends State<Writing3_4_DonePage> {
               ),
               const SizedBox(height: 24),
               Text(
-                '쓰기 4단계(신체)도 전부 학습했어요!',
+                '쓰기 4단계(신체)도 전부 학습했어요!', // ✅ 텍스트 수정 (4단계 신체)
                 style: theme.textTheme.titleLarge?.copyWith(
                   fontWeight: FontWeight.w800,
                   color: const Color(0xFF6B4F4F),
@@ -884,9 +1010,12 @@ class _AppleRewardDialog extends StatelessWidget {
         ),
         padding: const EdgeInsets.fromLTRB(24, 24, 24, 20),
         child: Column(
+          // ✅ const 제거
           mainAxisSize: MainAxisSize.min,
           children: [
+            // ✅ const 제거
             Image.asset(
+              // ✅ 경로 수정
               'assets/img/contents/studyWrite/gold_apple.png',
               width: 56,
               height: 56,
@@ -895,6 +1024,7 @@ class _AppleRewardDialog extends StatelessWidget {
             ),
             const SizedBox(height: 12),
             const Text(
+              // ✅ 텍스트 수정
               '이번 나무의 사과를 획득했어요!\n이번 나무의 황금사과까지 전부 모았어요!\n다음 나무의 사과도 부탁해~',
               textAlign: TextAlign.center,
               style: TextStyle(

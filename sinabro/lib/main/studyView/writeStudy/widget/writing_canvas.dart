@@ -1,6 +1,6 @@
 // lib/main/studyView/writeStudy/widget/writing_canvas.dart
 import 'package:flutter/material.dart';
-import 'package:sinabro/selvy_example_view/selvy_recognizer.dart';
+import 'package:sinabro/selvy_example_view/selvy_service.dart';
 
 typedef RecognizeCallback = void Function(String result);
 
