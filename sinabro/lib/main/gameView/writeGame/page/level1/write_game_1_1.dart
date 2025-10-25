@@ -1,11 +1,9 @@
-//write_game_1_1.dart
 // lib/main/studyView/writeGame/level1/write_game_1.dart
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-
-// 메인 허브 페이지 (아웃트로 후 이동할 곳) — 지금은 안 씀
 import 'package:sinabro/main/gameView/writeGame/page/write_game_main.dart';
+import 'package:sinabro/main/gameView/writeGame/api/write_game_api.dart';
 
 enum _Scene { cars, monkeys }
 
@@ -22,17 +20,20 @@ class _WriteGameLevel1PageState extends State<WriteGameLevel1Page> {
   _Scene scene = _Scene.cars;
   bool _showOutro = false;
 
-  // 씬 B의 5줄 x 좌표 비율(0~1) — 숫자만 바꿔서 간격 미세조정
+  // 서버 기록용
+  String? _resultId;
+  final _sw = Stopwatch();
+  bool _completing = false;
+
+  // 씬 B의 5줄 x 좌표 비율
   static const List<double> _bXRatios = [0.12, 0.30, 0.50, 0.70, 0.88];
 
-  // 라인 평가 상태(씬마다 별개)
   List<bool> passed = List.filled(lineCount, false);
   int? activeLine;
   List<Offset> stroke = [];
 
-  // 채점/픽업 파라미터
   static const double tol = 22.0;
-  static const double startPickTol = 80; // 픽업 여유↑
+  static const double startPickTol = 80;
   static const double hitRatio = 0.75;
   static const double coverageRatio = 0.78;
 
@@ -42,22 +43,48 @@ class _WriteGameLevel1PageState extends State<WriteGameLevel1Page> {
   void initState() {
     super.initState();
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+    _startGame();
   }
 
   @override
   void dispose() {
+    _sw.stop();
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
     super.dispose();
   }
 
+  Future<void> _startGame() async {
+    try {
+      _resultId = await WriteGameApi.start(
+        childId: widget.childId,
+        stageCode: 'FR_WG_001', // ✅ Level1-1 코드
+      );
+    } catch (_) {
+      _resultId = null;
+    }
+    _sw.start();
+  }
+
+  Future<void> _completeGame() async {
+    if (_resultId == null || _completing) return;
+    _completing = true;
+    _sw.stop();
+    try {
+      await WriteGameApi.complete(
+        resultId: _resultId!,
+        totalQuestions: lineCount * 2,
+        timeSpentSecs: _sw.elapsed.inSeconds,
+      );
+    } catch (_) {}
+  }
+
   // ─────────────────────────────────────────────
-  // 씬 A (가로 트랙: 자동차 → 깃발)
   List<_HGuide> _buildGuidesA(Size size) {
-    const leftPad = 180.0; // 자동차 이미지와의 간격
-    const rightPad = 140.0; // 깃발 이미지와의 간격
-    const top = 90.0; // 위 여백
-    const bottom = 180.0; // 아래 여백
-    const shorten = 12.0; // 선 양끝 약간 짧게
+    const leftPad = 180.0;
+    const rightPad = 140.0;
+    const top = 90.0;
+    const bottom = 180.0;
+    const shorten = 12.0;
 
     final usableH = size.height - top - bottom;
     final gap = usableH / (lineCount - 0.5);
@@ -71,10 +98,9 @@ class _WriteGameLevel1PageState extends State<WriteGameLevel1Page> {
     });
   }
 
-  // 씬 B (세로 트랙: 과일 ↓ 원숭이)
   List<_VGuide> _buildGuidesB(Size size) {
-    const topPad = 210.0; // 과일과의 간격
-    const bottomPad = 120.0; // 원숭이와의 간격
+    const topPad = 210.0;
+    const bottomPad = 120.0;
     const leftPad = 25.0;
     const rightPad = 25.0;
     const shorten = 8.0;
@@ -90,9 +116,8 @@ class _WriteGameLevel1PageState extends State<WriteGameLevel1Page> {
   }
 
   // ─────────────────────────────────────────────
-  // 입력 처리
   void _onPanStart(DragStartDetails d, Size size) {
-    if (allPassed) return;
+    if (_showOutro || allPassed) return;
     final line =
         (scene == _Scene.cars)
             ? _pickLineH(d.localPosition, size)
@@ -110,12 +135,12 @@ class _WriteGameLevel1PageState extends State<WriteGameLevel1Page> {
   }
 
   void _onPanUpdate(DragUpdateDetails d) {
-    if (activeLine == null || allPassed) return;
+    if (activeLine == null || _showOutro || allPassed) return;
     stroke.add(d.localPosition);
     setState(() {});
   }
 
-  void _onPanEnd(Size size) {
+  void _onPanEnd(Size size) async {
     if (activeLine == null || allPassed) return;
 
     final ok =
@@ -131,7 +156,6 @@ class _WriteGameLevel1PageState extends State<WriteGameLevel1Page> {
 
       if (allPassed) {
         if (scene == _Scene.cars) {
-          // 씬 A 완료 → 씬 B로 전환
           Future.delayed(const Duration(milliseconds: 300), () {
             if (!mounted) return;
             setState(() {
@@ -140,12 +164,13 @@ class _WriteGameLevel1PageState extends State<WriteGameLevel1Page> {
             });
           });
         } else {
-          // 씬 B까지 완료 → (바로) 아웃트로 노트 나타남(페이드인)
+          // ✅ 씬 B 완료 시 서버 완료 기록 + 아웃트로 실행
+          await _completeGame();
+          if (!mounted) return;
           setState(() => _showOutro = true);
         }
       }
     } else {
-      // 오답: 해당 라인만 리셋
       stroke.clear();
       activeLine = null;
       setState(() {});
@@ -153,7 +178,6 @@ class _WriteGameLevel1PageState extends State<WriteGameLevel1Page> {
   }
 
   // ─────────────────────────────────────────────
-  // 라인 픽업/채점
   int? _pickLineH(Offset p, Size size) {
     final gs = _buildGuidesA(size);
     for (int i = 0; i < gs.length; i++) {
@@ -221,47 +245,39 @@ class _WriteGameLevel1PageState extends State<WriteGameLevel1Page> {
         builder: (context, c) {
           final size = Size(c.maxWidth, c.maxHeight);
           return GestureDetector(
-            onPanStart: (d) => _onPanStart(d, size),
-            onPanUpdate: _onPanUpdate,
-            onPanEnd: (_) => _onPanEnd(size),
+            onPanStart: _showOutro ? null : (d) => _onPanStart(d, size),
+            onPanUpdate: _showOutro ? null : _onPanUpdate,
+            onPanEnd: _showOutro ? null : (_) => _onPanEnd(size),
             child: Stack(
               children: [
-                // 상단 제목
                 const Positioned.fill(child: _TitleBanner(text: '따라그려봐요!')),
-
                 if (scene == _Scene.cars) _buildSceneCars(size),
                 if (scene == _Scene.monkeys) _buildSceneMonkeys(size),
 
-                // 아웃트로(노트 + 애니메이션). 끝나면 팝업 → 2초 뒤 허브로 이동
                 if (_showOutro)
                   Positioned.fill(
                     child: OutroOverlay(
-                      // ✅ 애니메이션 시퀀스가 끝나면 팝업 띄우고 이동
                       onFinished: () {
                         if (!mounted) return;
-                        setState(() => _showOutro = false); // 오버레이 숨김(선택)
+                        setState(() => _showOutro = false);
                         _showClearPopup(context);
                       },
-                      autoFinish: true, // ✅ 완료 시 onFinished 호출하도록 true
-                      // ↓ 네가 조절한 값 그대로 유지
+                      autoFinish: true,
                       config: const OutroConfig(
                         noteWidthRatio: 0.86,
                         noteAspect: 0.72,
                         overlayOpacity: 0.25,
-                        // 취소선
                         strikeUseAngle: true,
                         strikeCenterPct: Offset(0.36, 0.33),
                         strikeAngleDeg: -22,
                         strikeLengthRatio: 0.35,
                         strikeWidth: 8.0,
                         strikeColor: Color(0xFFD92B2B),
-                        // 체크
                         checkCenterPct: Offset(0.155, 0.425),
                         checkSizePx: 65.0,
                         checkStrokeWidth: 8.0,
                         checkColor: Color(0xFFD92B2B),
                         checkRotationDeg: -8,
-                        // 도장
                         stampPosPct: Offset(0.285, -0.25),
                         stampDropPx: Offset(120, -140),
                         stampStartScale: 0.10,
@@ -278,7 +294,6 @@ class _WriteGameLevel1PageState extends State<WriteGameLevel1Page> {
     );
   }
 
-  // 완료 팝업(2초 유지 후 허브로 이동)
   void _showClearPopup(BuildContext context) {
     showDialog(
       context: context,
@@ -300,11 +315,10 @@ class _WriteGameLevel1PageState extends State<WriteGameLevel1Page> {
                 ],
               ),
               child: Column(
-                // ← const 빼기!
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Image.asset(
-                    'assets/img/contents/gameWrite/stamp.png', // 스탬프 이미지
+                    'assets/img/contents/gameWrite/stamp.png',
                     width: 84,
                     fit: BoxFit.contain,
                   ),
@@ -326,7 +340,7 @@ class _WriteGameLevel1PageState extends State<WriteGameLevel1Page> {
 
     Future.delayed(const Duration(seconds: 2), () {
       if (!mounted) return;
-      Navigator.of(context).pop(); // 팝업 닫기
+      Navigator.of(context).pop();
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(
           builder: (_) => WriteGameMainPage(childId: widget.childId),
@@ -335,11 +349,9 @@ class _WriteGameLevel1PageState extends State<WriteGameLevel1Page> {
     });
   }
 
-  // ─────────────────────────────────────────────
-  // 씬 A UI
+  // 씬 A
   Widget _buildSceneCars(Size size) {
     final guides = _buildGuidesA(size);
-
     return Stack(
       children: [
         CustomPaint(size: size, painter: _HGuidePainter(guides: guides)),
@@ -352,8 +364,6 @@ class _WriteGameLevel1PageState extends State<WriteGameLevel1Page> {
             size: size,
             painter: _StrokePainter(points: stroke, color: Colors.red),
           ),
-
-        // 좌측 자동차(세로 이미지 한 장)
         const Positioned(
           left: 16,
           top: 55,
@@ -361,7 +371,6 @@ class _WriteGameLevel1PageState extends State<WriteGameLevel1Page> {
           width: 230,
           child: _Asset('assets/img/contents/gameWrite/car.png'),
         ),
-        // 우측 깃발(세로 이미지 한 장)
         const Positioned(
           right: 16,
           top: 32,
@@ -373,17 +382,14 @@ class _WriteGameLevel1PageState extends State<WriteGameLevel1Page> {
     );
   }
 
-  // 씬 B UI
+  // 씬 B
   Widget _buildSceneMonkeys(Size size) {
-    const leftPad = 40.0;
-    const rightPad = 40.0;
+    const leftPad = 40.0, rightPad = 40.0;
     final usableW = size.width - leftPad - rightPad;
-
     final xPositions = List<double>.generate(
       lineCount,
       (i) => leftPad + usableW * _bXRatios[i],
     );
-
     final guides = _buildGuidesB(size);
 
     return Stack(
@@ -398,8 +404,6 @@ class _WriteGameLevel1PageState extends State<WriteGameLevel1Page> {
             size: size,
             painter: _StrokePainter(points: stroke, color: Colors.blue),
           ),
-
-        // 과일(상단)
         ...List.generate(lineCount, (i) {
           final img =
               (i % 2 == 0)
@@ -414,8 +418,6 @@ class _WriteGameLevel1PageState extends State<WriteGameLevel1Page> {
             child: _Asset(img),
           );
         }),
-
-        // 원숭이(하단)
         ...List.generate(lineCount, (i) {
           const w = 100.0, h = 140.0;
           return Positioned(
@@ -430,6 +432,9 @@ class _WriteGameLevel1PageState extends State<WriteGameLevel1Page> {
     );
   }
 }
+
+// 이하 _Asset, _TitleBanner, OutroConfig, OutroOverlay, _StrikePainter, _CheckPainter,
+// _HGuide/_VGuide, Painter 클래스들 원본 그대로 유지
 
 // 간단한 Image.asset 래퍼(코드 줄이기용)
 class _Asset extends StatelessWidget {

@@ -7,15 +7,14 @@ import 'package:sinabro/main/gameView/writeGame/page/write_game_main3.dart';
 import 'package:sinabro/selvy_example_view/selvy_service.dart'
     show SelvyRecognizer;
 
-const _IMG_DIR = 'assets/img/contents/gameWrite/';
+// ✅ API/매핑
+import 'package:sinabro/main/gameView/writeGame/data/wg_question_map.dart';
+import 'package:sinabro/main/gameView/writeGame/api/write_game_api.dart';
 
-// 아웃트로 배경
+const _IMG_DIR = 'assets/img/contents/gameWrite/';
 const _OUTRO_SUCCESS_BG = '${_IMG_DIR}outro_success.png';
 const _OUTRO_FAIL_BG = '${_IMG_DIR}outro_fail.png';
-// (선택) 박수 이미지 — 없으면 아이콘으로 대체됨
 const _CLAP = '${_IMG_DIR}clap.png';
-
-// 상단 얼굴/말풍선 이미지
 const _PROF_HEAD = '${_IMG_DIR}write_game_professor_head.png';
 const _BALLOON = '${_IMG_DIR}text_balloon1.png';
 
@@ -35,7 +34,7 @@ class _AnimalItem {
   String get word => syllables.join();
 }
 
-/// 문제 풀(6종)
+/// 문제 풀
 const List<_AnimalItem> _POOL = [
   _AnimalItem(
     key: 'dog',
@@ -76,9 +75,13 @@ const List<_AnimalItem> _POOL = [
 ];
 
 class WriteGameLevel3_1Page extends StatefulWidget {
-  const WriteGameLevel3_1Page({super.key, required this.childId});
+  const WriteGameLevel3_1Page({
+    super.key,
+    required this.childId,
+    this.resultId,
+  });
   final String childId;
-
+  final String? resultId;
   static const routeName = '/write/game/3/1';
 
   @override
@@ -86,12 +89,14 @@ class WriteGameLevel3_1Page extends StatefulWidget {
 }
 
 class _WriteGameLevel3_1PageState extends State<WriteGameLevel3_1Page> {
-  // 단어 전체를 쓰는 단일 캔버스
+  final _sw = Stopwatch();
   final _canvasKey = GlobalKey<WritingCanvasState>();
-
   late List<_AnimalItem> _problems;
   int _index = 0;
   final List<bool> _results = [];
+
+  String? _resultId;
+  bool _booting = true;
 
   _AnimalItem get current => _problems[_index];
   String get _targetWord => current.word;
@@ -99,7 +104,23 @@ class _WriteGameLevel3_1PageState extends State<WriteGameLevel3_1Page> {
   @override
   void initState() {
     super.initState();
-    _resetGame();
+    _initAndStart();
+  }
+
+  Future<void> _initAndStart() async {
+    try {
+      _resultId = widget.resultId;
+      _resultId ??= await WriteGameApi.start(
+        childId: widget.childId,
+        stageCode: 'FR_WG_008',
+      );
+      _sw.start();
+      _resetGame();
+    } catch (_) {
+      if (mounted) Navigator.of(context).pop();
+    } finally {
+      if (mounted) setState(() => _booting = false);
+    }
   }
 
   void _resetGame() {
@@ -108,7 +129,6 @@ class _WriteGameLevel3_1PageState extends State<WriteGameLevel3_1Page> {
     _problems = _problems.take(4).toList();
     _index = 0;
     _results.clear();
-
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       await _prepareProblem();
       setState(() {});
@@ -117,21 +137,50 @@ class _WriteGameLevel3_1PageState extends State<WriteGameLevel3_1Page> {
 
   Future<void> _prepareProblem() async {
     try {
-      await SelvyRecognizer.setCandidateSet([_targetWord]); // 단어 전체 후보셋
+      await SelvyRecognizer.setCandidateSet([_targetWord]);
     } catch (_) {}
     await _canvasKey.currentState?.clearCanvas();
   }
 
   Future<void> _playPronounce() async {
-    // 예: context.read<AudioService>().playAsset(current.audio!);
-    debugPrint(
-      '[3-1] play audio of: ${current.nameKo} (${current.audio ?? "no-audio"})',
-    );
+    debugPrint('[3-1] play audio: ${current.nameKo}');
+  }
+
+  String _normalize(String raw) =>
+      raw.split('\n').first.replaceAll(RegExp(r'\[\d+\]\s*'), '').trim();
+
+  Future<void> _sendChoice(String word, bool isCorrect) async {
+    if (_resultId == null) return;
+    final qid = requireWgQuestionId(animalQuestionMap, word, ctx: 'Stage3-1');
+    try {
+      await WriteGameApi.sendChoice(
+        resultId: _resultId!,
+        questionId: qid,
+        childWrittenText: word,
+        isCorrect: isCorrect,
+      );
+    } catch (_) {}
+  }
+
+  Future<bool> _completeAndGetSuccess() async {
+    if (_resultId == null) return false;
+    try {
+      final secs = _sw.elapsed.inSeconds; // ✅ 경과시간
+      final res = await WriteGameApi.complete(
+        resultId: _resultId!,
+        totalQuestions: _problems.length, // ✅ 4 문항
+        timeSpentSecs: secs, // ✅ 소요시간
+      );
+      return res.success == true;
+    } catch (_) {
+      return false;
+    }
   }
 
   void _onRecognizeWord(String recognized) async {
     final mine = _normalize(recognized);
     final isCorrect = mine == _targetWord;
+    await _sendChoice(_targetWord, isCorrect);
 
     _results.add(isCorrect);
     if (!mounted) return;
@@ -140,24 +189,14 @@ class _WriteGameLevel3_1PageState extends State<WriteGameLevel3_1Page> {
       setState(() => _index += 1);
       await _prepareProblem();
     } else {
-      final correct = _results.where((e) => e).length;
-      await _showEndSequence(correct);
+      final success = await _completeAndGetSuccess();
+      await _showEndSequence(success);
     }
   }
 
-  String _normalize(String raw) {
-    final top =
-        raw.split('\n').first.replaceAll(RegExp(r'\[\d+\]\s*'), '').trim();
-    return top;
-  }
-
-  /// 아웃트로(성공/실패)
-  Future<void> _showEndSequence(int correctCount) async {
-    final success = correctCount >= 3;
-
-    if (success) {
-      // 1) 성공 배경 먼저 살짝 보여주고
-      showDialog<void>(
+  Future<void> _showEndSequence(bool success) async {
+    if (success || _results.where((e) => e).length >= 3) {
+      showDialog(
         context: context,
         barrierDismissible: false,
         builder: (_) => const _FullImageDialog(imageAsset: _OUTRO_SUCCESS_BG),
@@ -166,8 +205,7 @@ class _WriteGameLevel3_1PageState extends State<WriteGameLevel3_1Page> {
       if (!mounted) return;
       Navigator.of(context, rootNavigator: true).pop();
 
-      // 2) 동일 배경 + 커스텀 팝업
-      showDialog<void>(
+      showDialog(
         context: context,
         barrierDismissible: false,
         builder:
@@ -176,8 +214,6 @@ class _WriteGameLevel3_1PageState extends State<WriteGameLevel3_1Page> {
               overlay: _ClearPopup(),
             ),
       );
-
-      // 3) 2.5초 후 메인3으로 이동
       await Future.delayed(const Duration(milliseconds: 2500));
       if (!mounted) return;
       Navigator.of(context, rootNavigator: true).pop();
@@ -187,8 +223,7 @@ class _WriteGameLevel3_1PageState extends State<WriteGameLevel3_1Page> {
         ),
       );
     } else {
-      // 실패: 배경 + 다시하기 버튼 → 메인3으로
-      await showDialog<void>(
+      await showDialog(
         context: context,
         barrierDismissible: false,
         builder:
@@ -232,6 +267,13 @@ class _WriteGameLevel3_1PageState extends State<WriteGameLevel3_1Page> {
 
   @override
   Widget build(BuildContext context) {
+    if (_booting) {
+      return const Scaffold(
+        backgroundColor: Color(0xFFF7EFE6),
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
     return Scaffold(
       backgroundColor: const Color(0xFFF7EFE6),
       appBar: AppBar(
@@ -265,8 +307,6 @@ class _WriteGameLevel3_1PageState extends State<WriteGameLevel3_1Page> {
                 ),
               ),
               const SizedBox(height: 6),
-
-              // 진행 점
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: List.generate(4, (i) {
@@ -295,12 +335,9 @@ class _WriteGameLevel3_1PageState extends State<WriteGameLevel3_1Page> {
                 }),
               ),
               const SizedBox(height: 10),
-
-              // 본문
               Expanded(
                 child: Row(
                   children: [
-                    // 왼쪽: 문제 이미지 + 말풍선 힌트
                     Expanded(
                       flex: 4,
                       child: LayoutBuilder(
@@ -334,33 +371,29 @@ class _WriteGameLevel3_1PageState extends State<WriteGameLevel3_1Page> {
                       ),
                     ),
                     const SizedBox(width: 20),
-
-                    // 오른쪽: 단어 전체 캔버스
                     Expanded(
                       flex: 6,
                       child: LayoutBuilder(
                         builder: (context, c) {
-                          final canvasW = (c.maxWidth * 0.86).clamp(
+                          final cw = (c.maxWidth * 0.86).clamp(
                             320.0,
                             c.maxWidth,
                           );
-                          final canvasH = (c.maxHeight * 0.62).clamp(
+                          final ch = (c.maxHeight * 0.62).clamp(
                             240.0,
                             c.maxHeight,
                           );
-                          final caption = (canvasH * 0.12).clamp(18.0, 28.0);
-
+                          final caption = (ch * 0.12).clamp(18.0, 28.0);
                           return Center(
                             child: Column(
                               mainAxisSize: MainAxisSize.min,
                               children: [
                                 SizedBox(
-                                  width: canvasW,
-                                  height: canvasH,
+                                  width: cw,
+                                  height: ch,
                                   child: Stack(
                                     alignment: Alignment.center,
                                     children: [
-                                      // 보드 배경
                                       Container(
                                         margin: const EdgeInsets.all(4),
                                         decoration: BoxDecoration(
@@ -377,10 +410,9 @@ class _WriteGameLevel3_1PageState extends State<WriteGameLevel3_1Page> {
                                           ],
                                         ),
                                       ),
-                                      // 실제 쓰기 캔버스
                                       SizedBox(
-                                        width: canvasW * 0.98,
-                                        height: canvasH * 0.98,
+                                        width: cw * 0.98,
+                                        height: ch * 0.98,
                                         child: WritingCanvas(
                                           key: _canvasKey,
                                           childId: widget.childId,
@@ -393,7 +425,7 @@ class _WriteGameLevel3_1PageState extends State<WriteGameLevel3_1Page> {
                                         ),
                                       ),
                                       Positioned(
-                                        bottom: canvasH * 0.06,
+                                        bottom: ch * 0.06,
                                         child: Text(
                                           '단어를 한 번에 써보세요!',
                                           style: TextStyle(
@@ -417,10 +449,6 @@ class _WriteGameLevel3_1PageState extends State<WriteGameLevel3_1Page> {
                                     style: ElevatedButton.styleFrom(
                                       backgroundColor: const Color(0xFFD9CCFF),
                                       foregroundColor: Colors.black87,
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 18,
-                                        vertical: 10,
-                                      ),
                                       shape: RoundedRectangleBorder(
                                         borderRadius: BorderRadius.circular(14),
                                       ),
@@ -452,7 +480,7 @@ class _WriteGameLevel3_1PageState extends State<WriteGameLevel3_1Page> {
   }
 }
 
-/* ───────────── 재사용: 상단 한글박사 얼굴 + 말풍선 위젯 ───────────── */
+/* ───────────── 재사용 위젯 ───────────── */
 class _ProfessorHeader extends StatelessWidget {
   const _ProfessorHeader({
     required this.text,
@@ -461,28 +489,20 @@ class _ProfessorHeader extends StatelessWidget {
     this.balloonHeight = 88,
     this.textSize = 18,
   });
-
   final String text;
   final double faceSize;
   final double balloonWidth;
   final double balloonHeight;
   final double textSize;
-
   @override
   Widget build(BuildContext context) {
     final maxBalloonW = MediaQuery.of(context).size.width - faceSize - 40;
     final bw = balloonWidth.clamp(100, maxBalloonW);
-
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        Image.asset(
-          _PROF_HEAD,
-          width: faceSize,
-          height: faceSize,
-          fit: BoxFit.contain,
-        ),
+        Image.asset(_PROF_HEAD, width: faceSize, height: faceSize),
         const SizedBox(width: 10),
         SizedBox(
           width: bw.toDouble(),
@@ -501,7 +521,6 @@ class _ProfessorHeader extends StatelessWidget {
                       fontSize: textSize,
                       fontWeight: FontWeight.w700,
                       color: const Color(0xFF5B4634),
-                      height: 1.2,
                     ),
                   ),
                 ),
@@ -514,7 +533,6 @@ class _ProfessorHeader extends StatelessWidget {
   }
 }
 
-/// 좌측 힌트 말풍선 (소리)
 class _SpeechHint extends StatelessWidget {
   const _SpeechHint({
     this.width = 240,
@@ -543,7 +561,6 @@ class _SpeechHint extends StatelessWidget {
                 fontSize: fontSize,
                 color: const Color(0xFF7A614B),
                 fontWeight: FontWeight.w700,
-                height: 1.1,
               ),
             ),
           ),
@@ -576,19 +593,15 @@ class _BalloonPainter extends CustomPainter {
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 
-/// 전체 화면 다이얼로그 (배경 이미지 + overlay)
 class _FullImageDialog extends StatelessWidget {
   const _FullImageDialog({required this.imageAsset, this.overlay, this.onTap});
-
   final String imageAsset;
   final Widget? overlay;
   final VoidCallback? onTap;
-
   @override
   Widget build(BuildContext context) {
     final w = MediaQuery.of(context).size.width;
     final h = MediaQuery.of(context).size.height;
-
     return Dialog(
       insetPadding: EdgeInsets.zero,
       backgroundColor: Colors.black,
@@ -599,8 +612,8 @@ class _FullImageDialog extends StatelessWidget {
           children: [
             Center(
               child: SizedBox(
-                width: w, // ← 화면 너비의 85%만 사용
-                height: h, // ← 화면 높이의 85%만 사용
+                width: w,
+                height: h,
                 child: Image.asset(imageAsset, fit: BoxFit.contain),
               ),
             ),
@@ -612,15 +625,12 @@ class _FullImageDialog extends StatelessWidget {
   }
 }
 
-/// ✅ 성공 팝업(이미지로 만든 게 아니라 위젯으로 그린 카드)
 class _ClearPopup extends StatelessWidget {
   const _ClearPopup();
-
   @override
   Widget build(BuildContext context) {
     final w = MediaQuery.of(context).size.width;
     final cardW = (w * 0.72).clamp(300.0, 520.0);
-
     return Center(
       child: Material(
         color: Colors.transparent,
@@ -641,7 +651,6 @@ class _ClearPopup extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // 박수 이미지가 있으면 사용, 없으면 아이콘 사용
               SizedBox(
                 height: 64,
                 child: Image.asset(
@@ -663,7 +672,6 @@ class _ClearPopup extends StatelessWidget {
                   color: Color(0xFF5A4032),
                   fontWeight: FontWeight.w800,
                   fontSize: 20,
-                  height: 1.3,
                 ),
               ),
               const SizedBox(height: 6),

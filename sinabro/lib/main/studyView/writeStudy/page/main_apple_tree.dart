@@ -87,7 +87,7 @@ class _AppleGardenState extends State<AppleGarden> {
         page = CandyWritePage(childId: widget.childId);
         break;
 
-      // level2
+      // ─────────────── level2 ───────────────
       case 4:
         page = Writing21Page(childId: widget.childId, fruitId: 'FR_WR_005');
         break;
@@ -101,7 +101,7 @@ class _AppleGardenState extends State<AppleGarden> {
         page = Writing24Page(childId: widget.childId, fruitId: 'FR_WR_008');
         break;
 
-      // level3
+      // ─────────────── level3 ───────────────
       case 8:
         page = Writing3_IntroPage(childId: widget.childId, fruitId: 'FR_WR_009');
         break;
@@ -113,6 +113,7 @@ class _AppleGardenState extends State<AppleGarden> {
         break;
       case 11:
         page = w34.Writing3_4_IntroPage(childId: widget.childId, fruitId: 'FR_WR_012');
+
         break;
 
       default:

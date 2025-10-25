@@ -7,6 +7,11 @@ import 'package:sinabro/main/gameView/writeGame/page/write_game_main3.dart';
 import 'package:sinabro/selvy_example_view/selvy_service.dart'
     show SelvyRecognizer;
 
+// 매핑
+import 'package:sinabro/main/gameView/writeGame/data/wg_question_map.dart';
+// API
+import 'package:sinabro/main/gameView/writeGame/api/write_game_api.dart';
+
 const _IMG_DIR = 'assets/img/contents/gameWrite/';
 
 // 아웃트로 배경
@@ -20,7 +25,7 @@ const _BALLOON = '${_IMG_DIR}text_balloon1.png';
 
 class _BodyItem {
   final String key;
-  final String nameKo;
+  final String nameKo; // 매핑 key로 사용
   final String image;
   final List<String> syllables;
   final String? audio;
@@ -31,6 +36,8 @@ class _BodyItem {
     required this.syllables,
     this.audio,
   });
+
+  String get word => syllables.join();
 }
 
 const List<_BodyItem> _POOL = [
@@ -89,12 +96,28 @@ class _WriteGameLevel3_4PageState extends State<WriteGameLevel3_4Page> {
   late List<_BodyItem> _problems;
   int _index = 0;
   final List<bool> _results = [];
+  String? _resultId;
+  final _sw = Stopwatch();
 
   _BodyItem get current => _problems[_index];
 
   @override
   void initState() {
     super.initState();
+    _startGame();
+  }
+
+  Future<void> _startGame() async {
+    try {
+      _resultId = await WriteGameApi.start(
+        childId: widget.childId,
+        stageCode: 'FR_WG_011', // 몸 랜덤 스테이지 코드
+      );
+      _sw.start();
+    } catch (e) {
+      debugPrint('[3-4] start error: $e');
+      _resultId = null;
+    }
     _resetGame();
   }
 
@@ -106,7 +129,7 @@ class _WriteGameLevel3_4PageState extends State<WriteGameLevel3_4Page> {
     _results.clear();
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       await _prepareProblem();
-      setState(() {});
+      if (mounted) setState(() {});
     });
   }
 
@@ -160,6 +183,34 @@ class _WriteGameLevel3_4PageState extends State<WriteGameLevel3_4Page> {
         break;
       }
     }
+
+    // wg_question_id 조회
+    String questionId;
+    try {
+      questionId = requireWgQuestionId(
+        bodyQuestionMap,
+        current.nameKo,
+        ctx: 'Stage3-4',
+      );
+    } catch (e) {
+      debugPrint('[3-4] mapping not found for "${current.nameKo}": $e');
+      questionId = 'UNKNOWN';
+    }
+
+    // 서버로 정답 전송
+    try {
+      if (_resultId != null && questionId != 'UNKNOWN') {
+        await WriteGameApi.sendChoice(
+          resultId: _resultId!,
+          questionId: questionId,
+          childWrittenText: results.join(),
+          isCorrect: isCorrect,
+        );
+      }
+    } catch (e) {
+      debugPrint('[3-4] sendChoice error: $e');
+    }
+
     _results.add(isCorrect);
     if (!mounted) return;
 
@@ -167,8 +218,23 @@ class _WriteGameLevel3_4PageState extends State<WriteGameLevel3_4Page> {
       setState(() => _index += 1);
       await _prepareProblem();
     } else {
-      final correct = _results.where((e) => e).length;
-      await _showEndSequence(correct);
+      // 완료
+      bool apiSuccess = false;
+      try {
+        if (_resultId != null) {
+          final res = await WriteGameApi.complete(
+            resultId: _resultId!,
+            totalQuestions: _problems.length,
+            timeSpentSecs: _sw.elapsed.inSeconds,
+          );
+          apiSuccess = res.success;
+        }
+      } catch (e) {
+        debugPrint('[3-4] complete error: $e');
+      }
+
+      final localSuccess = _results.where((e) => e).length >= 3;
+      await _showEndSequence(apiSuccess || localSuccess); // bool 전달
     }
   }
 
@@ -186,11 +252,9 @@ class _WriteGameLevel3_4PageState extends State<WriteGameLevel3_4Page> {
     return top;
   }
 
-  Future<void> _showEndSequence(int correctCount) async {
-    final success = correctCount >= 3;
-
+  // ✅ 시그니처를 bool로 변경
+  Future<void> _showEndSequence(bool success) async {
     if (success) {
-      // 1) 성공 배경 먼저
       showDialog<void>(
         context: context,
         barrierDismissible: false,
@@ -200,7 +264,6 @@ class _WriteGameLevel3_4PageState extends State<WriteGameLevel3_4Page> {
       if (!mounted) return;
       Navigator.of(context, rootNavigator: true).pop();
 
-      // 2) 성공 팝업
       showDialog<void>(
         context: context,
         barrierDismissible: false,
@@ -220,7 +283,6 @@ class _WriteGameLevel3_4PageState extends State<WriteGameLevel3_4Page> {
         ),
       );
     } else {
-      // 실패
       await showDialog<void>(
         context: context,
         barrierDismissible: false,
@@ -233,7 +295,12 @@ class _WriteGameLevel3_4PageState extends State<WriteGameLevel3_4Page> {
                 child: ElevatedButton(
                   onPressed: () {
                     Navigator.of(context, rootNavigator: true).pop();
-                    _resetGame();
+                    Navigator.of(context).pushReplacement(
+                      MaterialPageRoute(
+                        builder:
+                            (_) => WriteGameMain3Page(childId: widget.childId),
+                      ),
+                    );
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFFE7D3A6),
@@ -260,6 +327,9 @@ class _WriteGameLevel3_4PageState extends State<WriteGameLevel3_4Page> {
 
   @override
   Widget build(BuildContext context) {
+    // 초기 한 프레임 방어: 캔버스 키 아직 생성 전일 수 있음
+    final hasCanvas = _canvasKeys.isNotEmpty;
+
     return Scaffold(
       backgroundColor: const Color(0xFFF7EFE6),
       appBar: AppBar(
@@ -374,13 +444,22 @@ class _WriteGameLevel3_4PageState extends State<WriteGameLevel3_4Page> {
                             child: Column(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                _CanvasTile(
-                                  size: tileSize,
-                                  canvasKey: _canvasKeys.first,
-                                  childId: widget.childId,
-                                  target: current.syllables.first,
-                                  onRecognize: (s) => _onRecognizeAt(0, s),
-                                ),
+                                if (hasCanvas)
+                                  _CanvasTile(
+                                    size: tileSize,
+                                    canvasKey: _canvasKeys.first,
+                                    childId: widget.childId,
+                                    target: current.syllables.first,
+                                    onRecognize: (s) => _onRecognizeAt(0, s),
+                                  )
+                                else
+                                  SizedBox(
+                                    width: canvasW,
+                                    height: canvasH,
+                                    child: const Center(
+                                      child: CircularProgressIndicator(),
+                                    ),
+                                  ),
                                 const SizedBox(height: 12),
                                 SizedBox(
                                   height: 42,

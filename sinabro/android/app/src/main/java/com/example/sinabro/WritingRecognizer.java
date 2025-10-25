@@ -30,6 +30,9 @@
 
     // changed: 후보셋 저장 (Flutter에서 내려옴)
     private final List<String> candidateSet = new ArrayList<>();
+
+    // changed: 현재 모드 저장 (언어 옵션 플래그)
+    private int currentOption = DHWR.DTYPE_KOREAN;  
  
      public WritingRecognizer(Context context) {
          this.mContext = context;
@@ -144,12 +147,35 @@
 
      // changed: top1만 추출 (후보셋 필터링에 사용)
     private String extractTop1(DHWR.Result r) {
+        // if (r == null || r.size() < 1) return "";
+        // DHWR.Line line = r.get(0);
+        // if (line == null || line.size() < 1) return "";
+        // DHWR.Block block = line.get(0);
+        // if (block == null || block.candidates == null || block.candidates.size() < 1) return "";
+        // return String.valueOf(block.candidates.get(0));
         if (r == null || r.size() < 1) return "";
+
+        // 자모 모드: 기존 그대로 (첫 블록의 1순위만)
+        if (currentOption == DHWR.DTYPE_CONSONANT || currentOption == DHWR.DTYPE_VOWEL) {
+            DHWR.Line line = r.get(0);
+            if (line == null || line.size() < 1) return "";
+            DHWR.Block block = line.get(0);
+            if (block == null || block.candidates == null || block.candidates.size() < 1) return "";
+            return String.valueOf(block.candidates.get(0)).trim();
+        }
+
+        // ✅ 단어 모드: 한 줄 전체 block의 1순위를 이어붙임
         DHWR.Line line = r.get(0);
         if (line == null || line.size() < 1) return "";
-        DHWR.Block block = line.get(0);
-        if (block == null || block.candidates == null || block.candidates.size() < 1) return "";
-        return String.valueOf(block.candidates.get(0));
+
+        StringBuilder sb = new StringBuilder();
+        for (int k = 0; k < line.size(); k++) {
+            DHWR.Block block = line.get(k);
+            if (block == null || block.candidates == null || block.candidates.size() < 1) continue;
+            sb.append(String.valueOf(block.candidates.get(0)));
+        }
+
+        return sb.toString().replaceAll("\\s+", "").trim(); // 공백 방어
     }
 
     // changed: normalize (유니코드 자모 → 일반 자모)
@@ -176,6 +202,8 @@
          DHWR.ClearLanguage(mSetting.GetHandle());
          DHWR.AddLanguage(mSetting.GetHandle(), language, option);
          DHWR.SetAttribute(mSetting.GetHandle());
+
+         this.currentOption = option; // changed: 현재 모드 저장
      }
  
      // 후보 결과 반환
@@ -191,30 +219,70 @@
          if (resultSize < 1){
              Log.w("Selvy", "⚠️ 인식된 라인이 없음");
              return "";
-             }
+        }
  
          // 여러 후보를 추출하여 문자열로 구성 -> 추후 첫 후보만 인식 결과로 띄울 수 있게 수정 예정
-         for (int i = 0; i < MAX_CANDIDATES; i++) {
-             for (int j = 0; j < resultSize; j++) {
-                 DHWR.Line line = result.get(j);
-                 for (int k = 0; k < line.size(); k++) {
-                     DHWR.Block block = line.get(k);
-                     if (block.candidates.size() <= i) {
-                         exit = true;
-                         break;
-                     }
-                     candidates.append(String.format(Locale.US, " [%d] ", i + 1));
-                     candidates.append(block.candidates.get(i));
-                     if (k + 1 < line.size()) candidates.append(" ");
-                 }
-                 if (exit) break;
-                 if (j + 1 < result.size()) candidates.append("\n");
-             }
-             if (exit) break;
-             candidates.append("\n");
-         }
+        //  for (int i = 0; i < MAX_CANDIDATES; i++) {
+        //      for (int j = 0; j < resultSize; j++) {
+        //          DHWR.Line line = result.get(j);
+        //          for (int k = 0; k < line.size(); k++) {
+        //              DHWR.Block block = line.get(k);
+        //              if (block.candidates.size() <= i) {
+        //                  exit = true;
+        //                  break;
+        //              }
+        //              candidates.append(String.format(Locale.US, " [%d] ", i + 1));
+        //              candidates.append(block.candidates.get(i));
+        //              if (k + 1 < line.size()) candidates.append(" ");
+        //          }
+        //          if (exit) break;
+        //          if (j + 1 < result.size()) candidates.append("\n");
+        //      }
+        //      if (exit) break;
+        //      candidates.append("\n");
+        //  }
+
+        // ✅ 자모음 모드 → 기존 코드 (Block 단위 그대로)
+        if (currentOption == DHWR.DTYPE_CONSONANT || currentOption == DHWR.DTYPE_VOWEL) {
+            for (int i = 0; i < MAX_CANDIDATES; i++) {
+                for (int j = 0; j < resultSize; j++) {
+                    DHWR.Line line = result.get(j);
+                    for (int k = 0; k < line.size(); k++) {
+                        DHWR.Block block = line.get(k);
+                        if (block.candidates.size() <= i) {
+                            exit = true;
+                            break;
+                        }
+                        candidates.append(String.format(Locale.US, " [%d] ", i + 1));
+                        candidates.append(block.candidates.get(i));
+                        if (k + 1 < line.size()) candidates.append(" ");
+                    }
+                    if (exit) break;
+                    if (j + 1 < result.size()) candidates.append("\n");
+                }
+                if (exit) break;
+                candidates.append("\n");
+            }
+            return candidates.toString().trim();
+        }
+
+        // ✅ 단어 모드 (기본값) → Block 후보를 합쳐서 단어로 묶음
+        for (int i = 0; i < MAX_CANDIDATES; i++) {
+            StringBuilder lineBuilder = new StringBuilder();
+            for (int j = 0; j < resultSize; j++) {
+                DHWR.Line line = result.get(j);
+                for (int k = 0; k < line.size(); k++) {
+                    DHWR.Block block = line.get(k);
+                    if (block.candidates.size() <= i) continue;
+                    lineBuilder.append(block.candidates.get(i)); // 글자 이어붙이기
+                }
+            }
+            if (lineBuilder.length() > 0) {
+                candidates.append(String.format(Locale.US, "[%d] %s\n", i + 1, lineBuilder));
+            }
+        }
  
-         return candidates.toString();
+         return candidates.toString().trim();
      }
  
      // SDK 버전 정보

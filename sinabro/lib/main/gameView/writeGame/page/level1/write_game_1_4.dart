@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:sinabro/main/gameView/writeGame/page/write_game_main.dart';
+import 'package:sinabro/main/gameView/writeGame/api/write_game_api.dart';
 
 enum _Scene { squares, triangles, outro }
 
@@ -69,6 +70,11 @@ class _WriteGameLevel1_4PageState extends State<WriteGameLevel1_4Page> {
   int? activeLine;
   List<Offset> stroke = [];
 
+  // API/시간
+  String? _resultId;
+  final _sw = Stopwatch();
+  bool _completed = false;
+
   int get _lineCount =>
       scene == _Scene.squares ? 3 : (scene == _Scene.triangles ? 3 : 0);
   bool get _allPassed => passed.every((e) => e);
@@ -77,12 +83,41 @@ class _WriteGameLevel1_4PageState extends State<WriteGameLevel1_4Page> {
   void initState() {
     super.initState();
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+    _startGame();
   }
 
   @override
   void dispose() {
+    _sw.stop();
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
     super.dispose();
+  }
+
+  Future<void> _startGame() async {
+    try {
+      _resultId = await WriteGameApi.start(
+        childId: widget.childId,
+        stageCode: 'FR_WG_004', // Level1-4
+      );
+    } catch (_) {
+      _resultId = null;
+    }
+    _sw.start();
+  }
+
+  Future<void> _completeGame() async {
+    if (_completed) return;
+    _completed = true;
+    _sw.stop();
+    try {
+      if (_resultId != null) {
+        await WriteGameApi.complete(
+          resultId: _resultId!,
+          totalQuestions: 6, // 사각형 3 + 삼각형 3
+          timeSpentSecs: _sw.elapsed.inSeconds,
+        );
+      }
+    } catch (_) {}
   }
 
   /* ───────────────── guides ───────────────── */
@@ -169,7 +204,7 @@ class _WriteGameLevel1_4PageState extends State<WriteGameLevel1_4Page> {
     setState(() {});
   }
 
-  void _onPanEnd(Size size) {
+  Future<void> _onPanEnd(Size size) async {
     if (activeLine == null || _allPassed || scene == _Scene.outro) return;
 
     final guides =
@@ -193,6 +228,8 @@ class _WriteGameLevel1_4PageState extends State<WriteGameLevel1_4Page> {
             });
           });
         } else {
+          await _completeGame();
+          if (!mounted) return;
           setState(() => scene = _Scene.outro);
         }
       }
@@ -308,7 +345,7 @@ class _WriteGameLevel1_4PageState extends State<WriteGameLevel1_4Page> {
                           stampFinalScale: 1.0,
                           stampRotationDeg: -8,
                         ),
-                        // row4 (네가 수정할 수 있는 영역)
+                        // row4 커스텀
                         row4: OutroRowConfig(
                           strikeUseAngle: true,
                           strikeCenterPct: Offset(0.48, 0.80),
@@ -393,7 +430,7 @@ class _WriteGameLevel1_4PageState extends State<WriteGameLevel1_4Page> {
 
     Future.delayed(const Duration(seconds: 2), () {
       if (!mounted) return;
-      Navigator.of(context).pop(); // 팝업 닫기
+      Navigator.of(context).pop();
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(
           builder: (_) => WriteGameMainPage(childId: widget.childId),

@@ -6,6 +6,11 @@ import 'package:sinabro/main/studyView/writeStudy/widget/writing_canvas.dart';
 import 'package:sinabro/selvy_example_view/selvy_service.dart'
     show SelvyRecognizer;
 
+// ▼ 추가: 매핑/API
+import 'package:sinabro/main/gameView/writeGame/data/wg_question_map.dart'
+    as WG;
+import 'package:sinabro/main/gameView/writeGame/api/write_game_api.dart';
+
 /// 고정 사운드 아이콘 경로
 const _SOUND_IMG = 'assets/img/contents/gameWrite/sound.png';
 
@@ -273,8 +278,13 @@ const List<_Item> _VOWELS = [
 const List<_Item> _MIXED_POOL = [..._CONSONANTS, ..._VOWELS];
 
 class WriteGameLevel2_3Page extends StatefulWidget {
-  const WriteGameLevel2_3Page({super.key, required this.childId});
+  const WriteGameLevel2_3Page({
+    super.key,
+    required this.childId,
+    this.resultId,
+  });
   final String childId;
+  final String? resultId;
 
   static const routeName = '/write/game/2/3';
 
@@ -285,17 +295,40 @@ class WriteGameLevel2_3Page extends StatefulWidget {
 class _WriteGameLevel2_3PageState extends State<WriteGameLevel2_3Page> {
   final _canvasKey = GlobalKey<WritingCanvasState>();
 
-  // 리셋 필요하므로 final 제거
   late List<_Item> _problems; // 길이 4
   int _index = 0;
   final List<bool> _results = [];
 
   _Item get current => _problems[_index];
 
+  // API 상태
+  String? _resultId;
+  bool _booting = true;
+
   @override
   void initState() {
     super.initState();
-    _resetGame();
+    _initAndStart();
+  }
+
+  Future<void> _initAndStart() async {
+    try {
+      _resultId = widget.resultId;
+      _resultId ??= await WriteGameApi.start(
+        childId: widget.childId,
+        stageCode: 'FR_WG_007', // 혼합 스테이지 코드. 백엔드 값에 맞춰 수정.
+      );
+      _resetGame();
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('네트워크 오류. 잠시 후 다시 시도하세요.')),
+        );
+        Navigator.of(context).pop();
+      }
+    } finally {
+      if (mounted) setState(() => _booting = false);
+    }
   }
 
   void _resetGame() {
@@ -308,7 +341,7 @@ class _WriteGameLevel2_3PageState extends State<WriteGameLevel2_3Page> {
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       await _canvasKey.currentState?.clearCanvas();
       await _applyCandidate();
-      setState(() {});
+      if (mounted) setState(() {});
     });
   }
 
@@ -319,9 +352,7 @@ class _WriteGameLevel2_3PageState extends State<WriteGameLevel2_3Page> {
     } catch (_) {}
   }
 
-  /// 소리 아이콘 탭 → 현재 문제 오디오 재생 (프로젝트 플레이어로 교체)
   Future<void> _playPronounce() async {
-    // 예: context.read<AudioService>().playAsset(current.audio);
     debugPrint('[2-3] play audio: ${current.audio}');
   }
 
@@ -364,11 +395,7 @@ class _WriteGameLevel2_3PageState extends State<WriteGameLevel2_3Page> {
       'U+110B': 'ㅇ',
       'U+110C': 'ㅈ',
       'U+110D': 'ㅉ',
-      'U+110E': 'ㅊ',
-      'U+110F': 'ㅋ',
-      'U+1110': 'ㅌ',
-      'U+1111': 'ㅍ',
-      'U+1112': 'ㅎ',
+      'U+110E': 'ㅊ', 'U+110F': 'ㅋ', 'U+1110': 'ㅌ', 'U+1111': 'ㅍ', 'U+1112': 'ㅎ',
       // 모음(중성)
       'ᅡ': 'ㅏ',
       'ᅥ': 'ㅓ',
@@ -400,9 +427,50 @@ class _WriteGameLevel2_3PageState extends State<WriteGameLevel2_3Page> {
     return map[top] ?? top;
   }
 
+  Future<void> _sendChoice({
+    required String shownChar,
+    required _TargetType type,
+    required bool isCorrect,
+  }) async {
+    if (_resultId == null) return;
+    final map =
+        type == _TargetType.consonant
+            ? WG.consonantQuestionMap
+            : WG.vowelQuestionMap;
+    final qid = WG.requireWgQuestionId(map, shownChar, ctx: 'Stage2-3');
+
+    try {
+      await WriteGameApi.sendChoice(
+        resultId: _resultId!,
+        questionId: qid,
+        childWrittenText: shownChar,
+        isCorrect: isCorrect,
+      );
+    } catch (_) {
+      // 스텁/네트워크 실패 시 무시. 연결 후 로깅 처리.
+    }
+  }
+
+  Future<bool> _completeAndGetSuccess() async {
+    if (_resultId == null) return false;
+    try {
+      final res = await WriteGameApi.complete(resultId: _resultId!);
+      return res.success == true;
+    } catch (_) {
+      return false;
+    }
+  }
+
   void _onRecognize(String recognized) async {
     final mine = _normalize(recognized);
     final isCorrect = mine == current.char;
+
+    // 서버 기록
+    await _sendChoice(
+      shownChar: current.char,
+      type: current.type,
+      isCorrect: isCorrect,
+    );
 
     _results.add(isCorrect);
     if (!mounted) return;
@@ -412,33 +480,25 @@ class _WriteGameLevel2_3PageState extends State<WriteGameLevel2_3Page> {
       await _canvasKey.currentState?.clearCanvas();
       await _applyCandidate();
     } else {
-      // 종료 → 엔딩 시퀀스
-      final correct = _results.where((e) => e).length;
+      final serverSuccess = await _completeAndGetSuccess();
       if (!mounted) return;
-      await _showEndSequence(correct);
+      await _showEndSequence(serverSuccess: serverSuccess);
     }
   }
 
-  /// 엔딩 시퀀스: 1) 인트로 → 2/3) 성공/실패
-  Future<void> _showEndSequence(int correctCount) async {
-    // 1) 인트로
+  Future<void> _showEndSequence({required bool serverSuccess}) async {
     showDialog<void>(
       context: context,
       barrierDismissible: false,
       builder: (_) => const _FullImageDialog(imageAsset: _END_INTRO),
     );
 
-    // 2) 3초 뒤 인트로 닫기
     await Future.delayed(const Duration(milliseconds: 3000));
     if (mounted) {
       Navigator.of(context, rootNavigator: true).pop();
     }
 
-    // 3) 성공/실패
-    final success = correctCount >= 3;
-
-    if (success) {
-      // 성공: 탭 가능 + 3초 뒤 자동 메인으로
+    if (serverSuccess) {
       showDialog<void>(
         context: context,
         barrierDismissible: true,
@@ -459,7 +519,6 @@ class _WriteGameLevel2_3PageState extends State<WriteGameLevel2_3Page> {
         );
       });
     } else {
-      // 실패: 다시하기 버튼 → 게임 리셋
       await showDialog<void>(
         context: context,
         barrierDismissible: false,
@@ -471,10 +530,7 @@ class _WriteGameLevel2_3PageState extends State<WriteGameLevel2_3Page> {
                 bottom: 28,
                 child: ElevatedButton(
                   onPressed: () {
-                    Navigator.of(
-                      context,
-                      rootNavigator: true,
-                    ).pop(); // 실패 다이얼로그 닫기
+                    Navigator.of(context, rootNavigator: true).pop();
                     Navigator.pushReplacement(
                       context,
                       MaterialPageRoute(
@@ -508,6 +564,13 @@ class _WriteGameLevel2_3PageState extends State<WriteGameLevel2_3Page> {
 
   @override
   Widget build(BuildContext context) {
+    if (_booting) {
+      return const Scaffold(
+        backgroundColor: Color(0xFFF7EFE6),
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
     return Scaffold(
       backgroundColor: const Color(0xFFF7EFE6),
       appBar: AppBar(
@@ -736,7 +799,7 @@ class _WriteGameLevel2_3PageState extends State<WriteGameLevel2_3Page> {
   }
 }
 
-/// 말풍선 위젯(사이즈/글자크기 조절 가능)
+/// 말풍선 위젯
 class _SpeechHint extends StatelessWidget {
   const _SpeechHint({
     this.width = 300,
@@ -781,13 +844,13 @@ class _BalloonPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final r = RRect.fromRectAndRadius(
-      Rect.fromLTWH(0, 0, size.width, size.height - 10), // 하단 10px 꼬리 공간
+      Rect.fromLTWH(0, 0, size.width, size.height - 10),
       const Radius.circular(12),
     );
     final paint = Paint()..color = const Color(0xFFF2E2CF);
     canvas.drawRRect(r, paint);
 
-    const double tailBaseX = 40; // 꼬리 가로 위치
+    const double tailBaseX = 40;
     final double tailTopY = size.height - 10;
     final path =
         Path()
@@ -802,7 +865,6 @@ class _BalloonPainter extends CustomPainter {
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 
-/// 전체 화면 이미지를 꽉 채워 보여주는 다이얼로그
 /// 전체 화면 이미지를 꽉 채워 보여주는 다이얼로그
 class _FullImageDialog extends StatelessWidget {
   const _FullImageDialog({required this.imageAsset, this.overlay, this.onTap});
@@ -826,12 +888,9 @@ class _FullImageDialog extends StatelessWidget {
           children: [
             Center(
               child: SizedBox(
-                width: w, // 화면의 85% 너비만 사용
-                height: h, // 화면의 85% 높이만 사용
-                child: Image.asset(
-                  imageAsset,
-                  fit: BoxFit.contain, // 비율 유지, 잘림 없음
-                ),
+                width: w,
+                height: h,
+                child: Image.asset(imageAsset, fit: BoxFit.contain),
               ),
             ),
             if (overlay != null) overlay!,
