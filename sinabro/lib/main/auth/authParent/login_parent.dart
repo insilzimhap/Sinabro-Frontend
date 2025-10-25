@@ -1,7 +1,7 @@
 /**
  * @file lib/login/login_parent.dart
  * 역할: 부모 로그인/소셜 로그인. 로그인 성공 시 JWT를 ChildrenState에 저장.
- * 공지사항 버튼 및 관련 로직 제거 버전.
+ * 공지사항 버튼 및 관련 로직 제거 및 MyPage로 이동하도록 통합된 버전.
  */
 
 import 'package:flutter/material.dart';
@@ -18,7 +18,11 @@ import 'package:sinabro/common/auth_client.dart';
 // ✅ 세션
 import 'package:sinabro/main/parentView/page/child/children_state.dart';
 
+// 🟢 로그인 후 이동할 MyPage 위젯 Import
+import 'package:sinabro/main/parentView/page/mypage.dart';
+
 class LoginParentScreen extends StatefulWidget {
+  // ⛏️ 변경: role 필요 없음 (소셜은 무조건 부모)
   const LoginParentScreen({super.key});
 
   @override
@@ -32,13 +36,18 @@ class _LoginPageState extends State<LoginParentScreen> {
   String _message = '';
   bool _isLoading = false;
 
-  // 로그인 후 이동 공통 처리
+  // 로그인 후 이동 공통 처리 (MyPage로 이동하도록 수정)
   void _goAfterLogin({
     required String parentUserId,
     required String parentUserName,
   }) {
-    // 실제 홈 라우트로 교체 가능: '/parent/home' 등
-    Navigator.pushReplacementNamed(context, '/');
+    // 🟢 MyPage로 이동하도록 수정 (Navigator.pushReplacementNamed(context, '/'); 대신)
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+        builder: (_) => const MyPage(), // MyPage로 이동
+      ),
+    );
   }
 
   // ---------------- 일반 로그인 ----------------
@@ -53,8 +62,9 @@ class _LoginPageState extends State<LoginParentScreen> {
       final bodyOut = {
         'userId': _userIdController.text.trim(),
         'userPw': _passwordController.text.trim(),
-        'role': 'parent',
+        'role': 'parent', // 부모 고정
       };
+      print('[로그인] 요청 보냄: /api/users/login (userId=${bodyOut['userId']})');
       final response = await client.post(
         Uri.parse('$baseUrl/api/users/login'),
         headers: {'Content-Type': 'application/json'},
@@ -66,24 +76,29 @@ class _LoginPageState extends State<LoginParentScreen> {
       if (response.statusCode == 200) {
         final body = _safeJson(response.body);
 
-        // 토큰 파싱
+        // 🔐 토큰 파싱
         final at = (body['accessToken'] ?? body['token']) as String?;
         final rt = body['refreshToken'] as String?;
 
-        // 사용자 정보
+        // 👤 사용자 정보
         final Map<String, dynamic>? u =
             (body['user'] is Map) ? body['user'] as Map<String, dynamic> : null;
 
         // 🔐 토큰 저장 (전역 + UI 스토어)
         if (at != null && at.isNotEmpty) {
+          // ✅ 전역 AuthClient에도 주입 → 이후 보호 API 자동 부착
           await AuthClient.instance.setAuthToken(at, refreshToken: rt);
           await ChildrenState.instance.setToken(
             accessToken: at,
             refreshToken: (rt != null && rt.isNotEmpty) ? rt : null,
           );
+          print(
+              '[로그인] 토큰 저장 완료 (AT=${at.length}자, RT=${rt != null ? '있음' : '없음'})');
+        } else {
+          print('[로그인][경고] 응답에 토큰이 없음');
         }
 
-        // 세션 저장
+        // 세션 저장용 ID/이름 파싱(최상위 → user{} → 입력값 순서로 폴백)
         final parentUserId =
             (body['userId'] ?? u?['userId'] ?? _userIdController.text.trim())
                 .toString();
@@ -95,6 +110,8 @@ class _LoginPageState extends State<LoginParentScreen> {
           userId: parentUserId,
           userName: parentUserName.isEmpty ? null : parentUserName,
         );
+        print(
+            '[로그인] 세션 저장 완료 (userId=$parentUserId, userName=$parentUserName)'); // 두 번째 코드의 print 주석 유지
 
         _goAfterLogin(
           parentUserId: parentUserId,
@@ -116,7 +133,7 @@ class _LoginPageState extends State<LoginParentScreen> {
     }
   }
 
-  // ---------------- 카카오 로그인 ----------------
+  // ---------------- 카카오 로그인 (role=parent 고정) ----------------
   Future<void> _loginWithKakao() async {
     setState(() {
       _isLoading = true;
@@ -130,6 +147,7 @@ class _LoginPageState extends State<LoginParentScreen> {
         return;
       }
 
+      // 키 유지
       final nickname = user['nickname'] ?? '카카오사용자';
       final email = user['email'] ?? '';
       final kakaoId = (user['id'] ?? '').toString();
@@ -142,6 +160,7 @@ class _LoginPageState extends State<LoginParentScreen> {
         body: jsonEncode({
           'userId': kakaoId,
           'userEmail': email,
+          //'userPw': kakaoId,  제거! social-register는 이제 여기서 비번 안 보내고 추가정보 패이지에서 보냄
           'userName': nickname,
           'socialType': 'kakao',
           'socialId': kakaoId,
@@ -154,8 +173,10 @@ class _LoginPageState extends State<LoginParentScreen> {
         final Map<String, dynamic>? u =
             (body['user'] is Map) ? body['user'] as Map<String, dynamic> : null;
 
+        // 🔐 토큰 키 파싱
         final at = (body['accessToken'] ?? body['token']) as String?;
         final rt = body['refreshToken'] as String?;
+
         if (at != null && at.isNotEmpty) {
           await AuthClient.instance.setAuthToken(at, refreshToken: rt);
           await ChildrenState.instance.setToken(
@@ -163,11 +184,12 @@ class _LoginPageState extends State<LoginParentScreen> {
             refreshToken: (rt != null && rt.isNotEmpty) ? rt : null,
           );
           print(
-              '[카카오] 토큰 저장 완료 (AT=${at.length}자, RT=${rt != null ? '있음' : '없음'})');
+              '[카카오] 토큰 저장 완료 (AT=${at.length}자, RT=${rt != null ? '있음' : '없음'})'); // 두 번째 코드의 print 주석 유지
         } else {
-          print('[카카오][경고] 응답에 토큰이 없음');
+          print('[카카오][경고] 응답에 토큰이 없음'); // 두 번째 코드의 print 주석 유지
         }
 
+        // 👤 세션 저장 (user{} 우선)
         final parentUserId = (u?['userId'] ?? kakaoId).toString();
         final parentUserName = (u?['userName'] ?? nickname).toString();
         await ChildrenState.instance.setSession(
@@ -175,14 +197,16 @@ class _LoginPageState extends State<LoginParentScreen> {
           userName: parentUserName.isEmpty ? null : parentUserName,
         );
         print(
-            '[카카오] 세션 저장 완료 (userId=$parentUserId, userName=$parentUserName)');
+            '[카카오] 세션 저장 완료 (userId=$parentUserId, userName=$parentUserName)'); // 두 번째 코드의 print 주석 유지
 
+        // 정상 흐름: MyPage로
         if (!mounted) return;
         _goAfterLogin(
           parentUserId: parentUserId,
           parentUserName: parentUserName,
         );
       } else if (response.statusCode == 400) {
+        // ✅ 신규이며 비밀번호 미제공 등으로 400인 케이스 → 추가정보 화면으로 유도
         if (!mounted) return;
         Navigator.pushReplacement(
           context,
@@ -197,6 +221,7 @@ class _LoginPageState extends State<LoginParentScreen> {
           ),
         );
       } else if (response.statusCode == 409) {
+        // ✅ 기존 계정에 비번 payload를 보냈을 때만 나오는 케이스(현재 흐름에선 거의 발생 X)
         setState(() {
           _message = '이미 비밀번호가 설정된 계정입니다. (409)';
         });
@@ -214,7 +239,7 @@ class _LoginPageState extends State<LoginParentScreen> {
     }
   }
 
-  // ---------------- 구글 로그인 ----------------
+  // ---------------- 구글 로그인 (role=parent 고정) ----------------
   Future<void> _loginWithGoogle() async {
     setState(() {
       _isLoading = true;
@@ -223,6 +248,7 @@ class _LoginPageState extends State<LoginParentScreen> {
 
     try {
       final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
+
       if (googleUser == null) {
         setState(() => _message = '구글 로그인 취소됨');
         return;
@@ -239,25 +265,34 @@ class _LoginPageState extends State<LoginParentScreen> {
         body: jsonEncode({
           'userId': id,
           'userEmail': email,
+          //'userPw': id,      제거!! 여기서는 비밀번호 안 보냄
           'userName': name,
           'socialType': 'google',
           'socialId': id,
           'role': 'parent', // 부모 고정
         }),
       );
+      print('[구글] 응답 수신: ${response.statusCode}'); // 두 번째 코드의 print 주석 유지
 
       if (response.statusCode == 200) {
+        // ✅ 서버 응답 형식: { user: {...}, token: '...' }
         final body = _safeJson(response.body);
         final Map<String, dynamic>? u =
             (body['user'] is Map) ? body['user'] as Map<String, dynamic> : null;
 
+        // 🔐 토큰 키 호환: accessToken 또는 token 모두 수용(현재는 token이 표준)
         final at = (body['accessToken'] ?? body['token']) as String?;
         final rt = body['refreshToken'] as String?;
+
         if (at != null && at.isNotEmpty) {
           await ChildrenState.instance.setToken(
             accessToken: at,
             refreshToken: (rt != null && rt.isNotEmpty) ? rt : null,
           );
+          print(
+              '[구글] 토큰 저장 완료 (AT=${at.length}자, RT=${rt != null ? '있음' : '없음'})'); // 두 번째 코드의 print 주석 유지
+        } else {
+          print('[구글][경고] 응답에 토큰이 없음'); // 두 번째 코드의 print 주석 유지
         }
 
         // 👤 세션 저장
@@ -267,13 +302,17 @@ class _LoginPageState extends State<LoginParentScreen> {
           userId: parentUserId,
           userName: parentUserName.isEmpty ? null : parentUserName,
         );
+        print(
+            '[구글] 세션 저장 완료 (userId=$parentUserId, userName=$parentUserName)'); // 두 번째 코드의 print 주석 유지
 
+        // ✅ 정상 흐름: MyPage로
         if (!mounted) return;
         _goAfterLogin(
           parentUserId: parentUserId,
           parentUserName: parentUserName,
         );
       } else if (response.statusCode == 400) {
+        // ✅ 신규 + 비밀번호 미제공 등 → 추가정보 화면으로 유도
         if (!mounted) return;
         Navigator.pushReplacement(
           context,
@@ -288,6 +327,7 @@ class _LoginPageState extends State<LoginParentScreen> {
           ),
         );
       } else if (response.statusCode == 409) {
+        // ✅ 지금 흐름에선 발생 안 함(비번 안 보냄). 메시지만 표기.
         setState(() {
           _message = '이미 비밀번호가 설정된 계정입니다. (409)';
         });
@@ -309,6 +349,7 @@ class _LoginPageState extends State<LoginParentScreen> {
             : '구글 로그인 에러($code) $msg ${details ?? ''}';
       });
     } catch (e, st) {
+      // 그 외 모든 예외
       setState(() => _message = '구글 로그인 에러: $e');
       debugPrint('google sign-in error: $e');
       debugPrintStack(stackTrace: st);
@@ -328,6 +369,8 @@ class _LoginPageState extends State<LoginParentScreen> {
   }
 
   // ---------------- UI ----------------
+  // (선택) 공지 버튼 로직은 제거
+
   @override
   Widget build(BuildContext context) {
     const bg = Color(0xFFFEEFEF);

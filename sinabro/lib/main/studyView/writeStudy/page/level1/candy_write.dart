@@ -32,7 +32,7 @@ const _appleGold = '${_dir}apple_gold.png'; // 팝업 아이콘
 const _dalgona = '${_dir}dalgona.png';
 
 // 오디오 에셋 경로
-const _audioDir = 'assets/audio/contents/studyWrite/level1/';
+const _audioDir = 'audio/tts/studyWrite/level1/';
 const _audioIntro = '${_audioDir}write3_dalgona_intro.mp3';
 const _audioDone = '${_audioDir}write3_dalgona_done.mp3';
 const _audioFinish = '${_audioDir}write3_dalgona_finish.mp3';
@@ -138,22 +138,19 @@ class _CandyWritePageState extends State<CandyWritePage>
   }
 
   /// 오디오 재생 헬퍼 함수
-  void _playAudio(String assetPath, {bool isLooping = false}) {
-    if (!mounted) return; // 위젯 종료 후 호출 방지
-    _audioPlayer.stop(); // 기존 오디오가 있다면 중지
+  Future<void> _playAudio(String assetPath, {bool isLooping = false}) async {
+    // 위젯이 dispose된 후에 호출되는 것을 방지
+    if (!mounted) return;
+    await _audioPlayer.stop(); // 기존 오디오가 있다면 중지
     _audioPlayer
         .setReleaseMode(isLooping ? ReleaseMode.loop : ReleaseMode.release);
-    _audioPlayer.play(AssetSource(assetPath));
+    await _audioPlayer.play(AssetSource(assetPath));
+    return _audioPlayer.onPlayerComplete.first;
   }
   // ---------------------------------------------
 
   Future<void> _onStageDone() async {
     if (!mounted) return;
-
-    // 마지막 스테이지 완료 시에만 "완성되었어요" 재생
-    if (_stage >= _stages.length - 1) {
-      _playAudio(_audioDone); // "완성되었어요" 재생
-    }
 
     setState(() => _phase = _Phase.reveal);
     _revealCtrl
@@ -161,6 +158,18 @@ class _CandyWritePageState extends State<CandyWritePage>
       ..forward();
 
     await _revealCtrl.forward();
+    if (!mounted) return;
+
+    // 마지막 스테이지 완료 시에만 "완성되었어요" 재생
+    if (_stage >= _stages.length - 1) {
+      // "완성되었어요" 오디오 재생이 완료될 때까지 기다림
+      await _playAudio(_audioDone);
+      if (!mounted) return;
+
+      // 오디오가 끝난 후 5초간 대기
+      await Future.delayed(const Duration(seconds: 3));
+      if (!mounted) return;
+    }
 
     // 다음 단계 또는 엔딩
     if (_stage < _stages.length - 1) {
@@ -176,6 +185,9 @@ class _CandyWritePageState extends State<CandyWritePage>
     } else {
       // 마지막 → 먹는 장면 3초 → 팝업 → 나무로
       setState(() => _phase = _Phase.eat);
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
+        await _playAudio(_audioFinish);
+      });
       await Future.delayed(const Duration(seconds: 3));
       if (!mounted) return;
       await _showRewardPopup();

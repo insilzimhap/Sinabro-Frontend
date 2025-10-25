@@ -1,3 +1,5 @@
+// NEXT TODO : 별 이어그렸을 때 효과음 effect 넣기
+
 // 레벨 1 열매 1 별(직선) 서버 연결 완료
 // lib/main/studyView/writeStudy/page/level1/star_write.dart
 import 'dart:math';
@@ -24,7 +26,7 @@ const _celeStars = '${_dir}stars.png'; // ⭐ 세 개 별 이미지 (파일명: 
 const _appleImg = '${_dir}apple.png';
 
 // 오디오 에셋 경로
-const _audioDir = 'assets/audio/contents/studyWrite/level1/';
+const _audioDir = 'audio/tts/studyWrite/level1/';
 const _audioIntro = '${_audioDir}write3_star_intro.mp3';
 const _audioDraw = '${_audioDir}write3_star_draw.mp3';
 const _audioPerfect = '${_audioDir}write3_star_perfect.mp3';
@@ -69,11 +71,14 @@ class _ConstellationDrawPageState extends State<ConstellationDrawPage> {
   }
 
   /// 오디오 재생 헬퍼 함수
-  void _playAudio(String assetPath, {bool isLooping = false}) {
-    _audioPlayer.stop(); // 기존 오디오가 있다면 중지
+  Future<void> _playAudio(String assetPath, {bool isLooping = false}) async {
+    // 위젯이 dispose된 후에 호출되는 것을 방지
+    if (!mounted) return;
+    await _audioPlayer.stop(); // 기존 오디오가 있다면 중지
     _audioPlayer
         .setReleaseMode(isLooping ? ReleaseMode.loop : ReleaseMode.release);
-    _audioPlayer.play(AssetSource(assetPath));
+    await _audioPlayer.play(AssetSource(assetPath));
+    return _audioPlayer.onPlayerComplete.first;
   }
 
   // ------------------ 제스처 ------------------
@@ -162,7 +167,7 @@ class _ConstellationDrawPageState extends State<ConstellationDrawPage> {
   void _startFinishFlow() async {
     if (!mounted) return;
 
-    _playAudio(_audioPerfect); // ✅ "완벽해요!" 오디오 재생
+    await _playAudio(_audioPerfect); // ✅ "완벽해요!" 오디오 재생
 
     setState(() => _phase = _FlowPhase.banner); // 1) 완벽해요!
 

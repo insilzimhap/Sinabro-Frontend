@@ -1,3 +1,5 @@
+// NEXT TODO : 잼 바르고 완료 됐을 때 효과음
+
 // 레벨1 열매 2 잼 그리기(곡선) 서버 연결 완료
 // lib/main/studyView/writeStudy/page/level1/jam_write.dart
 import 'dart:math';
@@ -33,7 +35,7 @@ const Rect _kBreadRectNorm = Rect.fromLTWH(0.14, 0.16, 0.72, 0.60);
 const double _kGuideInsetPct = 0.05;
 
 // 오디오 에셋 경로 (경로 수정됨)
-const _audioDir = 'assets/audio/contents/studyWrite/level1/';
+const _audioDir = 'audio/tts/studyWrite/level1/';
 const _audioIntro = '${_audioDir}write3_jam_intro.mp3';
 // ❗ 'write3_jam_press.mp3'는 현재 UI 흐름(onPanStart)에 넣으면
 // ❗ 그릴 때마다 재생되어 부자연스러울 수 있어 제외하기로 함..
@@ -125,7 +127,11 @@ class _JamSpreadFlowPageState extends State<JamSpreadFlowPage>
   void initState() {
     super.initState();
     // 인트로 오디오 자동 재생
-    _playAudio(_audioIntro);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _playAudio(_audioIntro);
+      }
+    });
   }
 
   @override
@@ -136,14 +142,15 @@ class _JamSpreadFlowPageState extends State<JamSpreadFlowPage>
     super.dispose();
   }
 
-  /// 오디오 재생 헬퍼 함수 (외부에서 호출 가능하도록 public으로 변경)
-  void _playAudio(String assetPath, {bool isLooping = false}) {
+  /// 오디오 재생 헬퍼 함수
+  Future<void> _playAudio(String assetPath, {bool isLooping = false}) async {
     // 위젯이 dispose된 후에 호출되는 것을 방지
     if (!mounted) return;
-    _audioPlayer.stop(); // 기존 오디오가 있다면 중지
+    await _audioPlayer.stop(); // 기존 오디오가 있다면 중지
     _audioPlayer
         .setReleaseMode(isLooping ? ReleaseMode.loop : ReleaseMode.release);
-    _audioPlayer.play(AssetSource(assetPath));
+    await _audioPlayer.play(AssetSource(assetPath));
+    return _audioPlayer.onPlayerComplete.first;
   }
 
   /* ───────── precache ───────── */
@@ -207,7 +214,11 @@ class _JamSpreadFlowPageState extends State<JamSpreadFlowPage>
   /* ───────── flow helpers ───────── */
   void _startDraw() {
     // "선에 맞춰 잼을 발라주세요" 오디오 재생
-    _playAudio(_audioDraw);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _playAudio(_audioDraw);
+      }
+    });
 
     setState(() {
       _phase = _Phase.draw;
@@ -236,13 +247,19 @@ class _JamSpreadFlowPageState extends State<JamSpreadFlowPage>
 
     if (_stage == 2) {
       // "맛있게 완성되었어요" 오디오 재생
-      _playAudio(_audioDone);
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
+        await _playAudio(_audioDone);
+      });
       setState(() => _phase = _Phase.revealText1);
-      await Future.delayed(const Duration(seconds: 2));
+      await Future.delayed(const Duration(milliseconds: 3500));
       if (!mounted) return;
 
       // "잘 먹겠습니다" 오디오 재생
-      _playAudio(_audioFinish);
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          _playAudio(_audioFinish);
+        }
+      });
       setState(() => _phase = _Phase.revealText2);
       await Future.delayed(const Duration(seconds: 2));
       if (!mounted) return;
@@ -265,7 +282,11 @@ class _JamSpreadFlowPageState extends State<JamSpreadFlowPage>
     if (!mounted) return;
 
     // 다음 단계 그리기 오디오 재생
-    _playAudio(_audioDraw);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _playAudio(_audioDraw);
+      }
+    });
     setState(() {
       _stage++;
       _progress = 0;

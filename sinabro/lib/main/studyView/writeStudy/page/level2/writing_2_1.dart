@@ -17,7 +17,7 @@ import 'package:audioplayers/audioplayers.dart'; // 오디오 패키지 import
 const _twin1 = 'assets/img/contents/studyWrite/twin1.png';
 
 // 오디오 경로 및 파일명 정의
-const _audioDir = 'assets/audio/contents/studyWrite/level2/';
+const _audioDir = 'audio/tts/studyWrite/level2/';
 const _audioIntro = '${_audioDir}write4_study_intro_01.mp3'; // 자음 쌍둥이 인트로
 const _audioRepeat = '${_audioDir}write4_repeat.mp3'; // 따라 써봐요!
 

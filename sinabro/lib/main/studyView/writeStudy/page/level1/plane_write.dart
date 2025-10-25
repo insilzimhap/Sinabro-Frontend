@@ -13,7 +13,7 @@ import 'package:flutter/services.dart'; // rootBundle
 import 'package:audioplayers/audioplayers.dart'; // 오디오 패키지 import
 
 // 오디오 에셋 경로
-const _audioDir = 'assets/audio/contents/studyWrite/level1/';
+const _audioDir = 'audio/tts/studyWrite/level1/';
 const _audioIntro = '${_audioDir}write3_plane_intro.mp3';
 const _audioDraw = '${_audioDir}write3_plane_draw.mp3';
 
@@ -91,19 +91,23 @@ class _PlaneWritePageState extends State<PlaneWritePage> {
   }
 
   /// 오디오 재생 헬퍼 함수
-  void _playAudio(String assetPath, {bool isLooping = false}) {
-    if (!mounted) return; // 위젯 종료 후 호출 방지
-    _audioPlayer.stop(); // 기존 오디오가 있다면 중지
+  Future<void> _playAudio(String assetPath, {bool isLooping = false}) async {
+    // 위젯이 dispose된 후에 호출되는 것을 방지
+    if (!mounted) return;
+    await _audioPlayer.stop(); // 기존 오디오가 있다면 중지
     _audioPlayer
         .setReleaseMode(isLooping ? ReleaseMode.loop : ReleaseMode.release);
-    _audioPlayer.play(AssetSource(assetPath));
+    await _audioPlayer.play(AssetSource(assetPath));
+    return _audioPlayer.onPlayerComplete.first;
   }
   // ---------------------------------------------
 
-  void _startWriting() {
+  Future<void> _startWriting() async {
     if (!_showIntro) return;
     // 그리기 시작 오디오 재생
-    _playAudio(_audioDraw);
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      _playAudio(_audioDraw);
+    });
     setState(() {
       _showIntro = false;
       // ✅ 학습 시작 시간 기록 (실제 그리기 시작 시점)
@@ -111,9 +115,11 @@ class _PlaneWritePageState extends State<PlaneWritePage> {
     });
   }
 
-  void _advanceToNextStage() {
+  Future<void> _advanceToNextStage() async {
     // 다음 단계 그리기 오디오 재생
-    _playAudio(_audioDraw);
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      _playAudio(_audioDraw);
+    });
     setState(() {
       _stage += 1;
       _isCorrect = false;
@@ -229,7 +235,7 @@ class _PlaneWritePageState extends State<PlaneWritePage> {
               onProgress: (p) => setState(() => _progress = p),
               onDone: _onStageDone,
               // 그리기 실패 시 오디오 재생 콜백 추가
-              onFail: () => _playAudio(_audioDraw),
+              onFail: () async => await _playAudio(_audioDraw),
               strokeColor: const ui.Color.fromARGB(255, 0, 80, 255), // 파란 펜
               strokeWidthBasePx: 20,
             ),
