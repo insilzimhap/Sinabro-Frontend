@@ -1,4 +1,4 @@
-// lib/main/studyView/writeGame/write_game_main2.dart
+// lib/main/gameView/writeGame/write_game_main2.dart
 import 'package:flutter/material.dart';
 
 // 단계 페이지 import (경로/클래스명은 네 프로젝트에 맞게 확인)

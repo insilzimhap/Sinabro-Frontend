@@ -1,4 +1,4 @@
-// lib/main/studyView/writeGame/page/level2/write_game_2_1.dart
+// lib/main/gameView/writeGame/page/level2/write_game_2_1.dart
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:sinabro/main/studyView/writeStudy/widget/writing_canvas.dart';
@@ -10,13 +10,78 @@ import 'package:sinabro/selvy_example_view/selvy_service.dart'
 import 'package:sinabro/main/gameView/writeGame/data/wg_question_map.dart'
     as WG;
 import 'package:sinabro/main/gameView/writeGame/api/write_game_api.dart';
+// ⬇️ AUDIO IMPORT
+import 'package:audioplayers/audioplayers.dart';
 
-/// 에셋 경로
+// ⬇️ AUDIO ASSET DEFINITIONS
+// 오디오 플레이어 사용 시 위치: 공통 오디오 에셋 경로
+const String kGameWriteAudioDir = 'audio/tts/gameWrite/level2/';
+// 오디오 플레이어 사용 시 위치: 자음/모음 학습 오디오 에셋 경로 (studyWrite로 분리)
+const String kStudyWriteAudioDir = 'audio/tts/studyWrite/level2/';
+
+// 4세 쓰기 게임 공통 대사 에셋
+const Map<String, String> kLevel4CommonAssets = {
+  // 구분: 공통 | 대사: 과연 이것도 쓸 수 있을까? 글글글...
+  'COMMON_1': kGameWriteAudioDir + 'write4_game_common_1.mp3',
+  // 구분: 공통 | 대사: 쿠키가 맛있게 구워졌어요!
+  'SUCCESS_1': kGameWriteAudioDir + 'write4_game_success_1.mp3',
+  // 구분: 공통 | 대사: 쿠키 모양을 잘못 잡았나봐요... 다시 해볼까요?
+  'FAIL_1': kGameWriteAudioDir + 'write4_game_fail_1.mp3',
+};
+
+// 4세 쓰기 학습 자음 에셋
+const Map<String, String> kLevel4ConsonantAssets = {
+  'GIYEOK': kStudyWriteAudioDir + 'write4_giyeok_00.mp3',
+  'SSANG_GIYEOK': kStudyWriteAudioDir + 'write4_ssang_giyeok_00.mp3',
+  'DIGEUT': kStudyWriteAudioDir + 'write4_digeut_00.mp3',
+  'SSANG_DIGEUT': kStudyWriteAudioDir + 'write4_ssang_digeut_00.mp3',
+  'SIOT': kStudyWriteAudioDir + 'write4_siot_00.mp3',
+  'SSANG_SIOT': kStudyWriteAudioDir + 'write4_ssang_siot_00.mp3',
+  'JIEUT': kStudyWriteAudioDir + 'write4_jieut_00.mp3',
+  'SSANG_JIEUT': kStudyWriteAudioDir + 'write4_ssang_jieut_00.mp3',
+  'BIEUP': kStudyWriteAudioDir + 'write4_bieup_00.mp3',
+  'SSANG_BIEUP': kStudyWriteAudioDir + 'write4_ssang_bieup_00.mp3',
+  'NIEUN': kStudyWriteAudioDir + 'write4_nieun_00.mp3',
+  'RIEUL': kStudyWriteAudioDir + 'write4_rieul_00.mp3',
+  'MIEUM': kStudyWriteAudioDir + 'write4_mieum_00.mp3',
+  'IEUNG': kStudyWriteAudioDir + 'write4_ieung_00.mp3',
+  'CHIEUT': kStudyWriteAudioDir + 'write4_chieut_00.mp3',
+  'PIEUP': kStudyWriteAudioDir + 'write4_pieup_00.mp3',
+  'HIEUT': kStudyWriteAudioDir + 'write4_hieut_00.mp3',
+  'KIEUK': kStudyWriteAudioDir + 'write4_kieuk_00.mp3',
+  'TIEUT': kStudyWriteAudioDir + 'write4_tieut_00.mp3',
+};
+
+// 자음(Char)을 오디오 맵(Key)으로 변환하기 위한 유틸리티 맵
+const Map<String, String> kConsonantCharToKey = {
+  'ㄱ': 'GIYEOK',
+  'ㄲ': 'SSANG_GIYEOK',
+  'ㄷ': 'DIGEUT',
+  'ㄸ': 'SSANG_DIGEUT',
+  'ㅅ': 'SIOT',
+  'ㅆ': 'SSANG_SIOT',
+  'ㅈ': 'JIEUT',
+  'ㅉ': 'SSANG_JIEUT',
+  'ㅂ': 'BIEUP',
+  'ㅃ': 'SSANG_BIEUP',
+  'ㄴ': 'NIEUN',
+  'ㄹ': 'RIEUL',
+  'ㅁ': 'MIEUM',
+  'ㅇ': 'IEUNG',
+  'ㅊ': 'CHIEUT',
+  'ㅋ': 'KIEUK',
+  'ㅌ': 'TIEUT',
+  'ㅍ': 'PIEUP',
+  'ㅎ': 'HIEUT',
+};
+// ⬆️ AUDIO ASSET DEFINITIONS
+
+/// 에셋 경로(기존 피그마 -> 실제 데이터를 넣어 수정)
 /// 이미지: assets/img/contents/gameWrite/sound.png (고정)
-const _IMG_DIR = 'assets/img/contents/gameWrite/';
-const _AUD_DIR = 'assets/audio/gameWrite2/cons/';
+// const _AUD_DIR = 'assets/audio/gameWrite2/cons/'; //(혼란 방지를 위한 주석처리)
 
 /// 엔딩 이미지(전체 화면)
+const _IMG_DIR = 'assets/img/contents/gameWrite/';
 const _END_INTRO = '${_IMG_DIR}end_intro.png'; // 1번
 const _END_SUCCESS = '${_IMG_DIR}end_success.png'; // 2번
 const _END_FAIL = '${_IMG_DIR}end_fail.png'; // 3번
@@ -25,13 +90,13 @@ class _ConsonantItem {
   final String key; // 식별 키
   final String char; // ㄱ, ㄲ, ...
   final String nameKo;
-  final String audio; // 오디오 asset 경로
+  // final String audio; // (혼란 방지를 위한 주석처리)
 
   const _ConsonantItem({
     required this.key,
     required this.char,
     required this.nameKo,
-    required this.audio,
+    // required this.audio, // (혼란 방지를 위한 주석처리)
   });
 }
 
@@ -41,115 +106,115 @@ const List<_ConsonantItem> _POOL = [
     key: 'giyeok',
     char: 'ㄱ',
     nameKo: '기역',
-    audio: '${_AUD_DIR}giyeok.mp3',
+    // audio: '${_AUD_DIR}giyeok.mp3', // (혼란 방지를 위한 주석처리)
   ),
   _ConsonantItem(
     key: 'ssang_giyeok',
     char: 'ㄲ',
     nameKo: '쌍기역',
-    audio: '${_AUD_DIR}ssang_giyeok.mp3',
+    // audio: '${_AUD_DIR}ssang_giyeok.mp3', // (혼란 방지를 위한 주석처리)
   ),
   _ConsonantItem(
     key: 'digeut',
     char: 'ㄷ',
     nameKo: '디귿',
-    audio: '${_AUD_DIR}digeut.mp3',
+    // audio: '${_AUD_DIR}digeut.mp3', // (혼란 방지를 위한 주석처리)
   ),
   _ConsonantItem(
     key: 'ssang_digeut',
     char: 'ㄸ',
     nameKo: '쌍디귿',
-    audio: '${_AUD_DIR}ssang_digeut.mp3',
+    // audio: '${_AUD_DIR}ssang_digeut.mp3', // (혼란 방지를 위한 주석처리)
   ),
   _ConsonantItem(
     key: 'siot',
     char: 'ㅅ',
     nameKo: '시옷',
-    audio: '${_AUD_DIR}siot.mp3',
+    // audio: '${_AUD_DIR}siot.mp3', // (혼란 방지를 위한 주석처리)
   ),
   _ConsonantItem(
     key: 'ssang_siot',
     char: 'ㅆ',
     nameKo: '쌍시옷',
-    audio: '${_AUD_DIR}ssang_siot.mp3',
+    // audio: '${_AUD_DIR}ssang_siot.mp3', // (혼란 방지를 위한 주석처리)
   ),
   _ConsonantItem(
     key: 'jieut',
     char: 'ㅈ',
     nameKo: '지읒',
-    audio: '${_AUD_DIR}jieut.mp3',
+    // audio: '${_AUD_DIR}jieut.mp3', // (혼란 방지를 위한 주석처리)
   ),
   _ConsonantItem(
     key: 'ssang_jieut',
     char: 'ㅉ',
     nameKo: '쌍지읒',
-    audio: '${_AUD_DIR}ssang_jieut.mp3',
+    // audio: '${_AUD_DIR}ssang_jieut.mp3', // (혼란 방지를 위한 주석처리)
   ),
   _ConsonantItem(
     key: 'bieup',
     char: 'ㅂ',
     nameKo: '비읍',
-    audio: '${_AUD_DIR}bieup.mp3',
+    // audio: '${_AUD_DIR}bieup.mp3', // (혼란 방지를 위한 주석처리)
   ),
   _ConsonantItem(
     key: 'ssang_bieup',
     char: 'ㅃ',
     nameKo: '쌍비읍',
-    audio: '${_AUD_DIR}ssang_bieup.mp3',
+    // audio: '${_AUD_DIR}ssang_bieup.mp3', // (혼란 방지를 위한 주석처리)
   ),
   _ConsonantItem(
     key: 'nieun',
     char: 'ㄴ',
     nameKo: '니은',
-    audio: '${_AUD_DIR}nieun.mp3',
+    // audio: '${_AUD_DIR}nieun.mp3', // (혼란 방지를 위한 주석처리)
   ),
   _ConsonantItem(
     key: 'rieul',
     char: 'ㄹ',
     nameKo: '리을',
-    audio: '${_AUD_DIR}rieul.mp3',
+    // audio: '${_AUD_DIR}rieul.mp3', // (혼란 방지를 위한 주석처리)
   ),
   _ConsonantItem(
     key: 'mieum',
     char: 'ㅁ',
     nameKo: '미음',
-    audio: '${_AUD_DIR}mieum.mp3',
+    // audio: '${_AUD_DIR}mieum.mp3', // (혼란 방지를 위한 주석처리)
   ),
   _ConsonantItem(
     key: 'ieung',
     char: 'ㅇ',
     nameKo: '이응',
-    audio: '${_AUD_DIR}ieung.mp3',
+    // audio: '${_AUD_DIR}ieung.mp3', // (혼란 방지를 위한 주석처리)
   ),
   _ConsonantItem(
     key: 'chieut',
     char: 'ㅊ',
     nameKo: '치읓',
-    audio: '${_AUD_DIR}chieut.mp3',
+    // audio: '${_AUD_DIR}chieut.mp3', // (혼란 방지를 위한 주석처리)
   ),
   _ConsonantItem(
     key: 'pieup',
     char: 'ㅍ',
     nameKo: '피읖',
-    audio: '${_AUD_DIR}pieup.mp3',
+    // audio: '${_AUD_DIR}pieup.mp3', // (혼란 방지를 위한 주석처리)
   ),
   _ConsonantItem(
     key: 'hieut',
     char: 'ㅎ',
     nameKo: '히읗',
-    audio: '${_AUD_DIR}hieut.mp3',
+    // audio: '${_AUD_DIR}hieut.mp3', // (혼란 방지를 위한 주석처리)
   ),
   _ConsonantItem(
     key: 'kieuk',
     char: 'ㅋ',
     nameKo: '키읔',
-    audio: '${_AUD_DIR}kieuk.mp3',
+    // audio: '${_AUD_DIR}kieuk.mp3', // (혼란 방지를 위한 주석처리)
   ),
   _ConsonantItem(
     key: 'tieut',
     char: 'ㅌ',
     nameKo: '티읕',
-    audio: '${_AUD_DIR}tieut.mp3',
+    // audio: '${_AUD_DIR}tieut.mp3', // (혼란 방지를 위한 주석처리)
   ),
 ];
 
@@ -175,6 +240,8 @@ class _WriteGameLevel2_1PageState extends State<WriteGameLevel2_1Page> {
   late List<_ConsonantItem> _problems; // 길이 4
   int _index = 0; // 현재 문제
   final List<bool> _results = [];
+  // ⬇️ AUDIO PLAYER INSTANCE
+  final AudioPlayer _audioPlayer = AudioPlayer();
 
   _ConsonantItem get current => _problems[_index];
 
@@ -182,10 +249,34 @@ class _WriteGameLevel2_1PageState extends State<WriteGameLevel2_1Page> {
   String? _resultId; // 게임 세션 식별자
   bool _booting = true; // 초기화 중 표시용
 
+  // ⬇️ AUDIO HELPER FUNCTION
+  Future<void> _playAssetAudio(String assetPath) async {
+    if (!mounted) return;
+    await _audioPlayer.stop(); // 기존 오디오 중지
+    await _audioPlayer.play(AssetSource(assetPath));
+    debugPrint('🎶 오디오 재생 시작 (2-1): $assetPath');
+  }
+  // ⬆️ AUDIO HELPER FUNCTION
+
   @override
   void initState() {
     super.initState();
     _initAndStart();
+    // ⬇️ 공통 오디오 재생
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      final commonAudio = kLevel4CommonAssets['COMMON_1'];
+      if (commonAudio != null) {
+        await _playAssetAudio(commonAudio);
+      }
+    });
+    // ⬆️ 공통 오디오 재생
+  }
+
+  @override
+  void dispose() {
+    // ⬇️ AUDIO PLAYER DISPOSE
+    _audioPlayer.dispose();
+    super.dispose();
   }
 
   Future<void> _initAndStart() async {
@@ -234,8 +325,18 @@ class _WriteGameLevel2_1PageState extends State<WriteGameLevel2_1Page> {
 
   /// 소리 아이콘 탭 → 현재 문제 자음 오디오 재생 (플레이어는 프로젝트에 맞춰 교체)
   Future<void> _playPronounce() async {
-    // 예: context.read<AudioService>().playAsset(current.audio);
-    debugPrint('[2-1] play audio: ${current.audio}');
+    // ⬇️ 기존 로직 수정: 실제 오디오 에셋을 찾아 재생 (수정됨)
+    final audioKey = kConsonantCharToKey[current.char];
+    if (audioKey != null) {
+      final audioPath = kLevel4ConsonantAssets[audioKey];
+      if (audioPath != null) {
+        await _playAssetAudio(audioPath);
+      }
+    } else {
+      debugPrint(
+          '[2-1] Error: Audio key not found for consonant ${current.char}');
+    }
+    // ⬆️ 기존 로직 수정 (수정됨)
   }
 
   /// 인식 문자열 정규화(첫 줄만, [n] 제거, 호환 자모 통일)
@@ -348,21 +449,29 @@ class _WriteGameLevel2_1PageState extends State<WriteGameLevel2_1Page> {
       Navigator.of(context, rootNavigator: true).pop(); // 인트로 닫기
     }
 
-    // 3) 성공/실패 분기(서버 기준)
+    // 3) 성공/실패
     if (serverSuccess) {
+      // 3-1) 성공 다이얼로그 띄우기
       showDialog<void>(
         context: context,
         barrierDismissible: true,
-        builder:
-            (_) => _FullImageDialog(
-              imageAsset: _END_SUCCESS,
-              onTap: () => Navigator.of(context).pop(),
-            ),
+        builder: (_) => _FullImageDialog(
+          imageAsset: _END_SUCCESS,
+          onTap: () => Navigator.of(context).pop(),
+        ),
       );
 
+      // ⬇️ 오디오 재생 시점 수정 : 다이얼로그 표시 후 재생
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
+        await Future.delayed(const Duration(milliseconds: 100)); // 다이얼로그 표시 지연
+        final successAudio = kLevel4CommonAssets['SUCCESS_1'];
+        if (successAudio != null) {
+          await _playAssetAudio(successAudio);
+        }
+      });
       Future.delayed(const Duration(seconds: 3), () {
         if (!mounted) return;
-        Navigator.of(context, rootNavigator: true).pop(); // 성공 다이얼로그 닫기
+        Navigator.of(context, rootNavigator: true).pop();
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(
             builder: (_) => WriteGameMain2Page(childId: widget.childId),
@@ -370,46 +479,53 @@ class _WriteGameLevel2_1PageState extends State<WriteGameLevel2_1Page> {
         );
       });
     } else {
+      // 3-2) 실패 다이얼로그 띄우기
       await showDialog<void>(
         context: context,
         barrierDismissible: false,
-        builder:
-            (_) => _FullImageDialog(
-              imageAsset: _END_FAIL,
-              overlay: Positioned(
-                right: 24,
-                bottom: 28,
-                child: ElevatedButton(
-                  onPressed: () {
-                    Navigator.of(context, rootNavigator: true).pop(); // 실패 닫기
-                    Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(
-                        builder:
-                            (_) => WriteGameMain2Page(childId: widget.childId),
-                      ),
-                    );
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFE7D3A6),
-                    foregroundColor: const Color(0xFF5B3D20),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 18,
-                      vertical: 10,
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    elevation: 0,
+        builder: (_) => _FullImageDialog(
+          imageAsset: _END_FAIL,
+          overlay: Positioned(
+            right: 24,
+            bottom: 28,
+            child: ElevatedButton(
+              onPressed: () {
+                Navigator.of(context, rootNavigator: true).pop();
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => WriteGameMain2Page(childId: widget.childId),
                   ),
-                  child: const Text(
-                    '다시하기',
-                    style: TextStyle(fontWeight: FontWeight.w800),
-                  ),
+                );
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFE7D3A6),
+                foregroundColor: const Color(0xFF5B3D20),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 18,
+                  vertical: 10,
                 ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                elevation: 0,
+              ),
+              child: const Text(
+                '다시하기',
+                style: TextStyle(fontWeight: FontWeight.w800),
               ),
             ),
+          ),
+        ),
       );
+      // ⬇️ 오디오 재생 시점 수정 : 다이얼로그 표시 후 재생
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
+        await Future.delayed(const Duration(milliseconds: 100)); // 다이얼로그 표시 지연
+        final failAudio = kLevel4CommonAssets['FAIL_1'];
+        if (failAudio != null) {
+          await _playAssetAudio(failAudio);
+        }
+      });
     }
   }
 
@@ -479,14 +595,13 @@ class _WriteGameLevel2_1PageState extends State<WriteGameLevel2_1Page> {
                       height: 12,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color:
-                            done
-                                ? (_results[i]
-                                    ? const Color(0xFF4CAF50)
-                                    : const Color(0xFFE53935))
-                                : (now
-                                    ? const Color(0xFF795548)
-                                    : const Color(0xFFBCAAA4)),
+                        color: done
+                            ? (_results[i]
+                                ? const Color(0xFF4CAF50)
+                                : const Color(0xFFE53935))
+                            : (now
+                                ? const Color(0xFF795548)
+                                : const Color(0xFFBCAAA4)),
                       ),
                     ),
                   );
@@ -605,10 +720,8 @@ class _WriteGameLevel2_1PageState extends State<WriteGameLevel2_1Page> {
                                 SizedBox(
                                   height: 42,
                                   child: ElevatedButton(
-                                    onPressed:
-                                        () =>
-                                            _canvasKey.currentState
-                                                ?.recognizeAndCheckText(),
+                                    onPressed: () => _canvasKey.currentState
+                                        ?.recognizeAndCheckText(),
                                     style: ElevatedButton.styleFrom(
                                       backgroundColor: const Color(0xFFD9CCFF),
                                       foregroundColor: Colors.black87,
@@ -702,12 +815,11 @@ class _BalloonPainter extends CustomPainter {
     // 꼬리
     final double tailBaseX = 40;
     final double tailTopY = size.height - 10;
-    final path =
-        Path()
-          ..moveTo(tailBaseX, tailTopY)
-          ..relativeLineTo(14, 10)
-          ..relativeLineTo(6, -10)
-          ..close();
+    final path = Path()
+      ..moveTo(tailBaseX, tailTopY)
+      ..relativeLineTo(14, 10)
+      ..relativeLineTo(6, -10)
+      ..close();
     canvas.drawPath(path, paint);
   }
 

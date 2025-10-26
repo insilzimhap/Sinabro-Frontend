@@ -1,4 +1,4 @@
-// lib/main/studyView/writeGame/write_game_main.dart
+// lib/main/gameView/writeGame/write_game_main.dart
 import 'package:flutter/material.dart';
 
 // ⬇️ 1-1 단계 페이지
@@ -43,8 +43,8 @@ class _WriteGameMainPageState extends State<WriteGameMainPage> {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder:
-                            (_) => WriteGameLevel1Page(childId: widget.childId),
+                        builder: (_) =>
+                            WriteGameLevel1Page(childId: widget.childId),
                       ),
                     );
                   },
@@ -60,9 +60,8 @@ class _WriteGameMainPageState extends State<WriteGameMainPage> {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder:
-                            (_) =>
-                                WriteGameLevel1_2Page(childId: widget.childId),
+                        builder: (_) =>
+                            WriteGameLevel1_2Page(childId: widget.childId),
                       ),
                     );
                   },
@@ -78,9 +77,8 @@ class _WriteGameMainPageState extends State<WriteGameMainPage> {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder:
-                            (_) =>
-                                WriteGameLevel1_3Page(childId: widget.childId),
+                        builder: (_) =>
+                            WriteGameLevel1_3Page(childId: widget.childId),
                       ),
                     );
                   },
@@ -101,9 +99,8 @@ class _WriteGameMainPageState extends State<WriteGameMainPage> {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder:
-                            (_) =>
-                                WriteGameLevel1_4Page(childId: widget.childId),
+                        builder: (_) =>
+                            WriteGameLevel1_4Page(childId: widget.childId),
                       ),
                     );
                   },
@@ -121,10 +118,9 @@ class _WriteGameMainPageState extends State<WriteGameMainPage> {
                             Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder:
-                                    (_) => WriteGameMain2Page(
-                                      childId: widget.childId,
-                                    ),
+                                builder: (_) => WriteGameMain2Page(
+                                  childId: widget.childId,
+                                ),
                               ),
                             );
                           },
@@ -152,10 +148,9 @@ class _WriteGameMainPageState extends State<WriteGameMainPage> {
                             Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder:
-                                    (_) => WriteGameMain3Page(
-                                      childId: widget.childId,
-                                    ),
+                                builder: (_) => WriteGameMain3Page(
+                                  childId: widget.childId,
+                                ),
                               ),
                             );
                           },

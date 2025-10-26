@@ -1,4 +1,4 @@
-// lib/main/studyView/writeGame/page/level3/write_game_3_4.dart
+// lib/main/gameView/writeGame/page/level3/write_game_3_4.dart
 import 'dart:async';
 import 'dart:math';
 import 'package:flutter/material.dart';
@@ -11,6 +11,35 @@ import 'package:sinabro/selvy_example_view/selvy_service.dart'
 import 'package:sinabro/main/gameView/writeGame/data/wg_question_map.dart';
 // API
 import 'package:sinabro/main/gameView/writeGame/api/write_game_api.dart';
+// ⬇️ AUDIO IMPORT
+import 'package:audioplayers/audioplayers.dart';
+
+// ⬇️ AUDIO ASSET DEFINITIONS
+// 오디오 플레이어 사용 시 위치: 공통 오디오 에셋 경로
+const String kGameWriteAudioDir = 'audio/tts/gameWrite/level3/';
+// 오디오 플레이어 사용 시 위치: 학습 단어 오디오 에셋 경로
+const String kStudyWriteAudioDir = 'audio/tts/studyWrite/level3/';
+
+// 5세 쓰기 게임 공통 대사 에셋
+const Map<String, String> kLevel5CommonAssets = {
+  // 구분: 공통 | 대사: 과연 이것도 쓸 수 있을까? 글글글...
+  'COMMON_1': kGameWriteAudioDir + 'write5_game_common_1.mp3',
+  // 구분: 공통 | 대사: 대단하군...이렇게 잘할 줄이야!
+  'SUCCESS_1': kGameWriteAudioDir + 'write5_game_success_1.mp3',
+  // 구분: 공통 | 대사: 아쉽게도 퀴즈를 맞추지 못했네
+  'FAIL_1': kGameWriteAudioDir + 'write5_game_fail_1.mp3',
+};
+
+// 5세 쓰기 학습 신체 단어 에셋
+const Map<String, String> kLevel5BodyAssets = {
+  '눈': kStudyWriteAudioDir + 'body_eye.mp3',
+  '코': kStudyWriteAudioDir + 'body_nose.mp3',
+  '입': kStudyWriteAudioDir + 'body_mouth.mp3',
+  '귀': kStudyWriteAudioDir + 'body_ear.mp3',
+  '손': kStudyWriteAudioDir + 'body_hand.mp3',
+  '발': kStudyWriteAudioDir + 'body_foot.mp3',
+};
+// ⬆️ AUDIO ASSET DEFINITIONS
 
 const _IMG_DIR = 'assets/img/contents/gameWrite/';
 
@@ -28,13 +57,13 @@ class _BodyItem {
   final String nameKo; // 매핑 key로 사용
   final String image;
   final List<String> syllables;
-  final String? audio;
+  // final String? audio; // (혼란 방지를 위해 주석 처리됨)
   const _BodyItem({
     required this.key,
     required this.nameKo,
     required this.image,
     required this.syllables,
-    this.audio,
+    // this.audio, // (혼란 방지를 위해 주석 처리됨)
   });
 
   String get word => syllables.join();
@@ -93,6 +122,9 @@ class _WriteGameLevel3_4PageState extends State<WriteGameLevel3_4Page> {
   final List<GlobalKey<WritingCanvasState>> _canvasKeys = [];
   List<Completer<String>> _recognizeWaiters = [];
 
+  // ⬇️ AUDIO PLAYER INSTANCE
+  final AudioPlayer _audioPlayer = AudioPlayer();
+
   late List<_BodyItem> _problems;
   int _index = 0;
   final List<bool> _results = [];
@@ -101,10 +133,33 @@ class _WriteGameLevel3_4PageState extends State<WriteGameLevel3_4Page> {
 
   _BodyItem get current => _problems[_index];
 
+  // ⬇️ AUDIO HELPER FUNCTION
+  Future<void> _playAssetAudio(String assetPath) async {
+    if (!mounted) return;
+    await _audioPlayer.stop(); // 기존 오디오 중지
+    await _audioPlayer.play(AssetSource(assetPath));
+    debugPrint('🎶 오디오 재생 시작 (3-4): $assetPath');
+  }
+
   @override
   void initState() {
     super.initState();
     _startGame();
+    // ⬇️ 공통 오디오 재생
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      final commonAudio = kLevel5CommonAssets['COMMON_1'];
+      if (commonAudio != null) {
+        await _playAssetAudio(commonAudio);
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _sw.stop();
+    // ⬇️ AUDIO PLAYER DISPOSE
+    _audioPlayer.dispose();
+    super.dispose();
   }
 
   Future<void> _startGame() async {
@@ -151,9 +206,16 @@ class _WriteGameLevel3_4PageState extends State<WriteGameLevel3_4Page> {
   }
 
   Future<void> _playPronounce() async {
-    debugPrint(
-      '[3-4] audio: ${current.nameKo} (${current.audio ?? "no-audio"})',
-    );
+    // ⬇️ 기존 로직 수정: 실제 오디오 에셋을 찾아 재생
+    final audioPath = kLevel5BodyAssets[current.nameKo];
+    if (audioPath != null) {
+      await _playAssetAudio(audioPath);
+    } else {
+      debugPrint(
+        '[3-4] audio: ${current.nameKo} (Audio not mapped)',
+      );
+    }
+    // ⬆️ 기존 로직 수정
   }
 
   Future<void> _onCheckAndNext() async {
@@ -254,26 +316,38 @@ class _WriteGameLevel3_4PageState extends State<WriteGameLevel3_4Page> {
 
   // ✅ 시그니처를 bool로 변경
   Future<void> _showEndSequence(bool success) async {
+    // 1) 인트로 다이얼로그
+    showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const _FullImageDialog(imageAsset: _OUTRO_SUCCESS_BG),
+    );
+    await Future.delayed(const Duration(milliseconds: 3000));
+    if (!mounted) return;
+    Navigator.of(context, rootNavigator: true).pop();
+
     if (success) {
+      // 2) 팝업
       showDialog<void>(
         context: context,
         barrierDismissible: false,
-        builder: (_) => const _FullImageDialog(imageAsset: _OUTRO_SUCCESS_BG),
-      );
-      await Future.delayed(const Duration(milliseconds: 3000));
-      if (!mounted) return;
-      Navigator.of(context, rootNavigator: true).pop();
-
-      showDialog<void>(
-        context: context,
-        barrierDismissible: false,
-        builder:
-            (_) => const _FullImageDialog(
-              imageAsset: _OUTRO_SUCCESS_BG,
-              overlay: _ClearPopup(),
-            ),
+        builder: (_) => const _FullImageDialog(
+          imageAsset: _OUTRO_SUCCESS_BG,
+          overlay: _ClearPopup(),
+        ),
       );
 
+      // ⬇️ 성공 오디오 재생 시점: 다이얼로그 표시 후 재생
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
+        await Future.delayed(const Duration(milliseconds: 100)); // 다이얼로그 표시 지연
+        final successAudio = kLevel5CommonAssets['SUCCESS_1'];
+        if (successAudio != null) {
+          await _playAssetAudio(successAudio);
+        }
+      });
+      // ⬆️ 성공 오디오 재생 시점
+
+      // 3) 2.5초 후 메인3 이동
       await Future.delayed(const Duration(milliseconds: 2500));
       if (!mounted) return;
       Navigator.of(context, rootNavigator: true).pop();
@@ -283,45 +357,54 @@ class _WriteGameLevel3_4PageState extends State<WriteGameLevel3_4Page> {
         ),
       );
     } else {
+      // 실패
       await showDialog<void>(
         context: context,
         barrierDismissible: false,
-        builder:
-            (_) => _FullImageDialog(
-              imageAsset: _OUTRO_FAIL_BG,
-              overlay: Positioned(
-                right: 24,
-                bottom: 28,
-                child: ElevatedButton(
-                  onPressed: () {
-                    Navigator.of(context, rootNavigator: true).pop();
-                    Navigator.of(context).pushReplacement(
-                      MaterialPageRoute(
-                        builder:
-                            (_) => WriteGameMain3Page(childId: widget.childId),
-                      ),
-                    );
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFE7D3A6),
-                    foregroundColor: const Color(0xFF5B3D20),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 18,
-                      vertical: 10,
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    elevation: 0,
+        builder: (_) => _FullImageDialog(
+          imageAsset: _OUTRO_FAIL_BG,
+          overlay: Positioned(
+            right: 24,
+            bottom: 28,
+            child: ElevatedButton(
+              onPressed: () {
+                Navigator.of(context, rootNavigator: true).pop();
+                Navigator.of(context).pushReplacement(
+                  MaterialPageRoute(
+                    builder: (_) => WriteGameMain3Page(childId: widget.childId),
                   ),
-                  child: const Text(
-                    '다시하기',
-                    style: TextStyle(fontWeight: FontWeight.w800),
-                  ),
+                );
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFE7D3A6),
+                foregroundColor: const Color(0xFF5B3D20),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 18,
+                  vertical: 10,
                 ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                elevation: 0,
+              ),
+              child: const Text(
+                '다시하기',
+                style: TextStyle(fontWeight: FontWeight.w800),
               ),
             ),
+          ),
+        ),
       );
+
+      // ⬇️ 실패 오디오 재생 시점: 다이얼로그 표시 후 재생
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
+        await Future.delayed(const Duration(milliseconds: 100)); // 다이얼로그 표시 지연
+        final failAudio = kLevel5CommonAssets['FAIL_1'];
+        if (failAudio != null) {
+          await _playAssetAudio(failAudio);
+        }
+      });
+      // ⬆️ 실패 오디오 재생 시점
     }
   }
 
@@ -376,14 +459,13 @@ class _WriteGameLevel3_4PageState extends State<WriteGameLevel3_4Page> {
                       height: 12,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color:
-                            done
-                                ? (_results[i]
-                                    ? const Color(0xFF4CAF50)
-                                    : const Color(0xFFE53935))
-                                : (now
-                                    ? const Color(0xFF795548)
-                                    : const Color(0xFFBCAAA4)),
+                        color: done
+                            ? (_results[i]
+                                ? const Color(0xFF4CAF50)
+                                : const Color(0xFFE53935))
+                            : (now
+                                ? const Color(0xFF795548)
+                                : const Color(0xFFBCAAA4)),
                       ),
                     ),
                   );
@@ -444,6 +526,7 @@ class _WriteGameLevel3_4PageState extends State<WriteGameLevel3_4Page> {
                             child: Column(
                               mainAxisSize: MainAxisSize.min,
                               children: [
+                                // 캔버스가 단일 타일로 표시되는 로직
                                 if (hasCanvas)
                                   _CanvasTile(
                                     size: tileSize,
@@ -672,13 +755,13 @@ class _BalloonPainter extends CustomPainter {
     );
     final paint = Paint()..color = const Color(0xFFF2E2CF);
     canvas.drawRRect(r, paint);
+
     final double tailBaseX = 26, tailTopY = size.height - 10;
-    final path =
-        Path()
-          ..moveTo(tailBaseX, tailTopY)
-          ..relativeLineTo(14, 10)
-          ..relativeLineTo(6, -10)
-          ..close();
+    final path = Path()
+      ..moveTo(tailBaseX, tailTopY)
+      ..relativeLineTo(14, 10)
+      ..relativeLineTo(6, -10)
+      ..close();
     canvas.drawPath(path, paint);
   }
 
@@ -755,12 +838,11 @@ class _ClearPopup extends StatelessWidget {
                 child: Image.asset(
                   _CLAP,
                   fit: BoxFit.contain,
-                  errorBuilder:
-                      (_, __, ___) => const Icon(
-                        Icons.emoji_events,
-                        size: 48,
-                        color: Color(0xFF8D6E63),
-                      ),
+                  errorBuilder: (_, __, ___) => const Icon(
+                    Icons.emoji_events,
+                    size: 48,
+                    color: Color(0xFF8D6E63),
+                  ),
                 ),
               ),
               const SizedBox(height: 14),

@@ -7,6 +7,21 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:sinabro/main/gameView/writeGame/page/write_game_main.dart';
 import 'package:sinabro/main/gameView/writeGame/api/write_game_api.dart';
+// ⬇️ AUDIO IMPORT
+import 'package:audioplayers/audioplayers.dart';
+
+// ⬇️ AUDIO ASSET DEFINITIONS
+// 오디오 에셋 경로
+const String _audioDir = 'audio/tts/gameWrite/level1/';
+
+// 3세 쓰기 게임 1-3 레벨 오디오 에셋 정의
+const Map<String, String> LEVEL3_AUDIO_ASSETS_1_3 = {
+  // 구분: 공통 | 대사: 따라, 그려봐요~!
+  'COMMON_1': _audioDir + 'write3_game_common_1.mp3',
+  // 구분: 인트로 3 | 대사: 빙글~ 빙글~ 그리기. (씬 A/B 유도용)
+  'INTRO_3': _audioDir + 'write3_game_intro_3.mp3',
+};
+// ⬆️ AUDIO ASSET DEFINITIONS
 
 enum _Scene { birds, snail, outro }
 
@@ -110,22 +125,42 @@ class _WriteGameLevel1_3PageState extends State<WriteGameLevel1_3Page> {
   final _sw = Stopwatch();
   bool _completed = false;
 
+  // ⬇️ AUDIO PLAYER INSTANCE
+  final AudioPlayer _audioPlayer = AudioPlayer();
+
   int get _lineCount => scene == _Scene.snail ? 1 : 0;
   bool get _allPassed => passed.every((e) => e);
+
+  // ⬇️ AUDIO PLAYBACK LOGIC
+  /// 오디오 재생 헬퍼 함수
+  Future<void> _playAssetAudio(String assetPath) async {
+    if (!mounted) return;
+    await _audioPlayer.stop(); // 기존 오디오 중지
+    await _audioPlayer.play(AssetSource(assetPath));
+    debugPrint('🎶 오디오 재생 시작 (1-3): $assetPath');
+  }
 
   @override
   void initState() {
     super.initState();
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
     _startGame();
+    // ⬇️ 씬 A (Birds) 시작 오디오 재생 (수정됨: COMMON_1 + INTRO_3 재생)
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      _playAssetAudio(LEVEL3_AUDIO_ASSETS_1_3['COMMON_1']!);
+      _playAssetAudio(LEVEL3_AUDIO_ASSETS_1_3['INTRO_3']!);
+    });
   }
 
   @override
   void dispose() {
     _sw.stop();
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+    // ⬇️ AUDIO PLAYER DISPOSE
+    _audioPlayer.dispose();
     super.dispose();
   }
+  // ⬆️ AUDIO PLAYBACK LOGIC
 
   Future<void> _startGame() async {
     try {
@@ -158,7 +193,7 @@ class _WriteGameLevel1_3PageState extends State<WriteGameLevel1_3Page> {
   List<_GuidePath> _buildSnailGuide(Size size) {
     final center =
         Offset(size.width * kSpiralCxRatio, size.height * kSpiralCyRatio) +
-        kSpiralCenterOffset;
+            kSpiralCenterOffset;
 
     final a = kSpiralStartR, b = kSpiralGrowth, turns = kSpiralTurns;
     const steps = kSpiralSteps;
@@ -285,9 +320,7 @@ class _WriteGameLevel1_3PageState extends State<WriteGameLevel1_3Page> {
             child: Stack(
               children: [
                 const _TitleBanner(text: '따라그려봐요!'),
-
                 if (scene == _Scene.snail) _buildSceneSnail(size),
-
                 if (scene == _Scene.outro)
                   Positioned.fill(
                     child: OutroOverlay(
@@ -354,7 +387,6 @@ class _WriteGameLevel1_3PageState extends State<WriteGameLevel1_3Page> {
                       ),
                     ),
                   ),
-
                 if (stroke.isNotEmpty && scene == _Scene.snail)
                   CustomPaint(
                     size: size,
@@ -379,10 +411,9 @@ class _WriteGameLevel1_3PageState extends State<WriteGameLevel1_3Page> {
     return Stack(
       children: List.generate(kBirdLines, (i) {
         final baseTopNorm = kBirdGuideTopNorm + rowGapNorm * i;
-        final ov =
-            (i < kBirdRowOverrides.length)
-                ? kBirdRowOverrides[i]
-                : const BirdRowLayout();
+        final ov = (i < kBirdRowOverrides.length)
+            ? kBirdRowOverrides[i]
+            : const BirdRowLayout();
 
         final leftNorm =
             (ov.leftNorm ?? kBirdGuideLeftNorm) + (ov.dxPx / size.width);
@@ -414,6 +445,11 @@ class _WriteGameLevel1_3PageState extends State<WriteGameLevel1_3Page> {
               setState(() {
                 scene = _Scene.snail;
                 passed = List.filled(_lineCount, false);
+              });
+              // ⬇️ 씬 B (Snail) 시작 오디오 재생 (추가됨: COMMON_1 + INTRO_3 재생)
+              WidgetsBinding.instance.addPostFrameCallback((_) async {
+                _playAssetAudio(LEVEL3_AUDIO_ASSETS_1_3['COMMON_1']!);
+                _playAssetAudio(LEVEL3_AUDIO_ASSETS_1_3['INTRO_3']!);
               });
             }
           },
@@ -462,44 +498,43 @@ class _WriteGameLevel1_3PageState extends State<WriteGameLevel1_3Page> {
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder:
-          (_) => Center(
-            child: Container(
-              width: 320,
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: const Color(0xFFFFF8DC),
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: const [
-                  BoxShadow(
-                    color: Colors.black26,
-                    blurRadius: 10,
-                    offset: Offset(0, 4),
-                  ),
-                ],
+      builder: (_) => Center(
+        child: Container(
+          width: 320,
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: const Color(0xFFFFF8DC),
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: const [
+              BoxShadow(
+                color: Colors.black26,
+                blurRadius: 10,
+                offset: Offset(0, 4),
               ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Image.asset(
-                    'assets/img/contents/gameWrite/stamp.png',
-                    width: 84,
-                    fit: BoxFit.contain,
-                  ),
-                  const SizedBox(height: 14),
-                  const Text(
-                    '이번 단계를 클리어했어요!\n다음 단계도 도전해봐요',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w700,
-                      color: Colors.black87,
-                    ),
-                  ),
-                ],
-              ),
-            ),
+            ],
           ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Image.asset(
+                'assets/img/contents/gameWrite/stamp.png',
+                width: 84,
+                fit: BoxFit.contain,
+              ),
+              const SizedBox(height: 14),
+              const Text(
+                '이번 단계를 클리어했어요!\n다음 단계도 도전해봐요',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w700,
+                  color: Colors.black87,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
 
     Future.delayed(const Duration(seconds: 2), () {
@@ -745,28 +780,26 @@ class _OutroOverlayState extends State<OutroOverlay>
                     // Row1
                     AnimatedBuilder(
                       animation: _tStrike1,
-                      builder:
-                          (_, __) => CustomPaint(
-                            painter: _OutroStrikePainter(
-                              start: r1Strike.start,
-                              end: r1Strike.end,
-                              t: _tStrike1.value,
-                            ),
-                          ),
+                      builder: (_, __) => CustomPaint(
+                        painter: _OutroStrikePainter(
+                          start: r1Strike.start,
+                          end: r1Strike.end,
+                          t: _tStrike1.value,
+                        ),
+                      ),
                     ),
                     AnimatedBuilder(
                       animation: _tCheck1,
-                      builder:
-                          (_, __) => CustomPaint(
-                            painter: _OutroCheckPainter(
-                              center: r1CheckC,
-                              size: r1.checkSizePx,
-                              t: _tCheck1.value,
-                              color: r1.checkColor,
-                              strokeWidth: r1.checkStrokeWidth,
-                              rotationDeg: r1.checkRotationDeg,
-                            ),
-                          ),
+                      builder: (_, __) => CustomPaint(
+                        painter: _OutroCheckPainter(
+                          center: r1CheckC,
+                          size: r1.checkSizePx,
+                          t: _tCheck1.value,
+                          color: r1.checkColor,
+                          strokeWidth: r1.checkStrokeWidth,
+                          rotationDeg: r1.checkRotationDeg,
+                        ),
+                      ),
                     ),
                     AnimatedBuilder(
                       animation: _tStamp1,
@@ -806,28 +839,26 @@ class _OutroOverlayState extends State<OutroOverlay>
                     // Row2
                     AnimatedBuilder(
                       animation: _tStrike2,
-                      builder:
-                          (_, __) => CustomPaint(
-                            painter: _OutroStrikePainter(
-                              start: r2Strike.start,
-                              end: r2Strike.end,
-                              t: _tStrike2.value,
-                            ),
-                          ),
+                      builder: (_, __) => CustomPaint(
+                        painter: _OutroStrikePainter(
+                          start: r2Strike.start,
+                          end: r2Strike.end,
+                          t: _tStrike2.value,
+                        ),
+                      ),
                     ),
                     AnimatedBuilder(
                       animation: _tCheck2,
-                      builder:
-                          (_, __) => CustomPaint(
-                            painter: _OutroCheckPainter(
-                              center: r2CheckC,
-                              size: r2.checkSizePx,
-                              t: _tCheck2.value,
-                              color: r2.checkColor,
-                              strokeWidth: r2.checkStrokeWidth,
-                              rotationDeg: r2.checkRotationDeg,
-                            ),
-                          ),
+                      builder: (_, __) => CustomPaint(
+                        painter: _OutroCheckPainter(
+                          center: r2CheckC,
+                          size: r2.checkSizePx,
+                          t: _tCheck2.value,
+                          color: r2.checkColor,
+                          strokeWidth: r2.checkStrokeWidth,
+                          rotationDeg: r2.checkRotationDeg,
+                        ),
+                      ),
                     ),
                     AnimatedBuilder(
                       animation: _tStamp2,
@@ -867,28 +898,26 @@ class _OutroOverlayState extends State<OutroOverlay>
                     // Row3
                     AnimatedBuilder(
                       animation: _tStrike3,
-                      builder:
-                          (_, __) => CustomPaint(
-                            painter: _OutroStrikePainter(
-                              start: r3Strike.start,
-                              end: r3Strike.end,
-                              t: _tStrike3.value,
-                            ),
-                          ),
+                      builder: (_, __) => CustomPaint(
+                        painter: _OutroStrikePainter(
+                          start: r3Strike.start,
+                          end: r3Strike.end,
+                          t: _tStrike3.value,
+                        ),
+                      ),
                     ),
                     AnimatedBuilder(
                       animation: _tCheck3,
-                      builder:
-                          (_, __) => CustomPaint(
-                            painter: _OutroCheckPainter(
-                              center: r3CheckC,
-                              size: r3.checkSizePx,
-                              t: _tCheck3.value,
-                              color: r3.checkColor,
-                              strokeWidth: r3.checkStrokeWidth,
-                              rotationDeg: r3.checkRotationDeg,
-                            ),
-                          ),
+                      builder: (_, __) => CustomPaint(
+                        painter: _OutroCheckPainter(
+                          center: r3CheckC,
+                          size: r3.checkSizePx,
+                          t: _tCheck3.value,
+                          color: r3.checkColor,
+                          strokeWidth: r3.checkStrokeWidth,
+                          rotationDeg: r3.checkRotationDeg,
+                        ),
+                      ),
                     ),
                     AnimatedBuilder(
                       animation: _tStamp3,
@@ -952,12 +981,11 @@ class _OutroStrikePainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final p =
-        Paint()
-          ..color = const Color(0xFFD92B2B)
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 8
-          ..strokeCap = StrokeCap.round;
+    final p = Paint()
+      ..color = const Color(0xFFD92B2B)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 8
+      ..strokeCap = StrokeCap.round;
     final to = Offset(
       start.dx + (end.dx - start.dx) * t,
       start.dy + (end.dy - start.dy) * t,
@@ -987,13 +1015,12 @@ class _OutroCheckPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size sizeCanvas) {
-    final p =
-        Paint()
-          ..color = color
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = strokeWidth
-          ..strokeCap = StrokeCap.round
-          ..strokeJoin = StrokeJoin.round;
+    final p = Paint()
+      ..color = color
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = strokeWidth
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round;
 
     final ra = Offset(-0.24 * size, 0.06 * size);
     final rb = Offset(-0.06 * size, 0.35 * size);
@@ -1114,12 +1141,11 @@ class _GuidePainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final p =
-        Paint()
-          ..color = color
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = strokeWidth
-          ..strokeCap = StrokeCap.round;
+    final p = Paint()
+      ..color = color
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = strokeWidth
+      ..strokeCap = StrokeCap.round;
 
     for (final g in guides) {
       _drawDashedPolyline(canvas, g.points, p, dash: dash, gap: gap);
@@ -1180,18 +1206,17 @@ class _PassedPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final p =
-        Paint()
-          ..color = color
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = strokeWidth
-          ..strokeCap = StrokeCap.round
-          ..strokeJoin = StrokeJoin.round;
+    final p = Paint()
+      ..color = color
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = strokeWidth
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round;
 
     for (int i = 0; i < guides.length; i++) {
       if (!passed[i]) continue;
-      final path =
-          Path()..moveTo(guides[i].points.first.dx, guides[i].points.first.dy);
+      final path = Path()
+        ..moveTo(guides[i].points.first.dx, guides[i].points.first.dy);
       for (final pt in guides[i].points.skip(1)) {
         path.lineTo(pt.dx, pt.dy);
       }
@@ -1220,13 +1245,12 @@ class _StrokePainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     if (points.length < 2) return;
-    final p =
-        Paint()
-          ..color = color.withOpacity(0.96)
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = width
-          ..strokeCap = StrokeCap.round
-          ..strokeJoin = StrokeJoin.round;
+    final p = Paint()
+      ..color = color.withOpacity(0.96)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = width
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round;
     final path = Path()..moveTo(points.first.dx, points.first.dy);
     for (final pt in points.skip(1)) {
       path.lineTo(pt.dx, pt.dy);
@@ -1435,21 +1459,19 @@ class _ImageMaskGuideLayerState extends State<ImageMaskGuideLayer> {
   }
 
   Offset _toMask(Offset screenPt) => Offset(
-    (screenPt.dx - _guideRect.left) * _mx,
-    (screenPt.dy - _guideRect.top) * _my,
-  );
+        (screenPt.dx - _guideRect.left) * _mx,
+        (screenPt.dy - _guideRect.top) * _my,
+      );
 
   double _distanceToRect(Offset p, Rect r) {
-    final dx =
-        (p.dx < r.left)
-            ? (r.left - p.dx)
-            : (p.dx > r.right)
+    final dx = (p.dx < r.left)
+        ? (r.left - p.dx)
+        : (p.dx > r.right)
             ? (p.dx - r.right)
             : 0.0;
-    final dy =
-        (p.dy < r.top)
-            ? (r.top - p.dy)
-            : (p.dy > r.bottom)
+    final dy = (p.dy < r.top)
+        ? (r.top - p.dy)
+        : (p.dy > r.bottom)
             ? (p.dy - r.bottom)
             : 0.0;
     return math.sqrt(dx * dx + dy * dy);
@@ -1577,9 +1599,9 @@ class _ImageMaskGuideLayerState extends State<ImageMaskGuideLayer> {
 
                   if (_useHorizontal) {
                     final bandGX = (_gridW * _kEndBandPct).ceil().clamp(
-                      1,
-                      _gridW,
-                    );
+                          1,
+                          _gridW,
+                        );
                     final leftBandMaxX = (_minGXEdge + bandGX).clamp(
                       0,
                       _gridW - 1,
@@ -1599,9 +1621,9 @@ class _ImageMaskGuideLayerState extends State<ImageMaskGuideLayer> {
                     endReached = (inLeftBand || inRightBand) && inYSlack;
                   } else {
                     final bandGY = (_gridH * _kEndBandPct).ceil().clamp(
-                      1,
-                      _gridH,
-                    );
+                          1,
+                          _gridH,
+                        );
                     final topBandMaxY = (_minGYEdge + bandGY).clamp(
                       0,
                       _gridH - 1,
@@ -1689,12 +1711,11 @@ class _MaskClippedStrokePainter extends CustomPainter {
 
     canvas.saveLayer(maskDstRect, Paint());
 
-    final paint =
-        Paint()
-          ..color = strokeColor
-          ..style = PaintingStyle.stroke
-          ..strokeCap = StrokeCap.round
-          ..strokeWidth = strokeWidth;
+    final paint = Paint()
+      ..color = strokeColor
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round
+      ..strokeWidth = strokeWidth;
     canvas.drawPath(path, paint);
 
     canvas.drawImageRect(

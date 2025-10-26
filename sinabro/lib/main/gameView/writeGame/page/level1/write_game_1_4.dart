@@ -4,6 +4,21 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:sinabro/main/gameView/writeGame/page/write_game_main.dart';
 import 'package:sinabro/main/gameView/writeGame/api/write_game_api.dart';
+// ⬇️ AUDIO IMPORT
+import 'package:audioplayers/audioplayers.dart';
+
+// ⬇️ AUDIO ASSET DEFINITIONS
+// 오디오 에셋 경로
+const String _audioDir = 'audio/tts/gameWrite/level1/';
+
+// 3세 쓰기 게임 1-4 레벨 오디오 에셋 정의
+const Map<String, String> LEVEL3_AUDIO_ASSETS_1_4 = {
+  // 구분: 공통 | 대사: 따라, 그려봐요~!
+  'COMMON_1': _audioDir + 'write3_game_common_1.mp3',
+  // 구분: 인트로 4 | 대사: 도형 그리기. (씬 A/B 유도용)
+  'INTRO_4': _audioDir + 'write3_game_intro_4.mp3',
+};
+// ⬆️ AUDIO ASSET DEFINITIONS
 
 enum _Scene { squares, triangles, outro }
 
@@ -66,6 +81,7 @@ const _coverageRatio = 0.72;
 class _WriteGameLevel1_4PageState extends State<WriteGameLevel1_4Page> {
   _Scene scene = _Scene.squares;
 
+  // 진행/입력
   late List<bool> passed = List.filled(_lineCount, false);
   int? activeLine;
   List<Offset> stroke = [];
@@ -74,24 +90,43 @@ class _WriteGameLevel1_4PageState extends State<WriteGameLevel1_4Page> {
   String? _resultId;
   final _sw = Stopwatch();
   bool _completed = false;
+  // ⬇️ AUDIO PLAYER INSTANCE
+  final AudioPlayer _audioPlayer = AudioPlayer();
 
   int get _lineCount =>
       scene == _Scene.squares ? 3 : (scene == _Scene.triangles ? 3 : 0);
   bool get _allPassed => passed.every((e) => e);
+
+  // ⬇️ AUDIO PLAYBACK LOGIC
+  /// 오디오 재생 헬퍼 함수
+  Future<void> _playAssetAudio(String assetPath) async {
+    if (!mounted) return;
+    await _audioPlayer.stop(); // 기존 오디오 중지
+    await _audioPlayer.play(AssetSource(assetPath));
+    debugPrint('🎶 오디오 재생 시작 (1-4): $assetPath');
+  }
 
   @override
   void initState() {
     super.initState();
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
     _startGame();
+    // ⬇️ 씬 A (Squares) 시작 오디오 재생 (추가됨: COMMON_1 + INTRO_4 재생)
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      _playAssetAudio(LEVEL3_AUDIO_ASSETS_1_4['COMMON_1']!);
+      _playAssetAudio(LEVEL3_AUDIO_ASSETS_1_4['INTRO_4']!);
+    });
   }
 
   @override
   void dispose() {
     _sw.stop();
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+    // ⬇️ AUDIO PLAYER DISPOSE
+    _audioPlayer.dispose();
     super.dispose();
   }
+  // ⬆️ AUDIO PLAYBACK LOGIC
 
   Future<void> _startGame() async {
     try {
@@ -167,21 +202,19 @@ class _WriteGameLevel1_4PageState extends State<WriteGameLevel1_4Page> {
       });
     }
 
-    final pts =
-        <Offset>[]
-          ..addAll(edge(a, b)..removeLast())
-          ..addAll(edge(b, c)..removeLast())
-          ..addAll(edge(c, a));
+    final pts = <Offset>[]
+      ..addAll(edge(a, b)..removeLast())
+      ..addAll(edge(b, c)..removeLast())
+      ..addAll(edge(c, a));
     return _GuidePath.polyline(pts);
   }
 
   /* ───────────────── input & grade ───────────────── */
   void _onPanStart(DragStartDetails d, Size size) {
     if (_allPassed || scene == _Scene.outro) return;
-    final guides =
-        scene == _Scene.squares
-            ? _buildSquareGuides(size)
-            : _buildTriangleGuides(size);
+    final guides = scene == _Scene.squares
+        ? _buildSquareGuides(size)
+        : _buildTriangleGuides(size);
 
     int? pick;
     double best = double.infinity;
@@ -207,10 +240,9 @@ class _WriteGameLevel1_4PageState extends State<WriteGameLevel1_4Page> {
   Future<void> _onPanEnd(Size size) async {
     if (activeLine == null || _allPassed || scene == _Scene.outro) return;
 
-    final guides =
-        scene == _Scene.squares
-            ? _buildSquareGuides(size)
-            : _buildTriangleGuides(size);
+    final guides = scene == _Scene.squares
+        ? _buildSquareGuides(size)
+        : _buildTriangleGuides(size);
     final ok = _gradeStroke(stroke, guides[activeLine!]);
 
     if (ok) {
@@ -225,6 +257,11 @@ class _WriteGameLevel1_4PageState extends State<WriteGameLevel1_4Page> {
             setState(() {
               scene = _Scene.triangles;
               passed = List.filled(_lineCount, false);
+            });
+            // ⬇️ 씬 B (Triangles) 시작 오디오 재생 (추가됨: COMMON_1 + INTRO_4 재생)
+            WidgetsBinding.instance.addPostFrameCallback((_) async {
+              _playAssetAudio(LEVEL3_AUDIO_ASSETS_1_4['COMMON_1']!);
+              _playAssetAudio(LEVEL3_AUDIO_ASSETS_1_4['INTRO_4']!);
             });
           });
         } else {
@@ -276,10 +313,8 @@ class _WriteGameLevel1_4PageState extends State<WriteGameLevel1_4Page> {
             child: Stack(
               children: [
                 const _TitleBanner(text: '따라그려봐요!'),
-
                 if (scene == _Scene.squares) _buildSceneSquares(size),
                 if (scene == _Scene.triangles) _buildSceneTriangles(size),
-
                 if (scene == _Scene.outro)
                   Positioned.fill(
                     child: OutroOverlayNote3(
@@ -367,7 +402,6 @@ class _WriteGameLevel1_4PageState extends State<WriteGameLevel1_4Page> {
                       ),
                     ),
                   ),
-
                 if (stroke.isNotEmpty && scene != _Scene.outro)
                   CustomPaint(
                     size: size,
@@ -389,43 +423,42 @@ class _WriteGameLevel1_4PageState extends State<WriteGameLevel1_4Page> {
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder:
-          (_) => Center(
-            child: Container(
-              width: 320,
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: const Color(0xFFFFF8DC),
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: const [
-                  BoxShadow(
-                    color: Colors.black26,
-                    blurRadius: 10,
-                    offset: Offset(0, 4),
-                  ),
-                ],
+      builder: (_) => Center(
+        child: Container(
+          width: 320,
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: const Color(0xFFFFF8DC),
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: const [
+              BoxShadow(
+                color: Colors.black26,
+                blurRadius: 10,
+                offset: Offset(0, 4),
               ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Image.asset(
-                    'assets/img/contents/gameWrite/stamp.png',
-                    width: 80,
-                  ),
-                  const SizedBox(height: 14),
-                  const Text(
-                    '이번 단계를 클리어했어요!\n다음 단계도 도전해봐요',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w700,
-                      color: Colors.black87,
-                    ),
-                  ),
-                ],
-              ),
-            ),
+            ],
           ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Image.asset(
+                'assets/img/contents/gameWrite/stamp.png',
+                width: 80,
+              ),
+              const SizedBox(height: 14),
+              const Text(
+                '이번 단계를 클리어했어요!\n다음 단계도 도전해봐요',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w700,
+                  color: Colors.black87,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
 
     Future.delayed(const Duration(seconds: 2), () {
@@ -723,58 +756,57 @@ class _OutroOverlayNote3State extends State<OutroOverlayNote3>
 
                       return AnimatedBuilder(
                         animation: _seq,
-                        builder:
-                            (_, __) => Stack(
-                              children: [
-                                CustomPaint(
-                                  size: Size(noteW, noteH),
-                                  painter: _StrikePainter(
-                                    start: strike.start,
-                                    end: strike.end,
-                                    t: tStrike.value,
-                                    color: rc.strikeColor,
-                                    width: rc.strikeWidth,
-                                  ),
-                                ),
-                                CustomPaint(
-                                  size: Size(noteW, noteH),
-                                  painter: _CheckPainter(
-                                    center: checkC,
-                                    size: rc.checkSizePx,
-                                    t: tCheck.value,
-                                    color: rc.checkColor,
-                                    strokeWidth: rc.checkStrokeWidth,
-                                    rotationDeg: rc.checkRotationDeg,
-                                  ),
-                                ),
-                                Positioned(
-                                  left: stampP.dx,
-                                  top: stampP.dy,
-                                  child: Transform.translate(
-                                    offset: Tween<Offset>(
-                                      begin: rc.stampDropPx,
-                                      end: Offset.zero,
+                        builder: (_, __) => Stack(
+                          children: [
+                            CustomPaint(
+                              size: Size(noteW, noteH),
+                              painter: _StrikePainter(
+                                start: strike.start,
+                                end: strike.end,
+                                t: tStrike.value,
+                                color: rc.strikeColor,
+                                width: rc.strikeWidth,
+                              ),
+                            ),
+                            CustomPaint(
+                              size: Size(noteW, noteH),
+                              painter: _CheckPainter(
+                                center: checkC,
+                                size: rc.checkSizePx,
+                                t: tCheck.value,
+                                color: rc.checkColor,
+                                strokeWidth: rc.checkStrokeWidth,
+                                rotationDeg: rc.checkRotationDeg,
+                              ),
+                            ),
+                            Positioned(
+                              left: stampP.dx,
+                              top: stampP.dy,
+                              child: Transform.translate(
+                                offset: Tween<Offset>(
+                                  begin: rc.stampDropPx,
+                                  end: Offset.zero,
+                                ).transform(tStamp.value),
+                                child: Transform.rotate(
+                                  angle: rot,
+                                  child: Transform.scale(
+                                    scale: Tween<double>(
+                                      begin: rc.stampStartScale,
+                                      end: rc.stampFinalScale,
                                     ).transform(tStamp.value),
-                                    child: Transform.rotate(
-                                      angle: rot,
-                                      child: Transform.scale(
-                                        scale: Tween<double>(
-                                          begin: rc.stampStartScale,
-                                          end: rc.stampFinalScale,
-                                        ).transform(tStamp.value),
-                                        child: SizedBox(
-                                          width: _stampW(noteW, rc),
-                                          child: Image.asset(
-                                            rc.stampAsset,
-                                            fit: BoxFit.contain,
-                                          ),
-                                        ),
+                                    child: SizedBox(
+                                      width: _stampW(noteW, rc),
+                                      child: Image.asset(
+                                        rc.stampAsset,
+                                        fit: BoxFit.contain,
                                       ),
                                     ),
                                   ),
                                 ),
-                              ],
+                              ),
                             ),
+                          ],
+                        ),
                       );
                     }),
                   ],
@@ -811,12 +843,11 @@ class _StrikePainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final p =
-        Paint()
-          ..color = color
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = width
-          ..strokeCap = StrokeCap.round;
+    final p = Paint()
+      ..color = color
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = width
+      ..strokeCap = StrokeCap.round;
     final to = Offset(
       start.dx + (end.dx - start.dx) * t,
       start.dy + (end.dy - start.dy) * t,
@@ -848,13 +879,12 @@ class _CheckPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size _) {
-    final p =
-        Paint()
-          ..color = color
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = strokeWidth
-          ..strokeCap = StrokeCap.round
-          ..strokeJoin = StrokeJoin.round;
+    final p = Paint()
+      ..color = color
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = strokeWidth
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round;
 
     // 상대 좌표(원점 기준). size를 스케일로 사용.
     final ra = Offset(-0.24 * size, 0.06 * size);
@@ -976,12 +1006,11 @@ class _GuidePainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final p =
-        Paint()
-          ..color = color
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = strokeWidth
-          ..strokeCap = StrokeCap.round;
+    final p = Paint()
+      ..color = color
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = strokeWidth
+      ..strokeCap = StrokeCap.round;
 
     for (final g in guides) {
       _drawDashedPolyline(canvas, g.points, p, dash: dash, gap: gap);
@@ -1041,18 +1070,17 @@ class _PassedPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final p =
-        Paint()
-          ..color = color
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = strokeWidth
-          ..strokeCap = StrokeCap.round
-          ..strokeJoin = StrokeJoin.round;
+    final p = Paint()
+      ..color = color
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = strokeWidth
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round;
 
     for (int i = 0; i < guides.length; i++) {
       if (!passed[i]) continue;
-      final path =
-          Path()..moveTo(guides[i].points.first.dx, guides[i].points.first.dy);
+      final path = Path()
+        ..moveTo(guides[i].points.first.dx, guides[i].points.first.dy);
       for (final pt in guides[i].points.skip(1)) {
         path.lineTo(pt.dx, pt.dy);
       }
@@ -1080,13 +1108,12 @@ class _StrokePainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     if (points.length < 2) return;
-    final p =
-        Paint()
-          ..color = color.withOpacity(0.96)
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = width
-          ..strokeCap = StrokeCap.round
-          ..strokeJoin = StrokeJoin.round;
+    final p = Paint()
+      ..color = color.withOpacity(0.96)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = width
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round;
     final path = Path()..moveTo(points.first.dx, points.first.dy);
     for (final pt in points.skip(1)) {
       path.lineTo(pt.dx, pt.dy);
