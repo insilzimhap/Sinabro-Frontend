@@ -1,4 +1,9 @@
 // lib/main/studyView/listenStudy/page/level1/colors/color_entry_page.dart
+// 듣기 학습 레벨 1 (색상) - 열매 1,2 api 연동 완료
+// ⭐️ [추가] API 연동을 위한 3개 import
+import 'dart:convert';
+import 'package:sinabro/common/auth_client.dart';
+import 'package:sinabro/config.dart';
 
 import 'package:flutter/material.dart';
 import 'package:audioplayers/audioplayers.dart';
@@ -14,12 +19,14 @@ class ColorEntryPage extends StatefulWidget {
   final List<ColorLessonData> lessonsToShow;
   final bool isGold;
   final String childId;
+  final String fruitId;
 
   const ColorEntryPage({
     super.key,
     required this.lessonsToShow,
     required this.isGold,
     required this.childId,
+    required this.fruitId,
   });
 
   static const routeName = '/study/listen/color-entry';
@@ -33,10 +40,18 @@ class _ColorEntryPageState extends State<ColorEntryPage>
   bool _isReadyToTap = false;
   bool _isFlowRunning = false;
   Color? _prevColor;
+  bool _isCompleted = false; // ⭐️ [추가] API 중복 호출 방지
+
+  // ⭐️ [추가] API 호출 클라이언트 및 학습 시작 시간
+  final AuthClient _authClient = AuthClient();
+  late final DateTime _startTime;
 
   @override
   void initState() {
     super.initState();
+    // ⭐️ [추가] 학습 시작 시간 기록
+    _startTime = DateTime.now();
+
     debugPrint('[Entry] lessonsToShow length = ${widget.lessonsToShow.length}');
     ttsStateStream.listen((state) {
       if (state == PlayerState.completed && mounted) {
@@ -68,11 +83,57 @@ class _ColorEntryPageState extends State<ColorEntryPage>
     _runLessonAtIndex(0);
   }
 
+  // ⭐️ [신규 추가] 학습 완료 API 호출 함수
+  Future<void> _completeStudy() async {
+    // ⭐️ API 중복 호출 방지
+    if (_isCompleted) {
+      debugPrint("[ColorEntryPage] 이미 완료 API가 호출되었습니다. 중복 호출 방지.");
+      return;
+    }
+    _isCompleted = true; // ⭐️ 호출 플래그 세우기
+
+    // 1. 학습 시간 계산
+    final int timeSpentSecs = DateTime.now().difference(_startTime).inSeconds;
+
+    // 2. DTO (JSON Body) 구성
+    final body = jsonEncode({
+      'childId': widget.childId,
+      'fruitId': widget.fruitId, // ⭐️ 전달받은 fruitId 사용
+      'isCompleted': true,
+      'timeSpentSecs': timeSpentSecs,
+    });
+
+    // 3. API 엔드포인트
+    final uri = Uri.parse('$baseUrl/api/study/listening/complete');
+
+    // 4. API 호출
+    try {
+      debugPrint('[ColorEntryPage] 듣기 학습 완료 API 호출: $body');
+      final response = await _authClient.post(
+        uri,
+        headers: {'Content-Type': 'application/json'},
+        body: body,
+      );
+
+      if (response.statusCode == 200) {
+        debugPrint('[ColorEntryPage] 듣기 학습 완료 처리 성공 (fruitId: ${widget.fruitId})');
+      } else {
+        debugPrint('[ColorEntryPage] 학습 완료 처리 실패: (${response.statusCode}) ${response.body}');
+      }
+    } catch (e) {
+      debugPrint('[ColorEntryPage] 학습 완료 API 호출 중 예외 발생: $e');
+    }
+  }
+
   void _runLessonAtIndex(int index) {
     if (!mounted || index >= widget.lessonsToShow.length) {
       debugPrint("[Entry] All lessons completed. Popping EntryPage now.");
       debugPrint("==================================================");
       // 모든 학습 완료 시 팝업 호출 (안전장치)
+
+      // ⭐️ [수정] 1. API 호출
+      _completeStudy(); 
+      // 2. 팝업 호출 (안전장치)
       showApplePopup(context, isGold: widget.isGold, childId: widget.childId);
       return;
     }
@@ -111,11 +172,15 @@ class _ColorEntryPageState extends State<ColorEntryPage>
             "[Entry] --->>> Preparing to run next lesson at index: ${index + 1}");
         _runLessonAtIndex(index + 1);
       } else if (result == false) {
+        
         // 마지막 색 완료
-        debugPrint('[Entry] last color finished → showApplePopup.');
-        // 마지막 학습 완료 시 Navigator.pop() 대신 팝업 호출
+        debugPrint('[Entry] last color finished → API call & showApplePopup.');
+        // 1. API 호출
+        _completeStudy(); 
+        // 2. 팝업 호출
         showApplePopup(context, isGold: widget.isGold, childId: widget.childId);
-      } else {
+
+      }else {
         // 중간에 뒤로가기로 종료
         debugPrint('[Entry][오류] result==null 수신. 라우팅 실패/중복내비 가능성 → 흐름 중단');
         setState(() {

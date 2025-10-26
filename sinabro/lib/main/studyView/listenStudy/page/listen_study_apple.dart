@@ -90,21 +90,31 @@ class _ListenAppleSelectState extends State<ListenAppleSelect> {
 
   /// 백엔드 API를 호출하여 자녀의 듣기 학습 진척도를 불러옵니다.
   Future<void> _loadProgress() async {
-    setState(() {
-      _isLoading = true;
-      _errorMsg = '';
-    });
+    // ⭐️ [수정] 이미 로딩 중이면 중복 호출 방지 (선택 사항이지만 권장)
+    if (_isLoading && mounted) {
+      debugPrint("[ListenAppleSelect] Already loading, skipping duplicate _loadProgress call.");
+      return; 
+    }
+
+    // ⭐️ [수정] await로 호출 시, setState가 "before" await와 "after" await로 나뉨
+    if (mounted) {
+      setState(() {
+        _isLoading = true;
+        _errorMsg = '';
+      });
+    }
+
     try {
       final uri = Uri.parse(
           '$baseUrl/api/app/child/${widget.childId}/stage/ui/current?category=listening_study');
       debugPrint('[ListenAppleSelect] Loading progress from: $uri');
       final response = await _authClient.get(uri);
 
-      if (!mounted) return;
+      if (!mounted) return; // 비동기 작업 후 위젯이 사라졌는지 확인
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        debugPrint('[ListenAppleSelect] Progress loaded successfully: $data');
+        debugPrint('[ListenAppleSelect] Progress loaded successfully.');
         setState(() {
           _progressData = TreeProgress.fromJson(data);
           _isLoading = false;
@@ -175,23 +185,32 @@ class _ListenAppleSelectState extends State<ListenAppleSelect> {
   /// @param stageId 탭한 사과가 속한 나무(Stage)의 ID.
   /// @param sequenceInStage 탭한 사과의 나무 내 순번 (1부터 시작).
   /// @param isGold 탭한 사과가 황금 사과인지 여부 (라우터 전달용).
+  /// ✅ [수정] _tap 함수를 async/await로 변경
   Future<void> _tap(
       String fruitId, String stageId, int sequenceInStage, bool isGold) async {
-    // API 데이터 기준 활성화 여부 재확인 (필수!)
+    
+    // API 데이터 기준 활성화 여부 재확인
     final bool isActive =
         _progressData?.isActive(stageId, sequenceInStage) ?? false;
-    // 비활성화(잠긴) 사과는 아무 동작 안 함
+    
     if (!isActive) {
       debugPrint(
           '[ListenAppleSelect] Tap ignored: Fruit $fruitId ($stageId-$sequenceInStage) is locked.');
       return;
     }
 
-    // 활성화된 사과 -> 라우터 함수 호출하여 학습 시작
     debugPrint(
         '[ListenAppleSelect] Tapped active fruit: $fruitId ($stageId-$sequenceInStage)');
-    // isGold 값은 라우터 내부에서 학습 완료 시 팝업 종류를 결정하는 데 사용될 수 있음
-    navigateToListenStudy(context, fruitId, isGold, widget.childId);
+    
+    // ⭐️ [수정] await를 사용하여 학습 페이지가 닫힐 때까지 기다림
+    await navigateToListenStudy(context, fruitId, isGold, widget.childId);
+
+    // ⭐️ [추가] 학습 페이지(AnimalStudyEntry 등)에서 돌아왔을 때,
+    // ⭐️ UI 갱신을 위해 _loadProgress()를 다시 호출
+    if (mounted) {
+      debugPrint("[ListenAppleSelect] 학습 완료 후 복귀. 진행도 새로고침...");
+      await _loadProgress(); // API 재호출
+    }
   }
 
   // ----------------------------------------------------------------
