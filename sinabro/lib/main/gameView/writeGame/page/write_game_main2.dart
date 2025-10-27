@@ -116,6 +116,8 @@ class WriteGameMain2Page extends StatelessWidget {
                       _showSnack(context, '⚠️ 입장할 수 없는 열매입니다.');
                       return;
                     }
+                    // ✅ 저장해둠 → 다음 페이지에서 사용
+                    FruitState.instance.setResult(resultId);
                     
                     Navigator.push(
                       context,
@@ -145,6 +147,8 @@ class WriteGameMain2Page extends StatelessWidget {
                       _showSnack(context, '⚠️ 입장할 수 없는 열매입니다.');
                       return;
                     }
+                    // ✅ 저장해둠 → 다음 페이지에서 사용
+                    FruitState.instance.setResult(resultId);
 
                     Navigator.push(
                       context,
@@ -174,6 +178,10 @@ class WriteGameMain2Page extends StatelessWidget {
                       _showSnack(context, '⚠️ 입장할 수 없는 열매입니다.');
                       return;
                     }
+
+                    // ✅ 저장해둠 → 다음 페이지에서 사용
+                    FruitState.instance.setResult(resultId);
+                    
                     Navigator.push(
                       context,
                       MaterialPageRoute(

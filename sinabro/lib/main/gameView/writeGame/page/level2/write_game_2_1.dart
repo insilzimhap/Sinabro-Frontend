@@ -10,6 +10,12 @@ import 'package:sinabro/selvy_example_view/selvy_service.dart'
 import 'package:sinabro/main/gameView/writeGame/data/wg_question_map.dart'
     as WG;
 import 'package:sinabro/main/gameView/writeGame/api/write_game_api.dart';
+
+// 열매ID, 게임 api
+import 'package:sinabro/main/gameView/writeGame/api/fruit_state.dart';
+import 'package:sinabro/main/gameView/writeGame/api/child_game_api.dart';
+
+
 // ⬇️ AUDIO IMPORT
 import 'package:audioplayers/audioplayers.dart';
 
@@ -281,16 +287,18 @@ class _WriteGameLevel2_1PageState extends State<WriteGameLevel2_1Page> {
 
   Future<void> _initAndStart() async {
     try {
-      // resultId 확보
-      _resultId = widget.resultId;
-      _resultId ??= await WriteGameApi.start(
-        childId: widget.childId,
-        stageCode: 'FR_WG_005', // 자음 스테이지 코드(백엔드 합의값)
-      );
 
-      // 문제 셔플
+      // resultId는 부모 페이지에서 전달됨
+      _resultId = widget.resultId ?? FruitState.instance.resultId;
+
+      if (_resultId == null) {
+        throw Exception('resultId 없음');
+      }
+
+      // 문제 셔플 (랜덤 출제 로직)
       _resetGame();
     } catch (e) {
+
       // 치명적 실패시 단순 팝
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -317,6 +325,7 @@ class _WriteGameLevel2_1PageState extends State<WriteGameLevel2_1Page> {
     });
   }
 
+  /// ---------------------------------------------------------------------------
   /// Selvy 후보셋을 현재 자음 하나로 고정
   Future<void> _applyCandidate() async {
     try {
@@ -324,6 +333,8 @@ class _WriteGameLevel2_1PageState extends State<WriteGameLevel2_1Page> {
     } catch (_) {}
   }
 
+
+  /// ---------------------------------------------------------------------------
   /// 소리 아이콘 탭 → 현재 문제 자음 오디오 재생 (플레이어는 프로젝트에 맞춰 교체)
   Future<void> _playPronounce() async {
     // ⬇️ 기존 로직 수정: 실제 오디오 에셋을 찾아 재생 (수정됨)
@@ -340,6 +351,7 @@ class _WriteGameLevel2_1PageState extends State<WriteGameLevel2_1Page> {
     // ⬆️ 기존 로직 수정 (수정됨)
   }
 
+  /// ---------------------------------------------------------------------------
   /// 인식 문자열 정규화(첫 줄만, [n] 제거, 호환 자모 통일)
   String _normalize(String raw) {
     final top =
@@ -387,11 +399,18 @@ class _WriteGameLevel2_1PageState extends State<WriteGameLevel2_1Page> {
     return map[top] ?? top;
   }
 
+  // ---------------------------------------------------------------------------
+  // [2] 채점 결과 서버 전송 (_sendChoice)
+  // ⚙️ 역할: 프론트에서 이미 채점된 결과를 서버 DB에 저장하기만 함
+
   Future<void> _sendChoice({
-    required String shownChar,
-    required bool isCorrect,
+    required String shownChar,  //자녀가 쓴 글씨를 셀비가 인식한 결과값(후보 1순위)
+    required bool isCorrect,    // 프론트에서 판정한 결과 그대로 전달
   }) async {
     if (_resultId == null) return; // 방어
+
+    // ⚠️ [WriteGameApi] 문제 ID 매핑 + 서버 전송 부분
+    // 👉 나중에 ChildGameApi.recordWritingChoice() 로 교체 예정
     final questionId = WG.requireWgQuestionId(
       WG.consonantQuestionMap,
       shownChar,
@@ -406,35 +425,68 @@ class _WriteGameLevel2_1PageState extends State<WriteGameLevel2_1Page> {
     );
   }
 
+  // ---------------------------------------------------------------------------
+  // [3] 게임 완료 후 성공/실패 판정 (_completeAndGetSuccess)
+  // ---------------------------------------------------------------------------
+  // ⚙️ 역할: 서버에 “전체 결과 저장 + 서버 내부에서도 점수 계산” 요청
+  // ⚙️ 프론트 입장에서는 이미 성공/실패를 알고 있지만
+  //     서버가 이를 다시 확인하고 다음 열매를 언락할 수 있도록 함
+
   Future<bool> _completeAndGetSuccess() async {
     if (_resultId == null) return false;
+
+    // ⚠️ [WriteGameApi] 게임 완료 (채점 결과 요청)
+    // 👉 나중에 ChildGameApi.completeWritingGame() 으로 교체 예정
     final res = await WriteGameApi.complete(resultId: _resultId!);
     // 백엔드 응답 형식에 맞춰 success 필드 접근
     return res.success == true;
   }
 
-  void _onRecognize(String recognized) async {
-    final mine = _normalize(recognized);
-    final isCorrect = mine == current.char;
 
-    // 서버에 choice 먼저 기록
+
+  // ---------------------------------------------------------------------------
+  // [1] 글씨 인식 결과 수신 → 채점 로직 시작 (_onRecognize)
+  void _onRecognize(String recognized) async {
+
+    final mine = _normalize(recognized); // 셀비가 인식한 문자열
+
+    // 프론트 채점 로직 (실제 '채점'은 여기!)
+    final isCorrect = mine == current.char; // <-- 🔥 자녀가 쓴 글씨 == 정답 비교
+
+    // 서버에 choice 먼저 기록 (저장용, 판정은 프론트에서 이미 완료됨)
+    // ⚠️ [WriteGameApi] 선택 결과 기록 부분
+    // 👉 ChildGameApi.recordWritingChoice() 로 대체 예정
     await _sendChoice(shownChar: current.char, isCorrect: isCorrect);
 
     _results.add(isCorrect);
     if (!mounted) return;
 
+
+    // 다음 문제로 이동 or 게임 종료
     if (_index < _problems.length - 1) {
       setState(() => _index += 1);
       await _canvasKey.currentState?.clearCanvas();
       await _applyCandidate();
     } else {
-      // 끝 → 서버 기준으로 성공/실패 판단
+      // 끝 → 서버 기준으로 성공/실패 판단 (판단 자체도 프론트에서 하긴 합니다.. 그치만 서버에서도 하는 것 뿐임)
+      // (6) 모든 문제 완료 시, 서버에 최종 결과 요청
+      // ⚠️ [WriteGameApi] 최종 완료 결과 요청 부분
+      // 👉 ChildGameApi.completeWritingGame() 으로 교체 예정
+      // ⚠️ 주의: 성공/실패 자체는 프론트에서도 이미 알 수 있음
+    // 하지만 서버에서 다시 검증(백엔드 로직용) 후 success 여부를 리턴함
       final serverSuccess = await _completeAndGetSuccess();
       if (!mounted) return;
       await _showEndSequence(serverSuccess: serverSuccess);
     }
   }
 
+
+
+  // ---------------------------------------------------------------------------
+  // [4] 엔딩 시퀀스 (성공 / 실패 UI)
+  // ---------------------------------------------------------------------------
+  // ⚙️ 역할: 성공/실패 결과에 따라 다이얼로그 띄우고
+  //          성공이면 3초 뒤 다음 화면 이동, 실패면 다시하기 버튼 표시
   /// 엔딩 시퀀스: 1) 인트로 → 2/3) 성공/실패
   Future<void> _showEndSequence({required bool serverSuccess}) async {
     // 1) 인트로
