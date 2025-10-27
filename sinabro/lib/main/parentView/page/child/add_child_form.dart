@@ -1,17 +1,19 @@
 /**
- * @file lib/main/parentView/page/add_child_form.dart
+ * @file lib/main/parentView/page/child/add_child_form.dart
  * 역할: 자녀 추가 화면. 
- *    - 아이디 중복 확인(permitAll).
- *    - 자녀 등록 요청 (JWT 필요, 부모 userId 포함).
- *    - 성공 시 다이얼로그 → "첫 로그인 안내 팝업" → 자녀 로그인 페이지로 이동.
+ * - 아이디 중복 확인(permitAll).
+ * - 자녀 등록 요청 (JWT 필요, 부모 userId 포함).
+ * - 성공 시 다이얼로그 → "첫 로그인 안내 팝업" → 자녀 로그인 페이지로 이동.
  * @ 채영: JWT+api 연결 완료
+ * @ 연수: 언어팩 지원을 위한 코드 수정 완료
  */
 ///
 
 import 'package:flutter/material.dart';
 import 'package:sinabro/main/parentView/layout/parent_layout.dart';
-import 'package:sinabro/common/auth_client.dart';  
+import 'package:sinabro/common/auth_client.dart';
 import 'package:sinabro/main/auth/authChild/login_child.dart';
+import 'package:sinabro/main/parentView/widget/translated_text.dart'; // ✨
 
 // ▼ 서버 호출용
 import 'dart:convert';
@@ -139,7 +141,8 @@ class _AddChildFormPageState extends State<AddChildFormPage> {
         'userId': widget.parentUserId, // 부모 ID 필수
       };
 
-      final res = await AuthClient().post(                     // ✅ http.post → AuthClient().post
+      final res = await AuthClient().post(
+        // ✅ http.post → AuthClient().post
         uri,
         headers: {'Content-Type': 'application/json'},
         body: json.encode(payload),
@@ -185,7 +188,6 @@ class _AddChildFormPageState extends State<AddChildFormPage> {
   void _toast(String msg) =>
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
 
-
   /// "아이 첫 로그인 안내" 팝업 -> css 제대로 적용 필요
   Future<void> _showFirstLoginNotice() {
     return showDialog<void>(
@@ -193,14 +195,16 @@ class _AddChildFormPageState extends State<AddChildFormPage> {
       barrierDismissible: true,
       builder: (_) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text('안내', style: TextStyle(fontWeight: FontWeight.bold)),
-        content: const Text(
+        title: const TranslatedText('안내',
+            style: TextStyle(fontWeight: FontWeight.bold)), // ✨
+        content: const TranslatedText(
+          // ✨
           '아이 첫 로그인은 부모가 옆에서 도와줘야 해요!\n레벨테스트가 있습니다!',
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('확인'),
+            child: const TranslatedText('확인'), // ✨
           ),
         ],
       ),
@@ -232,7 +236,7 @@ class _AddChildFormPageState extends State<AddChildFormPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const _SectionTitle('자녀 추가하기'),
+                    const _SectionTitle(child: TranslatedText('자녀 추가하기')), // ✨
                     const SizedBox(height: 16),
 
                     // 아이디 + 중복확인
@@ -251,15 +255,17 @@ class _AddChildFormPageState extends State<AddChildFormPage> {
                             borderRadius: BorderRadius.circular(8),
                           ),
                         ),
-                        child: const Text('중복 확인'),
+                        child: const TranslatedText('중복 확인'), // ✨
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          _input(_id, hint: '아이 아이디를 입력하세요'),
-                          const SizedBox(height: 6), // ✅ 간격
+                          _input(_id,
+                              hint: '아이 아이디를 입력하세요'), // TODO: Hint text 번역
+                          const SizedBox(height: 6),
                           if (_dupMessage.isNotEmpty)
                             Text(
+                              // TODO: 동적 메시지 번역
                               _dupMessage,
                               style: TextStyle(fontSize: 12, color: _dupColor),
                             ),
@@ -273,26 +279,30 @@ class _AddChildFormPageState extends State<AddChildFormPage> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          _input(_pw, obscure: true, hint: '8자 이상 16자 이하'),
+                          _input(_pw,
+                              obscure: true,
+                              hint: '8자 이상 16자 이하'), // TODO: Hint text 번역
                           const SizedBox(height: 6),
-                          Text(
+                          const TranslatedText(
+                            // ✨
                             '8자 이상 16자 이하',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: _pwValidLength ? Colors.grey : Colors.red,
-                            ),
+                            style: TextStyle(fontSize: 12, color: Colors.grey),
                           ),
                         ],
                       ),
                     ),
 
                     // 이름
-                    _rowField(label: '이름', child: _input(_name, hint: '아이 이름')),
+                    _rowField(
+                        label: '이름',
+                        child:
+                            _input(_name, hint: '아이 이름')), // TODO: Hint text 번역
 
                     // 닉네임
                     _rowField(
                       label: '닉네임',
-                      child: _input(_nick, hint: '표시할 닉네임'),
+                      child:
+                          _input(_nick, hint: '표시할 닉네임'), // TODO: Hint text 번역
                     ),
 
                     // 생년월일 (년/월/일 드롭다운)
@@ -328,17 +338,16 @@ class _AddChildFormPageState extends State<AddChildFormPage> {
                               borderRadius: BorderRadius.circular(10),
                             ),
                           ),
-                          child:
-                              _isSaving
-                                  ? const SizedBox(
-                                    width: 20,
-                                    height: 20,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                      color: Colors.white,
-                                    ),
-                                  )
-                                  : const Text('저장하기'),
+                          child: _isSaving
+                              ? const SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: Colors.white,
+                                  ),
+                                )
+                              : const TranslatedText('저장하기'), // ✨
                         ),
                       ),
                     ),
@@ -359,7 +368,8 @@ class _AddChildFormPageState extends State<AddChildFormPage> {
     return Container(
       color: const Color(0xFF64A86A),
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 18),
-      child: const Text(
+      child: const TranslatedText(
+        // ✨
         '자녀 페이지',
         style: TextStyle(
           color: Colors.white,
@@ -382,7 +392,8 @@ class _AddChildFormPageState extends State<AddChildFormPage> {
         children: [
           SizedBox(
             width: 120,
-            child: Text(
+            child: TranslatedText(
+              // ✨
               label,
               style: const TextStyle(
                 fontSize: 16,
@@ -400,22 +411,23 @@ class _AddChildFormPageState extends State<AddChildFormPage> {
   }
 
   InputDecoration get _fieldDecoration => InputDecoration(
-    filled: true,
-    fillColor: const Color(0xFFF7F7F7),
-    contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-    border: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(10),
-      borderSide: const BorderSide(color: Color(0xFFE1E1E1)),
-    ),
-    enabledBorder: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(10),
-      borderSide: const BorderSide(color: Color(0xFFE1E1E1)),
-    ),
-    focusedBorder: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(10),
-      borderSide: const BorderSide(color: Color(0xFFB7CDB8)),
-    ),
-  );
+        filled: true,
+        fillColor: const Color(0xFFF7F7F7),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: Color(0xFFE1E1E1)),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: Color(0xFFE1E1E1)),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: Color(0xFFB7CDB8)),
+        ),
+      );
 
   Widget _input(TextEditingController c, {String? hint, bool obscure = false}) {
     return TextField(
@@ -427,14 +439,13 @@ class _AddChildFormPageState extends State<AddChildFormPage> {
 
   Widget _yearDropdown() {
     final years = List<int>.generate(40, (i) => DateTime.now().year - i);
-    final value = years.contains(_year) ? _year : years.first; // 안전값
+    final value = years.contains(_year) ? _year : years.first;
 
     return DropdownButtonFormField<int>(
       value: value,
-      items:
-          years
-              .map((y) => DropdownMenuItem(value: y, child: Text('$y년')))
-              .toList(),
+      items: years
+          .map((y) => DropdownMenuItem(value: y, child: Text('$y년')))
+          .toList(),
       decoration: _fieldDecoration,
       onChanged: (v) {
         if (v == null) return;
@@ -450,15 +461,14 @@ class _AddChildFormPageState extends State<AddChildFormPage> {
   Widget _monthDropdown() {
     return DropdownButtonFormField<int>(
       value: _month,
-      items:
-          List<int>.generate(12, (i) => i + 1)
-              .map(
-                (m) => DropdownMenuItem(
-                  value: m,
-                  child: Text('${m.toString().padLeft(2, '0')}월'),
-                ),
-              )
-              .toList(),
+      items: List<int>.generate(12, (i) => i + 1)
+          .map(
+            (m) => DropdownMenuItem(
+              value: m,
+              child: Text('${m.toString().padLeft(2, '0')}월'),
+            ),
+          )
+          .toList(),
       decoration: _fieldDecoration,
       onChanged: (v) {
         if (v == null) return;
@@ -478,15 +488,14 @@ class _AddChildFormPageState extends State<AddChildFormPage> {
 
     return DropdownButtonFormField<int>(
       value: _day,
-      items:
-          days
-              .map(
-                (d) => DropdownMenuItem(
-                  value: d,
-                  child: Text('${d.toString().padLeft(2, '0')}일'),
-                ),
-              )
-              .toList(),
+      items: days
+          .map(
+            (d) => DropdownMenuItem(
+              value: d,
+              child: Text('${d.toString().padLeft(2, '0')}일'),
+            ),
+          )
+          .toList(),
       decoration: _fieldDecoration,
       onChanged: (v) => setState(() => _day = v ?? _day),
     );
@@ -506,7 +515,7 @@ class _AddChildFormPageState extends State<AddChildFormPage> {
           .map(
             (opt) => DropdownMenuItem<int>(
               value: opt['value'] as int,
-              child: Text(opt['label'] as String),
+              child: TranslatedText(opt['label'] as String), // ✨
             ),
           )
           .toList(),
@@ -519,88 +528,88 @@ class _AddChildFormPageState extends State<AddChildFormPage> {
     return showDialog<void>(
       context: context,
       barrierDismissible: true,
-      builder:
-          (_) => Dialog(
-            insetPadding: const EdgeInsets.symmetric(
-              horizontal: 32,
-              vertical: 24,
-            ),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Container(
-              decoration: BoxDecoration(
-                color: const Color(0xFFE7F6E9),
-                border: Border.all(color: const Color(0xFF53A866), width: 3),
-                borderRadius: BorderRadius.circular(16),
+      builder: (_) => Dialog(
+        insetPadding: const EdgeInsets.symmetric(
+          horizontal: 32,
+          vertical: 24,
+        ),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Container(
+          decoration: BoxDecoration(
+            color: const Color(0xFFE7F6E9),
+            border: Border.all(color: const Color(0xFF53A866), width: 3),
+            borderRadius: BorderRadius.circular(16),
+          ),
+          padding: const EdgeInsets.fromLTRB(20, 18, 20, 24),
+          child: Stack(
+            children: [
+              Positioned(
+                right: 0,
+                top: 0,
+                child: IconButton(
+                  icon: const Icon(Icons.close, color: Color(0xFF2E7D32)),
+                  onPressed: () => Navigator.pop(context),
+                ),
               ),
-              padding: const EdgeInsets.fromLTRB(20, 18, 20, 24),
-              child: Stack(
+              Column(
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  Positioned(
-                    right: 0,
-                    top: 0,
-                    child: IconButton(
-                      icon: const Icon(Icons.close, color: Color(0xFF2E7D32)),
-                      onPressed: () => Navigator.pop(context),
+                  const SizedBox(height: 6),
+                  Container(
+                    width: 240,
+                    height: 120,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFDDE6D6),
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    alignment: Alignment.center,
+                    child: const TranslatedText(
+                      // ✨
+                      '추가 성공',
+                      style: TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.w800,
+                        color: Color(0xFF6B5A51),
+                      ),
                     ),
                   ),
-                  Column(
-                    mainAxisSize: MainAxisSize.min,
+                  const SizedBox(height: 16),
+                  // ✨ 동적 텍스트 번역 적용
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const SizedBox(height: 6),
-                      Container(
-                        width: 240,
-                        height: 120,
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFDDE6D6),
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        alignment: Alignment.center,
-                        child: const Text(
-                          '추가 성공',
-                          style: TextStyle(
-                            fontSize: 24,
-                            fontWeight: FontWeight.w800,
-                            color: Color(0xFF6B5A51),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      Text(
-                        '자녀 $childName 님이 추가되었습니다!',
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.w800,
-                          color: Color(0xFF6B5A51),
-                        ),
-                      ),
-                      const SizedBox(height: 8),
+                      const TranslatedText('자녀'),
+                      Text(' $childName '),
+                      const TranslatedText('님이 추가되었습니다!'),
                     ],
                   ),
                 ],
               ),
-            ),
+            ],
           ),
+        ),
+      ),
     );
   }
 }
 
 // 섹션 타이틀
+// ✨ String 대신 Widget을 받도록 수정
 class _SectionTitle extends StatelessWidget {
-  final String text;
-  const _SectionTitle(this.text);
+  final Widget child;
+  const _SectionTitle({required this.child});
 
   @override
   Widget build(BuildContext context) {
-    return Text(
-      text,
+    return DefaultTextStyle(
       style: const TextStyle(
         fontSize: 24,
         fontWeight: FontWeight.w900,
         color: Color(0xFF6B564C),
       ),
+      child: child,
     );
   }
 }

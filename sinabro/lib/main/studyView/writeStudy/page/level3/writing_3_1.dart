@@ -1,0 +1,1075 @@
+// lib/main/studyView/writeStudy/page/level3/writing_3_1.dart
+// 레벨 3 열매 1 동물 서버 연결 완료
+
+import 'dart:async';
+import 'package:flutter/material.dart';
+import 'package:sinabro/main/studyView/writeStudy/page/main_apple_tree.dart';
+import 'package:sinabro/main/studyView/writeStudy/widget/writing_canvas.dart';
+
+import 'package:http/http.dart' as http; // ⭐️ 1. http 패키지
+import 'dart:convert'; // ⭐️ 2. json 변환용
+import 'package:sinabro/config.dart'; // ⭐️ 3. baseUrl 사용
+import 'package:audioplayers/audioplayers.dart'; // 오디오 패키지 import 추가
+
+const String kMainAppleTreeRoute = '/apple_garden';
+
+/// 항상 나무 화면으로 복귀
+void _goToGarden(BuildContext context, String childId) {
+  final nav = Navigator.of(context, rootNavigator: true);
+  try {
+    nav.pushNamedAndRemoveUntil(
+      kMainAppleTreeRoute,
+      (_) => false,
+      arguments: {'childId': childId},
+    );
+  } catch (_) {
+    nav.pushAndRemoveUntil(
+      MaterialPageRoute(builder: (_) => AppleGarden(childId: childId)),
+      (route) => false,
+    );
+  }
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+// 공용 이동 유틸
+// ──────────────────────────────────────────────────────────────────────────────
+void _pushNamedOrFallback(
+  BuildContext context,
+  String routeName, {
+  Object? arguments, // Map<String, dynamic> 형태라고 가정
+  Widget? fallback,
+}) {
+  final nav = Navigator.of(context, rootNavigator: true);
+  try {
+    // 1. 이름으로 라우트 시도
+    nav.pushNamed(routeName, arguments: arguments);
+  } catch (_) {
+    // 2. 실패 시:
+    if (fallback != null) {
+      // 명시적으로 fallback 위젯이 주어졌으면 그걸 사용
+      nav.push(MaterialPageRoute(builder: (_) => fallback));
+    } else {
+      // fallback 위젯이 없으면, _routeFallbackWithChild 함수를 사용해서 생성 시도
+
+      // ⭐️⭐️⭐️ 여기가 수정된 부분! ⭐️⭐️⭐️
+      // arguments 맵에서 childId, fruitId, startTime을 안전하게 추출
+      final argsMap = arguments as Map<String, dynamic>?;
+      final childId =
+          argsMap?['childId'] as String? ?? 'unknown'; // 기본값 또는 에러 처리 필요
+      final fruitId = argsMap?['fruitId'] as String?;
+      final startTime = argsMap?['startTime'] as DateTime?;
+
+      // 추출한 값들을 _routeFallbackWithChild에 순서대로 전달!
+      final fallbackWidget =
+          _routeFallbackWithChild(routeName, childId, fruitId, startTime);
+      // ⭐️⭐️⭐️⭐️⭐️⭐️⭐️⭐️⭐️⭐️⭐️⭐️⭐️⭐️⭐️⭐️⭐️⭐️
+
+      if (fallbackWidget != null) {
+        // Fallback 위젯 생성 성공!
+        nav.push(MaterialPageRoute(builder: (_) => fallbackWidget));
+      } else {
+        // _routeFallbackWithChild 마저 실패하면 에러 메시지 표시
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Route not found: $routeName')));
+      }
+    }
+  }
+}
+
+void _replaceNamedOrFallback(
+  BuildContext context,
+  String routeName, {
+  Object? arguments,
+  Widget? fallback,
+}) {
+  final nav = Navigator.of(context, rootNavigator: true);
+  try {
+    nav.pushReplacementNamed(routeName, arguments: arguments);
+  } catch (e) {
+    debugPrint(
+        'pushReplacementNamed failed for $routeName: $e. Trying fallback...'); // 실패 로그 추가
+    if (fallback != null) {
+      nav.pushReplacement(MaterialPageRoute(builder: (_) => fallback));
+    } else {
+      // arguments 맵에서 값 추출 시도
+      final argsMap = arguments as Map<String, dynamic>?;
+      final childId = argsMap?['childId'] as String? ?? 'unknown';
+      final fruitId = argsMap?['fruitId'] as String?;
+      final startTime = argsMap?['startTime'] as DateTime?;
+
+      // 추출한 값으로 Fallback 위젯 생성 시도
+      final fallbackWidget =
+          _routeFallbackWithChild(routeName, childId, fruitId, startTime);
+
+      if (fallbackWidget != null) {
+        nav.pushReplacement(MaterialPageRoute(builder: (_) => fallbackWidget));
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Fallback Route not found: $routeName')),
+        );
+      }
+    }
+  }
+}
+
+// 라우트 문자열 → 페이지 위젯( childId 포함 ) 매퍼
+Widget? _routeFallbackWithChild(
+  String name,
+  String childId,
+  String? fruitId, // ⭐️ 추가 (nullable)
+  DateTime? startTime,
+) {
+  switch (name) {
+    case Writing3_IntroPage.routeName:
+      return Writing3_IntroPage(childId: childId, fruitId: fruitId!);
+    case Writing3_1Page.routeName:
+      return Writing3_1Page(childId: childId, fruitId: fruitId!);
+    case Writing3_2Page.routeName:
+      return Writing3_2Page(
+          childId: childId, fruitId: fruitId!, startTime: startTime!);
+    case Writing3_3Page.routeName:
+      return Writing3_3Page(
+          childId: childId, fruitId: fruitId!, startTime: startTime!);
+    case Writing3_4Page.routeName:
+      return Writing3_4Page(
+          childId: childId, fruitId: fruitId!, startTime: startTime!);
+    case Writing3_5Page.routeName:
+      return Writing3_5Page(
+          childId: childId, fruitId: fruitId!, startTime: startTime!);
+    case Writing3_6Page.routeName:
+      return Writing3_6Page(
+          childId: childId, fruitId: fruitId!, startTime: startTime!);
+    case Writing3_DonePage.routeName:
+      return Writing3_DonePage(childId: childId);
+    default:
+      return null;
+  }
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+// 오디오 정의
+// ──────────────────────────────────────────────────────────────────────────────
+const _audioDir = 'audio/tts/studyWrite/level3/';
+const _audioIntro1 = '${_audioDir}write5_study_intro_1.mp3'; // 1단계 인트로
+const _audioFinish1 = '${_audioDir}write5_study_finish_1.mp3'; // 1단계 완료
+
+// ✅ 단어 오디오 파일명 헬퍼 (예시, 실제 파일명 규칙에 맞게 조정 필요)
+String _getAnimalWordAudio(String wordKey) {
+  // wordKey 예시: 'dog', 'cat', 'rabbit' ...
+  return '${_audioDir}animal_$wordKey.mp3';
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+// 인트로 페이지
+// ──────────────────────────────────────────────────────────────────────────────
+class Writing3_IntroPage extends StatefulWidget {
+  const Writing3_IntroPage(
+      {super.key, required this.childId, required this.fruitId});
+  static const routeName = '/study/write/writing_3_1_intro';
+  final String childId;
+  final String fruitId;
+
+  @override
+  State<Writing3_IntroPage> createState() => _Writing3_IntroPageState();
+}
+
+class _Writing3_IntroPageState extends State<Writing3_IntroPage> {
+  static const _cardMixed = 'assets/img/contents/studyWrite/card_mixed.png';
+  // 오디오 플레이어
+  final AudioPlayer _audioPlayer = AudioPlayer();
+
+  // 오디오 재생 헬퍼 함수
+  void _playAudio(String assetPath) {
+    if (!mounted) return;
+    _audioPlayer.stop();
+    _audioPlayer.setReleaseMode(ReleaseMode.release);
+    _audioPlayer.play(AssetSource(assetPath));
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    // 인트로 오디오 자동 재생
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _playAudio(_audioIntro1); // 1단계 인트로 재생
+    });
+
+    Future<void>(() async {
+      await Future.delayed(const Duration(seconds: 3));
+      if (!mounted) return;
+      _replaceNamedOrFallback(
+        context,
+        Writing3_1Page.routeName,
+        arguments: {'childId': widget.childId, 'fruitId': widget.fruitId},
+        fallback:
+            Writing3_1Page(childId: widget.childId, fruitId: widget.fruitId),
+      );
+    });
+  }
+
+  // 오디오 리소스 해제
+  @override
+  void dispose() {
+    _audioPlayer.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return WillPopScope(
+      onWillPop: () async {
+        _goToGarden(context, widget.childId);
+        return false;
+      },
+      child: Scaffold(
+        backgroundColor: const Color(0xFFFEF5F6),
+        body: SafeArea(
+          child: Stack(
+            children: [
+              Column(
+                children: [
+                  const SizedBox(height: 48),
+                  Expanded(
+                    child: Center(
+                      child: LayoutBuilder(
+                        builder: (context, c) {
+                          final w = c.maxWidth;
+                          final imgW = (w * 0.45).clamp(260.0, 560.0);
+                          return ConstrainedBox(
+                            constraints: const BoxConstraints(maxWidth: 760),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              children: [
+                                Image.asset(
+                                  _cardMixed,
+                                  width: imgW,
+                                  fit: BoxFit.contain,
+                                  filterQuality: FilterQuality.high,
+                                ),
+                                const SizedBox(height: 24),
+                                // ✅ 텍스트는 1단계에 맞게 수정 (예시, 오디오와 일치 필요)
+                                Text(
+                                  '귀여운 카드가 뒤섞여버렸어요...',
+                                  textAlign: TextAlign.center,
+                                  style:
+                                      theme.textTheme.headlineSmall?.copyWith(
+                                    fontWeight: FontWeight.w800,
+                                    color: const Color(0xFF6B4F4F),
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  '그림은 어떤 카드인지 적어주세요!',
+                                  textAlign: TextAlign.center,
+                                  style: theme.textTheme.titleMedium?.copyWith(
+                                    fontWeight: FontWeight.w700,
+                                    color: const Color(0xFF6B4F4F),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              Positioned(
+                left: 8,
+                top: 8,
+                child: IconButton(
+                  icon: const Icon(Icons.arrow_back_ios_new_rounded),
+                  color: theme.colorScheme.onSurface.withOpacity(0.8),
+                  onPressed: () => _goToGarden(context, widget.childId),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+// 재사용 페이지(일러스트, 왼쪽 프리뷰, 오른쪽 트레이스+쓰기+판별)
+// ──────────────────────────────────────────────────────────────────────────────
+class _WritingAnimalPage extends StatefulWidget {
+  const _WritingAnimalPage({
+    super.key,
+    required this.childId,
+    required this.fruitId, // ⭐️ 추가!
+    this.startTime, // ⭐️ 추가! (첫 페이지 제외하고 받음)
+    this.isFirstPage = false, // ⭐️ 추가!
+    this.isLastPage = false, // ⭐️ 추가!
+    required this.illustPath,
+    required this.previewPath,
+    required this.tracePath,
+    required this.nextRouteName,
+    required this.columns,
+    required this.expectedWord, // 예: '강아지'
+    required this.acceptedWords, // 예: ['강아지','강이지',...]
+    required this.wordAudioKey, // 단어 오디오 키 (예: 'dog')
+    this.titleColor = const Color(0xFFFEF5F6),
+  });
+
+  final String childId;
+  final String fruitId; // ⭐️ 추가!
+  final DateTime? startTime; // ⭐️ 추가!
+  final bool isFirstPage; // ⭐️ 추가!
+  final bool isLastPage;
+  final String illustPath;
+  final String previewPath;
+  final String tracePath;
+  final String nextRouteName;
+  final int columns; // 2 or 3
+  final Color titleColor;
+
+  final String expectedWord;
+  final List<String> acceptedWords;
+  final String wordAudioKey; // 단어 오디오 키
+
+  @override
+  State<_WritingAnimalPage> createState() => _WritingAnimalPageState();
+}
+
+class _WritingAnimalPageState extends State<_WritingAnimalPage> {
+  final _canvasKey = GlobalKey<WritingCanvasState>();
+  late DateTime _startTime; // ⭐️ API용 시작 시간 기록
+  bool _apiCallSent = false; // ⭐️ API 중복 호출 방지
+
+  // 오디오 플레이어
+  final AudioPlayer _audioPlayer = AudioPlayer();
+
+  // 오디오 재생 헬퍼 함수
+  void _playAudio(String assetPath) {
+    if (!mounted) return;
+    _audioPlayer.stop();
+    _audioPlayer.setReleaseMode(ReleaseMode.release);
+    _audioPlayer.play(AssetSource(assetPath));
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    // ⭐️ 첫 페이지면 지금 시간 기록, 아니면 전달받은 시간 사용
+    _startTime = widget.isFirstPage ? DateTime.now() : widget.startTime!;
+
+    // 첫 페이지 로드 시 단어 오디오 자동 재생
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _playAudio(_getAnimalWordAudio(widget.wordAudioKey));
+    });
+  }
+
+  // 오디오 리소스 해제
+  @override
+  void dispose() {
+    _audioPlayer.dispose();
+    super.dispose();
+  }
+
+  /// ⭐️ (신규) 학습 완료 API 호출 함수 - JWT 없이
+  Future<void> _uploadStudyResult() async {
+    // 1. 걸린 시간 계산 (첫 페이지 시작 시간 기준)
+    final timeSpentSecs = DateTime.now().difference(_startTime).inSeconds;
+
+    // 2. API 엔드포인트
+    final url = Uri.parse('$baseUrl/api/study/writing/complete');
+
+    // 3. 전송할 데이터
+    final body = json.encode({
+      'childId': widget.childId,
+      'fruitId': widget.fruitId, // ⭐️ 생성자로 받은 fruitId 사용!
+      'isCompleted': true,
+      'timeSpentSecs': timeSpentSecs,
+    });
+
+    // 4. 헤더 (Content-Type만)
+    final headers = {
+      'Content-Type': 'application/json',
+    };
+
+    try {
+      // 5. API 호출
+      final response = await http.post(url, headers: headers, body: body);
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        debugPrint('[Writing3_X] API 연동 성공: fruitId ${widget.fruitId} 완료!');
+      } else {
+        debugPrint(
+            '[Writing3_X] API 연동 실패: ${response.statusCode} ${response.body}');
+      }
+    } catch (e) {
+      debugPrint('[Writing3_X] API 연동 중 예외 발생: $e');
+    }
+  }
+
+  /// 셀비식 정답 판별: 1) 첫 줄만, 2) 한글만, 3) 후보 일치
+  bool _isCorrect(String raw) {
+    final top1Line = raw.split('\n').first;
+    final buf = StringBuffer();
+    for (final r in top1Line.runes) {
+      final ch = String.fromCharCode(r);
+      if (RegExp(r'[가-힣]').hasMatch(ch)) buf.write(ch);
+    }
+    final cleaned = buf.toString().trim();
+    debugPrint('✅ 정제된 top1 = $cleaned');
+    return widget.acceptedWords.contains(cleaned);
+  }
+
+  void _goNext(BuildContext context) {
+    // ⭐️ 마지막 페이지 완료 시에만 API 호출
+    if (widget.isLastPage && !_apiCallSent) {
+      _apiCallSent = true;
+      _uploadStudyResult(); // ⭐️ API 호출!
+    }
+
+    _pushNamedOrFallback(
+      context,
+      widget.nextRouteName,
+      arguments: {'childId': widget.childId, 'fruitId': widget.fruitId},
+      fallback: _routeFallbackWithChild(
+        widget.nextRouteName, // 1번째: route 이름
+        widget.childId, // 2번째: childId
+        widget.fruitId, // 3번째: fruitId (이름 없이 값만!)
+        _startTime, // 4번째: startTime (이름 없이 값만!)
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final cols = widget.columns.clamp(2, 3);
+
+    return WillPopScope(
+      onWillPop: () async {
+        _goToGarden(context, widget.childId);
+        return false;
+      },
+      child: Scaffold(
+        backgroundColor: widget.titleColor,
+        body: SafeArea(
+          child: Stack(
+            children: [
+              Column(
+                children: [
+                  const SizedBox(height: 48),
+                  Expanded(
+                    child: Center(
+                      // ✅ 일러스트 이미지 탭 -> 단어 오디오 재생
+                      child: GestureDetector(
+                        onTap: () => _playAudio(
+                            _getAnimalWordAudio(widget.wordAudioKey)),
+                        child: Image.asset(
+                          widget.illustPath,
+                          width: 260,
+                          fit: BoxFit.contain,
+                          filterQuality: FilterQuality.high,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 24,
+                      vertical: 16,
+                    ),
+                    child: Row(
+                      children: [
+                        // 왼쪽: 프리뷰
+                        Expanded(
+                          child: _TileStrip(
+                            columns: cols,
+                            child: Image.asset(
+                              widget.previewPath,
+                              height: 150,
+                              fit: BoxFit.contain,
+                              filterQuality: FilterQuality.high,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 20),
+                        // 오른쪽: 트레이스 + 쓰기 + (아래) 채점 버튼
+                        Expanded(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              _TileStrip(
+                                columns: cols,
+                                child: LayoutBuilder(
+                                  builder: (_, __) {
+                                    return Stack(
+                                      fit: StackFit.expand,
+                                      children: [
+                                        // 밑: 트레이스 이미지
+                                        Center(
+                                          child: Image.asset(
+                                            widget.tracePath,
+                                            height: 150,
+                                            fit: BoxFit.contain,
+                                            filterQuality: FilterQuality.high,
+                                          ),
+                                        ),
+                                        // 위: 쓰기 캔버스 (반드시 터치 받도록 처리)
+                                        Positioned.fill(
+                                          child: GestureDetector(
+                                            behavior: HitTestBehavior.opaque,
+                                            child: WritingCanvas(
+                                              key: _canvasKey,
+                                              penWidth: 15,
+                                              targetChar: widget.expectedWord,
+                                              candidateSet:
+                                                  widget.acceptedWords,
+                                              targetType: "word",
+                                              autoRecognizeOnEnd:
+                                                  false, // 수동 채점
+                                              onRecognize: (result) async {
+                                                if (_isCorrect(result)) {
+                                                  _goNext(context);
+                                                } else {
+                                                  if (mounted) {
+                                                    ScaffoldMessenger.of(
+                                                      context,
+                                                    ).showSnackBar(
+                                                      const SnackBar(
+                                                        content: Text(
+                                                          '다시 써볼까요?',
+                                                        ),
+                                                        duration: Duration(
+                                                          milliseconds: 800,
+                                                        ),
+                                                      ),
+                                                    );
+                                                  }
+                                                  await _canvasKey.currentState
+                                                      ?.clearCanvas();
+                                                }
+                                              },
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    );
+                                  },
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              // 채점하기 버튼(수동 인식 트리거)
+                              SizedBox(
+                                height: 42,
+                                child: ElevatedButton(
+                                  onPressed: () async {
+                                    await _canvasKey.currentState
+                                        ?.recognizeAndCheckText();
+                                  },
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: const Color(0xFFD9CCFF),
+                                    foregroundColor: Colors.black87,
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 20,
+                                      vertical: 10,
+                                    ),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(14),
+                                    ),
+                                  ),
+                                  child: const Text(
+                                    '채점하기',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              // 좌상단: 뒤로 → 항상 나무로
+              Positioned(
+                left: 8,
+                top: 8,
+                child: IconButton(
+                  icon: const Icon(Icons.arrow_back_ios_new_rounded),
+                  color: theme.colorScheme.onSurface.withOpacity(0.8),
+                  onPressed: () => _goToGarden(context, widget.childId),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// 하단 네모 박스(2칸/3칸) - 2칸이면 전체 박스 폭 2/3만 사용(칸 크기 유지)
+class _TileStrip extends StatelessWidget {
+  const _TileStrip({required this.child, this.columns = 3});
+  final Widget child;
+  final int columns;
+
+  @override
+  Widget build(BuildContext context) {
+    const borderColor = Color(0xFFE1E1E1);
+    final cols = columns.clamp(2, 3);
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final fullW = constraints.maxWidth; // Expanded가 준 폭 (3칸 기준)
+        final targetW = fullW * (cols / 3.0); // 2칸이면 2/3 사용
+        final targetH = fullW / 3.6; // 높이는 3칸 기준 유지
+
+        return Align(
+          alignment: Alignment.center,
+          child: SizedBox(
+            width: targetW,
+            height: targetH,
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: borderColor),
+                boxShadow: const [
+                  BoxShadow(
+                    blurRadius: 8,
+                    offset: Offset(0, 2),
+                    color: Color(0x1A000000),
+                  ),
+                ],
+              ),
+              clipBehavior: Clip.antiAlias,
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  CustomPaint(
+                    painter: _GridSplitPainter(
+                      color: borderColor,
+                      columns: cols,
+                    ),
+                  ),
+                  Center(child: child),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _GridSplitPainter extends CustomPainter {
+  const _GridSplitPainter({required this.color, required this.columns});
+  final Color color;
+  final int columns;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (columns <= 1) return;
+    final p = Paint()
+      ..color = color
+      ..strokeWidth = 1;
+    final cellW = size.width / columns;
+    for (int i = 1; i < columns; i++) {
+      final x = cellW * i;
+      canvas.drawLine(Offset(x, 0), Offset(x, size.height), p);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+// 실제 페이지들(강아지→고양이→토끼→오리→거북이→개구리→완료)
+// ──────────────────────────────────────────────────────────────────────────────
+
+// 강아지
+class Writing3_1Page extends StatelessWidget {
+  const Writing3_1Page({
+    super.key,
+    required this.childId,
+    required this.fruitId,
+  });
+  static const routeName = '/study/write/writing_3_1';
+  final String childId;
+  final String fruitId;
+
+  @override
+  Widget build(BuildContext context) {
+    final arguments =
+        ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+    final id = arguments?['childId'] as String? ?? childId;
+    final fId =
+        arguments?['fruitId'] as String? ?? fruitId; // ⭐️ 3. fruitId 가져오기!
+
+    return _WritingAnimalPage(
+      childId: id,
+      fruitId: fId,
+      illustPath: 'assets/img/contents/studyWrite/dog.png',
+      previewPath: 'assets/img/contents/studyWrite/dog_preview.png',
+      tracePath: 'assets/img/contents/studyWrite/dog_trace.png',
+      nextRouteName: Writing3_2Page.routeName,
+      columns: 3,
+      expectedWord: '강아지',
+      acceptedWords: const ['강아지', '강이지', '깅이지', '강야지'],
+      isFirstPage: true, // 첫 페이지 플래그
+      wordAudioKey: 'dog', // 단어 오디오 키
+    );
+  }
+}
+
+// 고양이
+class Writing3_2Page extends StatelessWidget {
+  const Writing3_2Page({
+    super.key,
+    required this.childId,
+    required this.fruitId,
+    required this.startTime,
+  });
+
+  static const routeName = '/study/write/writing_3_2';
+  final String childId;
+  final String fruitId; // ⭐️ 추가
+  final DateTime startTime; // ⭐️ 추가
+
+  @override
+  Widget build(BuildContext context) {
+    final arguments =
+        ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+    final id = arguments?['childId'] as String? ?? childId;
+    final fId = arguments?['fruitId'] as String? ?? fruitId;
+    final start =
+        arguments?['startTime'] as DateTime? ?? startTime; // ⭐️ startTime 가져오기
+
+    return _WritingAnimalPage(
+      childId: id,
+      fruitId: fId, // ⭐️ 넘기기
+      startTime: start, // ⭐️ 넘기기
+      illustPath: 'assets/img/contents/studyWrite/cat.png',
+      previewPath: 'assets/img/contents/studyWrite/cat_preview.png',
+      tracePath: 'assets/img/contents/studyWrite/cat_trace.png',
+      nextRouteName: Writing3_3Page.routeName,
+      columns: 3,
+      expectedWord: '고양이',
+      acceptedWords: const ['고양이', '고얭이', '고야이', '고양니'],
+      wordAudioKey: 'cat', // ✅ 단어 오디오 키
+    );
+  }
+}
+
+// 토끼
+class Writing3_3Page extends StatelessWidget {
+  const Writing3_3Page({
+    super.key,
+    required this.childId,
+    required this.fruitId, // ⭐️ 추가
+    required this.startTime,
+  });
+
+  static const routeName = '/study/write/writing_3_3';
+  final String childId;
+  final String fruitId; // ⭐️ 추가
+  final DateTime startTime; // ⭐️ 추가
+
+  @override
+  Widget build(BuildContext context) {
+    final arguments =
+        ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+    final id = arguments?['childId'] as String? ?? childId;
+    final fId = arguments?['fruitId'] as String? ?? fruitId;
+    final start =
+        arguments?['startTime'] as DateTime? ?? startTime; // ⭐️ startTime 가져오기
+
+    return _WritingAnimalPage(
+      childId: id,
+      fruitId: fId, // ⭐️ 넘기기
+      startTime: start, // ⭐️ 넘기기
+      illustPath: 'assets/img/contents/studyWrite/rabbit.png',
+      previewPath: 'assets/img/contents/studyWrite/rabbit_preview.png',
+      tracePath: 'assets/img/contents/studyWrite/rabbit_trace.png',
+      nextRouteName: Writing3_4Page.routeName,
+      columns: 2,
+      expectedWord: '토끼',
+      acceptedWords: const ['토끼', '토키', '톡끼', '도끼'],
+      wordAudioKey: 'rabbit', // ✅ 단어 오디오 키
+    );
+  }
+}
+
+// 오리
+class Writing3_4Page extends StatelessWidget {
+  const Writing3_4Page({
+    super.key,
+    required this.childId,
+    required this.fruitId, // ⭐️ 추가
+    required this.startTime,
+  });
+
+  static const routeName = '/study/write/writing_3_4';
+  final String childId;
+  final String fruitId; // ⭐️ 추가
+  final DateTime startTime; // ⭐️ 추가
+
+  @override
+  Widget build(BuildContext context) {
+    final arguments =
+        ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+    final id = arguments?['childId'] as String? ?? childId;
+    final fId = arguments?['fruitId'] as String? ?? fruitId;
+    final start =
+        arguments?['startTime'] as DateTime? ?? startTime; // ⭐️ startTime 가져오기
+
+    return _WritingAnimalPage(
+      childId: id,
+      fruitId: fId, // ⭐️ 넘기기
+      startTime: start, // ⭐️ 넘기기
+      illustPath: 'assets/img/contents/studyWrite/duck.png',
+      previewPath: 'assets/img/contents/studyWrite/duck_preview.png',
+      tracePath: 'assets/img/contents/studyWrite/duck_trace.png',
+      nextRouteName: Writing3_5Page.routeName,
+      columns: 2,
+      expectedWord: '오리',
+      acceptedWords: const ['오리', '오니', '오이', '오릐'],
+      wordAudioKey: 'duck', // ✅ 단어 오디오 키
+    );
+  }
+}
+
+// 거북이
+class Writing3_5Page extends StatelessWidget {
+  const Writing3_5Page({
+    super.key,
+    required this.childId,
+    required this.fruitId, // ⭐️ 추가
+    required this.startTime,
+  });
+
+  static const routeName = '/study/write/writing_3_5';
+  final String childId;
+  final String fruitId; // ⭐️ 추가
+  final DateTime startTime; // ⭐️ 추가
+
+  @override
+  Widget build(BuildContext context) {
+    final arguments =
+        ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+    final id = arguments?['childId'] as String? ?? childId;
+    final fId = arguments?['fruitId'] as String? ?? fruitId;
+    final start =
+        arguments?['startTime'] as DateTime? ?? startTime; // ⭐️ startTime 가져오기
+
+    return _WritingAnimalPage(
+      childId: id,
+      fruitId: fId, // ⭐️ 넘기기
+      startTime: start, // ⭐️ 넘기기
+      illustPath: 'assets/img/contents/studyWrite/turtle.png',
+      previewPath: 'assets/img/contents/studyWrite/turtle_preview.png',
+      tracePath: 'assets/img/contents/studyWrite/turtle_trace.png',
+      nextRouteName: Writing3_6Page.routeName,
+      columns: 3,
+      expectedWord: '거북이',
+      acceptedWords: const ['거북이', '거부기', '거북ㅣ', '거북니'],
+      wordAudioKey: 'turtle', // ✅ 단어 오디오 키
+    );
+  }
+}
+
+// 개구리
+class Writing3_6Page extends StatelessWidget {
+  const Writing3_6Page({
+    super.key,
+    required this.childId,
+    required this.fruitId, // ⭐️ 추가
+    required this.startTime, // ⭐️ 추가
+  });
+
+  static const routeName = '/study/write/writing_3_6';
+  final String childId;
+  final String fruitId; // ⭐️ 추가
+  final DateTime startTime; // ⭐️ 추가
+
+  @override
+  Widget build(BuildContext context) {
+    final arguments =
+        ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+    final id = arguments?['childId'] as String? ?? childId;
+    final fId = arguments?['fruitId'] as String? ?? fruitId;
+    final start =
+        arguments?['startTime'] as DateTime? ?? startTime; // ⭐️ startTime 가져오기
+
+    return _WritingAnimalPage(
+      childId: id,
+      fruitId: fId, // ⭐️ 넘기기
+      startTime: start, // ⭐️ 넘기기
+      illustPath: 'assets/img/contents/studyWrite/frog.png',
+      previewPath: 'assets/img/contents/studyWrite/frog_preview.png',
+      tracePath: 'assets/img/contents/studyWrite/frog_trace.png',
+      nextRouteName: Writing3_DonePage.routeName,
+      columns: 3,
+      expectedWord: '개구리',
+      acceptedWords: const ['개구리', '개굴이', '개구니', '개구뤼'],
+      isLastPage: true, // 마지막 페이지 플래그
+      wordAudioKey: 'frog', // ✅ 단어 오디오 키
+    );
+  }
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+// 완료 화면
+// ──────────────────────────────────────────────────────────────────────────────
+class Writing3_DonePage extends StatefulWidget {
+  const Writing3_DonePage({super.key, required this.childId});
+  static const routeName = '/study/write/writing_3_done';
+  final String childId;
+
+  @override
+  State<Writing3_DonePage> createState() => _Writing3_DonePageState();
+}
+
+class _Writing3_DonePageState extends State<Writing3_DonePage> {
+  static const _clapPath = 'assets/img/contents/studyWrite/clap.png';
+  // ✅ 오디오 플레이어 추가
+  final AudioPlayer _audioPlayer = AudioPlayer();
+
+  // ✅ 오디오 재생 헬퍼 함수 추가
+  void _playAudio(String assetPath) {
+    if (!mounted) return;
+    _audioPlayer.stop();
+    _audioPlayer.setReleaseMode(ReleaseMode.release);
+    _audioPlayer.play(AssetSource(assetPath));
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    // ✅ 단계 완료 오디오 자동 재생
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _playAudio(_audioFinish1); // 1단계 완료 오디오 재생
+    });
+
+    // 기존 로직 (팝업 표시 및 화면 전환)
+    Future<void>(() async {
+      await Future.delayed(const Duration(seconds: 3));
+      if (!mounted) return;
+
+      await showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (ctx) {
+          Future.delayed(const Duration(seconds: 3), () {
+            if (Navigator.of(ctx).canPop()) Navigator.of(ctx).pop();
+          });
+          return const _AppleRewardDialog();
+        },
+      );
+
+      if (!mounted) return;
+
+      final nav = Navigator.of(context, rootNavigator: true);
+      try {
+        nav.pushNamedAndRemoveUntil(
+          kMainAppleTreeRoute,
+          (_) => false,
+          arguments: {'childId': widget.childId},
+        );
+      } catch (_) {
+        nav.pushAndRemoveUntil(
+          MaterialPageRoute(
+            builder: (_) => AppleGarden(childId: widget.childId),
+          ),
+          (route) => false,
+        );
+      }
+    });
+  }
+
+  // 오디오 리소스 해제
+  @override
+  void dispose() {
+    _audioPlayer.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Scaffold(
+      backgroundColor: const Color(0xFFFEF5F6),
+      body: SafeArea(
+        child: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Image.asset(
+                _clapPath,
+                width: 160,
+                fit: BoxFit.contain,
+                filterQuality: FilterQuality.high,
+              ),
+              const SizedBox(height: 24),
+              Text(
+                '쓰기 1단계(동물)를 전부 학습했어요!',
+                style: theme.textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.w800,
+                  color: const Color(0xFF6B4F4F),
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// 리워드 팝업
+class _AppleRewardDialog extends StatelessWidget {
+  const _AppleRewardDialog();
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      elevation: 0,
+      insetPadding: const EdgeInsets.symmetric(horizontal: 36),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Container(
+        decoration: BoxDecoration(
+          color: const Color(0xFFFFF3CD),
+          borderRadius: BorderRadius.circular(16),
+        ),
+        padding: const EdgeInsets.fromLTRB(24, 24, 24, 20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: const [
+            Text('🍎', style: TextStyle(fontSize: 56)),
+            SizedBox(height: 12),
+            Text(
+              '이번 나무의 사과를 획득했어요!\n잠시 후 나무로 돌아가요~',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 16,
+                height: 1.4,
+                color: Color(0xFF5B534A),
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}

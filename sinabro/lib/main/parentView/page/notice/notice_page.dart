@@ -2,11 +2,12 @@
  * 파일: lib/main/parentView/page/notice_page.dart (NoticePage)
  * @ authoor 박성민
  * 개요: 부모용 공지사항 목록 화면. ParentLayout 하위에서 공지 리스트를
- *      펼침/접힘 UI로 보여준다. 세션/부모정보를 복구해 사이드바/헤더에 반영.
- *      - 리스트: GET /api/app/notices?page=0&size=20
- *      - 상세:   GET /api/app/notices/{id}?increaseView=true (펼칠 때 로드)
- *      - JWT 필요 없음(permitAll). 헤더/사이드바용 부모표기는 기존 ChildrenState/ParentApi 흐름 유지.
+ * 펼침/접힘 UI로 보여준다. 세션/부모정보를 복구해 사이드바/헤더에 반영.
+ * - 리스트: GET /api/app/notices?page=0&size=20
+ * - 상세:   GET /api/app/notices/{id}?increaseView=true (펼칠 때 로드)
+ * - JWT 필요 없음(permitAll). 헤더/사이드바용 부모표기는 기존 ChildrenState/ParentApi 흐름 유지.
  * @ 채영: JWT+api 연결 완료
+ * @연수: 언어팩 지원을 위해 수정중 // ✨
  */
 import 'package:flutter/material.dart';
 import 'package:sinabro/main/parentView/layout/parent_layout.dart';
@@ -15,6 +16,7 @@ import 'package:sinabro/main/parentView/page/child/children_state.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:sinabro/config.dart';
+import 'package:sinabro/main/parentView/widget/translated_text.dart'; // ✨
 
 // 리스트 아이템(본문 제외)
 class NoticeRow {
@@ -53,22 +55,19 @@ class NoticeRow {
   }
 }
 
-
-
 // 상세(본문 포함)
 class NoticeDetail {
   final int id;
   final String content;
   final int views; // 서버가 증가된 조회수 내려줌
-  const NoticeDetail({required this.id, required this.content, required this.views});
+  const NoticeDetail(
+      {required this.id, required this.content, required this.views});
   factory NoticeDetail.fromJson(Map<String, dynamic> j) => NoticeDetail(
         id: (j['id'] as num).toInt(),
         content: j['content']?.toString() ?? '',
         views: (j['viewCount'] is num) ? (j['viewCount'] as num).toInt() : 0,
       );
 }
-
-
 
 class NoticePage extends StatefulWidget {
   final String? parentUserId; // (선택) 상단 컨텍스트 표기에 사용
@@ -117,7 +116,7 @@ class _NoticePageState extends State<NoticePage> {
       await _store.setParent(widget.parentUserId);
       final uid = (_store.activeUserId ?? '').trim();
       if (uid.isEmpty) {
-        throw 'parentUserId가 없습니다. 로그인/세션을 확인해주세요.';
+        throw 'parentUserId가 없습니다. 로그인/세션을 확인해주세요.'; // TODO: 번역
       }
 
       // 2) 이름 결정 (prop → session → 서버)
@@ -128,11 +127,11 @@ class _NoticePageState extends State<NoticePage> {
           name = await parent_api.ParentApi.fetchParentName(uid); // 🔐 JWT 필요
           await _store.setSession(userId: uid, userName: name);
         } catch (e) {
-        // ✅ 이전처럼 _err로 막지 말고, 배너만 띄움
-        if (mounted) setState(() => _authWarn = true);
-        name = ''; // 이름은 비워두고 아래에서 기본 표시 처리
+          // ✅ 이전처럼 _err로 막지 말고, 배너만 띄움
+          if (mounted) setState(() => _authWarn = true);
+          name = ''; // 이름은 비워두고 아래에서 기본 표시 처리
+        }
       }
-    }
 
       // 공지 첫 페이지 로드
       await _loadFirstPage();
@@ -146,7 +145,7 @@ class _NoticePageState extends State<NoticePage> {
     } catch (e) {
       if (!mounted) return;
       setState(() {
-        _err = '서버 연결 실패: $e';
+        _err = '서버 연결 실패: $e'; // TODO: 번역
         _ready = false;
       });
     }
@@ -179,7 +178,7 @@ class _NoticePageState extends State<NoticePage> {
       if (resp.statusCode != 200) {
         // ignore: avoid_print
         print('[notice][오류] 리스트 응답 상태코드=${resp.statusCode}');
-        throw '공지 리스트 로드 실패(${resp.statusCode})';
+        throw '공지 리스트 로드 실패(${resp.statusCode})'; // TODO: 번역
       }
 
       final jsonMap = json.decode(resp.body) as Map<String, dynamic>;
@@ -196,10 +195,11 @@ class _NoticePageState extends State<NoticePage> {
       });
 
       // ignore: avoid_print
-      print('[notice] 리스트 로드 완료: 추가=${rows.length} 총=${_rows.length} hasNext=$_hasNext');
+      print(
+          '[notice] 리스트 로드 완료: 추가=${rows.length} 총=${_rows.length} hasNext=$_hasNext');
     } catch (e) {
       if (!mounted) return;
-      setState(() => _err = '공지 리스트 로드 실패: $e');
+      setState(() => _err = '공지 리스트 로드 실패: $e'); // TODO: 번역
     } finally {
       if (mounted) setState(() => _isLoadingList = false);
     }
@@ -268,7 +268,7 @@ class _NoticePageState extends State<NoticePage> {
               const SizedBox(height: 12),
               ElevatedButton(
                 onPressed: _ensureParentContext,
-                child: const Text('다시 시도'),
+                child: const TranslatedText('다시 시도'), // ✨
               ),
             ],
           ),
@@ -294,35 +294,40 @@ class _NoticePageState extends State<NoticePage> {
                 children: [
                   const _NoticeHeader(),
                   if (_authWarn)
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(0, 8, 0, 8),
-                    child: Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFFFF3CD),
-                        borderRadius: BorderRadius.circular(6),
-                        border: Border.all(color: const Color(0xFFFFEEBA)),
-                      ),
-                      child: Row(
-                        children: const [
-                          Icon(Icons.info_outline, size: 18, color: Color(0xFF856404)),
-                          SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              '로그인을 진행해주세요!',
-                              style: TextStyle(fontSize: 13, color: Color(0xFF856404)),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(0, 8, 0, 8),
+                      child: Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 10),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFFF3CD),
+                          borderRadius: BorderRadius.circular(6),
+                          border: Border.all(color: const Color(0xFFFFEEBA)),
+                        ),
+                        child: Row(
+                          children: const [
+                            Icon(Icons.info_outline,
+                                size: 18, color: Color(0xFF856404)),
+                            SizedBox(width: 8),
+                            Expanded(
+                              child: TranslatedText(
+                                // ✨
+                                '로그인을 진행해주세요!',
+                                style: TextStyle(
+                                    fontSize: 13, color: Color(0xFF856404)),
+                              ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                     ),
-                  ),
                   const SizedBox(height: 8),
                   Expanded(
                     child: NotificationListener<ScrollNotification>(
                       onNotification: (n) {
-                        if (n.metrics.pixels >= n.metrics.maxScrollExtent - 120) {
+                        if (n.metrics.pixels >=
+                            n.metrics.maxScrollExtent - 120) {
                           _loadMore();
                         }
                         return false;
@@ -349,7 +354,10 @@ class _NoticePageState extends State<NoticePage> {
                             item: item,
                             opened: opened,
                             detailText: opened
-                                ? (detail?.content ?? (isLoadingDetail ? '불러오는 중...' : '탭하여 본문 불러오기'))
+                                ? (detail?.content ??
+                                    (isLoadingDetail
+                                        ? '불러오는 중...'
+                                        : '탭하여 본문 불러오기'))
                                 : null,
                             onTap: () async {
                               if (_openIndex == i) {
@@ -360,15 +368,17 @@ class _NoticePageState extends State<NoticePage> {
                               _detailCache.remove(item.id);
 
                               // 펼칠 때 상세 없으면 로드
-                              if (_loadingDetailId == item.id) return; // 중복 탭 방지(선택)
-                              final ok = await _loadDetail(item.id);   // increaseView=true 이므로 +1
+                              if (_loadingDetailId == item.id) return;
+                              final ok = await _loadDetail(item.id);
                               if (ok == null) {
                                 ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text('공지 상세를 불러오지 못했습니다.')),
+                                  const SnackBar(
+                                      content: Text(
+                                          '공지 상세를 불러오지 못했습니다.')), // TODO: 번역
                                 );
                                 return;
                               }
-            
+
                               if (!mounted) return;
                               setState(() => _openIndex = i);
                             },
@@ -402,7 +412,8 @@ class _NoticeHeader extends StatelessWidget {
           SizedBox(width: 12),
           Icon(Icons.home, color: Colors.white),
           SizedBox(width: 12),
-          Text(
+          TranslatedText(
+            // ✨
             '공지사항',
             style: TextStyle(
               color: Colors.white,
@@ -431,8 +442,7 @@ class _NoticeTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final border = Border.all(color: const Color(0xFFE6E6E6));
-    final dateStr =
-        '${item.createdAt.year.toString().padLeft(4, '0')}-'
+    final dateStr = '${item.createdAt.year.toString().padLeft(4, '0')}-'
         '${item.createdAt.month.toString().padLeft(2, '0')}-'
         '${item.createdAt.day.toString().padLeft(2, '0')}';
 
@@ -448,39 +458,71 @@ class _NoticeTile extends StatelessWidget {
             borderRadius: BorderRadius.circular(6),
             border: border,
             boxShadow: opened
-                ? [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 10, offset: const Offset(0, 4))]
+                ? [
+                    BoxShadow(
+                        color: Colors.black.withOpacity(0.04),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4))
+                  ]
                 : null,
           ),
           child: Column(
             children: [
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
                 child: Row(
                   children: [
                     const _RoundIcon(),
                     const SizedBox(width: 10),
                     Expanded(
-                      child: Text(
+                      child: TranslatedText(
                         item.title,
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: Colors.black87),
+                        style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.black87),
                       ),
                     ),
                     const SizedBox(width: 8),
-                    Icon(opened ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down, color: Colors.black45),
+                    Icon(
+                        opened
+                            ? Icons.keyboard_arrow_up
+                            : Icons.keyboard_arrow_down,
+                        color: Colors.black45),
                   ],
                 ),
               ),
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 44, vertical: 4),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 44, vertical: 4),
                 child: Row(
                   children: [
-                    Text(item.author, style: const TextStyle(fontSize: 12, color: Colors.black54)),
+                    Text(item.author,
+                        style: const TextStyle(
+                            fontSize: 12, color: Colors.black54)),
                     const SizedBox(width: 12),
-                    Text(dateStr, style: const TextStyle(fontSize: 12, color: Colors.black45)),
+                    Text(dateStr,
+                        style: const TextStyle(
+                            fontSize: 12, color: Colors.black45)),
                     const SizedBox(width: 12),
-                    Text('조회: ${item.views}', style: const TextStyle(fontSize: 12, color: Colors.black45)),
+                    // ✨
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const TranslatedText(
+                          '조회:',
+                          style: TextStyle(fontSize: 12, color: Colors.black45),
+                        ),
+                        Text(
+                          ' ${item.views}',
+                          style: const TextStyle(
+                              fontSize: 12, color: Colors.black45),
+                        )
+                      ],
+                    ),
                   ],
                 ),
               ),
@@ -490,9 +532,13 @@ class _NoticeTile extends StatelessWidget {
                   secondChild: Container(
                     width: double.infinity,
                     padding: const EdgeInsets.fromLTRB(44, 10, 12, 16),
-                    child: Text(detailText ?? '', style: const TextStyle(fontSize: 14, height: 1.5)),
+                    // ✨ 조건부 텍스트 번역 적용
+                    child: TranslatedText(detailText ?? '',
+                        style: const TextStyle(fontSize: 14, height: 1.5)),
                   ),
-                  crossFadeState: opened ? CrossFadeState.showSecond : CrossFadeState.showFirst,
+                  crossFadeState: opened
+                      ? CrossFadeState.showSecond
+                      : CrossFadeState.showFirst,
                   duration: const Duration(milliseconds: 180),
                 ),
               ),
@@ -504,22 +550,22 @@ class _NoticeTile extends StatelessWidget {
   }
 }
 
-  class _RoundIcon extends StatelessWidget {
-    const _RoundIcon();
-    @override
-    Widget build(BuildContext context) {
-      return Container(
-        width: 24,
-        height: 24,
-        decoration: BoxDecoration(
-          color: const Color(0xFFEDEDED),
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: const Icon(
-          Icons.campaign_outlined,
-          size: 14,
-          color: Colors.black54,
-        ),
-      );
-    }
+class _RoundIcon extends StatelessWidget {
+  const _RoundIcon();
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 24,
+      height: 24,
+      decoration: BoxDecoration(
+        color: const Color(0xFFEDEDED),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: const Icon(
+        Icons.campaign_outlined,
+        size: 14,
+        color: Colors.black54,
+      ),
+    );
   }
+}

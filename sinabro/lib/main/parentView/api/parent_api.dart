@@ -9,11 +9,9 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:sinabro/config.dart';
-import 'package:sinabro/common/auth_client.dart';   
-
+import 'package:sinabro/common/auth_client.dart';
 
 final _client = AuthClient.instance;
-
 
 class ParentApi {
   // 부모 프로필 조회
@@ -77,11 +75,13 @@ class ParentApi {
     throw Exception('알 수 없는 자녀 응답 구조: ${res.body}');
   }
 
-
   // 마이페이지 프리필: GET /api/app/mypage/parent/{userId}
   static Future<ParentProfile> fetchParentProfile(String userId) async {
     final uri = Uri.parse('$baseUrl/api/app/mypage/parent/$userId');
-    final res = await _client.get(uri, headers: const {'Accept': 'application/json'});
+    final res = await _client.get(
+      uri,
+      headers: const {'Accept': 'application/json'},
+    );
 
     // ignore: avoid_print
     print('[GET /api/app/mypage/parent/$userId] ${res.statusCode}');
@@ -96,11 +96,19 @@ class ParentApi {
   }
 
   // 진입 전 비밀번호 검증: POST /api/app/mypage/parent/{userId}/verify-password (204)
-  static Future<void> verifyParentPassword(String userId, String currentPassword) async {
-    final uri = Uri.parse('$baseUrl/api/app/mypage/parent/$userId/verify-password');
+  static Future<void> verifyParentPassword(
+    String userId,
+    String currentPassword,
+  ) async {
+    final uri = Uri.parse(
+      '$baseUrl/api/app/mypage/parent/$userId/verify-password',
+    );
     final res = await _client.post(
       uri,
-      headers: const {'Content-Type': 'application/json', 'Accept': 'application/json'},
+      headers: const {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
       body: jsonEncode({'currentPassword': currentPassword}),
     );
 
@@ -126,15 +134,20 @@ class ParentApi {
       'userEmail': userEmail,
       'userPhoneNum': userPhoneNum,
       // 둘 다 있을 때만 포함
-      if ((newPassword ?? '').isNotEmpty || (newPasswordConfirm ?? '').isNotEmpty)
+      if ((newPassword ?? '').isNotEmpty ||
+          (newPasswordConfirm ?? '').isNotEmpty)
         'newPassword': newPassword,
-      if ((newPassword ?? '').isNotEmpty || (newPasswordConfirm ?? '').isNotEmpty)
+      if ((newPassword ?? '').isNotEmpty ||
+          (newPasswordConfirm ?? '').isNotEmpty)
         'newPasswordConfirm': newPasswordConfirm,
     };
 
     final res = await _client.patch(
       uri,
-      headers: const {'Content-Type': 'application/json', 'Accept': 'application/json'},
+      headers: const {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
       body: jsonEncode(payload),
     );
 
@@ -150,10 +163,14 @@ class ParentApi {
     if (res.statusCode == 409) throw Exception('이미 사용 중인 이메일입니다.');
     throw Exception('프로필 수정 실패: ${res.statusCode} ${res.body}');
   }
+
   // 부모 설정 조회: GET /api/app/mypage/parent/{userId}/settings
   static Future<ParentSettings> fetchSettings(String userId) async {
     final uri = Uri.parse('$baseUrl/api/app/mypage/parent/$userId/settings');
-    final res = await _client.get(uri, headers: const {'Accept': 'application/json'});
+    final res = await _client.get(
+      uri,
+      headers: const {'Accept': 'application/json'},
+    );
 
     print('[GET settings/$userId] ${res.statusCode}');
 
@@ -182,7 +199,10 @@ class ParentApi {
 
     final res = await _client.patch(
       uri,
-      headers: const {'Content-Type': 'application/json', 'Accept': 'application/json'},
+      headers: const {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
       body: jsonEncode(payload),
     );
 
@@ -196,13 +216,20 @@ class ParentApi {
     throw Exception('설정 수정 실패: ${res.statusCode} ${res.body}');
   }
 
-
   // 부모 탈퇴 사전 검증: POST /api/app/mypage/parent/{userId}/verify-delete //changed
-  static Future<void> verifyDelete(String userId, String currentPassword) async {
-    final uri = Uri.parse('$baseUrl/api/app/mypage/parent/$userId/verify-delete');
+  static Future<void> verifyDelete(
+    String userId,
+    String currentPassword,
+  ) async {
+    final uri = Uri.parse(
+      '$baseUrl/api/app/mypage/parent/$userId/verify-delete',
+    );
     final res = await _client.post(
       uri,
-      headers: const {'Content-Type': 'application/json', 'Accept': 'application/json'},
+      headers: const {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
       body: jsonEncode({'currentPassword': currentPassword}),
     );
     print('[POST verify-delete] ${res.statusCode}');
@@ -213,11 +240,17 @@ class ParentApi {
   }
 
   // 부모 탈퇴: DELETE /api/app/mypage/parent/{userId} //changed
-  static Future<void> deleteParent(String userId, String currentPassword) async {
+  static Future<void> deleteParent(
+    String userId,
+    String currentPassword,
+  ) async {
     final uri = Uri.parse('$baseUrl/api/app/mypage/parent/$userId');
     final res = await _client.delete(
       uri,
-      headers: const {'Content-Type': 'application/json', 'Accept': 'application/json'},
+      headers: const {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
       body: jsonEncode({'currentPassword': currentPassword}),
     );
     print('[DELETE parent] ${res.statusCode}');
@@ -230,7 +263,10 @@ class ParentApi {
   // 로그아웃: POST /api/users/logout //changed
   static Future<void> logout() async {
     final uri = Uri.parse('$baseUrl/api/users/logout');
-    final res = await _client.post(uri, headers: const {'Accept': 'application/json'});
+    final res = await _client.post(
+      uri,
+      headers: const {'Accept': 'application/json'},
+    );
     print('[POST logout] ${res.statusCode}');
     if (res.statusCode == 204) return;
     throw Exception('로그아웃 실패: ${res.statusCode} ${res.body}');
@@ -239,7 +275,9 @@ class ParentApi {
   // 부모 언어 조회: GET /api/app/mypage/parent/{userId}/language -> for 연슈슈!!!
   static Future<String> fetchParentLanguage(String userId) async {
     final uri = Uri.parse('$baseUrl/api/app/mypage/parent/$userId/language');
-    print('[ParentApi] 부모 언어 조회 요청: GET /api/app/mypage/parent/$userId/language');
+    print(
+      '[ParentApi] 부모 언어 조회 요청: GET /api/app/mypage/parent/$userId/language',
+    );
 
     final res = await _client.get(
       uri,
@@ -266,7 +304,6 @@ class ParentApi {
     print('[ParentApi] ⚠️ 알 수 없는 오류 → ${res.statusCode} ${res.body}');
     throw Exception('부모 언어 조회 실패: ${res.statusCode} ${res.body}');
   }
-
 }
 
 class ChildSummary {
@@ -325,7 +362,6 @@ class ChildSummary {
           : childName;
 
   String get ageLabel => (childAge == null) ? '' : '${childAge}세';
-
 }
 
 // --- 모델: 부모 프로필 응답 ---
@@ -349,6 +385,7 @@ class ParentProfile {
         userPhoneNum: j['userPhoneNum']?.toString(),
       );
 }
+
 // 부모 설정 응답 모댈
 class ParentSettings {
   final bool allowNotifications;
@@ -373,7 +410,3 @@ class ParentSettings {
         'userLanguage': userLanguage,
       };
 }
-
-
-  
-
