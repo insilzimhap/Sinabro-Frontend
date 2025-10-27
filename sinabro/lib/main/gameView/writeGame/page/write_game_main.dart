@@ -33,9 +33,9 @@ class _WriteGameMainPageState extends State<WriteGameMainPage> {
           builder: (context, c) {
             return Stack(
               children: [
-                // 풍선 (좌상)
+                // 사다리 (좌상) -> FR_WG_001
                 _ObjectTile(
-                  id: 'balloons',
+                  id: 'ladder',
                   rect: const Rect.fromLTWH(40, 30, 180, 180),
                   imageAsset:
                       'assets/img/contents/gameWrite/write_game_1_1.png',
@@ -50,9 +50,9 @@ class _WriteGameMainPageState extends State<WriteGameMainPage> {
                   },
                 ),
 
-                // 비행기 (우상)
+                // 풍선 (우상) -> FR_WG_002
                 _ObjectTile(
-                  id: 'airplane',
+                  id: 'ballon',
                   rect: Rect.fromLTWH(c.maxWidth - 240, 30, 220, 170),
                   imageAsset:
                       'assets/img/contents/gameWrite/write_game_1_2.png',
@@ -67,9 +67,9 @@ class _WriteGameMainPageState extends State<WriteGameMainPage> {
                   },
                 ),
 
-                // 달팽이 (좌하)
+                // 비행기 (좌하) -> FR_WG_003
                 _ObjectTile(
-                  id: 'airplane2',
+                  id: 'airplane',
                   rect: Rect.fromLTWH(30, c.maxHeight - 240, 220, 170),
                   imageAsset:
                       'assets/img/contents/gameWrite/write_game_1_3.png',
@@ -84,9 +84,9 @@ class _WriteGameMainPageState extends State<WriteGameMainPage> {
                   },
                 ),
 
-                // 도형 (우하)
+                // 블록 (우하) -> FR_WG_004
                 _ObjectTile(
-                  id: 'shapes',
+                  id: 'block',
                   rect: Rect.fromLTWH(
                     c.maxWidth - 260,
                     c.maxHeight - 240,

@@ -6,11 +6,17 @@ import 'package:sinabro/main/gameView/writeGame/page/level2/write_game_2_1.dart'
 import 'package:sinabro/main/gameView/writeGame/page/level2/write_game_2_2.dart';
 import 'package:sinabro/main/gameView/writeGame/page/level2/write_game_2_3.dart';
 
+// 열매ID 매핑
+import 'package:sinabro/main/gameView/writeGame/api/fruit_state.dart';
+
 class WriteGameMain2Page extends StatelessWidget {
   const WriteGameMain2Page({super.key, required this.childId});
   final String childId;
 
+  
+
   static const String routeName = '/write/game/hub2';
+  static const String stageId = 'ST011'; // ✅ 쓰기게임 나무2(Stage 2)
 
   // 에셋 경로
   static const _dir = 'assets/img/contents/gameWrite/';
@@ -92,12 +98,17 @@ class WriteGameMain2Page extends StatelessWidget {
                   ),
                 ),
 
-                // 왼쪽 주머니 → write_game_2_1.dart
+                // 왼쪽 주머니 → write_game_2_1.dart (FR_WG_005)
                 _BagButton(
                   rect: leftBagRect,
                   imageAsset: _bagLeft,
                   semanticLabel: '왼쪽 과자 주머니',
                   onTap: () {
+                    // ✅ fruitId + stageId 저장
+                    FruitState.instance
+                      ..setStage(stageId)
+                      ..setFruit('FR_WG_005');
+                    
                     Navigator.push(
                       context,
                       MaterialPageRoute(
@@ -107,12 +118,15 @@ class WriteGameMain2Page extends StatelessWidget {
                   },
                 ),
 
-                // 오른쪽 위 주머니 → write_game_2_2.dart
+                // 오른쪽 위 주머니 → write_game_2_2.dart (FR_WG_006)
                 _BagButton(
                   rect: rightTopBagRect,
                   imageAsset: _bagRightTop,
                   semanticLabel: '오른쪽 위 과자 주머니',
                   onTap: () {
+                    FruitState.instance  // ✅ fruitId + stageId 저장
+                      ..setStage(stageId)
+                      ..setFruit('FR_WG_006');
                     Navigator.push(
                       context,
                       MaterialPageRoute(
@@ -122,12 +136,15 @@ class WriteGameMain2Page extends StatelessWidget {
                   },
                 ),
 
-                // 오른쪽 아래 주머니 → write_game_2_3.dart
+                // 오른쪽 아래 주머니 → write_game_2_3.dart (FR_WG_007)
                 _BagButton(
                   rect: rightBottomBagRect,
                   imageAsset: _bagRightBottom,
                   semanticLabel: '오른쪽 아래 과자 주머니',
                   onTap: () {
+                    FruitState.instance  // ✅ fruitId + stageId 저장
+                      ..setStage(stageId)
+                      ..setFruit('FR_WG_007');
                     Navigator.push(
                       context,
                       MaterialPageRoute(
