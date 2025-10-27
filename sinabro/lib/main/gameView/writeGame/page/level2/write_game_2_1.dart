@@ -303,6 +303,7 @@ class _WriteGameLevel2_1PageState extends State<WriteGameLevel2_1Page> {
     }
   }
 
+  // 랜덤 출제 로직
   void _resetGame() {
     final rnd = Random();
     _problems = [..._POOL]..shuffle(rnd);
@@ -690,7 +691,7 @@ class _WriteGameLevel2_1PageState extends State<WriteGameLevel2_1Page> {
                                         SizedBox(
                                           width: pad * 0.98,
                                           height: pad * 0.98,
-                                          child: WritingCanvas(
+                                          child: WritingCanvas(  // 여기가 셀비인가?
                                             key: _canvasKey,
                                             childId: widget.childId,
                                             targetChar: current.char,
