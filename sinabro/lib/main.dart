@@ -8,6 +8,8 @@ import 'package:kakao_flutter_sdk_common/kakao_flutter_sdk_common.dart';
 // 듣기게임 테스트용
 import 'main/gameView/listenGame/chapter_page.dart';
 
+// 보상페이지 테스트용
+import 'main/childView/page/sticker_Book.dart';
 
 void main() {
   
@@ -31,7 +33,7 @@ class MyApp extends StatelessWidget {
       //home: WriteStudyPage(),
       // home: const ListenAppleSelect(childId: "test_child"), // ✔️ 듣기학습 열매
       // home: GameListenChapterScreen(), // ✔️ 듣기게임 챕터
-      home: GameListenChapterScreen(),
+      home: LearningAlbumPage(),
     );
   }
 }

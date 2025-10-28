@@ -42,6 +42,9 @@ flutter:
     - assets/img/pageSetting/
     - assets/img/leveltest/
 
+    - assets/img/contents/stickerBook/
+    - assets/img/contents/stickerBook/stickers/
+
     - assets/img/contents/gameWrite/
 
     - assets/img/contents/gameListen/
