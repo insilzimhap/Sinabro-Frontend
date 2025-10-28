@@ -1,9 +1,10 @@
-// lib/main/studyView/listenGame/page/level2/intro_page.dart
+// lib/main/gameView/listenGame/page/level2/level2_intro_page.dart
 import 'package:flutter/material.dart';
 
 class Level2IntroPage extends StatefulWidget {
   final VoidCallback? onNext;
   const Level2IntroPage({super.key, this.onNext});
+  
 
   @override
   State<Level2IntroPage> createState() => _Level2IntroPageState();
@@ -16,17 +17,17 @@ class _Level2IntroPageState extends State<Level2IntroPage> {
     {
       'name': '꼬마요정',
       'text': '안녕하세요! 저는 꼬마요정이라고 해요',
-      'image': 'assets/img/contents/listenGame/level2/fairy_1.png',
+      'image': 'assets/img/contents/gameListen/level2/fairy_story_1.png',
     },
     {
       'name': '꼬마요정',
       'text': '세상을 돌아다니면서 행운을 준답니다',
-      'image': 'assets/img/contents/listenGame/level2/fairy_2.png',
+      'image': 'assets/img/contents/gameListen/level2/fairy_story_1.png',
     },
     {
       'name': '꼬마요정',
       'text': '저를 도와주실래요?',
-      'image': 'assets/img/contents/listenGame/level2/fairy_3.png',
+      'image': 'assets/img/contents/gameListen/level2/fairy_story_1.png',
     },
   ];
 
@@ -35,11 +36,10 @@ class _Level2IntroPageState extends State<Level2IntroPage> {
     final current = dialogues[_step];
 
     return Scaffold(
-      backgroundColor: const Color(0xFFD5FCDE), // 연두색 배경
+      backgroundColor: const Color(0xFFD5FCDE),
       body: SafeArea(
         child: Stack(
           children: [
-            // 🧚 캐릭터 이미지
             Center(
               child: AnimatedSwitcher(
                 duration: const Duration(milliseconds: 500),
@@ -50,8 +50,6 @@ class _Level2IntroPageState extends State<Level2IntroPage> {
                 ),
               ),
             ),
-
-            // 💬 말풍선 (캐릭터명 + 대사)
             Positioned(
               top: 80,
               left: 40,
@@ -60,8 +58,7 @@ class _Level2IntroPageState extends State<Level2IntroPage> {
                 duration: const Duration(milliseconds: 400),
                 child: Container(
                   key: ValueKey(current['text']),
-                  padding:
-                      const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                  padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(16),
@@ -77,8 +74,7 @@ class _Level2IntroPageState extends State<Level2IntroPage> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Container(
-                        padding: const EdgeInsets.symmetric(
-                            vertical: 2, horizontal: 8),
+                        padding: const EdgeInsets.symmetric(vertical: 2, horizontal: 8),
                         decoration: BoxDecoration(
                           color: const Color(0xFF6DBE78),
                           borderRadius: BorderRadius.circular(8),
@@ -106,19 +102,14 @@ class _Level2IntroPageState extends State<Level2IntroPage> {
                 ),
               ),
             ),
-
-            // ⬅️ 뒤로가기 버튼
             Positioned(
               top: 20,
               left: 16,
               child: IconButton(
-                icon: const Icon(Icons.arrow_back_ios_new_rounded,
-                    color: Color(0xFF2E6B3D)),
+                icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Color(0xFF2E6B3D)),
                 onPressed: () => Navigator.pop(context),
               ),
             ),
-
-            // 💚 다음 / 도와주기 버튼
             Positioned(
               right: 24,
               bottom: 40,
@@ -132,11 +123,8 @@ class _Level2IntroPageState extends State<Level2IntroPage> {
                           side: const BorderSide(color: Color(0xFF2E6B3D), width: 2),
                           foregroundColor: const Color(0xFF2E6B3D),
                           backgroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(
-                              vertical: 10, horizontal: 20),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
+                          padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 20),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                         ),
                         child: const Text('다음'),
                       )
@@ -147,11 +135,8 @@ class _Level2IntroPageState extends State<Level2IntroPage> {
                           side: const BorderSide(color: Color(0xFF2E6B3D), width: 2),
                           foregroundColor: const Color(0xFF2E6B3D),
                           backgroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(
-                              vertical: 10, horizontal: 20),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
+                          padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 20),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                         ),
                         child: const Text('도와주기'),
                       ),

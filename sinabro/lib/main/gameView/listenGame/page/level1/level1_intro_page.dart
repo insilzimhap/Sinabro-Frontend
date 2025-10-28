@@ -1,4 +1,4 @@
-// lib/main/studyView/listenGame/page/level1/intro_page.dart
+// lib/main/studyView/gameListen/page/level1/intro_page.dart
 import 'package:flutter/material.dart';
 
 class Level1IntroPage extends StatefulWidget {
@@ -18,17 +18,17 @@ class _Level1IntroPageState extends State<Level1IntroPage>
     {
       'name': '양지',
       'text': '안녕하세요! 저는 양지라고 해요',
-      'image': 'assets/img/contents/listenGame/level1/sheep_1.png',
+      'image': 'assets/img/contents/gameListen/level1/yangji_story_1.png',
     },
     {
       'name': '양지',
       'text': '내일 마법 시험이 있는데 성공을 못해요',
-      'image': 'assets/img/contents/listenGame/level1/sheep_2.png',
+      'image': 'assets/img/contents/gameListen/level1/yangji_story_2.png',
     },
     {
       'name': '양지',
       'text': '저를 좀 도와주세요!',
-      'image': 'assets/img/contents/listenGame/level1/sheep_3.png',
+      'image': 'assets/img/contents/gameListen/level1/yangji_story_2.png',
     },
   ];
 
@@ -154,3 +154,4 @@ class _Level1IntroPageState extends State<Level1IntroPage>
     );
   }
 }
+  

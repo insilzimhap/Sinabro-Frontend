@@ -25,13 +25,13 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: '시나브로',
       debugShowCheckedModeBanner: false, // 앱 화면 오른쪽 위 debug 배너 제거!
-      //home: CloudAnimationScreen(),
+      // home: CloudAnimationScreen(),
       //home: const HandwritingScreen(),
       //home: ListenStudyPage(),
       //home: WriteStudyPage(),
       // home: const ListenAppleSelect(childId: "test_child"), // ✔️ 듣기학습 열매
-      home: ListenGameChapterPage(), // ✔️ 듣기게임 챕터
-      //home: , 
+      // home: GameListenChapterScreen(), // ✔️ 듣기게임 챕터
+      home: GameListenChapterScreen(),
     );
   }
 }

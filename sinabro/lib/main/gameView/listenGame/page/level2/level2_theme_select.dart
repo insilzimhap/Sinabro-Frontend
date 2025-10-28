@@ -1,44 +1,35 @@
-// lib/main/studyView/listenGame/page/level2/theme_select_page.dart
 import 'package:flutter/material.dart';
-import '../listen_game_page.dart';
-import '../../data/level2_data.dart';
 
 class Level2ThemeSelectPage extends StatelessWidget {
-  const Level2ThemeSelectPage({super.key});
+  final Function(int) onThemeSelected;
+
+  const Level2ThemeSelectPage({
+    super.key,
+    required this.onThemeSelected,
+  });
 
   @override
   Widget build(BuildContext context) {
-    final themePaths = [
-      'assets/img/contents/listenGame/level2/theme/theme_1.png',
-      'assets/img/contents/listenGame/level2/theme/theme_2.png',
-      'assets/img/contents/listenGame/level2/theme/theme_3.png',
-    ];
-    const decoPath =
-        'assets/img/contents/listenGame/level2/theme/theme_deco.png';
-    const bgPath =
-        'assets/img/contents/listenGame/level2/theme/background.png';
+    final themePaths = List.generate(
+      3,
+      (i) => 'assets/img/contents/gameListen/level2/theme/theme_${i + 1}.png',
+    );
+    const decoPath = 'assets/img/contents/gameListen/level2/theme/theme_deco.png';
+    const bgPath = 'assets/img/contents/gameListen/level2/theme/background.png';
 
     return Scaffold(
       body: SafeArea(
         child: Stack(
           children: [
-            // 🟢 배경
             Positioned.fill(
-              child: Image.asset(
-                bgPath,
-                fit: BoxFit.cover,
-              ),
+              child: Image.asset(bgPath, fit: BoxFit.cover),
             ),
-
-            // 🌿 하단 풀 장식
             Positioned(
               bottom: 0,
               left: 0,
               right: 0,
               child: Image.asset(decoPath, fit: BoxFit.cover, height: 100),
             ),
-
-            // 🔙 뒤로가기
             Positioned(
               top: 16,
               left: 16,
@@ -48,8 +39,6 @@ class Level2ThemeSelectPage extends StatelessWidget {
                 onPressed: () => Navigator.pop(context),
               ),
             ),
-
-            // 🍀 테마 선택 버튼
             Center(
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -57,26 +46,10 @@ class Level2ThemeSelectPage extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: List.generate(themePaths.length, (index) {
-                    final path = themePaths[index];
                     return _ThemeButton(
                       index: index + 1,
-                      imagePath: path,
-                      onTap: () {
-                        final start = index * 5;
-                        final end = start + 5;
-                        final selected = level2GameData.sublist(start, end);
-
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => ListenGamePage(
-                              gameData: selected,
-                              onFinished: () => Navigator.popUntil(
-                                  context, (route) => route.isFirst),
-                            ),
-                          ),
-                        );
-                      },
+                      imagePath: themePaths[index],
+                      onTap: () => onThemeSelected(index),
                     );
                   }),
                 ),
@@ -124,7 +97,7 @@ class _ThemeButtonState extends State<_ThemeButton>
 
   @override
   Widget build(BuildContext context) {
-    final isCenter = widget.index == 2; // 가운데만 반짝이
+    final isCenter = widget.index == 2;
 
     return GestureDetector(
       onTap: widget.onTap,

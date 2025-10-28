@@ -1,4 +1,4 @@
-// lib/main/studyView/listenGame/page/level3/intro_page.dart
+// lib/main/studyView/gameListen/page/level3/intro_page.dart
 import 'package:flutter/material.dart';
 
 class Level3IntroPage extends StatefulWidget {
@@ -16,17 +16,17 @@ class _Level3IntroPageState extends State<Level3IntroPage> {
     {
       'name': '크크',
       'text': '안녕하크! 나는 크크라고 하크!',
-      'image': 'assets/img/contents/listenGame/level3/shark_1.png',
+      'image': 'assets/img/contents/gameListen/level3/kuku_story1.png',
     },
     {
       'name': '크크',
       'text': '엄마의 심부름을 해야한다크!',
-      'image': 'assets/img/contents/listenGame/level3/shark_2.png',
+      'image': 'assets/img/contents/gameListen/level3/kuku_story1.png',
     },
     {
       'name': '크크',
       'text': '그치만 숫자를 못 센다크... 도와달라크!',
-      'image': 'assets/img/contents/listenGame/level3/shark_3.png',
+      'image': 'assets/img/contents/gameListen/level3/kuku_story2.png',
     },
   ];
 

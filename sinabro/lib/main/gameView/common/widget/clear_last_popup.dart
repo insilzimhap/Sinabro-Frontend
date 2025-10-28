@@ -68,7 +68,7 @@ Future<void> showClearLastPopup(BuildContext context) async {
     Navigator.of(context, rootNavigator: true).pop();
     Navigator.pushAndRemoveUntil(
       context,
-      MaterialPageRoute(builder: (_) => const ListenGameChapterPage()),
+      MaterialPageRoute(builder: (_) => const GameListenChapterScreen()),
       (route) => route.isFirst,
     );
   }

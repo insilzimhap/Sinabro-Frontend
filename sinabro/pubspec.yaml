@@ -46,13 +46,24 @@ flutter:
 
     - assets/img/contents/gameListen/
     - assets/img/contents/gameListen/chapter/
+    - assets/img/contents/gameListen/level1/
+    - assets/img/contents/gameListen/level1/answer/
+    - assets/img/contents/gameListen/level1/theme/
+    - assets/img/contents/gameListen/level2/
+    - assets/img/contents/gameListen/level2/answer/
+    - assets/img/contents/gameListen/level2/result/
+    - assets/img/contents/gameListen/level2/theme/
+    - assets/img/contents/gameListen/level3/
+    - assets/img/contents/gameListen/level3/answer/
+    - assets/img/contents/gameListen/level3/theme/
+    - assets/img/contents/gameListen/tutorial/
 
     - assets/img/contents/studyListen/
     - assets/img/contents/studyListen/level2/
     - assets/img/contents/studyListen/level2/main_keyword/
     - assets/img/contents/studyListen/level2/main_topic/
     - assets/img/contents/studyListen/level2/story/
-    
+  
     - assets/img/contents/studyListen/level3/
     - assets/img/contents/studyListen/level3/main_keyword/
     - assets/img/contents/studyListen/level3/main_topic/
