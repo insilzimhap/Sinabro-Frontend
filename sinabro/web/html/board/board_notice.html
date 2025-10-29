@@ -30,25 +30,12 @@
           <th>No</th>
           <th>제목</th>
           <th>작성일</th>
-          <th>작성자</th>
+          <th>유형</th>
           <th>액션</th>
         </tr>
       </thead>
-      <tbody>
-        <tr>
-          <td>1</td>
-          <td>시스템 점검 안내</td>
-          <td>2025-04-11</td>
-          <td>관리자</td>
-          <td><button onclick="location.href='board_index_no_update.html'" class="manage-btn">관리</button></td>
-        </tr>
-        <tr>
-          <td>2</td>
-          <td>이벤트 안내</td>
-          <td>2025-04-10</td>
-          <td>운영팀</td>
-          <td><button class="manage-btn">관리</button></td>
-        </tr>
+      <tbody id="noticeTableBody">
+        <!-- JS에서 불러온 데이터가 여기에 들어감 -->
       </tbody>
     </table>
   </main>
@@ -59,6 +46,42 @@
       .then(data => {
         document.getElementById("header-container").innerHTML = data;
       });
+
+      // 공지사항 목록 불러오기
+    async function loadNotices() {
+      try {
+        const res = await fetch("http://localhost:8090/api/admin/notices"); // 백엔드 API 호출
+        if (!res.ok) throw new Error("데이터 불러오기 실패");
+        
+        const notices = await res.json();
+        const tbody = document.getElementById("noticeTableBody");
+        tbody.innerHTML = "";
+
+        // 최신순 정렬
+        notices.sort((a, b) => b.id - a.id);
+
+        notices.forEach((notice, index) => {
+          const row = `
+            <tr>
+              <td>${index + 1}</td>
+              <td>${notice.title}</td>
+              <td>${notice.createdDate ? notice.createdDate.split("T")[0] : ""}</td>
+              <td>${notice.noticeType || ""}</td>
+              <td>
+                <button onclick="location.href='board_index_no_update.html?id=${notice.id}'" class="manage-btn">관리</button>
+              </td>
+            </tr>
+          `;
+          tbody.innerHTML += row;
+        });
+      } catch (err) {
+        console.error(err);
+        alert("공지사항 목록을 불러오는 중 오류가 발생했습니다.");
+      }
+    }
+
+    // 페이지 로드 시 실행
+    window.onload = loadNotices;
   </script>
 </body>
 </html>

@@ -1,15 +1,47 @@
+// lib/main/studyView/listenStudy/page/level2/story1/gender_select_page.dart
+
 import 'package:flutter/material.dart';
+import 'package:audioplayers/audioplayers.dart';
 import 'models.dart';
 
-class GenderSelectPage extends StatelessWidget {
+class GenderSelectPage extends StatefulWidget {
   final ValueChanged<Gender> onSelected;
-  const GenderSelectPage({super.key, required this.onSelected});
+  final String childId; // 자녀 아이디
+
+  const GenderSelectPage({
+    super.key,
+    required this.onSelected,
+    required this.childId,
+  });
+
+  @override
+  State<GenderSelectPage> createState() => _GenderSelectPageState();
+}
+
+class _GenderSelectPageState extends State<GenderSelectPage> {
+  final AudioPlayer _audioPlayer = AudioPlayer();
+
+  @override
+  void initState() {
+    super.initState();
+    _playAudio('fam_gender.mp3');
+  }
+
+  @override
+  void dispose() {
+    _audioPlayer.dispose();
+    super.dispose();
+  }
+
+  // 오디오 재생 헬퍼
+  Future<void> _playAudio(String fileName) async {
+    await _audioPlayer
+        .play(AssetSource('audio/tts/studyListen/level2/family/$fileName'));
+  }
 
   void _choose(BuildContext context, Gender gender) {
-    // 먼저 현재 페이지를 닫고,
     Navigator.pop(context);
-    // pop 이후에 콜백을 호출(네비게이션 충돌 방지)
-    Future.microtask(() => onSelected(gender));
+    Future.microtask(() => widget.onSelected(gender));
   }
 
   @override
@@ -22,11 +54,13 @@ class GenderSelectPage extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             const Text(
-              "(__)는 어떤 모습이야?",
-              style: TextStyle(fontSize: 22, fontWeight: FontWeight.w600, color: Colors.brown),
+              "어떤 모습이야?",
+              style: TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.brown),
             ),
             const SizedBox(height: 28),
-
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
@@ -34,14 +68,22 @@ class GenderSelectPage extends StatelessWidget {
                   context,
                   imagePath: "assets/img/contents/studyListen/level2/girl.png",
                   label: "나는 여자아이야",
-                  onTap: () => _choose(context, Gender.female),
+                  onTap: () {
+                    // 여자아이 오디오 재생 후 선택
+                    _playAudio('fam_girl.mp3');
+                    _choose(context, Gender.female);
+                  },
                 ),
                 const SizedBox(width: 20),
                 _genderCard(
                   context,
                   imagePath: "assets/img/contents/studyListen/level2/boy.png",
                   label: "나는 남자아이야",
-                  onTap: () => _choose(context, Gender.male),
+                  onTap: () {
+                    // 남자아이 오디오 재생 후 선택
+                    _playAudio('fam_boy.mp3');
+                    _choose(context, Gender.male);
+                  },
                 ),
               ],
             ),
@@ -66,7 +108,10 @@ class GenderSelectPage extends StatelessWidget {
           color: Colors.brown[50],
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
-            BoxShadow(color: Colors.brown.withOpacity(0.2), offset: const Offset(2, 3), blurRadius: 4),
+            BoxShadow(
+                color: Colors.brown.withOpacity(0.2),
+                offset: const Offset(2, 3),
+                blurRadius: 4),
           ],
         ),
         child: Column(
@@ -74,7 +119,10 @@ class GenderSelectPage extends StatelessWidget {
             Image.asset(imagePath, height: 120),
             const SizedBox(height: 8),
             Text(label,
-                style: const TextStyle(fontSize: 16, color: Colors.brown, fontWeight: FontWeight.w500)),
+                style: const TextStyle(
+                    fontSize: 16,
+                    color: Colors.brown,
+                    fontWeight: FontWeight.w500)),
           ],
         ),
       ),

@@ -1,28 +1,41 @@
-import 'package:flutter/material.dart';
-import 'models.dart';
+// lib/main/studyView/listenStudy/page/level2/story1/main_keyword.dart
 
-class MainKeywordPage extends StatelessWidget {
+import 'package:flutter/material.dart';
+import 'package:audioplayers/audioplayers.dart';
+import 'package:sinabro/main/studyView/listenStudy/page/level2/story1/models.dart';
+
+class MainKeywordPage extends StatefulWidget {
   final int index; // 1~6
   final Gender gender;
   final VoidCallback onNext;
+  final String childId; // 자녀 아이디
 
   const MainKeywordPage({
     super.key,
     required this.index,
     required this.gender,
     required this.onNext,
+    required this.childId,
   });
 
+  @override
+  State<MainKeywordPage> createState() => _MainKeywordPageState();
+}
+
+class _MainKeywordPageState extends State<MainKeywordPage> {
+  // ✨ [수정] AudioPlayer 추가
+  final AudioPlayer _audioPlayer = AudioPlayer();
+
   String get _title {
-    switch (index) {
+    switch (widget.index) {
       case 1:
         return "엄마";
       case 2:
         return "아빠";
       case 3:
-        return gender == Gender.male ? "누나" : "언니";
+        return widget.gender == Gender.male ? "누나" : "언니";
       case 4:
-        return gender == Gender.male ? "형" : "오빠";
+        return widget.gender == Gender.male ? "형" : "오빠";
       case 5:
         return "나";
       case 6:
@@ -34,10 +47,49 @@ class MainKeywordPage extends StatelessWidget {
 
   String get _imagePath {
     const base = "assets/img/contents/studyListen/level2/main_keyword";
-    if (index == 5) {
-      return "$base/1-5(${gender == Gender.male ? "boy" : "girl"}).png";
+    if (widget.index == 5) {
+      return "$base/1-5(${widget.gender == Gender.male ? "boy" : "girl"}).png";
     }
-    return "$base/1-$index.png";
+    return "$base/1-${widget.index}.png";
+  }
+
+  // 오디오 파일명을 가져오는 함수
+  String get _audioFileName {
+    switch (widget.index) {
+      case 1:
+        return "fam_mom.mp3";
+      case 2:
+        return "fam_dad.mp3";
+      case 3:
+        return widget.gender == Gender.male ? "fam_nuna.mp3" : "fam_eonni.mp3";
+      case 4:
+        return widget.gender == Gender.male ? "fam_hyeong.mp3" : "fam_oppa.mp3";
+      case 5:
+        return "fam_me.mp3";
+      case 6:
+        return "fam_younger.mp3";
+      default:
+        return "";
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _playAudio();
+  }
+
+  @override
+  void dispose() {
+    _audioPlayer.dispose();
+    super.dispose();
+  }
+
+  Future<void> _playAudio() async {
+    if (_audioFileName.isNotEmpty) {
+      await _audioPlayer.play(
+          AssetSource('audio/tts/studyListen/level2/family/$_audioFileName'));
+    }
   }
 
   @override
@@ -45,7 +97,7 @@ class MainKeywordPage extends StatelessWidget {
     return Scaffold(
       backgroundColor: const Color(0xFFFDF7EF),
       body: InkWell(
-        onTap: onNext,
+        onTap: widget.onNext,
         child: SafeArea(
           child: Center(
             child: Column(

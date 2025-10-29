@@ -66,27 +66,25 @@ class _ListenStudyPageState extends State<ListenStudyPage> {
                           Future.delayed(const Duration(milliseconds: 300), () {
                             showDialog(
                               context: context,
-                              builder:
-                                  (_) => AlertDialog(
-                                    title: const Text('학습 완료 🎉'),
-                                    content: const Text('모든 소리를 다 들었어요!'),
-                                    actions: [
-                                      TextButton(
-                                        onPressed: () {
-                                          Navigator.pop(context);
-                                          Navigator.pushReplacement(
-                                            context,
-                                            MaterialPageRoute(
-                                              builder:
-                                                  (_) =>
-                                                      LobbyChildScreen(childId: widget.childId),
-                                            ),
-                                          );
-                                        },
-                                        child: const Text('확인'),
-                                      ),
-                                    ],
+                              builder: (_) => AlertDialog(
+                                title: const Text('학습 완료 🎉'),
+                                content: const Text('모든 소리를 다 들었어요!'),
+                                actions: [
+                                  TextButton(
+                                    onPressed: () {
+                                      Navigator.pop(context);
+                                      Navigator.pushReplacement(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (_) => LobbyChildScreen(
+                                              childId: widget.childId),
+                                        ),
+                                      );
+                                    },
+                                    child: const Text('확인'),
                                   ),
+                                ],
+                              ),
                             );
                           });
                         }

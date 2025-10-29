@@ -1,4 +1,5 @@
 // lib/main/childView/page/level_test_page.dart
+// 레벨 테스트 관련은 permitall 이라 수정 안했음 (그대로 http로 연결)
 
 import 'dart:convert';
 
@@ -19,7 +20,8 @@ class LevelTestPage extends StatefulWidget {
 
 class _LevelTestPageState extends State<LevelTestPage> {
   late Future<LevelTestResponse> futureData;
-  int stepIndex = 0; // 0 = 부모 안내(img1), 1..N = 부모문항(이미지 매핑), 그 다음 = 자녀 안내(img7) → 자녀문항 → 결과(img8)
+  int stepIndex =
+      0; // 0 = 부모 안내(img1), 1..N = 부모문항(이미지 매핑), 그 다음 = 자녀 안내(img7) → 자녀문항 → 결과(img8)
 
   final List<Map<String, dynamic>> parentChoices = [];
   final List<Map<String, dynamic>> levelChoices = [];
@@ -79,8 +81,10 @@ class _LevelTestPageState extends State<LevelTestPage> {
         const SizedBox(height: 24),
         Image.asset('assets/img/leveltest/img1.png', height: 220),
         const SizedBox(height: 20),
-        const Text('부모 영역',
-            style: TextStyle(fontSize: 32, fontWeight: FontWeight.w700)),
+        const Text(
+          '부모 영역',
+          style: TextStyle(fontSize: 32, fontWeight: FontWeight.w700),
+        ),
         const SizedBox(height: 16),
         const Padding(
           padding: EdgeInsets.symmetric(horizontal: 24),
@@ -105,8 +109,10 @@ class _LevelTestPageState extends State<LevelTestPage> {
                 borderRadius: BorderRadius.circular(16),
               ),
             ),
-            child: const Text('지금 레벨테스트를 진행하는 사람은 부모입니다',
-                style: TextStyle(fontWeight: FontWeight.w700)),
+            child: const Text(
+              '지금 레벨테스트를 진행하는 사람은 부모입니다',
+              style: TextStyle(fontWeight: FontWeight.w700),
+            ),
           ),
         ),
       ],
@@ -133,16 +139,15 @@ class _LevelTestPageState extends State<LevelTestPage> {
               padding: const EdgeInsets.symmetric(vertical: 8),
               child: GestureDetector(
                 onTap: () {
-                  parentChoices.add({
-                    'questionId': q.id,
-                    'optionId': opt.id,
-                  });
+                  parentChoices.add({'questionId': q.id, 'optionId': opt.id});
                   _next();
                 },
                 child: Container(
                   width: double.infinity,
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 16,
+                  ),
                   decoration: BoxDecoration(
                     color: const Color(0xFFF5F5F7),
                     borderRadius: BorderRadius.circular(16),
@@ -170,8 +175,10 @@ class _LevelTestPageState extends State<LevelTestPage> {
         const SizedBox(height: 24),
         Image.asset('assets/img/leveltest/img7.png', height: 220),
         const SizedBox(height: 20),
-        const Text('자녀 영역',
-            style: TextStyle(fontSize: 32, fontWeight: FontWeight.w700)),
+        const Text(
+          '자녀 영역',
+          style: TextStyle(fontSize: 32, fontWeight: FontWeight.w700),
+        ),
         const SizedBox(height: 16),
         const Padding(
           padding: EdgeInsets.symmetric(horizontal: 24),
@@ -199,8 +206,10 @@ class _LevelTestPageState extends State<LevelTestPage> {
                 borderRadius: BorderRadius.circular(16),
               ),
             ),
-            child: const Text('아이를 도와 레벨테스트를 진행하겠습니다',
-                style: TextStyle(fontWeight: FontWeight.w700)),
+            child: const Text(
+              '아이를 도와 레벨테스트를 진행하겠습니다',
+              style: TextStyle(fontWeight: FontWeight.w700),
+            ),
           ),
         ),
       ],
@@ -229,7 +238,7 @@ class _LevelTestPageState extends State<LevelTestPage> {
               color: Color(0x11000000),
               blurRadius: 6,
               offset: Offset(0, 2),
-            )
+            ),
           ],
         ),
         child: Column(
@@ -262,8 +271,10 @@ class _LevelTestPageState extends State<LevelTestPage> {
       children: [
         _progressBar(ratio),
         const SizedBox(height: 8),
-        Text(q.type,
-            style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w800)),
+        Text(
+          q.type,
+          style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w800),
+        ),
         const SizedBox(height: 8),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -315,8 +326,13 @@ class _LevelTestPageState extends State<LevelTestPage> {
                   children: List.generate(q.options.length, (i) {
                     final opt = q.options[i];
                     return Padding(
-                      padding: EdgeInsets.only(right: i < q.options.length - 1 ? spacing : 0),
-                      child: SizedBox(width: itemWidth, child: _optionCard(opt)),
+                      padding: EdgeInsets.only(
+                        right: i < q.options.length - 1 ? spacing : 0,
+                      ),
+                      child: SizedBox(
+                        width: itemWidth,
+                        child: _optionCard(opt),
+                      ),
                     );
                   }),
                 );
@@ -338,11 +354,12 @@ class _LevelTestPageState extends State<LevelTestPage> {
         const SizedBox(height: 24),
         Image.asset('assets/img/leveltest/img8.png', height: 240),
         const SizedBox(height: 20),
-        const Text('레벨 테스트 종료',
-            style: TextStyle(fontSize: 32, fontWeight: FontWeight.w800)),
+        const Text(
+          '레벨 테스트 종료',
+          style: TextStyle(fontSize: 32, fontWeight: FontWeight.w800),
+        ),
         const SizedBox(height: 12),
-        const Text('이제 아이와 함께 즐거운 학습을 시작해보세요!',
-            style: TextStyle(fontSize: 16)),
+        const Text('이제 아이와 함께 즐거운 학습을 시작해보세요!', style: TextStyle(fontSize: 16)),
         const SizedBox(height: 32),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -365,8 +382,10 @@ class _LevelTestPageState extends State<LevelTestPage> {
                 borderRadius: BorderRadius.circular(16),
               ),
             ),
-            child: const Text('다음으로 넘어가기',
-                style: TextStyle(fontWeight: FontWeight.w700)),
+            child: const Text(
+              '다음으로 넘어가기',
+              style: TextStyle(fontWeight: FontWeight.w700),
+            ),
           ),
         ),
       ],
@@ -391,9 +410,11 @@ class _LevelTestPageState extends State<LevelTestPage> {
           }
 
           final allParents = List<ParentQuestion>.from(
-              snapshot.data!.parentQuestions);
-          allParents.sort((a, b) =>
-              (a.questionOrder).compareTo(b.questionOrder));
+            snapshot.data!.parentQuestions,
+          );
+          allParents.sort(
+            (a, b) => (a.questionOrder).compareTo(b.questionOrder),
+          );
 
           List<ParentQuestion> parentQs = allParents;
           if (allParents.isNotEmpty &&
@@ -405,8 +426,7 @@ class _LevelTestPageState extends State<LevelTestPage> {
           final levelQs = snapshot.data!.levelTestQuestions;
 
           // 단계 계산: 부모 안내(1) + 부모문항(5) + 자녀 안내(1) + 자녀문항(M) + 결과(1)
-          final totalSteps =
-              1 + parentQs.length + 1 + levelQs.length + 1;
+          final totalSteps = 1 + parentQs.length + 1 + levelQs.length + 1;
           final ratio = stepIndex / (totalSteps - 1);
 
           if (stepIndex == 0) return _parentIntro();
@@ -415,7 +435,10 @@ class _LevelTestPageState extends State<LevelTestPage> {
             final q = parentQs[stepIndex - 1];
             final imgNumber = stepIndex + 1; // 1→img2, 5→img6
             return _parentQuestion(
-                q, 'assets/img/leveltest/img$imgNumber.png', ratio);
+              q,
+              'assets/img/leveltest/img$imgNumber.png',
+              ratio,
+            );
           }
 
           if (stepIndex == parentQs.length + 1) {
