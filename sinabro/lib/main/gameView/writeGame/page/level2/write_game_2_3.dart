@@ -9,7 +9,8 @@ import 'package:sinabro/selvy_example_view/selvy_service.dart'
 // ▼ 추가: 매핑/API
 import 'package:sinabro/main/gameView/writeGame/data/wg_question_map.dart'
     as WG;
-import 'package:sinabro/main/gameView/writeGame/api/write_game_api.dart';
+import 'package:sinabro/main/gameView/writeGame/api/child_game_api.dart'; //changed
+import 'package:sinabro/main/gameView/writeGame/api/fruit_state.dart'; //changed
 // ⬇️ AUDIO IMPORT
 import 'package:audioplayers/audioplayers.dart';
 
@@ -421,6 +422,9 @@ class _WriteGameLevel2_3PageState extends State<WriteGameLevel2_3Page> {
   String? _resultId;
   bool _booting = true;
 
+  late DateTime _startTime; //changed
+  int _elapsedSecs = 0; //changed
+
   // ⬇️ AUDIO HELPER FUNCTION
   Future<void> _playAssetAudio(String assetPath) async {
     if (!mounted) return;
@@ -452,13 +456,22 @@ class _WriteGameLevel2_3PageState extends State<WriteGameLevel2_3Page> {
 
   Future<void> _initAndStart() async {
     try {
-      _resultId = widget.resultId;
-      _resultId ??= await WriteGameApi.start(
-        childId: widget.childId,
-        stageCode: 'FR_WG_007', // 혼합 스테이지 코드. 백엔드 값에 맞춰 수정.
-      );
+
+      // resultId는 부모 페이지에서 전달됨
+      _resultId = widget.resultId ?? FruitState.instance.resultId;
+
+      if (_resultId == null) {
+        throw Exception('resultId 없음');
+      }
+
+      // 문제 셔플 (랜덤 출제 로직)
       _resetGame();
-    } catch (_) {
+
+      // ✅ 게임 시작 시점 기록
+      _startTime = DateTime.now();
+      debugPrint('[2-1] 🎯 게임 시작 시각 기록됨 → $_startTime');
+
+    } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('네트워크 오류. 잠시 후 다시 시도하세요.')),
@@ -484,13 +497,16 @@ class _WriteGameLevel2_3PageState extends State<WriteGameLevel2_3Page> {
     });
   }
 
-  /// Selvy 후보셋을 현재 문자 하나로 제한
+  /// ---------------------------------------------------------------------------
+  /// Selvy 후보셋을 현재 자음 하나로 고정
   Future<void> _applyCandidate() async {
     try {
       await SelvyRecognizer.setCandidateSet([current.char]);
     } catch (_) {}
   }
 
+  /// ---------------------------------------------------------------------------
+  /// 소리 아이콘 탭 → 현재 문제 자음 오디오 재생 (플레이어는 프로젝트에 맞춰 교체)
   Future<void> _playPronounce() async {
     // ⬇️ 기존 로직 수정: 실제 오디오 에셋을 찾아 재생
     final isConsonant = current.type == _TargetType.consonant;
@@ -509,6 +525,7 @@ class _WriteGameLevel2_3PageState extends State<WriteGameLevel2_3Page> {
     // ⬆️ 기존 로직 수정
   }
 
+  /// ---------------------------------------------------------------------------
   /// 라벨 정규화(첫 줄만, [n] 제거, 초/중성 호환자모 → 일반 자모)
   String _normalize(String raw) {
     final top =
@@ -580,37 +597,58 @@ class _WriteGameLevel2_3PageState extends State<WriteGameLevel2_3Page> {
     return map[top] ?? top;
   }
 
-  Future<void> _sendChoice({
-    required String shownChar,
-    required _TargetType type,
-    required bool isCorrect,
+  // ---------------------------------------------------------------------------
+  // 채점 결과 서버 전송 (_sendChoice)
+  Future<bool> _sendChoice({
+    required String shownChar, //changed
+    required _TargetType type, //changed
+    required bool isCorrect,   //changed
   }) async {
-    if (_resultId == null) return;
-    final map = type == _TargetType.consonant
-        ? WG.consonantQuestionMap
-        : WG.vowelQuestionMap;
-    final qid = WG.requireWgQuestionId(map, shownChar, ctx: 'Stage2-3');
+    if (_resultId == null) return false; //changed
 
-    try {
-      await WriteGameApi.sendChoice(
-        resultId: _resultId!,
-        questionId: qid,
-        childWrittenText: shownChar,
-        isCorrect: isCorrect,
-      );
-    } catch (_) {
-      // 스텁/네트워크 실패 시 무시. 연결 후 로깅 처리.
+    final questionId = WG.requireWgQuestionId( //changed
+      type == _TargetType.consonant
+          ? WG.consonantQuestionMap
+          : WG.vowelQuestionMap,
+      shownChar,
+      ctx: 'Stage2-3',
+    );
+
+    final success = await ChildGameApi.recordWritingChoice( //changed
+      resultId: _resultId!, //changed
+      questionId: questionId, //changed
+      childWrittenText: shownChar, //changed
+      isCorrect: isCorrect, //changed
+    );
+
+    debugPrint(success
+        ? '[2-3][_sendChoice] ✅ 서버 기록 성공'
+        : '[2-3][_sendChoice] ⚠️ 서버 기록 실패'); //changed
+    return success; //changed
     }
-  }
 
-  Future<bool> _completeAndGetSuccess() async {
-    if (_resultId == null) return false;
-    try {
-      final res = await WriteGameApi.complete(resultId: _resultId!);
-      return res.success == true;
-    } catch (_) {
+  // ---------------------------------------------------------------------------
+  // [3] 게임 완료 후 성공/실패 판정 (_completeAndGetSuccess)
+  // ---------------------------------------------------------------------------
+  Future<bool> _completeAndGetSuccess({required int timeSpentSecs}) async { //changed
+    if (_resultId == null) return false; 
+
+    final data = await ChildGameApi.completeWritingGame( 
+      resultId: _resultId!, 
+      timeSpentSecs: timeSpentSecs, 
+    );
+
+    if (data == null) {
+      debugPrint('[2-3][_completeAndGetSuccess] ⚠️ 서버 응답 없음'); 
       return false;
     }
+
+    final success = data['success'] == true;
+    final score = data['score'];
+    final total = data['totalQuestions'];
+    debugPrint('[2-3][_completeAndGetSuccess] ✅ 서버 success=$success '
+              '(score=$score / total=$total)'); 
+    return success;
   }
 
   void _onRecognize(String recognized) async {
