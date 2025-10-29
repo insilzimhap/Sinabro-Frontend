@@ -111,8 +111,13 @@ const List<_VegItem> _POOL = [
 ];
 
 class WriteGameLevel3_3Page extends StatefulWidget {
-  const WriteGameLevel3_3Page({super.key, required this.childId});
+  const WriteGameLevel3_3Page({
+    super.key, 
+    required this.childId,
+    required this.resultId,
+    });
   final String childId;
+  final String? resultId;
 
   static const routeName = '/write/game/3/3';
 

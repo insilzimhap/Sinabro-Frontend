@@ -651,33 +651,64 @@ class _WriteGameLevel2_3PageState extends State<WriteGameLevel2_3Page> {
     return success;
   }
 
+  // ---------------------------------------------------------------------------
+  // 글씨 인식 결과 수신 → 채점 로직 시작 (_onRecognize)
+  // ---------------------------------------------------------------------------
   void _onRecognize(String recognized) async {
-    final mine = _normalize(recognized);
-    final isCorrect = mine == current.char;
+    final mine = _normalize(recognized); //changed
+    final isCorrect = mine == current.char; //changed
+    debugPrint('[2-3][_onRecognize] 🔍 인식결과: $mine → 정답=${current.char}'); //changed
 
-    // 서버 기록
-    await _sendChoice(
+    // 1️⃣ 서버에 개별 문제 기록
+    await _sendChoice( //changed
       shownChar: current.char,
-      type: current.type,
+      type: current.type, //changed
       isCorrect: isCorrect,
     );
 
     _results.add(isCorrect);
     if (!mounted) return;
 
+    // 2️⃣ 다음 문제 or 게임 종료
     if (_index < _problems.length - 1) {
       setState(() => _index += 1);
       await _canvasKey.currentState?.clearCanvas();
       await _applyCandidate();
     } else {
-      final serverSuccess = await _completeAndGetSuccess();
+      // -----------------------------------------------------------------------
+      // [게임 종료 처리]
+      // changed: 프론트 success와 서버 success를 비교하도록 수정
+      // -----------------------------------------------------------------------
+      debugPrint('[2-3][_onRecognize] 모든 문제 완료 → 서버에 complete 요청 시작'); //changed
+
+      final endTime = DateTime.now(); //changed
+      _elapsedSecs = endTime.difference(_startTime).inSeconds; //changed
+      debugPrint('[2-3] 🕒 플레이 시간: $_elapsedSecs초'); //changed
+
+      // ✅ 프론트 성공 여부 계산
+      final correctCount = _results.where((e) => e).length; //changed
+      final frontSuccess = correctCount >= 3; //changed
+      debugPrint('[2-3] 🎯 프론트 success=$frontSuccess (정답 $correctCount/4)'); //changed
+
+      // ✅ 서버 성공 여부 요청
+      final serverSuccess =
+          await _completeAndGetSuccess(timeSpentSecs: _elapsedSecs); //changed
       if (!mounted) return;
-      await _showEndSequence(serverSuccess: serverSuccess);
+
+      // ✅ 최종 비교 로직
+      final isConsistent = (frontSuccess == serverSuccess); //changed
+      final finalSuccess = frontSuccess && serverSuccess && isConsistent; //changed
+
+      debugPrint('[2-3] ✅ 최종 success=$finalSuccess '
+                '(front=$frontSuccess / server=$serverSuccess / 일치=$isConsistent)'); //changed
+
+      // ✅ 엔딩 화면 호출
+      await _showEndSequence(finalSuccess: frontSuccess); //changed
     }
   }
 
   /// 엔딩 시퀀스: 1) 인트로 → 2/3) 성공/실패
-  Future<void> _showEndSequence({required bool serverSuccess}) async {
+  Future<void> _showEndSequence({required bool finalSuccess}) async {
     // 1) 인트로
     showDialog<void>(
       context: context,
@@ -692,7 +723,7 @@ class _WriteGameLevel2_3PageState extends State<WriteGameLevel2_3Page> {
     }
 
     // 3) 성공/실패
-    if (serverSuccess) {
+    if (finalSuccess) {
       // 3-1) 성공 다이얼로그 띄우기
       showDialog<void>(
         context: context,

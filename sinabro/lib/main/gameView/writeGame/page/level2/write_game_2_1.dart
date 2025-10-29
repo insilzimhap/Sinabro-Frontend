@@ -528,7 +528,7 @@ class _WriteGameLevel2_1PageState extends State<WriteGameLevel2_1Page> {
              '(front=$frontSuccess / server=$serverSuccess / 일치=$isConsistent)');
 
       // ✅ 엔딩 화면 호출 (성공/실패 구분)
-      await _showEndSequence(finalSuccess: finalSuccess); // 서버 없이 테스트 할 땐 frontSuccess로 할거긔
+      await _showEndSequence(finalSuccess: frontSuccess); // 서버 없이 테스트 할 땐 frontSuccess로 할거긔
     }
   }
 

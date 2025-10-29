@@ -331,7 +331,7 @@ class _WriteGameLevel2_2PageState extends State<WriteGameLevel2_2Page> {
 
     // 문제ID 매핑
     final questionId = WG.requireWgQuestionId(
-      WG.consonantQuestionMap,
+      WG.vowelQuestionMap,
       shownChar,
       ctx: 'Stage2-2',
     );
@@ -420,7 +420,7 @@ class _WriteGameLevel2_2PageState extends State<WriteGameLevel2_2Page> {
       debugPrint('[2-2] ✅ 최종 success=$finalSuccess '
           '(front=$frontSuccess / server=$serverSuccess / 일치=$isConsistent)'); //changed
 
-      await _showEndSequence(finalSuccess: finalSuccess); //changed
+      await _showEndSequence(finalSuccess: frontSuccess); //changed
     }
   }
 
