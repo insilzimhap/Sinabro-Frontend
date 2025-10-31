@@ -3,7 +3,7 @@ import '../../../gameView/listenGame/chapter_page.dart';
 
 /// 🏁 마지막 클리어 팝업
 /// - 5초 후 챕터 선택 페이지로 이동
-Future<void> showClearLastPopup(BuildContext context) async {
+Future<void> showClearLastPopup(BuildContext context, String childId) async {
   showGeneralDialog(
     context: context,
     barrierDismissible: false,
@@ -68,7 +68,9 @@ Future<void> showClearLastPopup(BuildContext context) async {
     Navigator.of(context, rootNavigator: true).pop();
     Navigator.pushAndRemoveUntil(
       context,
-      MaterialPageRoute(builder: (_) => const GameListenChapterScreen()),
+      MaterialPageRoute(
+        builder: (_) => GameListenChapterScreen(childId: childId), // ✅ childId 전달
+      ),
       (route) => route.isFirst,
     );
   }

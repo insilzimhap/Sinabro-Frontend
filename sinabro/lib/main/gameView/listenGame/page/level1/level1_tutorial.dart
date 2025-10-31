@@ -60,9 +60,14 @@ class _Level1TutorialPageState extends State<Level1TutorialPage>
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
-          builder: (_) => const ListenGameTransition(
-            nextPage: Level1ThemeSelectPage(),
-            duration: Duration(seconds: 3),
+          builder: (_) => ListenGameTransition(
+            nextPage: Level1ThemeSelectPage(
+              onThemeSelected: (index) {
+                // 선택된 테마 index 로직 (예: 다음 단계 이동 등)
+                debugPrint('선택된 테마: $index');
+              },
+            ),
+            duration: const Duration(seconds: 3),
           ),
         ),
       );

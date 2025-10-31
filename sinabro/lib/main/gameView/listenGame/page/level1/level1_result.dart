@@ -1,6 +1,6 @@
 // lib/main/gameView/common/listenGame/page/level1/level1_result.dart
 import 'package:flutter/material.dart';
-import 'level1_theme_select.dart';
+import 'package:sinabro/main/gameView/listenGame/page/level1/level1_theme_select.dart';
 
 class Level1ResultPage extends StatelessWidget {
   final int themeId;
@@ -14,10 +14,9 @@ class Level1ResultPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final imagePath =
-        success
-            ? "assets/img/contents/gameListen/level1/theme_${themeId}_clear.png"
-            : "assets/img/contents/gameListen/level1/theme_fail.png";
+    final imagePath = success
+        ? "assets/img/contents/gameListen/level1/theme_${themeId}_clear.png"
+        : "assets/img/contents/gameListen/level1/theme_fail.png";
 
     final Map<int, String> successDialogue = {
       1: "드디어 무지개를 만들었어요! 감사해요",
@@ -27,10 +26,9 @@ class Level1ResultPage extends StatelessWidget {
       5: "도와주신 덕분에 마법 만점이에요~!",
     };
 
-    final List<String> dialogue =
-        success
-            ? [successDialogue[themeId] ?? ""]
-            : ["앗! 마법으로 만들어지지 않았어요", "만드는걸 다시 도와주실래요?"];
+    final List<String> dialogue = success
+        ? [successDialogue[themeId] ?? ""]
+        : ["앗! 마법으로 만들어지지 않았어요", "만드는걸 다시 도와주실래요?"];
 
     return Scaffold(
       appBar: AppBar(
@@ -42,11 +40,8 @@ class Level1ResultPage extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // 결과 이미지
             Image.asset(imagePath, width: 250, fit: BoxFit.contain),
             const SizedBox(height: 24),
-
-            // 대사 출력
             ...dialogue.map(
               (line) => Padding(
                 padding: const EdgeInsets.symmetric(vertical: 4),
@@ -60,18 +55,20 @@ class Level1ResultPage extends StatelessWidget {
                 ),
               ),
             ),
-
             const SizedBox(height: 32),
-
-            // 버튼
             ElevatedButton(
               onPressed: () {
                 Navigator.pushAndRemoveUntil(
                   context,
                   MaterialPageRoute(
-                    builder: (_) => const Level1ThemeSelectPage(),
+                    builder: (_) => Level1ThemeSelectPage(
+                      onThemeSelected: (index) {
+                        // 테마 선택 시 처리 로직 (예: 다음 화면 이동)
+                        print('선택된 테마: $index');
+                      },
+                    ),
                   ),
-                  (route) => false, // 뒤로가기 불가능
+                  (route) => false,
                 );
               },
               style: ElevatedButton.styleFrom(
@@ -81,7 +78,10 @@ class Level1ResultPage extends StatelessWidget {
                   vertical: 12,
                 ),
               ),
-              child: const Text("테마 선택으로 돌아가기", style: TextStyle(fontSize: 16)),
+              child: const Text(
+                "테마 선택으로 돌아가기",
+                style: TextStyle(fontSize: 16),
+              ),
             ),
           ],
         ),

@@ -26,8 +26,7 @@ Future<void> showClearPopup(BuildContext context, int level) async {
           child: Center(
             child: Container(
               width: MediaQuery.of(context).size.width * 0.8,
-              padding:
-                  const EdgeInsets.symmetric(vertical: 32, horizontal: 20),
+              padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 20),
               decoration: BoxDecoration(
                 color: const Color(0xFFFFF8E1),
                 borderRadius: BorderRadius.circular(20),
@@ -78,13 +77,25 @@ Future<void> showClearPopup(BuildContext context, int level) async {
   Widget nextPage;
   switch (level) {
     case 1:
-      nextPage = const Level1ThemeSelectPage();
+      nextPage = Level1ThemeSelectPage(
+        onThemeSelected: (index) {
+          debugPrint("레벨1 테마 선택: $index");
+        },
+      );
       break;
     case 2:
-      nextPage = const Level2ThemeSelectPage();
+      nextPage = Level2ThemeSelectPage(
+        onThemeSelected: (index) {
+          debugPrint("레벨2 테마 선택: $index");
+        },
+      );
       break;
     case 3:
-      nextPage = const Level3ThemeSelectPage();
+      nextPage = Level3ThemeSelectPage(
+        onThemeSelected: (index) {
+          debugPrint("레벨3 테마 선택: $index");
+        },
+      );
       break;
     default:
       nextPage = const Placeholder();

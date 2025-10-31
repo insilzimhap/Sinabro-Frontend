@@ -17,6 +17,12 @@ class Level2ThemeSelectPage extends StatelessWidget {
     const decoPath = 'assets/img/contents/gameListen/level2/theme/theme_deco.png';
     const bgPath = 'assets/img/contents/gameListen/level2/theme/background.png';
 
+    final rects = [
+      const Rect.fromLTWH(60, 220, 110, 110),   // 1번 (왼쪽)
+      const Rect.fromLTWH(160, 160, 120, 120),  // 2번 (가운데)
+      const Rect.fromLTWH(270, 210, 110, 110),  // 3번 (오른쪽, 반짝)
+    ];
+
     return Scaffold(
       body: SafeArea(
         child: Stack(
@@ -34,26 +40,34 @@ class Level2ThemeSelectPage extends StatelessWidget {
               top: 16,
               left: 16,
               child: IconButton(
-                icon: const Icon(Icons.arrow_back_ios_new_rounded,
-                    color: Color(0xFF2E6B3D)),
+                icon: const Icon(
+                  Icons.arrow_back_ios_new_rounded,
+                  color: Color(0xFF2E6B3D),
+                ),
                 onPressed: () => Navigator.pop(context),
               ),
             ),
-            Center(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: List.generate(themePaths.length, (index) {
-                    return _ThemeButton(
-                      index: index + 1,
-                      imagePath: themePaths[index],
-                      onTap: () => onThemeSelected(index),
-                    );
-                  }),
-                ),
-              ),
+
+            // 왼쪽 테마 → theme_1.png
+            _ThemeButton(
+              rect: rects[0],
+              imagePath: themePaths[0],
+              onTap: () => onThemeSelected(0),
+            ),
+
+            // 중앙 테마 → theme_2.png
+            _ThemeButton(
+              rect: rects[1],
+              imagePath: themePaths[1],
+              onTap: () => onThemeSelected(1),
+            ),
+
+            // 오른쪽 테마 → theme_3.png (반짝)
+            _ThemeButton(
+              rect: rects[2],
+              imagePath: themePaths[2],
+              isShiny: true,
+              onTap: () => onThemeSelected(2),
             ),
           ],
         ),
@@ -63,14 +77,16 @@ class Level2ThemeSelectPage extends StatelessWidget {
 }
 
 class _ThemeButton extends StatefulWidget {
-  final int index;
+  final Rect rect;
   final String imagePath;
   final VoidCallback onTap;
+  final bool isShiny;
 
   const _ThemeButton({
-    required this.index,
+    required this.rect,
     required this.imagePath,
     required this.onTap,
+    this.isShiny = false,
   });
 
   @override
@@ -97,26 +113,33 @@ class _ThemeButtonState extends State<_ThemeButton>
 
   @override
   Widget build(BuildContext context) {
-    final isCenter = widget.index == 2;
-
-    return GestureDetector(
-      onTap: widget.onTap,
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          Image.asset(
-            widget.imagePath,
-            width: MediaQuery.of(context).size.width * 0.25,
-          ),
-          if (isCenter)
-            FadeTransition(
-              opacity: Tween(begin: 0.4, end: 1.0).animate(
-                CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
-              ),
-              child: const Icon(Icons.star_rounded,
-                  color: Colors.amber, size: 40),
+    return Positioned(
+      left: widget.rect.left,
+      top: widget.rect.top,
+      width: widget.rect.width,
+      height: widget.rect.height,
+      child: GestureDetector(
+        onTap: widget.onTap,
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            Image.asset(
+              widget.imagePath,
+              fit: BoxFit.contain,
             ),
-        ],
+            if (widget.isShiny)
+              FadeTransition(
+                opacity: Tween(begin: 0.4, end: 1.0).animate(
+                  CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
+                ),
+                child: const Icon(
+                  Icons.star_rounded,
+                  color: Colors.amber,
+                  size: 40,
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }

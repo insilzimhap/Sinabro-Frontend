@@ -1,13 +1,31 @@
+/*
+ * ------------------------------------------------------------------------------
+ * [듣기 게임 - 챕터(레벨) 선택 페이지]
+ *
+ * 이 페이지는 '듣기 게임' (listening_game) 카테고리의 모든 챕터(레벨)을 표시합니다.
+ * ------------------------------------------------------------------------------
+ */
 import 'package:flutter/material.dart';
+
+// 레벨 1
 import 'package:sinabro/main/gameView/listenGame/page/level1/level1_flow.dart';
 import 'package:sinabro/main/gameView/listenGame/page/level1/level1_intro_page.dart';
+
+// 레벨 2
 import 'package:sinabro/main/gameView/listenGame/page/level2/level2_flow.dart';
 import 'package:sinabro/main/gameView/listenGame/page/level2/level2_intro_page.dart';
+
+// 레벨 3
 import 'package:sinabro/main/gameView/listenGame/page/level3/level3_flow.dart';
 import 'package:sinabro/main/gameView/listenGame/page/level3/level3_intro_page.dart';
 
 class GameListenChapterScreen extends StatefulWidget {
-  const GameListenChapterScreen({super.key});
+  final String childId; // ✅ childId 필드 추가
+
+  const GameListenChapterScreen({
+    super.key,
+    required this.childId, // ✅ 생성자에 required 추가
+  });
 
   @override
   State<GameListenChapterScreen> createState() => _GameListenChapterScreenState();
@@ -69,7 +87,9 @@ class _GameListenChapterScreenState extends State<GameListenChapterScreen>
                 Level1IntroPage(
                   onNext: () => Navigator.pushReplacement(
                     context,
-                    MaterialPageRoute(builder: (_) => const Level1Flow()),
+                    MaterialPageRoute(
+                      builder: (_) => const Level1Flow(),
+                    ),
                   ),
                 ),
               ),
@@ -90,7 +110,9 @@ class _GameListenChapterScreenState extends State<GameListenChapterScreen>
                 Level2IntroPage(
                   onNext: () => Navigator.pushReplacement(
                     context,
-                    MaterialPageRoute(builder: (_) => const Level2Flow()),
+                    MaterialPageRoute(
+                      builder: (_) => const Level2Flow(),
+                    ),
                   ),
                 ),
               ),
@@ -111,7 +133,9 @@ class _GameListenChapterScreenState extends State<GameListenChapterScreen>
                 Level3IntroPage(
                   onNext: () => Navigator.pushReplacement(
                     context,
-                    MaterialPageRoute(builder: (_) => const Level3Flow()),
+                    MaterialPageRoute(
+                      builder: (_) => const Level3Flow(),
+                    ),
                   ),
                 ),
               ),

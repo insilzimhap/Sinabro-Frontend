@@ -7,12 +7,6 @@ import 'package:sinabro/main/gameView/writeGame/page/level1/write_game_1_2.dart'
 import 'package:sinabro/main/gameView/writeGame/page/level1/write_game_1_3.dart';
 import 'package:sinabro/main/gameView/writeGame/page/level1/write_game_1_4.dart';
 
-// ⬇️ 메인2, 메인3 이동
-import 'package:sinabro/main/gameView/writeGame/page/write_game_main2.dart'
-    show WriteGameMain2Page;
-import 'package:sinabro/main/gameView/writeGame/page/write_game_main3.dart'
-    show WriteGameMain3Page;
-
 class WriteGameMainPage extends StatefulWidget {
   const WriteGameMainPage({super.key, required this.childId});
   final String childId;
@@ -104,76 +98,6 @@ class _WriteGameMainPageState extends State<WriteGameMainPage> {
                       ),
                     );
                   },
-                ),
-
-                // 중앙 버튼 영역
-                Positioned.fill(
-                  child: Center(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        // 🔵 메인2 이동 버튼
-                        ElevatedButton(
-                          onPressed: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => WriteGameMain2Page(
-                                  childId: widget.childId,
-                                ),
-                              ),
-                            );
-                          },
-                          style: ElevatedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 24,
-                              vertical: 14,
-                            ),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(14),
-                            ),
-                          ),
-                          child: const Text(
-                            '다음 메인으로 가기',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        // 🟢 메인3 이동 버튼 (추가됨)
-                        ElevatedButton(
-                          onPressed: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => WriteGameMain3Page(
-                                  childId: widget.childId,
-                                ),
-                              ),
-                            );
-                          },
-                          style: ElevatedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 24,
-                              vertical: 14,
-                            ),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(14),
-                            ),
-                          ),
-                          child: const Text(
-                            '쓰기게임 메인3로 가기',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
                 ),
               ],
             );

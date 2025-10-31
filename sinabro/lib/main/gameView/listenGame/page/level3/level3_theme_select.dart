@@ -17,6 +17,11 @@ class Level3ThemeSelectPage extends StatelessWidget {
     const decoPath = 'assets/img/contents/gameListen/level3/theme/theme_deco.png';
     const bgPath = 'assets/img/contents/gameListen/level3/theme/background.png';
 
+    final rects = [
+      const Rect.fromLTWH(80, 220, 120, 120), // theme_1 (왼쪽)
+      const Rect.fromLTWH(220, 230, 120, 120), // theme_2 (오른쪽, 반짝)
+    ];
+
     return Scaffold(
       body: SafeArea(
         child: Stack(
@@ -34,26 +39,24 @@ class Level3ThemeSelectPage extends StatelessWidget {
               top: 16,
               left: 16,
               child: IconButton(
-                icon: const Icon(Icons.arrow_back_ios_new_rounded,
-                    color: Color(0xFF2E6B3D)),
+                icon: const Icon(
+                  Icons.arrow_back_ios_new_rounded,
+                  color: Color(0xFF2E6B3D),
+                ),
                 onPressed: () => Navigator.pop(context),
               ),
             ),
-            Center(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: List.generate(themePaths.length, (index) {
-                    return _ThemeButton(
-                      index: index + 1,
-                      imagePath: themePaths[index],
-                      onTap: () => onThemeSelected(index),
-                    );
-                  }),
-                ),
-              ),
+
+            _ThemeButton(
+              rect: rects[0],
+              imagePath: themePaths[0],
+              onTap: () => onThemeSelected(0),
+            ),
+            _ThemeButton(
+              rect: rects[1],
+              imagePath: themePaths[1],
+              onTap: () => onThemeSelected(1),
+              isShiny: true,
             ),
           ],
         ),
@@ -63,14 +66,16 @@ class Level3ThemeSelectPage extends StatelessWidget {
 }
 
 class _ThemeButton extends StatefulWidget {
-  final int index;
+  final Rect rect;
   final String imagePath;
   final VoidCallback onTap;
+  final bool isShiny;
 
   const _ThemeButton({
-    required this.index,
+    required this.rect,
     required this.imagePath,
     required this.onTap,
+    this.isShiny = false,
   });
 
   @override
@@ -97,26 +102,33 @@ class _ThemeButtonState extends State<_ThemeButton>
 
   @override
   Widget build(BuildContext context) {
-    final isCenter = widget.index == 2;
-
-    return GestureDetector(
-      onTap: widget.onTap,
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          Image.asset(
-            widget.imagePath,
-            width: MediaQuery.of(context).size.width * 0.25,
-          ),
-          if (isCenter)
-            FadeTransition(
-              opacity: Tween(begin: 0.4, end: 1.0).animate(
-                CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
-              ),
-              child: const Icon(Icons.star_rounded,
-                  color: Colors.amber, size: 40),
+    return Positioned(
+      left: widget.rect.left,
+      top: widget.rect.top,
+      width: widget.rect.width,
+      height: widget.rect.height,
+      child: GestureDetector(
+        onTap: widget.onTap,
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            Image.asset(
+              widget.imagePath,
+              fit: BoxFit.contain,
             ),
-        ],
+            if (widget.isShiny)
+              FadeTransition(
+                opacity: Tween(begin: 0.4, end: 1.0).animate(
+                  CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
+                ),
+                child: const Icon(
+                  Icons.star_rounded,
+                  color: Colors.amber,
+                  size: 40,
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }

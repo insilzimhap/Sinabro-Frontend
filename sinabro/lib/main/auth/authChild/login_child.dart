@@ -214,129 +214,157 @@ class _LoginChildScreenState extends State<LoginChildScreen> {
 
   // ---------------- UI ----------------
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(backgroundColor: const Color(0xFFFEF8E7), elevation: 0),
-      backgroundColor: const Color(0xFFFEF8E7),
-      body: Column(
-        children: [
-          const SizedBox(height: 30),
-          const Text(
-            '로그인',
-            style: TextStyle(
-              fontSize: 36,
-              fontWeight: FontWeight.bold,
-              color: Color(0xFF5A4032),
+Widget build(BuildContext context) {
+  return Scaffold(
+    appBar: AppBar(backgroundColor: const Color(0xFFFEF8E7), elevation: 0),
+    backgroundColor: const Color(0xFFFEF8E7),
+    body: Column(
+      children: [
+        const SizedBox(height: 30),
+        const Text(
+          '로그인',
+          style: TextStyle(
+            fontSize: 36,
+            fontWeight: FontWeight.bold,
+            color: Color(0xFF5A4032),
+          ),
+        ),
+        const SizedBox(height: 40),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            // 왼쪽 로그인 폼
+            Container(
+              width: 340,
+              padding: const EdgeInsets.all(30),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(30),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    '아이디로 로그인',
+                    style: TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF5A4032),
+                      decoration: TextDecoration.underline,
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  const Text('아이디', style: TextStyle(fontSize: 14)),
+                  const SizedBox(height: 5),
+                  TextField(
+                    controller: _idController,
+                    decoration: const InputDecoration(
+                      filled: true,
+                      fillColor: Color(0xFFF8F7F6),
+                      border: OutlineInputBorder(),
+                      contentPadding: EdgeInsets.symmetric(horizontal: 12),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  const Text('비밀번호', style: TextStyle(fontSize: 14)),
+                  const SizedBox(height: 5),
+                  TextField(
+                    controller: _pwController,
+                    obscureText: true,
+                    decoration: const InputDecoration(
+                      filled: true,
+                      fillColor: Color(0xFFF8F7F6),
+                      border: OutlineInputBorder(),
+                      contentPadding: EdgeInsets.symmetric(horizontal: 12),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  if (_isLoading) const Center(child: CircularProgressIndicator()),
+                  if (_message.isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      child: Text(
+                        _message,
+                        style: const TextStyle(color: Colors.red),
+                      ),
+                    ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      ElevatedButton(
+                        onPressed: _isLoading ? null : _login,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFFFFF0BB),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 20,
+                            vertical: 10,
+                          ),
+                        ),
+                        child: const Text(
+                          '로그인',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF7C685F),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 30),
+            // 오른쪽 이미지
+            Container(
+              width: 300,
+              height: 300,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(30),
+                image: const DecorationImage(
+                  image: AssetImage('assets/img/auth/loginRabit.png'),
+                  fit: BoxFit.contain,
+                ),
+              ),
+            ),
+          ],
+        ),
+
+        const SizedBox(height: 50),
+
+        // ✅ 자녀 로비로 이동 버튼 추가
+        ElevatedButton(
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => const LobbyChildScreen(childId: 'test_child',),
+              ),
+            );
+          },
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.brown,
+            padding: const EdgeInsets.symmetric(horizontal: 60, vertical: 20),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(30),
             ),
           ),
-          const SizedBox(height: 40),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              // 아이디 로그인 박스
-              Container(
-                width: 340,
-                padding: const EdgeInsets.all(30),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(30),
-                ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      '아이디로 로그인',
-                      style: TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF5A4032),
-                        decoration: TextDecoration.underline,
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-                    const Text('아이디', style: TextStyle(fontSize: 14)),
-                    const SizedBox(height: 5),
-                    TextField(
-                      controller: _idController,
-                      decoration: const InputDecoration(
-                        filled: true,
-                        fillColor: Color(0xFFF8F7F6),
-                        border: OutlineInputBorder(),
-                        contentPadding: EdgeInsets.symmetric(horizontal: 12),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    const Text('비밀번호', style: TextStyle(fontSize: 14)),
-                    const SizedBox(height: 5),
-                    TextField(
-                      controller: _pwController,
-                      obscureText: true,
-                      decoration: const InputDecoration(
-                        filled: true,
-                        fillColor: Color(0xFFF8F7F6),
-                        border: OutlineInputBorder(),
-                        contentPadding: EdgeInsets.symmetric(horizontal: 12),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    if (_isLoading)
-                      const Center(child: CircularProgressIndicator()),
-                    if (_message.isNotEmpty)
-                      Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 8),
-                        child: Text(
-                          _message,
-                          style: const TextStyle(color: Colors.red),
-                        ),
-                      ),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        ElevatedButton(
-                          onPressed: _isLoading ? null : _login,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFFFFF0BB),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 20,
-                              vertical: 10,
-                            ),
-                          ),
-                          child: const Text(
-                            '로그인',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: Color(0xFF7C685F),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 30),
-              // 오른쪽 이미지
-              Container(
-                width: 300,
-                height: 300,
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(30),
-                  image: const DecorationImage(
-                    image: AssetImage('assets/img/auth/loginRabit.png'),
-                    fit: BoxFit.contain,
-                  ),
-                ),
-              ),
-            ],
+          child: const Text(
+            '자녀 로비로 이동',
+            style: TextStyle(
+              fontSize: 20,
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+            ),
           ),
-        ],
-      ),
-    );
-  }
+        ),
+      ],
+    ),
+  );
+}
 }
