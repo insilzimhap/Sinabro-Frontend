@@ -104,17 +104,20 @@ class MyApp extends StatelessWidget {
               final list = args['lessonsToShow'];
               final isGold = args['isGold'];
               final childId = args['childId']; // ✅ childId 추출
+              final fruitId = args['fruitId'];
 
               // 데이터 타입이 모두 맞는지 확인
               if (list is List<ColorLessonData> &&
                   isGold is bool &&
-                  childId is String) {
+                  childId is String &&
+                  fruitId is String) {
                 // ColorEntryPage 생성 및 반환
                 return MaterialPageRoute(
                   builder: (_) => ColorEntryPage(
                     lessonsToShow: list,
                     isGold: isGold,
                     childId: childId, // ✅ 생성자에 childId 전달
+                    fruitId: fruitId,
                   ),
                   settings: settings,
                 );

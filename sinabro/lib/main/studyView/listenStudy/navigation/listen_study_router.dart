@@ -86,41 +86,41 @@ Future<void> navigateToListenStudy(
 
     // --- 레벨 2 (ST002) ---
     case 'FR_LS_006': // 가족
-      return startLevel2Routine(context, isGold: isGold, childId: childId);
+      return startLevel2Routine(context, isGold: isGold, childId: childId, fruitId: fruitId,);
       break;
     case 'FR_LS_007': // 기본 감정
       return startLevel2Routine2(context, 0,
-          isGold: isGold, childId: childId); // routineIndex 0
+          isGold: isGold, childId: childId, fruitId: fruitId); // routineIndex 0
       break;
     case 'FR_LS_008': // 복잡 감정
       return startLevel2Routine2(context, 1,
-          isGold: isGold, childId: childId); // routineIndex 1
+          isGold: isGold, childId: childId, fruitId: fruitId); // routineIndex 1
       break;
     case 'FR_LS_009': // 숫자 1~5
       return startLevel2Routine3(context, 2,
-          isGold: isGold, childId: childId); // routineIndex 2
+          isGold: isGold, childId: childId, fruitId: fruitId); // routineIndex 2
       break;
     case 'FR_LS_010': // 숫자 6~10
       return startLevel2Routine3(context, 3,
-          isGold: isGold, childId: childId); // routineIndex 3
+          isGold: isGold, childId: childId, fruitId: fruitId); // routineIndex 3
       break;
 
     // --- 레벨 3 (ST003) ---
     case 'FR_LS_011': // 일상 (아침)
       return startLevel3Routine(context, 0,
-          isGold: isGold, childId: childId); // routineIndex 0
+          isGold: isGold, childId: childId, fruitId: fruitId); // routineIndex 0
       break;
     case 'FR_LS_012': // 일상 (점심)
       return startLevel3Routine(context, 1,
-          isGold: isGold, childId: childId); // routineIndex 1
+          isGold: isGold, childId: childId, fruitId: fruitId); // routineIndex 1
       break;
     case 'FR_LS_013': // 일상 (놀이)
       return startLevel3Routine(context, 2,
-          isGold: isGold, childId: childId); // routineIndex 2
+          isGold: isGold, childId: childId, fruitId: fruitId); // routineIndex 2
       break;
     case 'FR_LS_014': // 일상 (저녁)
       return startLevel3Routine(context, 3,
-          isGold: isGold, childId: childId); // routineIndex 3
+          isGold: isGold, childId: childId, fruitId: fruitId); // routineIndex 3
       break;
 
     default:
