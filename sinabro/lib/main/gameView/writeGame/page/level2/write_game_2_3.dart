@@ -661,7 +661,7 @@ class _WriteGameLevel2_3PageState extends State<WriteGameLevel2_3Page> {
 
     // 1️⃣ 서버에 개별 문제 기록
     await _sendChoice( //changed
-      shownChar: current.char,
+      shownChar: mine,
       type: current.type, //changed
       isCorrect: isCorrect,
     );

@@ -286,7 +286,7 @@ class _WriteGameLevel3_1PageState extends State<WriteGameLevel3_1Page> {
   void _onRecognizeWord(String recognized) async {
     final mine = _normalize(recognized);
     final isCorrect = mine == _targetWord;
-    await _sendChoice(_targetWord, isCorrect);
+    await _sendChoice(mine, isCorrect);
 
     _results.add(isCorrect);
     if (!mounted) return;

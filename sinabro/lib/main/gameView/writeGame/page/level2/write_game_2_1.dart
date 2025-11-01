@@ -482,7 +482,7 @@ class _WriteGameLevel2_1PageState extends State<WriteGameLevel2_1Page> {
 
     // 1️⃣ 서버에 개별 문제 기록
     // 🔥 [WriteGameApi] 선택 결과 기록 부분
-    final choiceSaved = await _sendChoice(shownChar: current.char, isCorrect: isCorrect);
+    final choiceSaved = await _sendChoice(shownChar: mine, isCorrect: isCorrect);
     if (!mounted) return;
     if (choiceSaved) {
       _results.add(isCorrect);

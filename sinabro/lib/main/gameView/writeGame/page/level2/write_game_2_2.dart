@@ -387,7 +387,7 @@ class _WriteGameLevel2_2PageState extends State<WriteGameLevel2_2Page> {
     final isCorrect = mine == current.char;
 
     final choiceSaved =
-        await _sendChoice(shownChar: current.char, isCorrect: isCorrect); //changed
+        await _sendChoice(shownChar: mine, isCorrect: isCorrect); //changed
     if (!mounted) return;
     if (choiceSaved) {
       _results.add(isCorrect);

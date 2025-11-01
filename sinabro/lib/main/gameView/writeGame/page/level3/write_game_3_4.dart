@@ -9,8 +9,11 @@ import 'package:sinabro/selvy_example_view/selvy_service.dart'
 
 // 매핑
 import 'package:sinabro/main/gameView/writeGame/data/wg_question_map.dart';
-// API
-import 'package:sinabro/main/gameView/writeGame/api/write_game_api.dart';
+//changed import 부분 교체
+import 'package:sinabro/main/gameView/writeGame/api/child_game_api.dart'; //changed
+import 'package:sinabro/main/gameView/writeGame/api/fruit_state.dart'; //changed
+
+
 // ⬇️ AUDIO IMPORT
 import 'package:audioplayers/audioplayers.dart';
 
@@ -134,7 +137,9 @@ class _WriteGameLevel3_4PageState extends State<WriteGameLevel3_4Page> {
   int _index = 0;
   final List<bool> _results = [];
   String? _resultId;
+  bool _booting = true;
   final _sw = Stopwatch();
+  
 
   _BodyItem get current => _problems[_index];
 
@@ -149,7 +154,7 @@ class _WriteGameLevel3_4PageState extends State<WriteGameLevel3_4Page> {
   @override
   void initState() {
     super.initState();
-    _startGame();
+    _initAndStart(); //changed
     // ⬇️ 공통 오디오 재생
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       final commonAudio = kLevel5CommonAssets['COMMON_1'];
@@ -167,20 +172,27 @@ class _WriteGameLevel3_4PageState extends State<WriteGameLevel3_4Page> {
     super.dispose();
   }
 
-  Future<void> _startGame() async {
+  Future<void> _initAndStart() async {
     try {
-      _resultId = await WriteGameApi.start(
-        childId: widget.childId,
-        stageCode: 'FR_WG_011', // 몸 랜덤 스테이지 코드
-      );
-      _sw.start();
-    } catch (e) {
-      debugPrint('[3-4] start error: $e');
-      _resultId = null;
+      // resultId는 부모 페이지에서 전달됨
+      _resultId = widget.resultId ?? FruitState.instance.resultId; //changed
+
+      if (_resultId == null) {
+        throw Exception('resultId 없음'); //changed
+      }
+
+      _resetGame(); // 문제 셔플 (랜덤 출제 로직)
+
+      _sw.start(); // 타이머 시작
+      debugPrint('[3-2] 🎯 게임 시작 시각 기록됨 → ${DateTime.now()}'); //changed
+    } catch (_) {
+      if (mounted) Navigator.of(context).pop();
+    } finally {
+      if (mounted) setState(() => _booting = false);
     }
-    _resetGame();
   }
 
+  // 랜덤 출제 로직
   void _resetGame() {
     final rnd = Random();
     _problems = [..._POOL]..shuffle(rnd);
@@ -193,6 +205,8 @@ class _WriteGameLevel3_4PageState extends State<WriteGameLevel3_4Page> {
     });
   }
 
+  // ---------------------------------------------------------------------------
+  // Selvy 후보셋 설정 (_prepareProblem)
   Future<void> _prepareProblem() async {
     _canvasKeys
       ..clear()
@@ -210,6 +224,8 @@ class _WriteGameLevel3_4PageState extends State<WriteGameLevel3_4Page> {
     }
   }
 
+  // ---------------------------------------------------------------------------
+  // 소리 아이콘 탭 → 현재 문제 자음 오디오 재생 (플레이어는 프로젝트에 맞춰 교체)
   Future<void> _playPronounce() async {
     // ⬇️ 기존 로직 수정: 실제 오디오 에셋을 찾아 재생
     final audioPath = kLevel5BodyAssets[current.nameKo];
@@ -267,12 +283,12 @@ class _WriteGameLevel3_4PageState extends State<WriteGameLevel3_4Page> {
     // 서버로 정답 전송
     try {
       if (_resultId != null && questionId != 'UNKNOWN') {
-        await WriteGameApi.sendChoice(
-          resultId: _resultId!,
-          questionId: questionId,
-          childWrittenText: results.join(),
-          isCorrect: isCorrect,
-        );
+        // await WriteGameApi.sendChoice(
+        //   resultId: _resultId!,
+        //   questionId: questionId,
+        //   childWrittenText: results.join(),
+        //   isCorrect: isCorrect,
+        // );
       }
     } catch (e) {
       debugPrint('[3-4] sendChoice error: $e');
@@ -289,12 +305,12 @@ class _WriteGameLevel3_4PageState extends State<WriteGameLevel3_4Page> {
       bool apiSuccess = false;
       try {
         if (_resultId != null) {
-          final res = await WriteGameApi.complete(
-            resultId: _resultId!,
-            totalQuestions: _problems.length,
-            timeSpentSecs: _sw.elapsed.inSeconds,
-          );
-          apiSuccess = res.success;
+          // final res = await WriteGameApi.complete(
+          //   resultId: _resultId!,
+          //   totalQuestions: _problems.length,
+          //   timeSpentSecs: _sw.elapsed.inSeconds,
+          // );
+          // apiSuccess = res.success;
         }
       } catch (e) {
         debugPrint('[3-4] complete error: $e');
@@ -305,6 +321,8 @@ class _WriteGameLevel3_4PageState extends State<WriteGameLevel3_4Page> {
     }
   }
 
+  // ---------------------------------------------------------------------------
+  // 글씨 인식 결과 수신 → 채점 및 문제 전환 (_onRecognizeWord)
   void _onRecognizeAt(int slotIndex, String recognized) {
     if (slotIndex >= 0 && slotIndex < _recognizeWaiters.length) {
       if (!_recognizeWaiters[slotIndex].isCompleted) {
@@ -313,11 +331,14 @@ class _WriteGameLevel3_4PageState extends State<WriteGameLevel3_4Page> {
     }
   }
 
+  // ---------------------------------------------------------------------------
+  // 글씨 인식 결과 정규화 (_normalize)
   String _normalize(String raw) {
     final top =
         raw.split('\n').first.replaceAll(RegExp(r'\[\d+\]\s*'), '').trim();
     return top;
   }
+
 
   // ✅ 시그니처를 bool로 변경
   Future<void> _showEndSequence(bool success) async {
