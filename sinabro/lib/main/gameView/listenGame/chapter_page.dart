@@ -20,11 +20,11 @@ import 'package:sinabro/main/gameView/listenGame/page/level3/level3_flow.dart';
 import 'package:sinabro/main/gameView/listenGame/page/level3/level3_intro_page.dart';
 
 class GameListenChapterScreen extends StatefulWidget {
-  final String childId; // ✅ childId 필드 추가
+  final String childId;
 
   const GameListenChapterScreen({
     super.key,
-    required this.childId, // ✅ 생성자에 required 추가
+    required this.childId,
   });
 
   @override

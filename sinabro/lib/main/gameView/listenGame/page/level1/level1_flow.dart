@@ -1,11 +1,10 @@
 /*
  * ----------------------------------------------------------------
- * [듣기 학습 - 레벨 1의 플로우 ]
- *  - 레벨 1의 게임 진행 흐름
- *  - 챕터 선택(레벨1) 
+ * [듣기 학습 - 레벨 1의 플로우 (최종 수정)]
+ *  - 챕터 선택(레벨1)
  *    -> 인트로(level1_intro_page.dart)
- *    -> 튜토리얼(level1_tutorial.dart)
  *    -> 테마 선택(level1_theme_select.dart)
+ *    -> (테마1-1일 경우) 튜토리얼(level1_tutorial.dart)
  *    -> 공통 - 게임 전환 화면(listen_game_transition.dart)
  *    -> 게임 진행 화면(level1_game_page.dart)
  *    -> 게임 결과 화면(level1_result.dart)
@@ -48,6 +47,7 @@ class _Level1FlowState extends State<Level1Flow> {
       );
     }
 
+    // ✅ 테마1-1 (themeIndex == 0)일 때 튜토리얼 먼저 실행
     if (themeIndex == 0 && !_tutorialDone) {
       Navigator.push(
         context,
@@ -55,13 +55,14 @@ class _Level1FlowState extends State<Level1Flow> {
           builder: (_) => Level1TutorialPage(
             onTutorialEnd: () {
               setState(() => _tutorialDone = true);
-              Navigator.pushReplacement(
+              // 튜토리얼 → 전환 화면 → 1-1 게임
+              Navigator.push(
                 context,
                 MaterialPageRoute(
                   builder: (_) => ListenGameTransition(
                     nextPage: ListenGamePage(
                       gameData: selectedSet,
-                      onFinished: (correctCount) => goToResultPage(correctCount),
+                      onFinished: goToResultPage,
                     ),
                   ),
                 ),
@@ -71,13 +72,14 @@ class _Level1FlowState extends State<Level1Flow> {
         ),
       );
     } else {
+      // 일반 테마는 바로 전환 화면 → 게임
       Navigator.push(
         context,
         MaterialPageRoute(
           builder: (_) => ListenGameTransition(
             nextPage: ListenGamePage(
               gameData: selectedSet,
-              onFinished: (correctCount) => goToResultPage(correctCount),
+              onFinished: goToResultPage,
             ),
           ),
         ),
