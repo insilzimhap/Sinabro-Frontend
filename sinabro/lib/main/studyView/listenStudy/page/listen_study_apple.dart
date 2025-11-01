@@ -90,11 +90,6 @@ class _ListenAppleSelectState extends State<ListenAppleSelect> {
 
   /// 백엔드 API를 호출하여 자녀의 듣기 학습 진척도를 불러옵니다.
   Future<void> _loadProgress() async {
-    // ⭐️ [수정] 이미 로딩 중이면 중복 호출 방지 (선택 사항이지만 권장)
-    if (_isLoading && mounted) {
-      debugPrint("[ListenAppleSelect] Already loading, skipping duplicate _loadProgress call.");
-      return; 
-    }
 
     // ⭐️ [수정] await로 호출 시, setState가 "before" await와 "after" await로 나뉨
     if (mounted) {
