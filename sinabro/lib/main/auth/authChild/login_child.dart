@@ -343,7 +343,7 @@ Widget build(BuildContext context) {
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (_) => const LobbyChildScreen(childId: 'test_child',),
+                builder: (_) => const LobbyChildScreen(childId: 'test_child_id',),
               ),
             );
           },

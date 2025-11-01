@@ -1,4 +1,18 @@
 // lib/main/studyView/listenGame/page/listen_game_page.dart
+
+/*
+ * ----------------------------------------------------------------
+ * [듣기 학습 - 게임 진행 화면]
+ *  - 듣기 학습 게임의 실제 문제 풀이 화면
+ *  - 문제별 오디오 재생 및 정답 선택 기능 포함
+ *  - 구성 요소
+ *      1. 캐릭터 대화 및 음성 듣기 버튼
+ *      2. 보기(이미지 3개) 중 정답 선택
+ *      3. 정답 확인 후 다음 문제로 자동 이동
+ *      4. 모든 문제 완료 시 onFinished 콜백으로 결과 전달
+ * ----------------------------------------------------------------
+ */
+
 import 'package:flutter/material.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:sinabro/main/gameView/listenGame/model/listen_game_content.dart';

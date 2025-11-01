@@ -1,3 +1,12 @@
+/*
+ * ----------------------------------------------------------------
+ * [듣기 학습 - 게임 진행 화면]
+ *  - 문제별 음성 듣기 후 올바른 그림(선택지)을 선택하는 단계
+ *  - 캐릭터 대사, 오디오 재생, 정오답 판정 및 진행 흐름 포함
+ *  - 모든 문제 완료 시 정답 개수를 콜백(onFinished)으로 전달
+ * ----------------------------------------------------------------
+ */
+
 // lib/main/studyView/listenGame/page/listen_game_page.dart
 import 'package:flutter/material.dart';
 import 'package:audioplayers/audioplayers.dart';

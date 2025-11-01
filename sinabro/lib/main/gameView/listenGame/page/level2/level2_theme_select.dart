@@ -1,3 +1,11 @@
+/*
+ * ----------------------------------------------------------------
+ * [듣기 학습 - 레벨 2 테마 선택 화면]
+ *  - 챕터(레벨 2)의 테마(열매) 3개 중 하나를 선택하는 페이지
+ *  - 각 테마 이미지를 터치하면 해당 테마 진입
+ * ----------------------------------------------------------------
+ */
+
 import 'package:flutter/material.dart';
 
 class Level2ThemeSelectPage extends StatelessWidget {
@@ -66,7 +74,6 @@ class Level2ThemeSelectPage extends StatelessWidget {
             _ThemeButton(
               rect: rects[2],
               imagePath: themePaths[2],
-              isShiny: true,
               onTap: () => onThemeSelected(2),
             ),
           ],

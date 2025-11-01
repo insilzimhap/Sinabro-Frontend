@@ -1,3 +1,17 @@
+/*
+ * ----------------------------------------------------------------
+ * [듣기 학습 - 레벨 3 게임의 데이터값 ]
+ * 
+ *  - characterName: 상단 말풍선의 캐릭터명
+ *  - dialogueText : 상단 말풍선의 텍스트
+ *  - characterImagePath : 상단 말풍선의 캐릭터이미지
+ *  - audioPath : 음성 파일 경로
+ *  - optionImages : 보기 이미지
+ *  - correctIndex : 정답 인덱스
+ * ----------------------------------------------------------------
+ */
+
+// UI import 
 import 'package:sinabro/main/gameView/listenGame/model/listen_game_content.dart';
 
 final level3GameData = [

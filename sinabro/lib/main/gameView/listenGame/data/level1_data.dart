@@ -1,7 +1,21 @@
+/*
+ * ----------------------------------------------------------------
+ * [듣기 학습 - 레벨 1 게임의 데이터값 ]
+ * 
+ *  - characterName: 상단 말풍선의 캐릭터명
+ *  - dialogueText : 상단 말풍선의 텍스트
+ *  - characterImagePath : 상단 말풍선의 캐릭터이미지
+ *  - audioPath : 음성 파일 경로
+ *  - optionImages : 보기 이미지
+ *  - correctIndex : 정답 인덱스
+ * ----------------------------------------------------------------
+ */
+
+// UI import 
 import 'package:sinabro/main/gameView/listenGame/model/listen_game_content.dart';
 
 final level1GameData = [
-  // 📍 테마 1 — 무지개 만들기
+  // 📍 테마 1 ---------------------------------------------------------------- // 
   ListenGameContent(
     characterName: '양지',
     dialogueText: '무지개 만들기 마법서를 골라주셨네요!',
@@ -63,7 +77,7 @@ final level1GameData = [
     correctIndex: 2,
   ),
 
-  // 📍 테마 2 — 사탕 만들기
+  // 📍 테마 2 ---------------------------------------------------------------- // 
   ListenGameContent(
     characterName: '양지',
     dialogueText: '사탕 만들기 마법서를 골라주셨네요!',
@@ -125,7 +139,7 @@ final level1GameData = [
     correctIndex: 1,
   ),
 
-  // 📍 테마 3 — 동물 하급
+  // 📍 테마 3 ---------------------------------------------------------------- // 
   ListenGameContent(
     characterName: '양지',
     dialogueText: '동물의 하급 마법서를 골라주셨네요!',
@@ -187,7 +201,7 @@ final level1GameData = [
     correctIndex: 0,
   ),
 
-  // 📍 테마 4 — 동물 중급
+  // 📍 테마 4 ---------------------------------------------------------------- // 
   ListenGameContent(
     characterName: '양지',
     dialogueText: '동물의 중급 마법서를 골라주셨네요!',
@@ -249,7 +263,7 @@ final level1GameData = [
     correctIndex: 2,
   ),
 
-  // 📍 테마 5 — 동물 상급
+  // 📍 테마 5 ---------------------------------------------------------------- // 
   ListenGameContent(
     characterName: '양지',
     dialogueText: '동물의 상급 마법서를 골라주셨네요!',

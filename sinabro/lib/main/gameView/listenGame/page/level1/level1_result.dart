@@ -1,4 +1,12 @@
-// lib/main/gameView/common/listenGame/page/level1/level1_result.dart
+/*
+ * ----------------------------------------------------------------
+ * [듣기 학습 - 레벨 1 결과 화면]
+ *  - 게임 완료 후 성공/실패 여부에 따라 다른 이미지와 대사 출력
+ *  - <다시하기> 버튼으로 테마 선택 페이지로 복귀
+ * ----------------------------------------------------------------
+ */
+
+
 import 'package:flutter/material.dart';
 import 'package:sinabro/main/gameView/listenGame/page/level1/level1_theme_select.dart';
 
@@ -31,60 +39,95 @@ class Level1ResultPage extends StatelessWidget {
         : ["앗! 마법으로 만들어지지 않았어요", "만드는걸 다시 도와주실래요?"];
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text("결과"),
-        backgroundColor: Colors.orange[200],
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(24.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Image.asset(imagePath, width: 250, fit: BoxFit.contain),
-            const SizedBox(height: 24),
-            ...dialogue.map(
-              (line) => Padding(
-                padding: const EdgeInsets.symmetric(vertical: 4),
-                child: Text(
-                  line,
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w500,
+      body: Stack(
+        fit: StackFit.expand,
+        children: [
+          Image.asset(imagePath, fit: BoxFit.cover),
+
+          // 오른쪽 위 말풍선
+          Positioned(
+            right: 20,
+            top: 120,
+            child: Container(
+              width: 300,
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.9),
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    margin: const EdgeInsets.only(bottom: 6),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFFE1B3),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Text(
+                      "양지",
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.brown,
+                      ),
+                    ),
                   ),
-                ),
+                  ...dialogue.map(
+                    (line) => Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 2),
+                      child: Text(
+                        line,
+                        style: const TextStyle(
+                          fontSize: 16,
+                          color: Colors.black87,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
-            const SizedBox(height: 32),
-            ElevatedButton(
+          ),
+
+          // 오른쪽 아래 버튼
+          Positioned(
+            right: 32,
+            bottom: 32,
+            child: ElevatedButton(
               onPressed: () {
                 Navigator.pushAndRemoveUntil(
                   context,
                   MaterialPageRoute(
                     builder: (_) => Level1ThemeSelectPage(
-                      onThemeSelected: (index) {
-                        // 테마 선택 시 처리 로직 (예: 다음 화면 이동)
-                        print('선택된 테마: $index');
-                      },
+                      onThemeSelected: (index) {},
                     ),
                   ),
                   (route) => false,
                 );
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.orange[300],
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 24,
-                  vertical: 12,
+                backgroundColor: const Color(0xFFFFB74D),
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(24),
                 ),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
+                elevation: 3,
               ),
               child: const Text(
-                "테마 선택으로 돌아가기",
-                style: TextStyle(fontSize: 16),
+                "다시하기",
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

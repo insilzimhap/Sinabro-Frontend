@@ -1,9 +1,23 @@
+/*
+ * ----------------------------------------------------------------
+ * [듣기 학습 - 레벨 1의 플로우 ]
+ *  - 레벨 1의 게임 진행 흐름
+ *  - 챕터 선택(레벨1) 
+ *    -> 인트로(level1_intro_page.dart)
+ *    -> 튜토리얼(level1_tutorial.dart)
+ *    -> 테마 선택(level1_theme_select.dart)
+ *    -> 공통 - 게임 전환 화면(listen_game_transition.dart)
+ *    -> 게임 진행 화면(level1_game_page.dart)
+ *    -> 게임 결과 화면(level1_result.dart)
+ *        -> 테마 선택으로 이동
+ * ----------------------------------------------------------------
+ */
+
 import 'package:flutter/material.dart';
 import 'package:sinabro/main/gameView/listenGame/page/level1/level1_game_page.dart';
 import 'package:sinabro/main/gameView/listenGame/page/level1/level1_theme_select.dart';
-import 'package:sinabro/main/gameView/listenGame/page/level1/tutorial_page.dart';
-import 'package:sinabro/main/gameView/listenGame/page/level1/level1_clear.dart';
-import 'package:sinabro/main/gameView/listenGame/page/level1/level1_fail.dart';
+import 'package:sinabro/main/gameView/listenGame/page/level1/level1_tutorial.dart';
+import 'package:sinabro/main/gameView/listenGame/page/level1/level1_result.dart';
 import 'package:sinabro/main/gameView/listenGame/data/level1_data.dart';
 import 'package:sinabro/main/gameView/common/layout/listen_game_transition.dart';
 
@@ -22,25 +36,24 @@ class _Level1FlowState extends State<Level1Flow> {
     final selectedSet = level1GameData.sublist(startIndex, startIndex + 5);
 
     void goToResultPage(int correctCount) {
-      if (correctCount >= 3) {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (_) => const Level1ClearPage()),
-        );
-      } else {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (_) => const Level1FailPage()),
-        );
-      }
+      final success = correctCount >= 3;
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (_) => Level1ResultPage(
+            themeId: themeIndex + 1,
+            success: success,
+          ),
+        ),
+      );
     }
 
     if (themeIndex == 0 && !_tutorialDone) {
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (_) => TutorialPage(
-            onTutorialComplete: () {
+          builder: (_) => Level1TutorialPage(
+            onTutorialEnd: () {
               setState(() => _tutorialDone = true);
               Navigator.pushReplacement(
                 context,
