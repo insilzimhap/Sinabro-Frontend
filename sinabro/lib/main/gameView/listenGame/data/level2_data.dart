@@ -11,6 +11,7 @@
  * ----------------------------------------------------------------
  */
 
+// UI import 
 import 'package:sinabro/main/gameView/listenGame/model/listen_game_content.dart';
 
 final level2GameData = [
@@ -104,7 +105,7 @@ final level2GameData = [
     dialogueText: '사람의 표정은 참 다양하네요!',
     characterImagePath: 'assets/img/contents/gameListen/level2/fairy_chat.png',
     audioPath: 'assets/audio/gameListen/level2/t3_q1.mp3',
-    optionImages: ['disppointed.png', 'shy.png', 'simsim.png'],
+    optionImages: ['disappointed.png', 'shy.png', 'simsim.png'],
     correctIndex: 0,
   ),
   ListenGameContent(
@@ -112,7 +113,7 @@ final level2GameData = [
     dialogueText: '표정을 따라하다 보면 더 알기 쉬워요',
     characterImagePath: 'assets/img/contents/gameListen/level2/fairy_chat.png',
     audioPath: 'assets/audio/gameListen/level2/t3_q2.mp3',
-    optionImages: ['hungry.png', 'comfortable.png', 'disppointed.png'],
+    optionImages: ['hungry.png', 'comfortable.png', 'disappointed.png'],
     correctIndex: 0,
   ),
   ListenGameContent(
@@ -120,7 +121,7 @@ final level2GameData = [
     dialogueText: '이건 조금 어려운 것 같아요',
     characterImagePath: 'assets/img/contents/gameListen/level2/fairy_chat.png',
     audioPath: 'assets/audio/gameListen/level2/t3_q3.mp3',
-    optionImages: ['simsim.png', 'disppointed.png', 'shy.png'],
+    optionImages: ['simsim.png', 'disappointed.png', 'shy.png'],
     correctIndex: 2,
   ),
   ListenGameContent(

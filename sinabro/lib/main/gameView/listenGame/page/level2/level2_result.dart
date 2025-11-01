@@ -7,8 +7,9 @@
  */
 
 import 'package:flutter/material.dart';
-import 'package:sinabro/main/gameView/listenGame/page/level2/level2_theme_select.dart';
-
+//changed-start
+import 'package:sinabro/main/gameView/listenGame/page/level2/level2_flow.dart';
+//changed-end
 class Level2ResultPage extends StatelessWidget {
   final int themeId;
   final bool success;
@@ -22,7 +23,7 @@ class Level2ResultPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final imagePath = success
-        ? "assets/img/contents/gameListen/level2/theme_${themeId}_clear.png"
+        ? "assets/img/contents/gameListen/level2/theme_clear.png"
         : "assets/img/contents/gameListen/level2/theme_fail.png";
 
     final Map<int, String> successDialogue = {
@@ -46,7 +47,7 @@ class Level2ResultPage extends StatelessWidget {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: Colors.white.withOpacity(0.9),
                 borderRadius: BorderRadius.circular(16),
               ),
               child: Column(
@@ -68,8 +69,8 @@ class Level2ResultPage extends StatelessWidget {
                   Align(
                     alignment: Alignment.centerRight,
                     child: Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 8, vertical: 2),
+                      padding:
+                          const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                       decoration: BoxDecoration(
                         color: const Color(0xFFB5E7B3),
                         borderRadius: BorderRadius.circular(6),
@@ -93,12 +94,15 @@ class Level2ResultPage extends StatelessWidget {
             right: 24,
             child: ElevatedButton(
               onPressed: () {
-                Navigator.pushAndRemoveUntil(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => Level2ThemeSelectPage(
-                      onThemeSelected: (index) {},
-                    ),
+                Navigator.of(context).pushAndRemoveUntil( //changed-start
+                  PageRouteBuilder(
+                    pageBuilder: (context, animation, secondaryAnimation) =>
+                        const Level2Flow(),
+                    transitionsBuilder:
+                        (context, animation, secondaryAnimation, child) {
+                      return FadeTransition(opacity: animation, child: child);
+                    },
+                    transitionDuration: const Duration(milliseconds: 450), //changed-end
                   ),
                   (route) => false,
                 );

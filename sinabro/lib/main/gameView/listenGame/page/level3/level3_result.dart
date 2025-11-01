@@ -7,8 +7,9 @@
  */
 
 import 'package:flutter/material.dart';
-import 'package:sinabro/main/gameView/listenGame/page/level3/level3_theme_select.dart';
-
+//changed-start
+import 'package:sinabro/main/gameView/listenGame/page/level3/level3_flow.dart';
+//changed-end
 class Level3ResultPage extends StatelessWidget {
   final int themeId;
   final bool success;
@@ -22,7 +23,7 @@ class Level3ResultPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final imagePath = success
-        ? "assets/img/contents/gameListen/level3/theme_${themeId}_clear.png"
+        ? "assets/img/contents/gameListen/level3/theme_clear.png"
         : "assets/img/contents/gameListen/level3/theme_fail.png";
 
     final Map<int, String> successDialogue = {
@@ -39,19 +40,33 @@ class Level3ResultPage extends StatelessWidget {
         fit: StackFit.expand,
         children: [
           Image.asset(imagePath, fit: BoxFit.cover),
-
-          // 오른쪽 위 '다시하기' 버튼
           Positioned(
             right: 24,
             top: 36,
             child: ElevatedButton(
               onPressed: () {
-                Navigator.pushAndRemoveUntil(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => Level3ThemeSelectPage(
-                      onThemeSelected: (index) {},
-                    ),
+                Navigator.of(context).pushAndRemoveUntil(
+                  PageRouteBuilder( //changed-start
+                    pageBuilder: (context, animation, secondaryAnimation) =>
+                        const Level3Flow(),
+                    transitionsBuilder:
+                        (context, animation, secondaryAnimation, child) {
+                      final offsetAnimation = Tween<Offset>(
+                        begin: const Offset(0.0, 1.0),
+                        end: Offset.zero,
+                      ).animate(CurvedAnimation(
+                        parent: animation,
+                        curve: Curves.easeOutCubic,
+                      ));
+                      return SlideTransition(
+                        position: offsetAnimation,
+                        child: FadeTransition(
+                          opacity: animation,
+                          child: child,
+                        ),
+                      );
+                    },
+                    transitionDuration: const Duration(milliseconds: 500), //changed-end
                   ),
                   (route) => false,
                 );
@@ -75,8 +90,6 @@ class Level3ResultPage extends StatelessWidget {
               ),
             ),
           ),
-
-          // 하단 중앙 말풍선
           Positioned(
             bottom: 48,
             left: 0,

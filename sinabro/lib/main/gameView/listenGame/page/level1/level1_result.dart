@@ -6,10 +6,10 @@
  * ----------------------------------------------------------------
  */
 
-
 import 'package:flutter/material.dart';
-import 'package:sinabro/main/gameView/listenGame/page/level1/level1_theme_select.dart';
-
+//changed-start
+import 'package:sinabro/main/gameView/listenGame/page/level1/level1_flow.dart';
+//changed-end
 class Level1ResultPage extends StatelessWidget {
   final int themeId;
   final bool success;
@@ -43,8 +43,6 @@ class Level1ResultPage extends StatelessWidget {
         fit: StackFit.expand,
         children: [
           Image.asset(imagePath, fit: BoxFit.cover),
-
-          // 오른쪽 위 말풍선
           Positioned(
             right: 20,
             top: 120,
@@ -91,20 +89,21 @@ class Level1ResultPage extends StatelessWidget {
               ),
             ),
           ),
-
-          // 오른쪽 아래 버튼
           Positioned(
             right: 32,
             bottom: 32,
             child: ElevatedButton(
               onPressed: () {
-                Navigator.pushAndRemoveUntil(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => Level1ThemeSelectPage(
-                      onThemeSelected: (index) {},
-                    ),
-                  ),
+                Navigator.of(context).pushAndRemoveUntil( //changed-start
+                  PageRouteBuilder(
+                    pageBuilder: (context, animation, secondaryAnimation) =>
+                        const Level1Flow(),
+                    transitionsBuilder:
+                        (context, animation, secondaryAnimation, child) {
+                      return FadeTransition(opacity: animation, child: child);
+                    },
+                    transitionDuration: const Duration(milliseconds: 450), //changed-end
+                  ), 
                   (route) => false,
                 );
               },
