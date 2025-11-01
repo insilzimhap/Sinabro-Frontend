@@ -36,7 +36,7 @@ class _LevelTestPageState extends State<LevelTestPage> {
     final fileName = audioUrl.substring(audioUrl.lastIndexOf('/') + 1);
 
     // 로컬 에셋 경로와 파일 이름을 조합하여 반환
-    return 'assets/audio/tts/levelTest/$fileName';
+    return 'audio/tts/levelTest/$fileName';
   }
 
   @override
