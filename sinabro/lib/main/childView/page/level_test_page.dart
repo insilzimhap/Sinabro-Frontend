@@ -27,11 +27,37 @@ class _LevelTestPageState extends State<LevelTestPage> {
   final List<Map<String, dynamic>> levelChoices = [];
 
   final AudioPlayer _player = AudioPlayer();
+  // 오디오 재생 상태 추적 변수 유지 (재생 로직에 필요)
+  PlayerState _playerState = PlayerState.stopped;
+
+  // 💡 백엔드 URL을 로컬 에셋 경로로 매핑하는 함수 (유지됨)
+  String _getAssetPath(String audioUrl) {
+    // 예: /audio/apple.mp3 에서 파일 이름(apple.mp3)만 추출
+    final fileName = audioUrl.substring(audioUrl.lastIndexOf('/') + 1);
+
+    // 로컬 에셋 경로와 파일 이름을 조합하여 반환
+    return 'assets/audio/tts/levelTest/$fileName';
+  }
 
   @override
   void initState() {
     super.initState();
     futureData = fetchLevelTestData(widget.childId);
+
+    // 오디오 플레이어 상태 변경 리스너 유지 (재생/정지 판단에 필요)
+    _player.onPlayerStateChanged.listen((state) {
+      if (mounted) {
+        setState(() {
+          _playerState = state;
+        });
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _player.dispose(); // 위젯 종료 시 플레이어 리소스 해제
+    super.dispose();
   }
 
   void _next() => setState(() => stepIndex++);
@@ -220,6 +246,11 @@ class _LevelTestPageState extends State<LevelTestPage> {
   Widget _optionCard(LevelTestOption opt) {
     return GestureDetector(
       onTap: () {
+        // 오디오 재생 중이면 중지 로직 유지
+        if (_playerState != PlayerState.stopped) {
+          _player.stop();
+        }
+
         levelChoices.add({
           'questionId': _currentQuestionId,
           'optionId': opt.id,
@@ -290,7 +321,14 @@ class _LevelTestPageState extends State<LevelTestPage> {
             padding: const EdgeInsets.only(top: 8),
             child: InkWell(
               onTap: () async {
-                await _player.play(UrlSource('$baseUrl${q.audioUrl!}'));
+                // ✅ 수정된 로직: 재생 중이면 멈추고, 아니면 로컬 에셋 재생
+                if (_playerState == PlayerState.playing) {
+                  await _player.stop();
+                } else {
+                  final assetPath = _getAssetPath(q.audioUrl!);
+                  // AssetSource를 사용하여 로컬 파일 재생
+                  await _player.play(AssetSource(assetPath));
+                }
               },
               child: Container(
                 padding: const EdgeInsets.all(24),
@@ -365,6 +403,11 @@ class _LevelTestPageState extends State<LevelTestPage> {
           padding: const EdgeInsets.symmetric(horizontal: 24),
           child: ElevatedButton(
             onPressed: () async {
+              // 오디오 재생 중이면 중지 로직 유지
+              if (_playerState != PlayerState.stopped) {
+                _player.stop();
+              }
+
               await _submitLevelChoices();
               if (!mounted) return;
               Navigator.pushReplacement(
