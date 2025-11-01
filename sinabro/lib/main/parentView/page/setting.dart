@@ -92,7 +92,10 @@ class _SettingsPageState extends State<SettingsPage> {
       );
 
       // 2. 성공 시, TranslationService를 다시 초기화하여 변경된 언어를 즉시 앱에 적용합니다.
-      await TranslationService.instance.initialize(widget.parentUserId!);
+      await TranslationService.instance.initialize(
+        widget.parentUserId!,
+        force: true,
+      );
 
       if (!mounted) return;
       print('[설정 저장 성공]');
