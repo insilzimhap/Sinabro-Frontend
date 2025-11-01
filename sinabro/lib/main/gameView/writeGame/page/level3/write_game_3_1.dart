@@ -9,7 +9,10 @@ import 'package:sinabro/selvy_example_view/selvy_service.dart'
 
 // ✅ API/매핑
 import 'package:sinabro/main/gameView/writeGame/data/wg_question_map.dart';
-import 'package:sinabro/main/gameView/writeGame/api/write_game_api.dart';
+// 열매ID, 게임 api
+import 'package:sinabro/main/gameView/writeGame/api/fruit_state.dart';
+import 'package:sinabro/main/gameView/writeGame/api/child_game_api.dart';
+
 // ⬇️ AUDIO IMPORT
 import 'package:audioplayers/audioplayers.dart';
 
@@ -174,13 +177,17 @@ class _WriteGameLevel3_1PageState extends State<WriteGameLevel3_1Page> {
 
   Future<void> _initAndStart() async {
     try {
-      _resultId = widget.resultId;
-      _resultId ??= await WriteGameApi.start(
-        childId: widget.childId,
-        stageCode: 'FR_WG_008',
-      );
-      _sw.start();
-      _resetGame();
+      // resultId는 부모 페이지에서 전달됨
+      _resultId = widget.resultId ?? FruitState.instance.resultId; //changed
+
+      if (_resultId == null) {
+        throw Exception('resultId 없음'); //changed
+      }
+
+      _resetGame(); // 문제 셔플 (랜덤 출제 로직)
+
+      _sw.start(); // 타이머 시작
+      debugPrint('[3-1] 🎯 게임 시작 시각 기록됨 → ${DateTime.now()}'); //changed
     } catch (_) {
       if (mounted) Navigator.of(context).pop();
     } finally {
@@ -188,6 +195,7 @@ class _WriteGameLevel3_1PageState extends State<WriteGameLevel3_1Page> {
     }
   }
 
+  // 랜덤 출제 로직
   void _resetGame() {
     final rnd = Random();
     _problems = [..._POOL]..shuffle(rnd);
@@ -200,6 +208,8 @@ class _WriteGameLevel3_1PageState extends State<WriteGameLevel3_1Page> {
     });
   }
 
+  // ---------------------------------------------------------------------------
+  // Selvy 후보셋 설정 (_prepareProblem)
   Future<void> _prepareProblem() async {
     try {
       await SelvyRecognizer.setCandidateSet([_targetWord]);
@@ -207,6 +217,8 @@ class _WriteGameLevel3_1PageState extends State<WriteGameLevel3_1Page> {
     await _canvasKey.currentState?.clearCanvas();
   }
 
+  // ---------------------------------------------------------------------------
+  // 소리 아이콘 탭 → 현재 문제 자음 오디오 재생 (플레이어는 프로젝트에 맞춰 교체)
   Future<void> _playPronounce() async {
     // ⬇️ 기존 로직 수정: 실제 오디오 에셋을 찾아 재생
     final audioPath = kLevel5AnimalAssets[current.nameKo];
@@ -217,37 +229,60 @@ class _WriteGameLevel3_1PageState extends State<WriteGameLevel3_1Page> {
     }
   }
 
+
+  // ---------------------------------------------------------------------------
+  // 글씨 인식 결과 정규화 (_normalize)
   String _normalize(String raw) =>
       raw.split('\n').first.replaceAll(RegExp(r'\[\d+\]\s*'), '').trim();
 
+
+  // ---------------------------------------------------------------------------
+  // [2] 채점 결과 서버 전송 (_sendChoice)
   Future<void> _sendChoice(String word, bool isCorrect) async {
     if (_resultId == null) return;
-    final qid = requireWgQuestionId(animalQuestionMap, word, ctx: 'Stage3-1');
+    final questionId = requireWgQuestionId(animalQuestionMap, word, ctx: 'Stage3-1');
     try {
-      await WriteGameApi.sendChoice(
-        resultId: _resultId!,
-        questionId: qid,
-        childWrittenText: word,
-        isCorrect: isCorrect,
+      await ChildGameApi.recordWritingChoice(
+        resultId: _resultId!, 
+        questionId: questionId, 
+        childWrittenText: word, 
+        isCorrect: isCorrect, 
       );
-    } catch (_) {}
-  }
-
-  Future<bool> _completeAndGetSuccess() async {
-    if (_resultId == null) return false;
-    try {
-      final secs = _sw.elapsed.inSeconds; // ✅ 경과시간
-      final res = await WriteGameApi.complete(
-        resultId: _resultId!,
-        totalQuestions: _problems.length, // ✅ 4 문항
-        timeSpentSecs: secs, // ✅ 소요시간
-      );
-      return res.success == true;
-    } catch (_) {
-      return false;
+      debugPrint('[3-1][_sendChoice] ✅ 서버 기록 성공');
+    } catch (e) {
+      debugPrint('[3-1][_sendChoice] ⚠️ 서버 기록 실패: $e'); 
     }
   }
 
+  // ---------------------------------------------------------------------------
+  // 게임 완료 후 성공/실패 판정 (_completeAndGetSuccess)
+  Future<bool> _completeAndGetSuccess() async {
+    if (_resultId == null) return false;
+    try {
+      final secs = _sw.elapsed.inSeconds; //changed
+      final data = await ChildGameApi.completeWritingGame( //changed
+        resultId: _resultId!, //changed
+        timeSpentSecs: secs, //changed
+      );
+
+      if (data == null) {
+        debugPrint('[3-1][_completeAndGetSuccess] ⚠️ 서버 응답 없음'); //changed
+        return false;
+      }
+
+      final success = data['success'] == true; //changed
+      final score = data['score']; //changed
+      final total = data['totalQuestions']; //changed
+      debugPrint('[3-1][_completeAndGetSuccess] ✅ 서버 success=$success (score=$score / total=$total)'); 
+      return success; 
+    } catch (e) {
+      debugPrint('[3-1][_completeAndGetSuccess] ⚠️ 예외 발생: $e'); 
+      return false; 
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // 글씨 인식 결과 수신 → 채점 및 문제 전환 (_onRecognizeWord)
   void _onRecognizeWord(String recognized) async {
     final mine = _normalize(recognized);
     final isCorrect = mine == _targetWord;
@@ -260,12 +295,29 @@ class _WriteGameLevel3_1PageState extends State<WriteGameLevel3_1Page> {
       setState(() => _index += 1);
       await _prepareProblem();
     } else {
-      final success = await _completeAndGetSuccess();
-      await _showEndSequence(success);
+      // -----------------------------------------------------------------------
+      // [게임 종료 처리] — 프론트/서버 success 비교 로직 추가
+      // -----------------------------------------------------------------------
+      debugPrint('[3-1][_onRecognizeWord] 모든 문제 완료 → 서버에 complete 요청 시작'); //changed
+
+      final frontCount = _results.where((e) => e).length; //changed
+      final frontSuccess = frontCount >= 3; //changed
+      debugPrint('[3-1] 🎯 프론트 success=$frontSuccess (정답 $frontCount/${_problems.length})'); //changed
+
+      final serverSuccess = await _completeAndGetSuccess(); //changed
+      if (!mounted) return;
+
+      final isConsistent = (frontSuccess == serverSuccess); //changed
+      final finalSuccess = frontSuccess && serverSuccess && isConsistent; //changed
+      debugPrint('[3-1] ✅ 최종 success=$finalSuccess (front=$frontSuccess / server=$serverSuccess / 일치=$isConsistent)'); //changed
+
+      await _showEndSequence(finalSuccess); //changed
     }
   }
 
-  Future<void> _showEndSequence(bool success) async {
+  // ---------------------------------------------------------------------------
+  // 엔딩 시퀀스 (성공 / 실패 UI)
+  Future<void> _showEndSequence(bool finalSuccess) async {
     // 1) 인트로 다이얼로그 (기존 로직 유지)
     showDialog(
       context: context,
@@ -278,7 +330,7 @@ class _WriteGameLevel3_1PageState extends State<WriteGameLevel3_1Page> {
     if (!mounted) return;
     Navigator.of(context, rootNavigator: true).pop();
 
-    if (success || _results.where((e) => e).length >= 3) {
+    if (finalSuccess) {
       // 3-1) 성공 다이얼로그 띄우기
       showDialog(
         context: context,

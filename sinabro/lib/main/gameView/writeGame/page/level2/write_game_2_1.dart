@@ -7,9 +7,9 @@ import 'package:sinabro/selvy_example_view/selvy_service.dart'
     show SelvyRecognizer;
 
 // ▼ 추가: 매핑/API
+
 import 'package:sinabro/main/gameView/writeGame/data/wg_question_map.dart'
     as WG;
-import 'package:sinabro/main/gameView/writeGame/api/write_game_api.dart';
 
 // 열매ID, 게임 api
 import 'package:sinabro/main/gameView/writeGame/api/fruit_state.dart';
