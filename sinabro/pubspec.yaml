@@ -5,7 +5,6 @@ publish_to: 'none'
 version: 1.0.0+1
 
 environment:
-  # 1번 파일(^3.7.2)보다 2번 파일(>=3.0.0)의 범위가 더 넓고 호환성이 좋으므로 2번 기준으로 합침
   sdk: ">=3.0.0 <4.0.0"
 
 dependencies:
@@ -17,55 +16,44 @@ dependencies:
   kakao_flutter_sdk_auth: ^1.3.1
   google_sign_in: ^6.3.0
   cupertino_icons: ^1.0.8
+  file_picker: ^10.1.9
   shared_preferences: ^2.1.1
   audioplayers: ^5.2.0
   provider: ^6.1.1
   http: ^1.1.0
-
-  # --- 2번 파일에만 있던 의존성 추가 ---
-  file_picker: ^10.1.9
   just_audio: ^0.9.36
   audio_session: ^0.1.21
-  googleapis_auth: ^1.6.0 # 구글 번역 api
-  html_unescape: ^2.0.0 # 특수문자
+  googleapis_auth: ^1.6.0 # 구글 번역 api 
+  html_unescape: ^2.0.0 # 특수문자를 안전하게 전달
 
 dev_dependencies:
+  flutter_lints: ^5.0.0
   flutter_test:
     sdk: flutter
-  
-  # 1번 파일의 더 최신 버전(5.0.0)으로 적용
-  flutter_lints: ^5.0.0
 
 flutter:
   uses-material-design: true
 
-  # 2번 파일의 폰트 설정 추가
-  # fonts:
-  #   - family: Inter
-  #     fonts:
-  #       - asset: assets/font/Inter-Light.ttf
-  #         weight: 300
-  #       - asset: assets/font/Inter-Medium.ttf
-  #         weight: 500
-  #       - asset: assets/font/Inter-Bold.ttf
-  #         weight: 700
+  fonts:
+  - family: Inter
+    fonts:
+      - asset: assets/font/Inter-Light.ttf
+        weight: 300
+      - asset: assets/font/Inter-Medium.ttf
+        weight: 500
+      - asset: assets/font/Inter-Bold.ttf
+        weight: 700
 
   assets:
     # --- 공통 Img ---
     - assets/img/auth/
     - assets/img/character/
     - assets/img/contents/gameListen/
-    - assets/img/contents/gameWrite/
-    - assets/img/contents/studyListen/
-    - assets/img/contents/studyWrite/
-    - assets/img/icon/
-    - assets/img/leveltest/
-    - assets/img/pageMain/
-    - assets/img/pageSetting/
-    - assets/img/contents/studyWrite/test/
     - assets/img/contents/gameListen/level1/
     - assets/img/contents/gameListen/level2/
     - assets/img/contents/gameListen/level3/
+    - assets/img/contents/gameWrite/
+    - assets/img/contents/studyListen/
     - assets/img/contents/studyListen/level1/
     - assets/img/contents/studyListen/level1/colors/
     - assets/img/contents/studyListen/level1/animals/
@@ -77,24 +65,33 @@ flutter:
     - assets/img/contents/studyListen/level3/main_keyword/
     - assets/img/contents/studyListen/level3/main_topic/
     - assets/img/contents/studyListen/level3/story/
-    # - assets/img/icon/popup/
+    - assets/img/contents/studyWrite/
+    - assets/img/icon/
+    - assets/img/icon/popup/
+    - assets/img/leveltest/
+    - assets/img/pageMain/
+    - assets/img/pageSetting/
 
-    # --- 공통 Audio ---
     - assets/audio/bgm/
     - assets/audio/effect/
+    - assets/audio/tts/levelTest/
     - assets/audio/tts/gameListen/
+    - assets/audio/tts/gameListen/practice/
+    - assets/audio/tts/gameListen/level1/
+    - assets/audio/tts/gameListen/level2/
+    - assets/audio/tts/gameListen/level3/
     - assets/audio/tts/gameWrite/
+    - assets/audio/tts/gameWrite/level1/
+    - assets/audio/tts/gameWrite/level2/
+    - assets/audio/tts/gameWrite/level3/
     - assets/audio/tts/studyListen/
-    - assets/audio/tts/studyWrite/
-    - assets/audio/tts/studyListen/dailyConversation/
-    - assets/audio/tts/studyListen/dailyConversation/test/
-    - assets/audio/tts/studyListen/soundWords/
-    - assets/audio/tts/studyListen/soundWords/test/
-    - assets/audio/tts/studyWrite/test/
-    # - assets/audio/tts/levelTest/
     - assets/audio/tts/studyListen/level1/animals/
     - assets/audio/tts/studyListen/level1/colors/
     - assets/audio/tts/studyListen/level2/emotions/
     - assets/audio/tts/studyListen/level2/family/
     - assets/audio/tts/studyListen/level2/numbers/
     - assets/audio/tts/studyListen/level3/daily/
+    - assets/audio/tts/studyWrite/
+    - assets/audio/tts/studyWrite/level1/
+    - assets/audio/tts/studyWrite/level2/
+    - assets/audio/tts/studyWrite/level3/

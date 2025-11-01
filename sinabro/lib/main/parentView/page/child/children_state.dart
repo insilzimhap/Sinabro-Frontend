@@ -1,5 +1,5 @@
 /**
- * @file lib/main/parentView/page/children_state.dart
+ * @file lib/main/parentView/page/child/children_state.dart
  *
  * 역할: 앱 전역에서 부모 세션, 자녀 목록, JWT 토큰을 관리하는 경량 스토어.
  * - 로그인 성공 시 세션/토큰을 메모리와 SharedPreferences에 저장
@@ -8,7 +8,6 @@
  * @ 채영: auth_client, parent_api 손 보면서 코드 수정봤습니다
  */
 ///
-
 
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -78,10 +77,9 @@ class ChildrenState extends ChangeNotifier {
     // notifyListeners();
     Future.microtask(() => notifyListeners()); // 수정된 값 다시 불로오기 위해 빌드 후 실행
 
-
     // ✅ (세션 복구 직후) 토큰 자동 복구
     // - 앱 재시작 등으로 메모리에 토큰이 없을 수 있음
-    // - SharedPreferences에서 읽어 _accessToken/_refreshToken 에 로드(메모리 복원)한다.  
+    // - SharedPreferences에서 읽어 _accessToken/_refreshToken 에 로드(메모리 복원)한다.
     if (_accessToken == null || _accessToken!.isEmpty) {
       final prefs = await SharedPreferences.getInstance();
       _accessToken = prefs.getString('accessToken');
@@ -148,7 +146,7 @@ class ChildrenState extends ChangeNotifier {
     notifyListeners();
   }
 
-   // ---------- JWT 토큰 ----------
+  // ---------- JWT 토큰 ----------
   // 메모리에 보관되는 현재 액세스/리프레시 토큰.
   // null 또는 빈 문자열이면 미로그인 상태로 간주.
   String? _accessToken;
@@ -176,7 +174,8 @@ class ChildrenState extends ChangeNotifier {
       await prefs.setString('refreshToken', refreshToken);
     }
     // ★ CHANGED: refreshToken 유무와 상관 없이 항상 AuthClient에 주입
-    await AuthClient.instance.setAuthToken(accessToken, refreshToken: refreshToken);
+    await AuthClient.instance
+        .setAuthToken(accessToken, refreshToken: refreshToken);
 
     // ignore: avoid_print
     print(
@@ -184,7 +183,7 @@ class ChildrenState extends ChangeNotifier {
     );
     notifyListeners();
   }
-  
+
   // ★ CHANGED: 과거 코드 호환용(부팅 시 토큰 복구 필요할 때 사용)
   Future<void> _hydrateTokensIfNeeded() async {
     if (_accessToken != null && _accessToken!.isNotEmpty) return;
@@ -204,5 +203,4 @@ class ChildrenState extends ChangeNotifier {
     await _hydrateTokensIfNeeded();
     return _refreshToken;
   }
-
 }

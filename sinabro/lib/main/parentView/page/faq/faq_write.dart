@@ -1,16 +1,17 @@
 /*
  * 파일: lib/main/parentView/page/faq_write.dart (FaqWritePage)
  * 개요: 부모용 문의/FAQ 작성 화면. 사이드바(ParentLayout) 내 '문의사항' 메뉴에 대응하며
- *      제목·내용 입력 후 서버 전송(추후 연동) 및 성공 토스트를 띄운 뒤 이전 화면으로 복귀한다.
+ * 제목·내용 입력 후 서버 전송(추후 연동) 및 성공 토스트를 띄운 뒤 이전 화면으로 복귀한다.
  * @ 채영: JWT+api 연결 완료
+ * @연수: 언어팩 지원을 위해 수정중 // ✨
  */
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:sinabro/main/parentView/layout/parent_layout.dart';
 import 'package:sinabro/common/auth_client.dart'; //changed (JWT 자동 부착)
-import 'package:sinabro/config.dart';             //changed (baseUrl)
+import 'package:sinabro/config.dart'; //changed (baseUrl)
 import 'dart:convert';
-
+import 'package:sinabro/main/parentView/widget/translated_text.dart'; // ✨
 
 class FaqWritePage extends StatefulWidget {
   final String? parentUserId;
@@ -31,14 +32,15 @@ class _FaqWritePageState extends State<FaqWritePage> {
     if (title.isEmpty || body.isEmpty) {
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text('제목과 내용을 입력해 주세요.')));
+      ).showSnackBar(
+          const SnackBar(content: Text('제목과 내용을 입력해 주세요.'))); // TODO: 번역
       return;
     }
 
     try {
       //changed: 서버 API 호출
-      final uri = Uri.parse(
-          '$baseUrl/api/app/inquiries/parent/${widget.parentUserId}');
+      final uri =
+          Uri.parse('$baseUrl/api/app/inquiries/parent/${widget.parentUserId}');
       final resp = await AuthClient().post(
         uri,
         headers: {'Content-Type': 'application/json'},
@@ -124,7 +126,8 @@ class _FaqWritePageState extends State<FaqWritePage> {
                   ),
                   // 본문 텍스트
                   const Center(
-                    child: Text(
+                    child: TranslatedText(
+                      // ✨
                       '문의가 등록되었습니다!',
                       textAlign: TextAlign.center,
                       style: TextStyle(
@@ -177,7 +180,8 @@ class _FaqWritePageState extends State<FaqWritePage> {
                     ),
                     alignment: Alignment.centerLeft,
                     padding: const EdgeInsets.symmetric(horizontal: 20),
-                    child: const Text(
+                    child: const TranslatedText(
+                      // ✨
                       '문의하기',
                       style: TextStyle(
                         color: Colors.white,
@@ -201,7 +205,8 @@ class _FaqWritePageState extends State<FaqWritePage> {
                           TextField(
                             controller: _titleCtl,
                             decoration: const InputDecoration(
-                              labelText: '제목',
+                              label:
+                                  TranslatedText('제목'), // ✨ labelText -> label
                               filled: true,
                               fillColor: Color(0xFFF8F9FA),
                               border: OutlineInputBorder(),
@@ -214,7 +219,8 @@ class _FaqWritePageState extends State<FaqWritePage> {
                             minLines: 8,
                             maxLines: 12,
                             decoration: const InputDecoration(
-                              labelText: '내용',
+                              label:
+                                  TranslatedText('내용'), // ✨ labelText -> label
                               filled: true,
                               fillColor: Color(0xFFF8F9FA),
                               border: OutlineInputBorder(),
@@ -241,7 +247,8 @@ class _FaqWritePageState extends State<FaqWritePage> {
                         ),
                         child: const Padding(
                           padding: EdgeInsets.symmetric(horizontal: 18),
-                          child: Text(
+                          child: TranslatedText(
+                            // ✨
                             '작성완료',
                             style: TextStyle(color: Colors.white),
                           ),

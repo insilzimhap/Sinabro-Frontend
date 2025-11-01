@@ -1,4 +1,4 @@
-// lib/main/studyView/writeGame/page/level3/write_game_3_2.dart
+// lib/main/gameView/writeGame/page/level3/write_game_3_2.dart
 import 'dart:async';
 import 'dart:math';
 import 'package:flutter/material.dart';
@@ -10,6 +10,37 @@ import 'package:sinabro/selvy_example_view/selvy_service.dart'
 // ✅ 추가: 서버 연동용 import
 import 'package:sinabro/main/gameView/writeGame/api/write_game_api.dart';
 import 'package:sinabro/main/gameView/writeGame/data/wg_question_map.dart';
+// ⬇️ AUDIO IMPORT
+import 'package:audioplayers/audioplayers.dart';
+
+// ⬇️ AUDIO ASSET DEFINITIONS
+// 오디오 플레이어 사용 시 위치: 공통 오디오 에셋 경로
+const String kGameWriteAudioDir = 'audio/tts/gameWrite/level3/';
+// 오디오 플레이어 사용 시 위치: 학습 단어 오디오 에셋 경로
+const String kStudyWriteAudioDir = 'audio/tts/studyWrite/level3/';
+
+// 5세 쓰기 게임 공통 대사 에셋
+const Map<String, String> kLevel5CommonAssets = {
+  // 구분: 공통 | 대사: 과연 이것도 쓸 수 있을까? 글글글...
+  'COMMON_1': kGameWriteAudioDir + 'write5_game_common_1.mp3',
+  // 구분: 공통 | 대사: 대단하군...이렇게 잘할 줄이야!
+  'SUCCESS_1': kGameWriteAudioDir + 'write5_game_success_1.mp3',
+  // 구분: 공통 | 대사: 아쉽게도 퀴즈를 맞추지 못했네
+  'FAIL_1': kGameWriteAudioDir + 'write5_game_fail_1.mp3',
+};
+
+// 5세 쓰기 학습 과일 단어 에셋
+const Map<String, String> kLevel5FruitAssets = {
+  '사과': kStudyWriteAudioDir + 'fruit_apple.mp3',
+  '바나나': kStudyWriteAudioDir + 'fruit_banana.mp3',
+  '딸기': kStudyWriteAudioDir + 'fruit_strawberry.mp3',
+  '포도': kStudyWriteAudioDir + 'fruit_grape.mp3',
+  '수박': kStudyWriteAudioDir + 'fruit_watermelon.mp3',
+  '복숭아': kStudyWriteAudioDir + 'fruit_peach.mp3',
+  '배': kStudyWriteAudioDir + 'fruit_pear.mp3',
+  '감': kStudyWriteAudioDir + 'fruit_persimmon.mp3',
+};
+// ⬆️ AUDIO ASSET DEFINITIONS
 
 const _IMG_DIR = 'assets/img/contents/gameWrite/';
 const _OUTRO_SUCCESS_BG = '${_IMG_DIR}outro_success.png';
@@ -23,14 +54,14 @@ class _FruitItem {
   final String nameKo;
   final String image;
   final List<String> syllables;
-  final String? audio;
+  // final String? audio; // (혼란 방지를 위해 주석 처리됨)
 
   const _FruitItem({
     required this.key,
     required this.nameKo,
     required this.image,
     required this.syllables,
-    this.audio,
+    // this.audio, // (혼란 방지를 위해 주석 처리됨)
   });
 
   String get word => syllables.join();
@@ -92,15 +123,40 @@ class _WriteGameLevel3_2PageState extends State<WriteGameLevel3_2Page> {
   int _index = 0;
   final List<bool> _results = [];
 
+  // ⬇️ AUDIO PLAYER INSTANCE
+  final AudioPlayer _audioPlayer = AudioPlayer();
+
   _FruitItem get current => _problems[_index];
   String get _targetWord => current.word;
 
   String? _resultId;
 
+  // ⬇️ AUDIO HELPER FUNCTION
+  Future<void> _playAssetAudio(String assetPath) async {
+    if (!mounted) return;
+    await _audioPlayer.stop(); // 기존 오디오 중지
+    await _audioPlayer.play(AssetSource(assetPath));
+    debugPrint('🎶 오디오 재생 시작 (3-2): $assetPath');
+  }
+
   @override
   void initState() {
     super.initState();
     _startGame();
+    // ⬇️ 공통 오디오 재생
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      final commonAudio = kLevel5CommonAssets['COMMON_1'];
+      if (commonAudio != null) {
+        await _playAssetAudio(commonAudio);
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    // ⬇️ AUDIO PLAYER DISPOSE
+    _audioPlayer.dispose();
+    super.dispose();
   }
 
   Future<void> _startGame() async {
@@ -136,7 +192,14 @@ class _WriteGameLevel3_2PageState extends State<WriteGameLevel3_2Page> {
   }
 
   Future<void> _playPronounce() async {
-    debugPrint('[3-2] play audio: ${current.nameKo}');
+    // ⬇️ 기존 로직 수정: 실제 오디오 에셋을 찾아 재생
+    final audioPath = kLevel5FruitAssets[current.nameKo];
+    if (audioPath != null) {
+      await _playAssetAudio(audioPath);
+    } else {
+      debugPrint('[3-2] Error: Audio key not found for word ${current.nameKo}');
+    }
+    // ⬆️ 기존 로직 수정
   }
 
   void _onRecognizeWord(String recognized) async {
@@ -173,10 +236,9 @@ class _WriteGameLevel3_2PageState extends State<WriteGameLevel3_2Page> {
           await WriteGameApi.complete(resultId: _resultId!);
         }
       } catch (_) {}
-      final apiRes =
-          (_resultId != null)
-              ? await WriteGameApi.complete(resultId: _resultId!)
-              : null;
+      final apiRes = (_resultId != null)
+          ? await WriteGameApi.complete(resultId: _resultId!)
+          : null;
       final success = apiRes?.success ?? (_results.where((e) => e).length >= 3);
       await _showEndSequence(success ? 4 : 0); // 기존 시그니처 유지용
     }
@@ -191,25 +253,37 @@ class _WriteGameLevel3_2PageState extends State<WriteGameLevel3_2Page> {
   Future<void> _showEndSequence(int correctCount) async {
     final success = correctCount >= 3;
 
-    if (success) {
-      showDialog<void>(
-        context: context,
-        barrierDismissible: false,
-        builder: (_) => const _FullImageDialog(imageAsset: _OUTRO_SUCCESS_BG),
-      );
-      await Future.delayed(const Duration(milliseconds: 3000));
-      if (!mounted) return;
-      Navigator.of(context, rootNavigator: true).pop();
+    // 1) 인트로 다이얼로그
+    showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const _FullImageDialog(imageAsset: _OUTRO_SUCCESS_BG),
+    );
+    await Future.delayed(const Duration(milliseconds: 3000));
+    if (!mounted) return;
+    Navigator.of(context, rootNavigator: true).pop();
 
+    if (success) {
+      // 3-1) 성공 다이얼로그 띄우기
       showDialog<void>(
         context: context,
         barrierDismissible: false,
-        builder:
-            (_) => const _FullImageDialog(
-              imageAsset: _OUTRO_SUCCESS_BG,
-              overlay: _ClearPopup(),
-            ),
+        builder: (_) => const _FullImageDialog(
+          imageAsset: _OUTRO_SUCCESS_BG,
+          overlay: _ClearPopup(),
+        ),
       );
+
+      // ⬇️ 성공 오디오 재생 시점 : 다이얼로그 표시 후 재생
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
+        await Future.delayed(const Duration(milliseconds: 100)); // 다이얼로그 표시 지연
+        final successAudio = kLevel5CommonAssets['SUCCESS_1'];
+        if (successAudio != null) {
+          await _playAssetAudio(successAudio);
+        }
+      });
+      // ⬆️ 성공 오디오 재생 시점
+
       await Future.delayed(const Duration(milliseconds: 2500));
       if (!mounted) return;
       Navigator.of(context, rootNavigator: true).pop();
@@ -219,45 +293,54 @@ class _WriteGameLevel3_2PageState extends State<WriteGameLevel3_2Page> {
         ),
       );
     } else {
+      // 3-2) 실패 다이얼로그 띄우기
       await showDialog<void>(
         context: context,
         barrierDismissible: false,
-        builder:
-            (_) => _FullImageDialog(
-              imageAsset: _OUTRO_FAIL_BG,
-              overlay: Positioned(
-                right: 24,
-                bottom: 28,
-                child: ElevatedButton(
-                  onPressed: () {
-                    Navigator.of(context, rootNavigator: true).pop();
-                    Navigator.of(context).pushReplacement(
-                      MaterialPageRoute(
-                        builder:
-                            (_) => WriteGameMain3Page(childId: widget.childId),
-                      ),
-                    );
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFE7D3A6),
-                    foregroundColor: const Color(0xFF5B3D20),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 18,
-                      vertical: 10,
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    elevation: 0,
+        builder: (_) => _FullImageDialog(
+          imageAsset: _OUTRO_FAIL_BG,
+          overlay: Positioned(
+            right: 24,
+            bottom: 28,
+            child: ElevatedButton(
+              onPressed: () {
+                Navigator.of(context, rootNavigator: true).pop();
+                Navigator.of(context).pushReplacement(
+                  MaterialPageRoute(
+                    builder: (_) => WriteGameMain3Page(childId: widget.childId),
                   ),
-                  child: const Text(
-                    '다시하기',
-                    style: TextStyle(fontWeight: FontWeight.w800),
-                  ),
+                );
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFE7D3A6),
+                foregroundColor: const Color(0xFF5B3D20),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 18,
+                  vertical: 10,
                 ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                elevation: 0,
+              ),
+              child: const Text(
+                '다시하기',
+                style: TextStyle(fontWeight: FontWeight.w800),
               ),
             ),
+          ),
+        ),
       );
+
+      // ⬇️ 실패 오디오 재생 시점 : 다이얼로그 표시 후 재생
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
+        await Future.delayed(const Duration(milliseconds: 100)); // 다이얼로그 표시 지연
+        final failAudio = kLevel5CommonAssets['FAIL_1'];
+        if (failAudio != null) {
+          await _playAssetAudio(failAudio);
+        }
+      });
+      // ⬆️ 실패 오디오 재생 시점
     }
   }
 
@@ -310,14 +393,13 @@ class _WriteGameLevel3_2PageState extends State<WriteGameLevel3_2Page> {
                       height: 12,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color:
-                            done
-                                ? (ok
-                                    ? const Color(0xFF4CAF50)
-                                    : const Color(0xFFE53935))
-                                : (now
-                                    ? const Color(0xFF795548)
-                                    : const Color(0xFFBCAAA4)),
+                        color: done
+                            ? (ok
+                                ? const Color(0xFF4CAF50)
+                                : const Color(0xFFE53935))
+                            : (now
+                                ? const Color(0xFF795548)
+                                : const Color(0xFFBCAAA4)),
                       ),
                     ),
                   );
@@ -432,10 +514,8 @@ class _WriteGameLevel3_2PageState extends State<WriteGameLevel3_2Page> {
                                 SizedBox(
                                   height: 42,
                                   child: ElevatedButton(
-                                    onPressed:
-                                        () =>
-                                            _canvasKey.currentState
-                                                ?.recognizeAndCheckText(),
+                                    onPressed: () => _canvasKey.currentState
+                                        ?.recognizeAndCheckText(),
                                     style: ElevatedButton.styleFrom(
                                       backgroundColor: const Color(0xFFD9CCFF),
                                       foregroundColor: Colors.black87,
@@ -587,12 +667,11 @@ class _BalloonPainter extends CustomPainter {
     canvas.drawRRect(r, paint);
 
     final double tailBaseX = 26, tailTopY = size.height - 10;
-    final path =
-        Path()
-          ..moveTo(tailBaseX, tailTopY)
-          ..relativeLineTo(14, 10)
-          ..relativeLineTo(6, -10)
-          ..close();
+    final path = Path()
+      ..moveTo(tailBaseX, tailTopY)
+      ..relativeLineTo(14, 10)
+      ..relativeLineTo(6, -10)
+      ..close();
     canvas.drawPath(path, paint);
   }
 
@@ -668,12 +747,11 @@ class _ClearPopup extends StatelessWidget {
                 child: Image.asset(
                   _CLAP,
                   fit: BoxFit.contain,
-                  errorBuilder:
-                      (_, __, ___) => const Icon(
-                        Icons.emoji_events,
-                        size: 48,
-                        color: Color(0xFF8D6E63),
-                      ),
+                  errorBuilder: (_, __, ___) => const Icon(
+                    Icons.emoji_events,
+                    size: 48,
+                    color: Color(0xFF8D6E63),
+                  ),
                 ),
               ),
               const SizedBox(height: 14),

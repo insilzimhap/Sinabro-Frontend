@@ -9,10 +9,10 @@ import 'package:provider/provider.dart';
 import 'package:sinabro/main/mainView/page/user_select_screen.dart';
 
 // 메뉴 대상 페이지들
-import 'package:sinabro/main/parentView/page/children_page.dart';
-import 'package:sinabro/main/parentView/page/faq.dart';
+import 'package:sinabro/main/parentView/page/child/children_page.dart';
+import 'package:sinabro/main/parentView/page/faq/faq.dart';
 import 'package:sinabro/main/parentView/page/mypage.dart';
-import 'package:sinabro/main/parentView/page/notice_page.dart';
+import 'package:sinabro/main/parentView/page/notice/notice_page.dart';
 import 'package:sinabro/main/parentView/page/setting.dart' as psettings;
 
 // 번역 관련 import

@@ -10,7 +10,7 @@ import 'dart:convert';
 
 import 'package:sinabro/config.dart';
 import 'package:sinabro/main/auth/authParent/login_parent.dart';
-import 'package:sinabro/main/parentView/page/children_state.dart';
+import 'package:sinabro/main/parentView/page/child/children_state.dart';
 import 'package:flutter/services.dart'; // TextInputFormatter, rootBundle
 
 class SignUpPage extends StatefulWidget {
@@ -170,12 +170,12 @@ class _SignUpPageState extends State<SignUpPage> {
         'userEmail': _emailController.text.trim(),
         'userName': _nameController.text.trim(),
         'userPhoneNum': _phoneController.text.trim(),
-        'role': widget.role,
-        'userLanguage': _mapLang(_lang),
+        'role': widget.role, // 보통 'parent'
+        'userLanguage': _mapLang(_lang), // 옵션. 미보내도 서버에서 Korea 기본값
         'settings': {
-          'privacyConsent': true,
-          'allowNotifications': _agreePush,
-          'emailSubscription': _agreeEmail,
+          'privacyConsent': true, // 필수
+          'allowNotifications': _agreePush, // 선택
+          'emailSubscription': _agreeEmail, // 선택
         },
       };
 
@@ -250,9 +250,9 @@ class _SignUpPageState extends State<SignUpPage> {
     const bg = Color(0xFFFFF1F1);
     final cardColor = Colors.white;
     final headerStyle = Theme.of(context).textTheme.headlineSmall?.copyWith(
-      color: const Color(0xFF7A4F3B),
-      fontWeight: FontWeight.w800,
-    );
+          color: const Color(0xFF7A4F3B),
+          fontWeight: FontWeight.w800,
+        );
 
     return Scaffold(
       backgroundColor: bg,
@@ -274,39 +274,38 @@ class _SignUpPageState extends State<SignUpPage> {
                   ),
                   const SizedBox(height: 12),
                   Expanded(
-                    child:
-                        isWide
-                            ? Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Expanded(
-                                  flex: 3,
-                                  child: _leftFormCard(cardColor),
-                                ),
-                                const SizedBox(width: 20),
-                                Expanded(
-                                  flex: 2,
-                                  child: Column(
-                                    children: [
-                                      _rightConsentCard(cardColor),
-                                      const SizedBox(height: 20),
-                                      _animationBox(cardColor),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            )
-                            : SingleChildScrollView(
-                              child: Column(
-                                children: [
-                                  _leftFormCard(cardColor),
-                                  const SizedBox(height: 16),
-                                  _rightConsentCard(cardColor),
-                                  const SizedBox(height: 16),
-                                  _animationBox(cardColor),
-                                ],
+                    child: isWide
+                        ? Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Expanded(
+                                flex: 3,
+                                child: _leftFormCard(cardColor),
                               ),
+                              const SizedBox(width: 20),
+                              Expanded(
+                                flex: 2,
+                                child: Column(
+                                  children: [
+                                    _rightConsentCard(cardColor),
+                                    const SizedBox(height: 20),
+                                    _animationBox(cardColor),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          )
+                        : SingleChildScrollView(
+                            child: Column(
+                              children: [
+                                _leftFormCard(cardColor),
+                                const SizedBox(height: 16),
+                                _rightConsentCard(cardColor),
+                                const SizedBox(height: 16),
+                                _animationBox(cardColor),
+                              ],
                             ),
+                          ),
                   ),
                 ],
               ),
@@ -320,10 +319,9 @@ class _SignUpPageState extends State<SignUpPage> {
 
   // 좌측: 입력 폼 카드
   Widget _leftFormCard(Color cardColor) {
-    final idHintColor =
-        _idAvailable == null
-            ? Colors.grey
-            : _idAvailable == true
+    final idHintColor = _idAvailable == null
+        ? Colors.grey
+        : _idAvailable == true
             ? Colors.green
             : Colors.red;
 
@@ -362,14 +360,13 @@ class _SignUpPageState extends State<SignUpPage> {
                         borderRadius: BorderRadius.circular(10),
                       ),
                     ),
-                    child:
-                        _idChecking
-                            ? const SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                            : const Text('중복 확인'),
+                    child: _idChecking
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Text('중복 확인'),
                   ),
                 ),
               ],
@@ -408,10 +405,9 @@ class _SignUpPageState extends State<SignUpPage> {
                 child: Text(
                   '8자 이상 16자 이하',
                   style: TextStyle(
-                    color:
-                        _isPasswordValid(_pwController.text)
-                            ? Colors.green
-                            : Colors.grey,
+                    color: _isPasswordValid(_pwController.text)
+                        ? Colors.green
+                        : Colors.grey,
                     fontSize: 12,
                   ),
                 ),
@@ -436,10 +432,9 @@ class _SignUpPageState extends State<SignUpPage> {
                         ? '비밀번호가 일치합니다.'
                         : '비밀번호가 일치하지 않습니다.',
                     style: TextStyle(
-                      color:
-                          _pwConfirmController.text == _pwController.text
-                              ? Colors.green
-                              : Colors.red,
+                      color: _pwConfirmController.text == _pwController.text
+                          ? Colors.green
+                          : Colors.red,
                       fontSize: 12,
                     ),
                   ),
@@ -571,9 +566,7 @@ class _SignUpPageState extends State<SignUpPage> {
                   DropdownMenuItem(value: 'English', child: Text('English')),
                   DropdownMenuItem(value: '日本語', child: Text('日本語')),
                   DropdownMenuItem(
-                    value: 'Tiếng Việt',
-                    child: Text('Tiếng Việt'),
-                  ),
+                      value: 'Tiếng Việt', child: Text('Tiếng Việt')),
                   DropdownMenuItem(value: '中文', child: Text('中文')),
                   DropdownMenuItem(value: 'ไทย', child: Text('ไทย')),
                 ],
@@ -596,27 +589,26 @@ class _SignUpPageState extends State<SignUpPage> {
         height: 180,
         width: double.infinity,
         child: Center(
-          child:
-              _isLoading
-                  ? const CircularProgressIndicator()
-                  : ElevatedButton(
-                    onPressed: _registerUser,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFFFFC5C5),
-                      foregroundColor: Colors.brown[800],
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 28,
-                        vertical: 14,
-                      ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
+          child: _isLoading
+              ? const CircularProgressIndicator()
+              : ElevatedButton(
+                  onPressed: _registerUser,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFFFC5C5),
+                    foregroundColor: Colors.brown[800],
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 28,
+                      vertical: 14,
                     ),
-                    child: const Text(
-                      '가입하기 애니메이션(자리)',
-                      style: TextStyle(fontWeight: FontWeight.bold),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
                     ),
                   ),
+                  child: const Text(
+                    '가입하기 애니메이션(자리)',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                ),
         ),
       ),
     );

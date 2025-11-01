@@ -197,12 +197,10 @@ class _HandwritingPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final paint =
-        Paint()
-          ..color = Colors.black
-          ..strokeWidth =
-              penWidth // changed
-          ..strokeCap = StrokeCap.round;
+    final paint = Paint()
+      ..color = Colors.black
+      ..strokeWidth = penWidth // changed
+      ..strokeCap = StrokeCap.round;
 
     for (final stroke in strokes) {
       for (int i = 0; i < stroke.length - 1; i++) {

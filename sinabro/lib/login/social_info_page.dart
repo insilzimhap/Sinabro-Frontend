@@ -16,11 +16,10 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 
 import 'package:sinabro/config.dart';
-import 'package:sinabro/main/parentView/page/notice_page.dart';
+import 'package:sinabro/main/parentView/page/notice/notice_page.dart';
 import 'package:sinabro/common/auth_client.dart';
-import 'package:sinabro/main/parentView/page/children_state.dart';
+import 'package:sinabro/main/parentView/page/child/children_state.dart';
 import 'package:flutter/services.dart';
-
 
 class SocialExtraInfoPage extends StatefulWidget {
   final String userId;
@@ -46,13 +45,12 @@ class _SocialExtraInfoPageState extends State<SocialExtraInfoPage> {
   // ---------------- 상태 ----------------
   final TextEditingController _phoneController = TextEditingController();
 
-
   // [UI-ONLY] 피그마용 상태 (서버 전송 안 함)
   final _pwController = TextEditingController();
   final _pwConfirmController = TextEditingController();
   bool _agreePrivacy = false; // 필수 동의(제출 시 검증)
-  bool _agreeEmail = false;   
-  bool _agreePush  = false;   
+  bool _agreeEmail = false;
+  bool _agreePush = false;
   String _lang = '한국어';
   String _message = '';
   bool _isLoading = false;
@@ -68,7 +66,7 @@ class _SocialExtraInfoPageState extends State<SocialExtraInfoPage> {
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
         contentPadding:
             const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-  );
+      );
 
   void _showSnack(String msg) {
     if (!mounted) return;
@@ -77,13 +75,20 @@ class _SocialExtraInfoPageState extends State<SocialExtraInfoPage> {
 
   String _mapLang(String v) {
     switch (v) {
-      case '한국어': return 'Korea';
-      case 'English': return 'English';
-      case '日本語': return 'Japanese';
-      case 'Tiếng Việt': return 'Vietnamese';
-      case '中文': return 'Chinese';
-      case 'ไทย': return 'Thai';
-      default: return 'Korea';
+      case '한국어':
+        return 'Korea';
+      case 'English':
+        return 'English';
+      case '日本語':
+        return 'Japanese';
+      case 'Tiếng Việt':
+        return 'Vietnamese';
+      case '中文':
+        return 'Chinese';
+      case 'ไทย':
+        return 'Thai';
+      default:
+        return 'Korea';
     }
   }
 
@@ -96,13 +101,12 @@ class _SocialExtraInfoPageState extends State<SocialExtraInfoPage> {
     }
   }
 
-
   // ───────────────── 제출 ─────────────────
   Future<void> _submit() async {
-
     // 0) 클라이언트 검증
     final phone = _phoneController.text.trim();
-    final hasPw = _pwController.text.isNotEmpty || _pwConfirmController.text.isNotEmpty;
+    final hasPw =
+        _pwController.text.isNotEmpty || _pwConfirmController.text.isNotEmpty;
 
     if (!_agreePrivacy) {
       return _showSnack('개인정보 수집 동의가 필요합니다.');
@@ -119,9 +123,7 @@ class _SocialExtraInfoPageState extends State<SocialExtraInfoPage> {
       }
     }
 
-
     setState(() => _isLoading = true);
-
 
     try {
       // 1) 페이로드 구성
@@ -130,12 +132,12 @@ class _SocialExtraInfoPageState extends State<SocialExtraInfoPage> {
         'userEmail': widget.userEmail,
         'userName': widget.userName,
         'userPhoneNum': phone.isEmpty ? null : phone,
-        'role': 'parent',  // 부모 고정
+        'role': 'parent', // 부모 고정
         'socialType': widget.socialType, // kakao / google
         'socialId': widget.socialId,
         'userLanguage': _mapLang(_lang),
         'settings': {
-          'privacyConsent': _agreePrivacy,  //필수동의
+          'privacyConsent': _agreePrivacy, //필수동의
           'allowNotifications': _agreePush,
           'emailSubscription': _agreeEmail,
         },
@@ -167,8 +169,9 @@ class _SocialExtraInfoPageState extends State<SocialExtraInfoPage> {
         final refresh = body['refreshToken'] as String?;
         final userMap = body['user'] as Map<String, dynamic>?;
 
-        final parentUserId   = (userMap?['userId']   ?? widget.userId).toString();
-        final parentUserName = (userMap?['userName'] ?? widget.userName).toString();
+        final parentUserId = (userMap?['userId'] ?? widget.userId).toString();
+        final parentUserName =
+            (userMap?['userName'] ?? widget.userName).toString();
 
         // 🔐 토큰/세션 저장
         if (token != null && token.isNotEmpty) {
@@ -177,20 +180,21 @@ class _SocialExtraInfoPageState extends State<SocialExtraInfoPage> {
           // UI 스토어/SharedPreferences
           await ChildrenState.instance.setToken(
             accessToken: token,
-            refreshToken: (refresh != null && refresh.isNotEmpty) ? refresh : null,
+            refreshToken:
+                (refresh != null && refresh.isNotEmpty) ? refresh : null,
           );
-          print('[소셜추가] 토큰 저장 완료 (AT=${token.length}자, RT=${refresh != null ? '있음' : '없음'})');
+          print(
+              '[소셜추가] 토큰 저장 완료 (AT=${token.length}자, RT=${refresh != null ? '있음' : '없음'})');
         } else {
           print('[소셜추가][경고] 응답에 토큰이 없음');
         }
-
 
         await ChildrenState.instance.setSession(
           userId: parentUserId,
           userName: parentUserName.isEmpty ? null : parentUserName,
         );
-        print('[소셜추가] 세션 저장 완료 (userId=$parentUserId, userName=$parentUserName)');
-
+        print(
+            '[소셜추가] 세션 저장 완료 (userId=$parentUserId, userName=$parentUserName)');
 
         // 추가 정보 등록 완료 → 공지사항으로 이동
         Navigator.pushReplacement(
@@ -210,7 +214,6 @@ class _SocialExtraInfoPageState extends State<SocialExtraInfoPage> {
       if (mounted) setState(() => _isLoading = false);
     }
   }
-
 
   // ---------------- UI ----------------
   @override
@@ -253,7 +256,8 @@ class _SocialExtraInfoPageState extends State<SocialExtraInfoPage> {
                         ? Row(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Expanded(flex: 3, child: _leftFormCard(cardColor)),
+                              Expanded(
+                                  flex: 3, child: _leftFormCard(cardColor)),
                               const SizedBox(width: 20),
                               Expanded(
                                 flex: 2,
@@ -502,7 +506,8 @@ class _SocialExtraInfoPageState extends State<SocialExtraInfoPage> {
                   DropdownMenuItem(value: '한국어', child: Text('한국어')),
                   DropdownMenuItem(value: 'English', child: Text('English')),
                   DropdownMenuItem(value: '日本語', child: Text('日本語')),
-                  DropdownMenuItem(value: 'Tiếng Việt', child: Text('Tiếng Việt')),
+                  DropdownMenuItem(
+                      value: 'Tiếng Việt', child: Text('Tiếng Việt')),
                   DropdownMenuItem(value: '中文', child: Text('中文')),
                   DropdownMenuItem(value: 'ไทย', child: Text('ไทย')),
                 ],
@@ -532,8 +537,8 @@ class _SocialExtraInfoPageState extends State<SocialExtraInfoPage> {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFFFFC5C5),
                     foregroundColor: Colors.brown[800],
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 28, vertical: 14),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 28, vertical: 14),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),

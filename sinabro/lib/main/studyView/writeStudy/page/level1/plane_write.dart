@@ -1,4 +1,5 @@
 // 레벨1 열매 3 비행기 그리기(곡선2) 서버 연결 완료
+// lib/main/studyView/writeStudy/page/level1/plane_write.dart
 
 import 'dart:math';
 import 'dart:typed_data';
@@ -7,9 +8,14 @@ import 'dart:convert'; // http 사용을 위해 추가
 import 'package:http/http.dart' as http; // http 사용을 위해 추가
 import 'package:sinabro/config.dart'; // baseUrl 사용을 위해 추가
 
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart'; // rootBundle
+import 'package:audioplayers/audioplayers.dart'; // 오디오 패키지 import
+
+// 오디오 에셋 경로
+const _audioDir = 'audio/tts/studyWrite/level1/';
+const _audioIntro = '${_audioDir}write3_plane_intro.mp3';
+const _audioDraw = '${_audioDir}write3_plane_draw.mp3';
 
 class PlaneWritePage extends StatefulWidget {
   final String childId;
@@ -63,15 +69,57 @@ class _PlaneWritePageState extends State<PlaneWritePage> {
   static const double _introPlaneRightFactor = 0.07; // 오른쪽에서 4% 지점(→ left로 환산)
   static const double _introPlaneTopFactor = 0.16; // 위에서 16% 지점
 
+  // ✅ 오디오 플레이어 인스턴스
+  final AudioPlayer _audioPlayer = AudioPlayer();
+
   // ✅ 학습 시작 시간 기록 변수
   DateTime? _startTime;
 
-  void _startWriting() {
-    if (!_showIntro) return;
-    setState(() => _showIntro = false);
+  // ------------------ ✅ 오디오 ------------------
+  @override
+  void initState() {
+    super.initState();
+    // 인트로 오디오 자동 재생
+    _playAudio(_audioIntro);
   }
 
-  void _advanceToNextStage() {
+  @override
+  void dispose() {
+    // 오디오 플레이어 리소스 해제
+    _audioPlayer.dispose();
+    super.dispose();
+  }
+
+  /// 오디오 재생 헬퍼 함수
+  Future<void> _playAudio(String assetPath, {bool isLooping = false}) async {
+    // 위젯이 dispose된 후에 호출되는 것을 방지
+    if (!mounted) return;
+    await _audioPlayer.stop(); // 기존 오디오가 있다면 중지
+    _audioPlayer
+        .setReleaseMode(isLooping ? ReleaseMode.loop : ReleaseMode.release);
+    await _audioPlayer.play(AssetSource(assetPath));
+    return _audioPlayer.onPlayerComplete.first;
+  }
+  // ---------------------------------------------
+
+  Future<void> _startWriting() async {
+    if (!_showIntro) return;
+    // 그리기 시작 오디오 재생
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      _playAudio(_audioDraw);
+    });
+    setState(() {
+      _showIntro = false;
+      // ✅ 학습 시작 시간 기록 (실제 그리기 시작 시점)
+      _startTime = DateTime.now();
+    });
+  }
+
+  Future<void> _advanceToNextStage() async {
+    // 다음 단계 그리기 오디오 재생
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      _playAudio(_audioDraw);
+    });
     setState(() {
       _stage += 1;
       _isCorrect = false;
@@ -84,9 +132,9 @@ class _PlaneWritePageState extends State<PlaneWritePage> {
   Future<void> _uploadStudyWritingResult() async {
     // 실제 이 학습에 해당하는 정확한 fruit_id로 바꿔주세요!
     const String fruitIdForThisStudy = 'FR_WR_003';
-    
+
     // ✅ 학습 시간 계산
-    int timeSpentSeconds = 0; 
+    int timeSpentSeconds = 0;
     if (_startTime != null) {
       timeSpentSeconds = DateTime.now().difference(_startTime!).inSeconds;
     }
@@ -96,7 +144,7 @@ class _PlaneWritePageState extends State<PlaneWritePage> {
       'childId': widget.childId, // State 위젯의 childId 사용
       'fruitId': fruitIdForThisStudy,
       'timeSpentSecs': timeSpentSeconds, // 계산된 시간 사용
-      'isCompleted': true,  // 학습을 정상적으로 완료했으므로 true
+      'isCompleted': true, // 학습을 정상적으로 완료했으므로 true
     });
 
     try {
@@ -119,7 +167,8 @@ class _PlaneWritePageState extends State<PlaneWritePage> {
     }
   }
 
-  void _onStageDone() async { // ⭐ async 키워드 추가
+  void _onStageDone() async {
+    // ⭐ async 키워드 추가
     if (_isCorrect || _busyAdvancing) return;
     setState(() => _isCorrect = true);
     _busyAdvancing = true;
@@ -129,7 +178,7 @@ class _PlaneWritePageState extends State<PlaneWritePage> {
       // 1초 기다렸다가 다음 스테이지로
       await Future.delayed(const Duration(seconds: 1)); // ⭐ await 사용
       if (!mounted) return;
-      _advanceToNextStage();
+      _advanceToNextStage(); // 여기서 다음 단계 오디오 재생됨
     }
     // 마지막 스테이지 완료 시
     else {
@@ -185,6 +234,8 @@ class _PlaneWritePageState extends State<PlaneWritePage> {
               sampleStridePx: 4, // 샘플 그리드 간격
               onProgress: (p) => setState(() => _progress = p),
               onDone: _onStageDone,
+              // 그리기 실패 시 오디오 재생 콜백 추가
+              onFail: () async => await _playAudio(_audioDraw),
               strokeColor: const ui.Color.fromARGB(255, 0, 80, 255), // 파란 펜
               strokeWidthBasePx: 20,
             ),
@@ -339,10 +390,13 @@ class _PlaneWritePageState extends State<PlaneWritePage> {
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
-                    '비행기 선을 따라 그려보세요!  ${(_progress * 100).round()}%',
+                    // ⭐ 피그마 이미지에는 "비행기가 날아갈 수 있도록..." -> 현재 "비행기 선을 따라..."
+                    // 피그마 기준으로 수정
+                    '비행기가 날아갈 수 있도록\n선을 이어주세요! ${(_progress * 100).round()}%',
                     textAlign: TextAlign.center,
                     style: const TextStyle(
                       color: Colors.white,
+                      // TODO : 돌려보고 글씨 크기 조정
                       fontSize: 20,
                       fontWeight: FontWeight.w700,
                       height: 1.2,
@@ -362,7 +416,7 @@ class _PlaneWritePageState extends State<PlaneWritePage> {
           // ====== 단계 정답 오버레이 ======
           if (_isCorrect && _stage < 2) _overlayLabel('정답입니다! 🎉'),
 
-          // ====== 마지막 단계 "완벽해요!" ======
+          // ====== 마지막 단계 "완벽해요!" (⭐ 사용 안 함) ======
           if (_showPerfect) _overlayLabel('완벽해요! ✨'),
 
           // ====== 완료 팝업 ======
@@ -460,6 +514,7 @@ class PlaneImageGuideLayer extends StatefulWidget {
 
   final ValueChanged<double> onProgress; // 0..1
   final VoidCallback onDone;
+  final VoidCallback? onFail; // 실패 콜백 추가
 
   final ui.Color strokeColor;
   final double strokeWidthBasePx;
@@ -477,6 +532,7 @@ class PlaneImageGuideLayer extends StatefulWidget {
     required this.sampleStridePx,
     required this.onProgress,
     required this.onDone,
+    this.onFail, // 실패 콜백
     required this.strokeColor,
     required this.strokeWidthBasePx,
   });
@@ -619,22 +675,20 @@ class _PlaneImageGuideLayerState extends State<PlaneImageGuideLayer> {
 
   // 화면→마스크/마스크→화면
   Offset _toMask(Offset screenPt) => Offset(
-    (screenPt.dx - _guideRect.left) * _mx,
-    (screenPt.dy - _guideRect.top) * _my,
-  );
+        (screenPt.dx - _guideRect.left) * _mx,
+        (screenPt.dy - _guideRect.top) * _my,
+      );
 
   // 점-사각형 최소거리
   double _distanceToRect(Offset p, Rect r) {
-    final dx =
-        (p.dx < r.left)
-            ? (r.left - p.dx)
-            : (p.dx > r.right)
+    final dx = (p.dx < r.left)
+        ? (r.left - p.dx)
+        : (p.dx > r.right)
             ? (p.dx - r.right)
             : 0.0;
-    final dy =
-        (p.dy < r.top)
-            ? (r.top - p.dy)
-            : (p.dy > r.bottom)
+    final dy = (p.dy < r.top)
+        ? (r.top - p.dy)
+        : (p.dy > r.bottom)
             ? (p.dy - r.bottom)
             : 0.0;
     return sqrt(dx * dx + dy * dy);
@@ -764,9 +818,9 @@ class _PlaneImageGuideLayerState extends State<PlaneImageGuideLayer> {
                 if (_useHorizontal) {
                   // X 밴드 + Y 슬랙
                   final bandGX = (_gridW * _kEndBandPct).ceil().clamp(
-                    1,
-                    _gridW,
-                  );
+                        1,
+                        _gridW,
+                      );
                   final leftBandMaxX = (_minGXEdge + bandGX).clamp(
                     0,
                     _gridW - 1,
@@ -787,9 +841,9 @@ class _PlaneImageGuideLayerState extends State<PlaneImageGuideLayer> {
                 } else {
                   // Y 밴드 + X 슬랙
                   final bandGY = (_gridH * _kEndBandPct).ceil().clamp(
-                    1,
-                    _gridH,
-                  );
+                        1,
+                        _gridH,
+                      );
                   final topBandMaxY = (_minGYEdge + bandGY).clamp(
                     0,
                     _gridH - 1,
@@ -819,6 +873,7 @@ class _PlaneImageGuideLayerState extends State<PlaneImageGuideLayer> {
               if (success) {
                 widget.onDone();
               } else {
+                widget.onFail?.call(); // ✅ 실패 콜백 호출
                 _resetAttempt(); // 실패 시 재시도
               }
             },
@@ -877,12 +932,11 @@ class _MaskClippedStrokePainter extends CustomPainter {
 
     canvas.saveLayer(maskDstRect, Paint());
 
-    final paint =
-        Paint()
-          ..color = strokeColor
-          ..style = PaintingStyle.stroke
-          ..strokeCap = StrokeCap.round
-          ..strokeWidth = strokeWidth;
+    final paint = Paint()
+      ..color = strokeColor
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round
+      ..strokeWidth = strokeWidth;
     canvas.drawPath(path, paint);
 
     canvas.drawImageRect(

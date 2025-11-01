@@ -5,9 +5,39 @@ import 'package:sinabro/main/studyView/writeStudy/page/main_apple_tree.dart';
 import 'package:sinabro/main/studyView/writeStudy/widget/writing_canvas.dart';
 
 import 'package:http/http.dart' as http; // ⭐️ 1. http 패키지
-import 'dart:convert';                   // ⭐️ 2. json 변환용
-import 'package:sinabro/config.dart';    // ⭐️ 3. baseUrl 사용
+import 'dart:convert'; // ⭐️ 2. json 변환용
+import 'package:sinabro/config.dart'; // ⭐️ 3. baseUrl 사용
 
+import 'package:audioplayers/audioplayers.dart'; // 오디오 재생용 패키지
+
+// 오디오 경로 및 파일명 정의
+const _audioDir = 'audio/tts/studyWrite/level2/';
+const _audioIntroVowel = '${_audioDir}write4_study_intro_03.mp3'; // 모음 친구들 인트로
+const _audioRepeat = '${_audioDir}write4_repeat.mp3'; // 따라 써봐요!
+
+// 모음(2-3 세트) 키 → 파일명 베이스 매핑
+const Map<String, String> _audioKeyMapVowel = {
+  'a': 'a', // ㅏ
+  'ae': 'ae', // ㅐ
+  'eo': 'eo', // ㅓ
+  'e': 'e', // ㅔ
+  'o': 'o', // ㅗ
+  'u': 'u', // ㅜ
+  'eu': 'eu', // ㅡ
+  'i': 'i', // ㅣ
+  'wi': 'wi', // ㅟ
+  'oe': 'oe', // ㅚ
+};
+
+// 오디오 파일명 헬퍼
+String _getAudioBaseName(String lessonKey) =>
+    _audioKeyMapVowel[lessonKey] ?? lessonKey;
+String _getLetterNameAudio(String key) =>
+    '${_audioDir}write4_${_getAudioBaseName(key)}_00.mp3'; // 글자 이름
+String _getWordAudio(String key) =>
+    '${_audioDir}write4_${_getAudioBaseName(key)}_01.mp3'; // 연상 단어
+String _getCompletionAudio(String key) =>
+    '${_audioDir}write4_${_getAudioBaseName(key)}_02.mp3'; // 완료 멘트
 
 /// ---------------------------------------------------------------------------
 /// 레슨 스펙 (mask / trace / preview 모두 개별 조정 가능)
@@ -268,7 +298,11 @@ class _Writing23PageState extends State<Writing23Page> {
 
   // ⭐️ API 연동 변수 추가
   late DateTime _startTime; // 학습 시작 시간
-  bool _apiCallSent = false;  // API 중복 호출 방지 플래그
+  bool _apiCallSent = false; // API 중복 호출 방지 플래그
+
+  // 오디오 플레이어 및 구독
+  final AudioPlayer _audioPlayer = AudioPlayer();
+  StreamSubscription? _playerCompleteSubscription;
 
   @override
   void initState() {
@@ -277,11 +311,22 @@ class _Writing23PageState extends State<Writing23Page> {
 
     _startTime = DateTime.now(); // ⭐️ 시간 측정 시작!
 
+    // 인트로 또는 바로 학습 오디오 시퀀스 시작
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_showIntro) {
+        _playAudio(_audioIntroVowel); // 모음 인트로
+      } else {
+        _playWriteScreenSequence(); // 글자 이름 → 단어 → (첫 레슨이면) 따라 써봐요
+      }
+    });
   }
 
   @override
   void dispose() {
     _finalPopupTimer?.cancel();
+    // 오디오 구독 해제 및 플레이어 dispose
+    _playerCompleteSubscription?.cancel();
+    _audioPlayer.dispose();
     super.dispose();
   }
 
@@ -310,17 +355,17 @@ class _Writing23PageState extends State<Writing23Page> {
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
-          builder:
-              (_) => Writing23Page(
-                childId: widget.childId,
-                lesson: nextKey,
-                showIntro: false,
-                fruitId: widget.fruitId,
-              ),
+          builder: (_) => Writing23Page(
+            childId: widget.childId,
+            lesson: nextKey,
+            showIntro: false,
+            fruitId: widget.fruitId,
+          ),
         ),
       );
     }
   }
+
   /// ⭐️ (신규) 학습 완료 API 호출 함수 - JWT 없이
   Future<void> _uploadStudyResult() async {
     // 1. 걸린 시간 계산
@@ -349,7 +394,8 @@ class _Writing23PageState extends State<Writing23Page> {
       if (response.statusCode == 200 || response.statusCode == 201) {
         debugPrint('[Writing22] API 연동 성공: fruitId ${widget.fruitId} 완료!');
       } else {
-        debugPrint('[Writing22] API 연동 실패: ${response.statusCode} ${response.body}');
+        debugPrint(
+            '[Writing22] API 연동 실패: ${response.statusCode} ${response.body}');
       }
     } catch (e) {
       debugPrint('[Writing22] API 연동 중 예외 발생: $e');
@@ -370,19 +416,69 @@ class _Writing23PageState extends State<Writing23Page> {
       'ᅵ': 'ㅣ', 'U+1175': 'ㅣ',
       'ᅱ': 'ㅟ', 'U+1171': 'ㅟ',
       'ᅬ': 'ㅚ', 'U+116D': 'ㅚ',
-      // 자음(재사용 대비)
-      'ᄂ': 'ㄴ', 'U+1102': 'ㄴ',
-      'ᄅ': 'ㄹ', 'U+1105': 'ㄹ',
-      'ᄆ': 'ㅁ', 'U+1106': 'ㅁ',
-      'ᄋ': 'ㅇ', 'U+110B': 'ㅇ',
-      'ᄎ': 'ㅊ', 'U+110E': 'ㅊ',
-      'ᄑ': 'ㅍ', 'U+1111': 'ㅍ',
-      'ᄒ': 'ㅎ', 'U+1112': 'ㅎ',
-      'ᄏ': 'ㅋ', 'U+110F': 'ㅋ',
-      'ᄐ': 'ㅌ', 'U+1110': 'ㅌ',
     };
     final t = s.trim();
     return map[t] ?? t;
+  }
+
+  /// 오디오 재생 유틸
+  void _playAudio(String assetPath, {bool isLooping = false}) {
+    if (!mounted) return;
+    _audioPlayer.stop();
+    _playerCompleteSubscription?.cancel();
+    _audioPlayer
+        .setReleaseMode(isLooping ? ReleaseMode.loop : ReleaseMode.release);
+    _audioPlayer.play(AssetSource(assetPath));
+  }
+
+  /// 오디오 재생 후 완료까지 대기(순차 재생용, 타임아웃 포함)
+  Future<void> _playAudioAndWait(String assetPath) {
+    if (!mounted) return Future.value();
+    final completer = Completer<void>();
+    _playerCompleteSubscription?.cancel();
+
+    _playAudio(assetPath);
+
+    _playerCompleteSubscription = _audioPlayer.onPlayerComplete.listen((_) {
+      if (!completer.isCompleted) completer.complete();
+      _playerCompleteSubscription?.cancel();
+    });
+
+    // 안전 타임아웃
+    Future.delayed(const Duration(seconds: 5), () {
+      if (!completer.isCompleted) {
+        _playerCompleteSubscription?.cancel();
+        if (mounted) {
+          debugPrint('Audio playback timed out: $assetPath');
+          completer.complete();
+        }
+      }
+    });
+
+    return completer.future;
+  }
+
+  /// 글자 학습 화면 오디오 순차 재생
+  Future<void> _playWriteScreenSequence() async {
+    if (!mounted) return;
+    final lessonKey = widget.lesson;
+    final bool isFirstLesson = VOWEL_ORDER2.first == lessonKey;
+
+    try {
+      await _playAudioAndWait(_getLetterNameAudio(lessonKey)); // 글자 이름
+      if (!mounted) return;
+      await _playAudioAndWait(_getWordAudio(lessonKey)); // 연상 단어
+      if (!mounted) return;
+      if (isFirstLesson) {
+        await _playAudioAndWait(_audioRepeat); // 따라 써봐요!
+      }
+    } catch (e) {
+      debugPrint("Error playing write screen sequence: $e");
+    } finally {
+      if (mounted) {
+        _playerCompleteSubscription?.cancel();
+      }
+    }
   }
 
   /// ✅ 인식 콜백: top1 라인만 사용 + [n] 토큰 제거 후 정규화 비교
@@ -394,6 +490,9 @@ class _Writing23PageState extends State<Writing23Page> {
     final target = _norm(spec.bigChar);
 
     if (got.isNotEmpty && got == target) {
+      // 완료 오디오 재생
+      _playAudio(_getCompletionAudio(widget.lesson));
+
       // 1. 인식 성공! 완료 단계로 UI 변경
       setState(() => step = 1);
 
@@ -401,9 +500,8 @@ class _Writing23PageState extends State<Writing23Page> {
       // 마지막 레슨('oe')이고, API를 아직 안 보냈다면 호출!
       if (_isFinalLesson && !_apiCallSent) {
         _apiCallSent = true; // 중복 호출 방지 플래그 설정
-        _uploadStudyResult();  // API 호출 함수 실행!
+        _uploadStudyResult(); // API 호출 함수 실행!
       }
-      // ⭐️⭐️⭐️⭐️⭐️⭐️⭐️⭐️⭐️⭐️⭐️⭐️⭐️⭐️⭐️
 
       // 3. (기존 로직) 마지막 레슨이면 팝업 예약
       if (_isFinalLesson && !_rewardShown && !_finalPopupScheduled) {
@@ -493,7 +591,11 @@ class _Writing23PageState extends State<Writing23Page> {
   Widget _buildIntro(BuildContext context) {
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
-      onTap: () => setState(() => _showIntro = false),
+      // ✅ [수정] 인트로 탭 시 학습 시퀀스 오디오도 시작하도록 변경
+      onTap: () {
+        setState(() => _showIntro = false);
+        _playWriteScreenSequence();
+      },
       child: Container(
         color: const Color(0xFFFFF4F3),
         child: SafeArea(
@@ -592,18 +694,16 @@ class _Writing23PageState extends State<Writing23Page> {
           onPressed: _goBackToAppleTree,
         ),
       ),
-      body:
-          _showIntro
-              ? _buildIntro(context)
-              : SafeArea(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  child:
-                      step == 0
-                          ? _buildWriteStep(context)
-                          : _buildCompleteStep(context),
-                ),
+      body: _showIntro
+          ? _buildIntro(context)
+          : SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: step == 0
+                    ? _buildWriteStep(context)
+                    : _buildCompleteStep(context),
               ),
+            ),
 
       // ✅ FAB은 항상 깔고 보임만 제어(페이드)
       floatingActionButton: Padding(
@@ -669,41 +769,56 @@ class _Writing23PageState extends State<Writing23Page> {
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Text(
-                              spec.bigChar,
-                              style: TextStyle(
-                                fontSize: glyphSize,
-                                fontWeight: FontWeight.w900,
-                                height: 1.0,
+                            // ✅ 큰 글자 탭 시 글자 이름 오디오
+                            GestureDetector(
+                              onTap: () =>
+                                  _playAudio(_getLetterNameAudio(spec.key)),
+                              child: Text(
+                                spec.bigChar,
+                                style: TextStyle(
+                                  fontSize: glyphSize,
+                                  fontWeight: FontWeight.w900,
+                                  height: 1.0,
+                                ),
                               ),
                             ),
                             SizedBox(height: glyphSize * 0.06),
-                            Text(
-                              spec.nameKo,
-                              style: TextStyle(
-                                fontSize: wordSize,
-                                fontWeight: FontWeight.w800,
+                            // ✅ 글자 이름 탭 시 글자 이름 오디오
+                            GestureDetector(
+                              onTap: () =>
+                                  _playAudio(_getLetterNameAudio(spec.key)),
+                              child: Text(
+                                spec.nameKo,
+                                style: TextStyle(
+                                  fontSize: wordSize,
+                                  fontWeight: FontWeight.w800,
+                                ),
                               ),
                             ),
                             SizedBox(height: glyphSize * 0.14),
-                            Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Image.asset(
-                                  spec.wordIconAsset,
-                                  width: iconSize,
-                                  height: iconSize,
-                                  fit: BoxFit.contain,
-                                ),
-                                const SizedBox(width: 12),
-                                Text(
-                                  spec.wordLabel,
-                                  style: TextStyle(
-                                    fontSize: labelSize,
-                                    fontWeight: FontWeight.w700,
+                            // ✅ 단어 아이콘+이름 탭 시 연상 단어 오디오
+                            GestureDetector(
+                              onTap: () => _playAudio(_getWordAudio(spec.key)),
+                              behavior: HitTestBehavior.opaque,
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Image.asset(
+                                    spec.wordIconAsset,
+                                    width: iconSize,
+                                    height: iconSize,
+                                    fit: BoxFit.contain,
                                   ),
-                                ),
-                              ],
+                                  const SizedBox(width: 12),
+                                  Text(
+                                    spec.wordLabel,
+                                    style: TextStyle(
+                                      fontSize: labelSize,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
                           ],
                         ),
@@ -793,17 +908,15 @@ class _Writing23PageState extends State<Writing23Page> {
                                   ...List.generate(spec.traceAssets.length, (
                                     i,
                                   ) {
-                                    final scale =
-                                        (i < spec.traceScales.length)
-                                            ? spec.traceScales[i]
-                                            : 1.0;
-                                    final offs =
-                                        (i < spec.traceOffsets.length)
-                                            ? spec.traceOffsets[i]
-                                            : const Offset(0, -2);
+                                    final scale = (i < spec.traceScales.length)
+                                        ? spec.traceScales[i]
+                                        : 1.0;
+                                    final offs = (i < spec.traceOffsets.length)
+                                        ? spec.traceOffsets[i]
+                                        : const Offset(0, -2);
                                     final traceW =
                                         (padW * baseMaskFill * baseTraceFill) *
-                                        scale;
+                                            scale;
 
                                     return SizedBox(
                                       width: traceW,
@@ -859,10 +972,8 @@ class _Writing23PageState extends State<Writing23Page> {
                             width: 200, // 버튼 폭 고정
                             height: 42, // 버튼 높이 고정
                             child: ElevatedButton(
-                              onPressed:
-                                  () =>
-                                      _canvasKey.currentState
-                                          ?.recognizeAndCheckText(),
+                              onPressed: () => _canvasKey.currentState
+                                  ?.recognizeAndCheckText(),
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: const Color(0xFFFFD966),
                                 foregroundColor: Colors.black87,
@@ -944,8 +1055,9 @@ class _Writing23PageState extends State<Writing23Page> {
                 ),
               ),
               const SizedBox(height: 28),
+              // NEXT TODO : 조사 분리? : ‘${spec.bigChar}’를 학습했어요!
               Text(
-                '‘${spec.bigChar}’를 학습했어요!',
+                '‘${spec.bigChar}’을/를 학습했어요!',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: titleSize,

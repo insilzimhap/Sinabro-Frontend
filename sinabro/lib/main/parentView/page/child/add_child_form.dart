@@ -1,5 +1,5 @@
 /**
- * @file lib/main/parentView/page/add_child_form.dart
+ * @file lib/main/parentView/page/child/add_child_form.dart
  * 역할: 자녀 추가 화면. 
  * - 아이디 중복 확인(permitAll).
  * - 자녀 등록 요청 (JWT 필요, 부모 userId 포함).

@@ -12,7 +12,7 @@
 import 'package:flutter/material.dart';
 import 'package:sinabro/main/parentView/layout/parent_layout.dart';
 import 'package:sinabro/main/parentView/api/parent_api.dart' as parent_api;
-import 'package:sinabro/main/parentView/page/children_state.dart';
+import 'package:sinabro/main/parentView/page/child/children_state.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:sinabro/config.dart';

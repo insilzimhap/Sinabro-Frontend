@@ -76,6 +76,8 @@ class _SettingsPageState extends State<SettingsPage> {
     }
   }
 
+  // ================= Actions =================
+
   // 부모 설정 저장: PATCH /api/app/mypage/parent/{userId}/settings
   Future<void> _save() async {
     if ((widget.parentUserId ?? '').isEmpty) return;
@@ -370,6 +372,8 @@ class _SettingsPageState extends State<SettingsPage> {
     );
   }
 
+
+  // (파일 1의 기존 다이얼로그)
   Future<bool?> _showConfirmDialog({
     required String title,
     required String message,
@@ -481,6 +485,7 @@ class _SettingsPageState extends State<SettingsPage> {
     );
   }
 
+  // (파일 1의 기존 다이얼로그)
   Future<void> _showSuccessGoHome({required String message}) async {
     await showDialog<void>(
       context: context,
@@ -541,7 +546,7 @@ class _SettingsPageState extends State<SettingsPage> {
     );
   }
 
-  // ================= UI =================
+  // ================= UI (파일 1 기준) =================
   @override
   Widget build(BuildContext context) {
     return ParentLayout(
@@ -662,19 +667,32 @@ class _SettingsPageState extends State<SettingsPage> {
                       SizedBox(
                         height: 46,
                         child: FilledButton(
-                          onPressed: _save,
+                          onPressed: _saving ? null : _save, // 저장 중 비활성화
                           style: FilledButton.styleFrom(
                             backgroundColor: const Color(0xFF6DBF73),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(10),
                             ),
                           ),
-                          child: const Padding(
-                            padding: EdgeInsets.symmetric(horizontal: 22),
-                            child: TranslatedText(
-                              '저장하기',
-                              style: TextStyle(color: Colors.white),
-                            ),
+
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 22),
+                            child: _saving // 저장 중 로딩 인디케이터
+                                ? const SizedBox(
+                                    width: 18,
+                                    height: 18,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      valueColor: AlwaysStoppedAnimation(
+                                        Colors.white,
+                                      ),
+                                    ),
+                                  )
+                                : const TranslatedText(
+                                    '저장하기',
+                                    style: TextStyle(color: Colors.white),
+                                  ),
+
                           ),
                         ),
                       ),

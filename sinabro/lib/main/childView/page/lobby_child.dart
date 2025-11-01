@@ -105,198 +105,194 @@ class _LobbyChildScreenState extends State<LobbyChildScreen> {
     return Scaffold(
       backgroundColor: _bg,
       body: SafeArea(
-        child:
-            _isLoading
-                ? const Center(child: CircularProgressIndicator())
-                : Stack(
-                  children: [
-                    // ===== 메인 콘텐츠 =====
-                    Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 36,
-                        vertical: 28,
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // ===== 상단: 캐릭터명 칩 + 응원말풍선 + 도감 버튼 =====
-                          Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Expanded(
-                                child: Stack(
-                                  clipBehavior: Clip.none,
-                                  children: [
-                                    GestureDetector(
-                                      onTap: _setRandomMessage,
-                                      child: Container(
-                                        height: 64,
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 18,
+        child: _isLoading
+            ? const Center(child: CircularProgressIndicator())
+            : Stack(
+                children: [
+                  // ===== 메인 콘텐츠 =====
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 36,
+                      vertical: 28,
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // ===== 상단: 캐릭터명 칩 + 응원말풍선 + 도감 버튼 =====
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(
+                              child: Stack(
+                                clipBehavior: Clip.none,
+                                children: [
+                                  GestureDetector(
+                                    onTap: _setRandomMessage,
+                                    child: Container(
+                                      height: 64,
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 18,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: Colors.white,
+                                        borderRadius: BorderRadius.circular(
+                                          18,
                                         ),
-                                        decoration: BoxDecoration(
-                                          color: Colors.white,
-                                          borderRadius: BorderRadius.circular(
-                                            18,
-                                          ),
-                                          border: Border.all(
-                                            color: _accent,
-                                            width: 3,
-                                          ),
-                                          boxShadow: [
-                                            BoxShadow(
-                                              color: Colors.black.withOpacity(
-                                                0.05,
-                                              ),
-                                              blurRadius: 8,
-                                              offset: const Offset(0, 2),
+                                        border: Border.all(
+                                          color: _accent,
+                                          width: 3,
+                                        ),
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color: Colors.black.withOpacity(
+                                              0.05,
                                             ),
-                                          ],
-                                        ),
-                                        alignment: Alignment.centerLeft,
-                                        child: Text(
-                                          currentMessage,
-                                          style: const TextStyle(
-                                            fontSize: 16,
-                                            color: _textMain,
-                                            height: 1.2,
+                                            blurRadius: 8,
+                                            offset: const Offset(0, 2),
                                           ),
-                                        ),
+                                        ],
                                       ),
-                                    ),
-                                    Positioned(
-                                      top: -18,
-                                      left: 10,
-                                      child: Container(
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 16,
-                                          vertical: 8,
-                                        ),
-                                        decoration: BoxDecoration(
-                                          color: _chip,
-                                          borderRadius: BorderRadius.circular(
-                                            20,
-                                          ),
-                                          boxShadow: [
-                                            BoxShadow(
-                                              color: Colors.black.withOpacity(
-                                                0.06,
-                                              ),
-                                              blurRadius: 6,
-                                              offset: const Offset(0, 1),
-                                            ),
-                                          ],
-                                        ),
-                                        child: Text(
-                                          characterName.isNotEmpty
-                                              ? characterName
-                                              : '캐릭터명',
-                                          style: const TextStyle(
-                                            fontSize: 16,
-                                            fontWeight: FontWeight.w700,
-                                            color: _textMain,
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              const SizedBox(width: 18),
-                              _pillButton(label: '도감', onTap: () {}),
-                            ],
-                          ),
-                          const SizedBox(height: 28),
-
-                          // ===== 본문: 좌(캐릭터) / 우(2x2 버튼) =====
-                          Expanded(
-                            child: Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                // -- Left: 캐릭터 카드 + 닉네임
-                                SizedBox(
-                                  width: 260,
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Container(
-                                        height: kLeftCardHeight,
-                                        decoration: BoxDecoration(
-                                          color: _charCard,
-                                          borderRadius: BorderRadius.circular(
-                                            16,
-                                          ),
-                                        ),
-                                        alignment: Alignment.center,
-                                        child: Text(
-                                          characterName.isNotEmpty
-                                              ? characterName
-                                              : '캐릭터',
-                                          style: const TextStyle(
-                                            color: Color(0xFF7D7D7D),
-                                            fontSize: 18,
-                                            fontWeight: FontWeight.w600,
-                                          ),
-                                        ),
-                                      ),
-                                      const SizedBox(height: 16),
-                                      Text(
-                                        nickname.isNotEmpty ? '$nickname님' : '',
+                                      alignment: Alignment.centerLeft,
+                                      child: Text(
+                                        currentMessage,
                                         style: const TextStyle(
-                                          fontSize: 20,
+                                          fontSize: 16,
+                                          color: _textMain,
+                                          height: 1.2,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                  Positioned(
+                                    top: -18,
+                                    left: 10,
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 16,
+                                        vertical: 8,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: _chip,
+                                        borderRadius: BorderRadius.circular(
+                                          20,
+                                        ),
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color: Colors.black.withOpacity(
+                                              0.06,
+                                            ),
+                                            blurRadius: 6,
+                                            offset: const Offset(0, 1),
+                                          ),
+                                        ],
+                                      ),
+                                      child: Text(
+                                        characterName.isNotEmpty
+                                            ? characterName
+                                            : '캐릭터명',
+                                        style: const TextStyle(
+                                          fontSize: 16,
                                           fontWeight: FontWeight.w700,
                                           color: _textMain,
                                         ),
                                       ),
-                                      const SizedBox(height: 8),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(width: 18),
+                            _pillButton(label: '도감', onTap: () {}),
+                          ],
+                        ),
+                        const SizedBox(height: 28),
+
+                        // ===== 본문: 좌(캐릭터) / 우(2x2 버튼) =====
+                        Expanded(
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              // -- Left: 캐릭터 카드 + 닉네임
+                              SizedBox(
+                                width: 260,
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Container(
+                                      height: kLeftCardHeight,
+                                      decoration: BoxDecoration(
+                                        color: _charCard,
+                                        borderRadius: BorderRadius.circular(
+                                          16,
+                                        ),
+                                      ),
+                                      alignment: Alignment.center,
+                                      child: Text(
+                                        characterName.isNotEmpty
+                                            ? characterName
+                                            : '캐릭터',
+                                        style: const TextStyle(
+                                          color: Color(0xFF7D7D7D),
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(height: 16),
+                                    Text(
+                                      nickname.isNotEmpty ? '$nickname님' : '',
+                                      style: const TextStyle(
+                                        fontSize: 20,
+                                        fontWeight: FontWeight.w700,
+                                        color: _textMain,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Row(
+                                      children: [
+                                        Text(
+                                          'ID: ${widget.childId}',
+                                          style: const TextStyle(
+                                            fontSize: 14,
+                                            color: _textMain,
+                                          ),
+                                        ),
+                                        const SizedBox(width: 12),
+                                        Text(
+                                          '레벨: ${level.isNotEmpty ? level : "-"}',
+                                          style: const TextStyle(
+                                            fontSize: 14,
+                                            color: _textMain,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(width: kColsGap),
+
+                              // -- Right: 2x2 버튼 그리드
+                              Expanded(
+                                child: SizedBox(
+                                  height: kButtonsRowHeight,
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
                                       Row(
                                         children: [
-                                          Text(
-                                            'ID: ${widget.childId}',
-                                            style: const TextStyle(
-                                              fontSize: 14,
-                                              color: _textMain,
-                                            ),
-                                          ),
-                                          const SizedBox(width: 12),
-                                          Text(
-                                            '레벨: ${level.isNotEmpty ? level : "-"}',
-                                            style: const TextStyle(
-                                              fontSize: 14,
-                                              color: _textMain,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                const SizedBox(width: kColsGap),
-
-                                // -- Right: 2x2 버튼 그리드
-                                Expanded(
-                                  child: SizedBox(
-                                    height: kButtonsRowHeight,
-                                    child: Column(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.center,
-                                      children: [
-                                        Row(
-                                          children: [
-                                            _bigAction('쓰기 학습', () {
-                                              Navigator.push(
-                                                context,
-                                                MaterialPageRoute(
-                                                  builder:
-                                                      (_) => AppleGarden(
-                                                        childId: widget.childId,
-                                                      ),
+                                          _bigAction('쓰기 학습', () {
+                                            Navigator.push(
+                                              context,
+                                              MaterialPageRoute(
+                                                builder: (_) => AppleGarden(
+                                                  childId: widget.childId,
                                                 ),
-                                              );
-                                            }),
-                                            const SizedBox(width: kColsGap),
-                                            _bigAction('듣기 학습', () {
+                                              ),
+                                            );
+                                          }),
+                                          const SizedBox(width: kColsGap),
+                                          _bigAction('듣기 학습', () {
                                             // ⭐️ [수정] MaterialPageRoute 대신 pushNamed 사용
                                             Navigator.pushNamed(
                                               context,
@@ -306,55 +302,55 @@ class _LobbyChildScreenState extends State<LobbyChildScreen> {
                                               },
                                             );
                                           }),
-                                          ],
-                                        ),
-                                        const SizedBox(height: kRowsGap),
-                                        Row(
-                                          children: [
-                                            _bigAction('쓰기 게임', () {
-                                              Navigator.push(
-                                                context,
-                                                MaterialPageRoute(
-                                                  builder:
-                                                      (_) => WriteGameMainPage(
-                                                        childId: widget.childId,
-                                                      ),
+                                        ],
+                                      ),
+                                      const SizedBox(height: kRowsGap),
+                                      Row(
+                                        children: [
+                                          _bigAction('쓰기 게임', () {
+                                            Navigator.push(
+                                              context,
+                                              MaterialPageRoute(
+                                                builder: (_) =>
+                                                    WriteGameMainPage(
+                                                  childId: widget.childId,
                                                 ),
-                                              );
-                                            }),
-                                            const SizedBox(width: kColsGap),
-                                            _bigAction('듣기 게임', () {
-                                              // TODO
-                                            }),
-                                          ],
-                                        ),
-                                      ],
-                                    ),
+                                              ),
+                                            );
+                                          }),
+                                          const SizedBox(width: kColsGap),
+                                          _bigAction('듣기 게임', () {
+                                            // TODO
+                                          }),
+                                        ],
+                                      ),
+                                    ],
                                   ),
                                 ),
-                              ],
-                            ),
+                              ),
+                            ],
                           ),
-                          const SizedBox(height: 8),
-                        ],
-                      ),
+                        ),
+                        const SizedBox(height: 8),
+                      ],
                     ),
+                  ),
 
-                    // ===== 우하단: 로그아웃 버튼 =====
-                    Positioned(
-                      right: 36,
-                      bottom: 28,
-                      child: _pillButton(
-                        label: '로그아웃',
-                        onTap: () {
-                          // TODO: 로그아웃 로직
-                        },
-                        width: 140,
-                        height: 56,
-                      ),
+                  // ===== 우하단: 로그아웃 버튼 =====
+                  Positioned(
+                    right: 36,
+                    bottom: 28,
+                    child: _pillButton(
+                      label: '로그아웃',
+                      onTap: () {
+                        // TODO: 로그아웃 로직
+                      },
+                      width: 140,
+                      height: 56,
                     ),
-                  ],
-                ),
+                  ),
+                ],
+              ),
       ),
     );
   }

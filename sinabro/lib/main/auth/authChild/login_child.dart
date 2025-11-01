@@ -10,7 +10,6 @@
  */
 ///
 
-
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
@@ -18,8 +17,6 @@ import 'dart:convert';
 import 'package:sinabro/main/childView/page/lobby_child.dart';
 import 'package:sinabro/main/childView/page/level_test_page.dart';
 import 'package:sinabro/config.dart';
-
-
 
 class LoginChildScreen extends StatefulWidget {
   const LoginChildScreen({super.key});
@@ -56,9 +53,9 @@ class _LoginChildScreenState extends State<LoginChildScreen> {
       // ignore: avoid_print
       print('[login_child] 자녀정보 조회 시작 childId=$childId');
 
-      final resp = await http
-          .get(uri, headers: const {'Accept': 'application/json'})
-          .timeout(const Duration(seconds: 8));
+      final resp = await http.get(uri, headers: const {
+        'Accept': 'application/json'
+      }).timeout(const Duration(seconds: 8));
 
       if (resp.statusCode != 200) {
         // ignore: avoid_print
@@ -139,7 +136,7 @@ class _LoginChildScreenState extends State<LoginChildScreen> {
           final raw = response.body.trim();
           if (raw.isNotEmpty) childId = raw;
         }
-        
+
         // 공백 제거
         childId = childId.trim();
 
@@ -161,13 +158,16 @@ class _LoginChildScreenState extends State<LoginChildScreen> {
 
         final characterId = (info['characterId'] ?? '').toString().trim();
         // ignore: avoid_print
-        print('[login_child] characterId=${characterId.isEmpty ? '(없음)' : characterId}');
+        print(
+            '[login_child] characterId=${characterId.isEmpty ? '(없음)' : characterId}');
 
         if (characterId.isNotEmpty) {
           // 자녀 로비로
           Navigator.pushReplacement(
             context,
-            MaterialPageRoute(builder: (_) => LobbyChildScreen(childId: childId)),
+            MaterialPageRoute(
+              builder: (_) => LobbyChildScreen(childId: childId),
+            ),
           );
         } else {
           // 레벨테스트로
@@ -285,8 +285,10 @@ class _LoginChildScreenState extends State<LoginChildScreen> {
                     if (_message.isNotEmpty)
                       Padding(
                         padding: const EdgeInsets.symmetric(vertical: 8),
-                        child: Text(_message,
-                            style: const TextStyle(color: Colors.red)),
+                        child: Text(
+                          _message,
+                          style: const TextStyle(color: Colors.red),
+                        ),
                       ),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.end,
@@ -299,7 +301,9 @@ class _LoginChildScreenState extends State<LoginChildScreen> {
                               borderRadius: BorderRadius.circular(12),
                             ),
                             padding: const EdgeInsets.symmetric(
-                                horizontal: 20, vertical: 10),
+                              horizontal: 20,
+                              vertical: 10,
+                            ),
                           ),
                           child: const Text(
                             '로그인',

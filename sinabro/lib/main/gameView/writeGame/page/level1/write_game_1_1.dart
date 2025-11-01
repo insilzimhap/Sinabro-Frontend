@@ -1,9 +1,22 @@
-// lib/main/studyView/writeGame/level1/write_game_1.dart
+// lib/main/gameView/writeGame/level1/write_game_1.dart
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:sinabro/main/gameView/writeGame/page/write_game_main.dart';
 import 'package:sinabro/main/gameView/writeGame/api/write_game_api.dart';
+import 'package:audioplayers/audioplayers.dart';
+
+// 오디오 에셋 경로
+const String _audioDir = 'audio/tts/gameWrite/level1/';
+
+// 3세 쓰기 게임 1-1 레벨 오디오 에셋 정의
+const Map<String, String> LEVEL3_AUDIO_ASSETS_1_1 = {
+  // 구분: 공통 | 대사: 따라, 그려봐요~! (씬 A/B 진입 시 사용)
+  'COMMON_1': _audioDir + 'write3_game_common_1.mp3',
+  // 구분: 인트로 1 | 대사: 쭉~ 쭉~ 그리기. (씬 A/B 진입 시 사용)
+  'INTRO_1': _audioDir + 'write3_game_intro_1.mp3',
+};
+// ⬆️ AUDIO ASSET DEFINITIONS
 
 enum _Scene { cars, monkeys }
 
@@ -39,19 +52,40 @@ class _WriteGameLevel1PageState extends State<WriteGameLevel1Page> {
 
   bool get allPassed => passed.every((e) => e);
 
+  // AUDIO PLAYER INSTANCE
+  final AudioPlayer _audioPlayer = AudioPlayer();
+
+  // AUDIO PLAYBACK LOGIC
   @override
   void initState() {
     super.initState();
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
     _startGame();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      // 씬 A (Cars) 시작 오디오 재생 (수정됨: COMMON_1 + INTRO_1 재생)
+      _playAssetAudio(LEVEL3_AUDIO_ASSETS_1_1['COMMON_1']!);
+      _playAssetAudio(LEVEL3_AUDIO_ASSETS_1_1['INTRO_1']!);
+    });
+  }
+
+  /// 오디오 재생 헬퍼 함수 (추가됨: audioplayers 사용)
+  Future<void> _playAssetAudio(String assetPath) async {
+    if (!mounted) return;
+    await _audioPlayer.stop(); // 기존 오디오 중지
+    // AssetSource 사용: assets/ 경로 내의 오디오 파일을 재생합니다.
+    await _audioPlayer.play(AssetSource(assetPath));
+    debugPrint('🎶 오디오 재생 시작 (1-1): $assetPath');
   }
 
   @override
   void dispose() {
     _sw.stop();
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+    // AUDIO PLAYER DISPOSE
+    _audioPlayer.dispose();
     super.dispose();
   }
+  // ⬆️ AUDIO PLAYBACK LOGIC (수정 및 추가 끝)
 
   Future<void> _startGame() async {
     try {
@@ -118,10 +152,9 @@ class _WriteGameLevel1PageState extends State<WriteGameLevel1Page> {
   // ─────────────────────────────────────────────
   void _onPanStart(DragStartDetails d, Size size) {
     if (_showOutro || allPassed) return;
-    final line =
-        (scene == _Scene.cars)
-            ? _pickLineH(d.localPosition, size)
-            : _pickLineV(d.localPosition, size);
+    final line = (scene == _Scene.cars)
+        ? _pickLineH(d.localPosition, size)
+        : _pickLineV(d.localPosition, size);
 
     if (line == null || passed[line]) {
       activeLine = null;
@@ -143,10 +176,9 @@ class _WriteGameLevel1PageState extends State<WriteGameLevel1Page> {
   void _onPanEnd(Size size) async {
     if (activeLine == null || allPassed) return;
 
-    final ok =
-        scene == _Scene.cars
-            ? _gradeStrokeH(stroke, _buildGuidesA(size)[activeLine!])
-            : _gradeStrokeV(stroke, _buildGuidesB(size)[activeLine!]);
+    final ok = scene == _Scene.cars
+        ? _gradeStrokeH(stroke, _buildGuidesA(size)[activeLine!])
+        : _gradeStrokeV(stroke, _buildGuidesB(size)[activeLine!]);
 
     if (ok) {
       passed[activeLine!] = true;
@@ -162,10 +194,14 @@ class _WriteGameLevel1PageState extends State<WriteGameLevel1Page> {
               scene = _Scene.monkeys;
               passed = List.filled(lineCount, false);
             });
+            // ⬇️ 씬 전환 오디오 재생 (수정됨: COMMON_1 + INTRO_1 재생)
+            _playAssetAudio(LEVEL3_AUDIO_ASSETS_1_1['COMMON_1']!);
+            _playAssetAudio(LEVEL3_AUDIO_ASSETS_1_1['INTRO_1']!);
           });
         } else {
           // ✅ 씬 B 완료 시 서버 완료 기록 + 아웃트로 실행
           await _completeGame();
+          // ⬇️ 게임 완료 오디오 재생 (수정됨: 최종 완료 시 오디오 재생 로직 제거)
           if (!mounted) return;
           setState(() => _showOutro = true);
         }
@@ -253,7 +289,6 @@ class _WriteGameLevel1PageState extends State<WriteGameLevel1Page> {
                 const Positioned.fill(child: _TitleBanner(text: '따라그려봐요!')),
                 if (scene == _Scene.cars) _buildSceneCars(size),
                 if (scene == _Scene.monkeys) _buildSceneMonkeys(size),
-
                 if (_showOutro)
                   Positioned.fill(
                     child: OutroOverlay(
@@ -298,44 +333,43 @@ class _WriteGameLevel1PageState extends State<WriteGameLevel1Page> {
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder:
-          (_) => Center(
-            child: Container(
-              width: 320,
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: const Color(0xFFFFF8DC),
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: const [
-                  BoxShadow(
-                    color: Colors.black26,
-                    blurRadius: 10,
-                    offset: Offset(0, 4),
-                  ),
-                ],
+      builder: (_) => Center(
+        child: Container(
+          width: 320,
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: const Color(0xFFFFF8DC),
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: const [
+              BoxShadow(
+                color: Colors.black26,
+                blurRadius: 10,
+                offset: Offset(0, 4),
               ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Image.asset(
-                    'assets/img/contents/gameWrite/stamp.png',
-                    width: 84,
-                    fit: BoxFit.contain,
-                  ),
-                  const SizedBox(height: 14),
-                  const Text(
-                    '이번 단계를 클리어했어요!\n다음 단계도 도전해봐요',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w700,
-                      color: Colors.black87,
-                    ),
-                  ),
-                ],
-              ),
-            ),
+            ],
           ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Image.asset(
+                'assets/img/contents/gameWrite/stamp.png',
+                width: 84,
+                fit: BoxFit.contain,
+              ),
+              const SizedBox(height: 14),
+              const Text(
+                '이번 단계를 클리어했어요!\n다음 단계도 도전해봐요',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w700,
+                  color: Colors.black87,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
 
     Future.delayed(const Duration(seconds: 2), () {
@@ -405,10 +439,9 @@ class _WriteGameLevel1PageState extends State<WriteGameLevel1Page> {
             painter: _StrokePainter(points: stroke, color: Colors.blue),
           ),
         ...List.generate(lineCount, (i) {
-          final img =
-              (i % 2 == 0)
-                  ? 'assets/img/contents/gameWrite/banana.png'
-                  : 'assets/img/contents/gameWrite/apple.png';
+          final img = (i % 2 == 0)
+              ? 'assets/img/contents/gameWrite/banana.png'
+              : 'assets/img/contents/gameWrite/apple.png';
           const w = 90.0, h = 120.0;
           return Positioned(
             top: 150,
@@ -688,32 +721,30 @@ class _OutroOverlayState extends State<OutroOverlay>
                     // 1) 취소선
                     AnimatedBuilder(
                       animation: _tStrike,
-                      builder:
-                          (_, __) => CustomPaint(
-                            painter: _StrikePainter(
-                              start: strikeStart,
-                              end: strikeEnd,
-                              t: _tStrike.value,
-                              color: cfg.strikeColor,
-                              width: cfg.strikeWidth,
-                            ),
-                          ),
+                      builder: (_, __) => CustomPaint(
+                        painter: _StrikePainter(
+                          start: strikeStart,
+                          end: strikeEnd,
+                          t: _tStrike.value,
+                          color: cfg.strikeColor,
+                          width: cfg.strikeWidth,
+                        ),
+                      ),
                     ),
 
                     // 2) 체크(회전 지원)
                     AnimatedBuilder(
                       animation: _tCheck,
-                      builder:
-                          (_, __) => CustomPaint(
-                            painter: _CheckPainter(
-                              center: checkCenter,
-                              size: cfg.checkSizePx,
-                              t: _tCheck.value,
-                              color: cfg.checkColor,
-                              strokeWidth: cfg.checkStrokeWidth,
-                              rotationDeg: cfg.checkRotationDeg,
-                            ),
-                          ),
+                      builder: (_, __) => CustomPaint(
+                        painter: _CheckPainter(
+                          center: checkCenter,
+                          size: cfg.checkSizePx,
+                          t: _tCheck.value,
+                          color: cfg.checkColor,
+                          strokeWidth: cfg.checkStrokeWidth,
+                          rotationDeg: cfg.checkRotationDeg,
+                        ),
+                      ),
                     ),
 
                     // 3) 스탬프(드롭 + 스케일 + 회전)
@@ -781,12 +812,11 @@ class _StrikePainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final p =
-        Paint()
-          ..color = color
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = width
-          ..strokeCap = StrokeCap.round;
+    final p = Paint()
+      ..color = color
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = width
+      ..strokeCap = StrokeCap.round;
 
     final to = Offset(
       start.dx + (end.dx - start.dx) * t,
@@ -824,13 +854,12 @@ class _CheckPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size _) {
-    final p =
-        Paint()
-          ..color = color
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = strokeWidth
-          ..strokeCap = StrokeCap.round
-          ..strokeJoin = StrokeJoin.round;
+    final p = Paint()
+      ..color = color
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = strokeWidth
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round;
 
     // 기본(미회전) 상대 좌표
     final ra = Offset(-0.24 * size, 0.06 * size);
@@ -840,9 +869,9 @@ class _CheckPainter extends CustomPainter {
     // 회전 적용
     final rad = rotationDeg * math.pi / 180.0;
     Offset rot(Offset v) => Offset(
-      v.dx * math.cos(rad) - v.dy * math.sin(rad),
-      v.dx * math.sin(rad) + v.dy * math.cos(rad),
-    );
+          v.dx * math.cos(rad) - v.dy * math.sin(rad),
+          v.dx * math.sin(rad) + v.dy * math.cos(rad),
+        );
 
     final a = center + rot(ra);
     final b = center + rot(rb);
@@ -894,10 +923,9 @@ class _HGuide {
     return ((p.dx - start.dx) * v.dx + (p.dy - start.dy) * v.dy) / c2;
   }
 
-  Path toPath() =>
-      Path()
-        ..moveTo(start.dx, start.dy)
-        ..lineTo(end.dx, end.dy);
+  Path toPath() => Path()
+    ..moveTo(start.dx, start.dy)
+    ..lineTo(end.dx, end.dy);
 }
 
 class _VGuide {
@@ -922,10 +950,9 @@ class _VGuide {
     return ((p.dx - start.dx) * v.dx + (p.dy - start.dy) * v.dy) / c2;
   }
 
-  Path toPath() =>
-      Path()
-        ..moveTo(start.dx, start.dy)
-        ..lineTo(end.dx, end.dy);
+  Path toPath() => Path()
+    ..moveTo(start.dx, start.dy)
+    ..lineTo(end.dx, end.dy);
 }
 
 class _HGuidePainter extends CustomPainter {
@@ -934,12 +961,11 @@ class _HGuidePainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final paint =
-        Paint()
-          ..color = Colors.grey.shade400
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 8
-          ..strokeCap = StrokeCap.round;
+    final paint = Paint()
+      ..color = Colors.grey.shade400
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 8
+      ..strokeCap = StrokeCap.round;
 
     for (final g in guides) {
       _drawDashed(canvas, g.start, g.end, paint, dash: 16, gap: 24);
@@ -981,12 +1007,11 @@ class _HPassedPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final paint =
-        Paint()
-          ..color = const Color(0xFF27AE60)
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 10
-          ..strokeCap = StrokeCap.round;
+    final paint = Paint()
+      ..color = const Color(0xFF27AE60)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 10
+      ..strokeCap = StrokeCap.round;
     for (int i = 0; i < guides.length; i++) {
       if (passed[i]) canvas.drawPath(guides[i].toPath(), paint);
     }
@@ -1002,12 +1027,11 @@ class _VGuidePainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final paint =
-        Paint()
-          ..color = Colors.grey.shade400
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 8
-          ..strokeCap = StrokeCap.round;
+    final paint = Paint()
+      ..color = Colors.grey.shade400
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 8
+      ..strokeCap = StrokeCap.round;
 
     for (final g in guides) {
       _drawDashed(canvas, g.start, g.end, paint, dash: 16, gap: 24);
@@ -1049,12 +1073,11 @@ class _VPassedPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final paint =
-        Paint()
-          ..color = const Color(0xFF2D9CDB)
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 10
-          ..strokeCap = StrokeCap.round;
+    final paint = Paint()
+      ..color = const Color(0xFF2D9CDB)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 10
+      ..strokeCap = StrokeCap.round;
     for (int i = 0; i < guides.length; i++) {
       if (passed[i]) canvas.drawPath(guides[i].toPath(), paint);
     }
@@ -1073,13 +1096,12 @@ class _StrokePainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     if (points.length < 2) return;
-    final paint =
-        Paint()
-          ..color = color.withOpacity(0.95)
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 10
-          ..strokeCap = StrokeCap.round
-          ..strokeJoin = StrokeJoin.round;
+    final paint = Paint()
+      ..color = color.withOpacity(0.95)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 10
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round;
 
     final path = Path()..moveTo(points.first.dx, points.first.dy);
     for (final p in points.skip(1)) {

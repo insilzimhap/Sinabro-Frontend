@@ -12,7 +12,7 @@ import 'dart:convert';
 import 'dart:developer';
 import 'package:sinabro/common/auth_client.dart';
 import 'package:sinabro/config.dart';
-import 'package:sinabro/main/parentView/page/child_profile_edit.dart';
+import 'package:sinabro/main/parentView/page/child/child_profile_edit.dart';
 import 'package:sinabro/main/parentView/page/child_AIreport_page.dart';
 
 // API 응답 데이터를 담을 모델 클래스

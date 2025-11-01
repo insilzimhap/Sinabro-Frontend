@@ -1,12 +1,15 @@
-// lib/main/studyView/writeStudy/page/writing_3_1.dart
+// lib/main/studyView/writeStudy/page/level3/writing_3_1.dart
+// 레벨 3 열매 1 동물 서버 연결 완료
+
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:sinabro/main/studyView/writeStudy/page/main_apple_tree.dart';
 import 'package:sinabro/main/studyView/writeStudy/widget/writing_canvas.dart';
 
 import 'package:http/http.dart' as http; // ⭐️ 1. http 패키지
-import 'dart:convert';                   // ⭐️ 2. json 변환용
-import 'package:sinabro/config.dart';    // ⭐️ 3. baseUrl 사용
+import 'dart:convert'; // ⭐️ 2. json 변환용
+import 'package:sinabro/config.dart'; // ⭐️ 3. baseUrl 사용
+import 'package:audioplayers/audioplayers.dart'; // 오디오 패키지 import 추가
 
 const String kMainAppleTreeRoute = '/apple_garden';
 
@@ -47,21 +50,23 @@ void _pushNamedOrFallback(
       nav.push(MaterialPageRoute(builder: (_) => fallback));
     } else {
       // fallback 위젯이 없으면, _routeFallbackWithChild 함수를 사용해서 생성 시도
-      
+
       // ⭐️⭐️⭐️ 여기가 수정된 부분! ⭐️⭐️⭐️
       // arguments 맵에서 childId, fruitId, startTime을 안전하게 추출
       final argsMap = arguments as Map<String, dynamic>?;
-      final childId = argsMap?['childId'] as String? ?? 'unknown'; // 기본값 또는 에러 처리 필요
+      final childId =
+          argsMap?['childId'] as String? ?? 'unknown'; // 기본값 또는 에러 처리 필요
       final fruitId = argsMap?['fruitId'] as String?;
       final startTime = argsMap?['startTime'] as DateTime?;
 
       // 추출한 값들을 _routeFallbackWithChild에 순서대로 전달!
-      final fallbackWidget = _routeFallbackWithChild(routeName, childId, fruitId, startTime);
+      final fallbackWidget =
+          _routeFallbackWithChild(routeName, childId, fruitId, startTime);
       // ⭐️⭐️⭐️⭐️⭐️⭐️⭐️⭐️⭐️⭐️⭐️⭐️⭐️⭐️⭐️⭐️⭐️⭐️
 
       if (fallbackWidget != null) {
-         // Fallback 위젯 생성 성공!
-         nav.push(MaterialPageRoute(builder: (_) => fallbackWidget));
+        // Fallback 위젯 생성 성공!
+        nav.push(MaterialPageRoute(builder: (_) => fallbackWidget));
       } else {
         // _routeFallbackWithChild 마저 실패하면 에러 메시지 표시
         ScaffoldMessenger.of(
@@ -82,7 +87,8 @@ void _replaceNamedOrFallback(
   try {
     nav.pushReplacementNamed(routeName, arguments: arguments);
   } catch (e) {
-    debugPrint('pushReplacementNamed failed for $routeName: $e. Trying fallback...'); // 실패 로그 추가
+    debugPrint(
+        'pushReplacementNamed failed for $routeName: $e. Trying fallback...'); // 실패 로그 추가
     if (fallback != null) {
       nav.pushReplacement(MaterialPageRoute(builder: (_) => fallback));
     } else {
@@ -93,10 +99,11 @@ void _replaceNamedOrFallback(
       final startTime = argsMap?['startTime'] as DateTime?;
 
       // 추출한 값으로 Fallback 위젯 생성 시도
-      final fallbackWidget = _routeFallbackWithChild(routeName, childId, fruitId, startTime);
+      final fallbackWidget =
+          _routeFallbackWithChild(routeName, childId, fruitId, startTime);
 
       if (fallbackWidget != null) {
-         nav.pushReplacement(MaterialPageRoute(builder: (_) => fallbackWidget));
+        nav.pushReplacement(MaterialPageRoute(builder: (_) => fallbackWidget));
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Fallback Route not found: $routeName')),
@@ -107,23 +114,32 @@ void _replaceNamedOrFallback(
 }
 
 // 라우트 문자열 → 페이지 위젯( childId 포함 ) 매퍼
-Widget? _routeFallbackWithChild(String name, String childId, String? fruitId,     // ⭐️ 추가 (nullable)
-  DateTime? startTime,) {
+Widget? _routeFallbackWithChild(
+  String name,
+  String childId,
+  String? fruitId, // ⭐️ 추가 (nullable)
+  DateTime? startTime,
+) {
   switch (name) {
     case Writing3_IntroPage.routeName:
-      return Writing3_IntroPage(childId: childId,fruitId: fruitId!);
+      return Writing3_IntroPage(childId: childId, fruitId: fruitId!);
     case Writing3_1Page.routeName:
       return Writing3_1Page(childId: childId, fruitId: fruitId!);
     case Writing3_2Page.routeName:
-      return Writing3_2Page(childId: childId, fruitId: fruitId!, startTime: startTime!);
+      return Writing3_2Page(
+          childId: childId, fruitId: fruitId!, startTime: startTime!);
     case Writing3_3Page.routeName:
-      return Writing3_3Page(childId: childId, fruitId: fruitId!, startTime: startTime!);
+      return Writing3_3Page(
+          childId: childId, fruitId: fruitId!, startTime: startTime!);
     case Writing3_4Page.routeName:
-      return Writing3_4Page(childId: childId, fruitId: fruitId!, startTime: startTime!);
+      return Writing3_4Page(
+          childId: childId, fruitId: fruitId!, startTime: startTime!);
     case Writing3_5Page.routeName:
-      return Writing3_5Page(childId: childId, fruitId: fruitId!, startTime: startTime!);
+      return Writing3_5Page(
+          childId: childId, fruitId: fruitId!, startTime: startTime!);
     case Writing3_6Page.routeName:
-      return Writing3_6Page(childId: childId, fruitId: fruitId!, startTime: startTime!);
+      return Writing3_6Page(
+          childId: childId, fruitId: fruitId!, startTime: startTime!);
     case Writing3_DonePage.routeName:
       return Writing3_DonePage(childId: childId);
     default:
@@ -132,10 +148,24 @@ Widget? _routeFallbackWithChild(String name, String childId, String? fruitId,   
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
+// 오디오 정의
+// ──────────────────────────────────────────────────────────────────────────────
+const _audioDir = 'audio/tts/studyWrite/level3/';
+const _audioIntro1 = '${_audioDir}write5_study_intro_1.mp3'; // 1단계 인트로
+const _audioFinish1 = '${_audioDir}write5_study_finish_1.mp3'; // 1단계 완료
+
+// ✅ 단어 오디오 파일명 헬퍼 (예시, 실제 파일명 규칙에 맞게 조정 필요)
+String _getAnimalWordAudio(String wordKey) {
+  // wordKey 예시: 'dog', 'cat', 'rabbit' ...
+  return '${_audioDir}animal_$wordKey.mp3';
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
 // 인트로 페이지
 // ──────────────────────────────────────────────────────────────────────────────
 class Writing3_IntroPage extends StatefulWidget {
-  const Writing3_IntroPage({super.key, required this.childId,required this.fruitId});
+  const Writing3_IntroPage(
+      {super.key, required this.childId, required this.fruitId});
   static const routeName = '/study/write/writing_3_1_intro';
   final String childId;
   final String fruitId;
@@ -146,10 +176,25 @@ class Writing3_IntroPage extends StatefulWidget {
 
 class _Writing3_IntroPageState extends State<Writing3_IntroPage> {
   static const _cardMixed = 'assets/img/contents/studyWrite/card_mixed.png';
+  // 오디오 플레이어
+  final AudioPlayer _audioPlayer = AudioPlayer();
+
+  // 오디오 재생 헬퍼 함수
+  void _playAudio(String assetPath) {
+    if (!mounted) return;
+    _audioPlayer.stop();
+    _audioPlayer.setReleaseMode(ReleaseMode.release);
+    _audioPlayer.play(AssetSource(assetPath));
+  }
 
   @override
   void initState() {
     super.initState();
+    // 인트로 오디오 자동 재생
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _playAudio(_audioIntro1); // 1단계 인트로 재생
+    });
+
     Future<void>(() async {
       await Future.delayed(const Duration(seconds: 3));
       if (!mounted) return;
@@ -157,9 +202,17 @@ class _Writing3_IntroPageState extends State<Writing3_IntroPage> {
         context,
         Writing3_1Page.routeName,
         arguments: {'childId': widget.childId, 'fruitId': widget.fruitId},
-        fallback: Writing3_1Page(childId: widget.childId, fruitId: widget.fruitId),
+        fallback:
+            Writing3_1Page(childId: widget.childId, fruitId: widget.fruitId),
       );
     });
+  }
+
+  // 오디오 리소스 해제
+  @override
+  void dispose() {
+    _audioPlayer.dispose();
+    super.dispose();
   }
 
   @override
@@ -197,14 +250,15 @@ class _Writing3_IntroPageState extends State<Writing3_IntroPage> {
                                   filterQuality: FilterQuality.high,
                                 ),
                                 const SizedBox(height: 24),
+                                // ✅ 텍스트는 1단계에 맞게 수정 (예시, 오디오와 일치 필요)
                                 Text(
-                                  '으라차차 카드가 뒤섞여버렸어요...',
+                                  '귀여운 카드가 뒤섞여버렸어요...',
                                   textAlign: TextAlign.center,
-                                  style: theme.textTheme.headlineSmall
-                                      ?.copyWith(
-                                        fontWeight: FontWeight.w800,
-                                        color: const Color(0xFF6B4F4F),
-                                      ),
+                                  style:
+                                      theme.textTheme.headlineSmall?.copyWith(
+                                    fontWeight: FontWeight.w800,
+                                    color: const Color(0xFF6B4F4F),
+                                  ),
                                 ),
                                 const SizedBox(height: 8),
                                 Text(
@@ -248,10 +302,10 @@ class _WritingAnimalPage extends StatefulWidget {
   const _WritingAnimalPage({
     super.key,
     required this.childId,
-    required this.fruitId,       // ⭐️ 추가!
-    this.startTime,       // ⭐️ 추가! (첫 페이지 제외하고 받음)
+    required this.fruitId, // ⭐️ 추가!
+    this.startTime, // ⭐️ 추가! (첫 페이지 제외하고 받음)
     this.isFirstPage = false, // ⭐️ 추가!
-    this.isLastPage = false,  // ⭐️ 추가!
+    this.isLastPage = false, // ⭐️ 추가!
     required this.illustPath,
     required this.previewPath,
     required this.tracePath,
@@ -259,13 +313,14 @@ class _WritingAnimalPage extends StatefulWidget {
     required this.columns,
     required this.expectedWord, // 예: '강아지'
     required this.acceptedWords, // 예: ['강아지','강이지',...]
+    required this.wordAudioKey, // 단어 오디오 키 (예: 'dog')
     this.titleColor = const Color(0xFFFEF5F6),
   });
 
   final String childId;
-  final String fruitId;      // ⭐️ 추가!
+  final String fruitId; // ⭐️ 추가!
   final DateTime? startTime; // ⭐️ 추가!
-  final bool isFirstPage;    // ⭐️ 추가!
+  final bool isFirstPage; // ⭐️ 추가!
   final bool isLastPage;
   final String illustPath;
   final String previewPath;
@@ -276,6 +331,7 @@ class _WritingAnimalPage extends StatefulWidget {
 
   final String expectedWord;
   final List<String> acceptedWords;
+  final String wordAudioKey; // 단어 오디오 키
 
   @override
   State<_WritingAnimalPage> createState() => _WritingAnimalPageState();
@@ -286,11 +342,34 @@ class _WritingAnimalPageState extends State<_WritingAnimalPage> {
   late DateTime _startTime; // ⭐️ API용 시작 시간 기록
   bool _apiCallSent = false; // ⭐️ API 중복 호출 방지
 
+  // 오디오 플레이어
+  final AudioPlayer _audioPlayer = AudioPlayer();
+
+  // 오디오 재생 헬퍼 함수
+  void _playAudio(String assetPath) {
+    if (!mounted) return;
+    _audioPlayer.stop();
+    _audioPlayer.setReleaseMode(ReleaseMode.release);
+    _audioPlayer.play(AssetSource(assetPath));
+  }
+
   @override
   void initState() {
     super.initState();
     // ⭐️ 첫 페이지면 지금 시간 기록, 아니면 전달받은 시간 사용
     _startTime = widget.isFirstPage ? DateTime.now() : widget.startTime!;
+
+    // 첫 페이지 로드 시 단어 오디오 자동 재생
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _playAudio(_getAnimalWordAudio(widget.wordAudioKey));
+    });
+  }
+
+  // 오디오 리소스 해제
+  @override
+  void dispose() {
+    _audioPlayer.dispose();
+    super.dispose();
   }
 
   /// ⭐️ (신규) 학습 완료 API 호출 함수 - JWT 없이
@@ -321,7 +400,8 @@ class _WritingAnimalPageState extends State<_WritingAnimalPage> {
       if (response.statusCode == 200 || response.statusCode == 201) {
         debugPrint('[Writing3_X] API 연동 성공: fruitId ${widget.fruitId} 완료!');
       } else {
-        debugPrint('[Writing3_X] API 연동 실패: ${response.statusCode} ${response.body}');
+        debugPrint(
+            '[Writing3_X] API 연동 실패: ${response.statusCode} ${response.body}');
       }
     } catch (e) {
       debugPrint('[Writing3_X] API 연동 중 예외 발생: $e');
@@ -342,7 +422,7 @@ class _WritingAnimalPageState extends State<_WritingAnimalPage> {
   }
 
   void _goNext(BuildContext context) {
-
+    // ⭐️ 마지막 페이지 완료 시에만 API 호출
     if (widget.isLastPage && !_apiCallSent) {
       _apiCallSent = true;
       _uploadStudyResult(); // ⭐️ API 호출!
@@ -354,9 +434,9 @@ class _WritingAnimalPageState extends State<_WritingAnimalPage> {
       arguments: {'childId': widget.childId, 'fruitId': widget.fruitId},
       fallback: _routeFallbackWithChild(
         widget.nextRouteName, // 1번째: route 이름
-        widget.childId,      // 2번째: childId
-        widget.fruitId,      // 3번째: fruitId (이름 없이 값만!)
-        _startTime,          // 4번째: startTime (이름 없이 값만!)
+        widget.childId, // 2번째: childId
+        widget.fruitId, // 3번째: fruitId (이름 없이 값만!)
+        _startTime, // 4번째: startTime (이름 없이 값만!)
       ),
     );
   }
@@ -381,11 +461,16 @@ class _WritingAnimalPageState extends State<_WritingAnimalPage> {
                   const SizedBox(height: 48),
                   Expanded(
                     child: Center(
-                      child: Image.asset(
-                        widget.illustPath,
-                        width: 260,
-                        fit: BoxFit.contain,
-                        filterQuality: FilterQuality.high,
+                      // ✅ 일러스트 이미지 탭 -> 단어 오디오 재생
+                      child: GestureDetector(
+                        onTap: () => _playAudio(
+                            _getAnimalWordAudio(widget.wordAudioKey)),
+                        child: Image.asset(
+                          widget.illustPath,
+                          width: 260,
+                          fit: BoxFit.contain,
+                          filterQuality: FilterQuality.high,
+                        ),
                       ),
                     ),
                   ),
@@ -593,10 +678,9 @@ class _GridSplitPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     if (columns <= 1) return;
-    final p =
-        Paint()
-          ..color = color
-          ..strokeWidth = 1;
+    final p = Paint()
+      ..color = color
+      ..strokeWidth = 1;
     final cellW = size.width / columns;
     for (int i = 1; i < columns; i++) {
       final x = cellW * i;
@@ -614,18 +698,22 @@ class _GridSplitPainter extends CustomPainter {
 
 // 강아지
 class Writing3_1Page extends StatelessWidget {
-  const Writing3_1Page({super.key, required this.childId, required this.fruitId,});
+  const Writing3_1Page({
+    super.key,
+    required this.childId,
+    required this.fruitId,
+  });
   static const routeName = '/study/write/writing_3_1';
   final String childId;
   final String fruitId;
-  
 
   @override
   Widget build(BuildContext context) {
-    
-    final arguments = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+    final arguments =
+        ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
     final id = arguments?['childId'] as String? ?? childId;
-    final fId = arguments?['fruitId'] as String? ?? fruitId; // ⭐️ 3. fruitId 가져오기!
+    final fId =
+        arguments?['fruitId'] as String? ?? fruitId; // ⭐️ 3. fruitId 가져오기!
 
     return _WritingAnimalPage(
       childId: id,
@@ -637,31 +725,34 @@ class Writing3_1Page extends StatelessWidget {
       columns: 3,
       expectedWord: '강아지',
       acceptedWords: const ['강아지', '강이지', '깅이지', '강야지'],
-      isFirstPage: true,
+      isFirstPage: true, // 첫 페이지 플래그
+      wordAudioKey: 'dog', // 단어 오디오 키
     );
   }
 }
 
 // 고양이
 class Writing3_2Page extends StatelessWidget {
-  const Writing3_2Page
-    ({super.key, 
-      required this.childId, 
-      required this.fruitId,
-      required this.startTime,});
+  const Writing3_2Page({
+    super.key,
+    required this.childId,
+    required this.fruitId,
+    required this.startTime,
+  });
 
   static const routeName = '/study/write/writing_3_2';
   final String childId;
   final String fruitId; // ⭐️ 추가
   final DateTime startTime; // ⭐️ 추가
-  
 
   @override
   Widget build(BuildContext context) {
-    final arguments = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+    final arguments =
+        ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
     final id = arguments?['childId'] as String? ?? childId;
     final fId = arguments?['fruitId'] as String? ?? fruitId;
-    final start = arguments?['startTime'] as DateTime? ?? startTime; // ⭐️ startTime 가져오기
+    final start =
+        arguments?['startTime'] as DateTime? ?? startTime; // ⭐️ startTime 가져오기
 
     return _WritingAnimalPage(
       childId: id,
@@ -674,17 +765,19 @@ class Writing3_2Page extends StatelessWidget {
       columns: 3,
       expectedWord: '고양이',
       acceptedWords: const ['고양이', '고얭이', '고야이', '고양니'],
+      wordAudioKey: 'cat', // ✅ 단어 오디오 키
     );
   }
 }
 
 // 토끼
 class Writing3_3Page extends StatelessWidget {
-  const Writing3_3Page
-    ({super.key, 
-      required this.childId, 
-      required this.fruitId, // ⭐️ 추가
-      required this.startTime,});
+  const Writing3_3Page({
+    super.key,
+    required this.childId,
+    required this.fruitId, // ⭐️ 추가
+    required this.startTime,
+  });
 
   static const routeName = '/study/write/writing_3_3';
   final String childId;
@@ -693,11 +786,12 @@ class Writing3_3Page extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final arguments = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+    final arguments =
+        ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
     final id = arguments?['childId'] as String? ?? childId;
     final fId = arguments?['fruitId'] as String? ?? fruitId;
-    final start = arguments?['startTime'] as DateTime? ?? startTime; // ⭐️ startTime 가져오기
-
+    final start =
+        arguments?['startTime'] as DateTime? ?? startTime; // ⭐️ startTime 가져오기
 
     return _WritingAnimalPage(
       childId: id,
@@ -710,17 +804,19 @@ class Writing3_3Page extends StatelessWidget {
       columns: 2,
       expectedWord: '토끼',
       acceptedWords: const ['토끼', '토키', '톡끼', '도끼'],
+      wordAudioKey: 'rabbit', // ✅ 단어 오디오 키
     );
   }
 }
 
 // 오리
 class Writing3_4Page extends StatelessWidget {
-  const Writing3_4Page
-    ({super.key, 
-      required this.childId, 
-      required this.fruitId, // ⭐️ 추가
-      required this.startTime,});
+  const Writing3_4Page({
+    super.key,
+    required this.childId,
+    required this.fruitId, // ⭐️ 추가
+    required this.startTime,
+  });
 
   static const routeName = '/study/write/writing_3_4';
   final String childId;
@@ -729,11 +825,12 @@ class Writing3_4Page extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final arguments = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+    final arguments =
+        ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
     final id = arguments?['childId'] as String? ?? childId;
     final fId = arguments?['fruitId'] as String? ?? fruitId;
-    final start = arguments?['startTime'] as DateTime? ?? startTime; // ⭐️ startTime 가져오기
-
+    final start =
+        arguments?['startTime'] as DateTime? ?? startTime; // ⭐️ startTime 가져오기
 
     return _WritingAnimalPage(
       childId: id,
@@ -746,17 +843,19 @@ class Writing3_4Page extends StatelessWidget {
       columns: 2,
       expectedWord: '오리',
       acceptedWords: const ['오리', '오니', '오이', '오릐'],
+      wordAudioKey: 'duck', // ✅ 단어 오디오 키
     );
   }
 }
 
 // 거북이
 class Writing3_5Page extends StatelessWidget {
-  const Writing3_5Page
-    ({super.key, 
-      required this.childId, 
-      required this.fruitId, // ⭐️ 추가
-      required this.startTime,});
+  const Writing3_5Page({
+    super.key,
+    required this.childId,
+    required this.fruitId, // ⭐️ 추가
+    required this.startTime,
+  });
 
   static const routeName = '/study/write/writing_3_5';
   final String childId;
@@ -765,11 +864,12 @@ class Writing3_5Page extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final arguments = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+    final arguments =
+        ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
     final id = arguments?['childId'] as String? ?? childId;
     final fId = arguments?['fruitId'] as String? ?? fruitId;
-    final start = arguments?['startTime'] as DateTime? ?? startTime; // ⭐️ startTime 가져오기
-
+    final start =
+        arguments?['startTime'] as DateTime? ?? startTime; // ⭐️ startTime 가져오기
 
     return _WritingAnimalPage(
       childId: id,
@@ -782,6 +882,7 @@ class Writing3_5Page extends StatelessWidget {
       columns: 3,
       expectedWord: '거북이',
       acceptedWords: const ['거북이', '거부기', '거북ㅣ', '거북니'],
+      wordAudioKey: 'turtle', // ✅ 단어 오디오 키
     );
   }
 }
@@ -802,10 +903,12 @@ class Writing3_6Page extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final arguments = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+    final arguments =
+        ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
     final id = arguments?['childId'] as String? ?? childId;
     final fId = arguments?['fruitId'] as String? ?? fruitId;
-    final start = arguments?['startTime'] as DateTime? ?? startTime; // ⭐️ startTime 가져오기
+    final start =
+        arguments?['startTime'] as DateTime? ?? startTime; // ⭐️ startTime 가져오기
 
     return _WritingAnimalPage(
       childId: id,
@@ -818,7 +921,8 @@ class Writing3_6Page extends StatelessWidget {
       columns: 3,
       expectedWord: '개구리',
       acceptedWords: const ['개구리', '개굴이', '개구니', '개구뤼'],
-      isLastPage: true,
+      isLastPage: true, // 마지막 페이지 플래그
+      wordAudioKey: 'frog', // ✅ 단어 오디오 키
     );
   }
 }
@@ -837,10 +941,26 @@ class Writing3_DonePage extends StatefulWidget {
 
 class _Writing3_DonePageState extends State<Writing3_DonePage> {
   static const _clapPath = 'assets/img/contents/studyWrite/clap.png';
+  // ✅ 오디오 플레이어 추가
+  final AudioPlayer _audioPlayer = AudioPlayer();
+
+  // ✅ 오디오 재생 헬퍼 함수 추가
+  void _playAudio(String assetPath) {
+    if (!mounted) return;
+    _audioPlayer.stop();
+    _audioPlayer.setReleaseMode(ReleaseMode.release);
+    _audioPlayer.play(AssetSource(assetPath));
+  }
 
   @override
   void initState() {
     super.initState();
+    // ✅ 단계 완료 오디오 자동 재생
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _playAudio(_audioFinish1); // 1단계 완료 오디오 재생
+    });
+
+    // 기존 로직 (팝업 표시 및 화면 전환)
     Future<void>(() async {
       await Future.delayed(const Duration(seconds: 3));
       if (!mounted) return;
@@ -876,6 +996,13 @@ class _Writing3_DonePageState extends State<Writing3_DonePage> {
     });
   }
 
+  // 오디오 리소스 해제
+  @override
+  void dispose() {
+    _audioPlayer.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -909,6 +1036,7 @@ class _Writing3_DonePageState extends State<Writing3_DonePage> {
   }
 }
 
+// 리워드 팝업
 class _AppleRewardDialog extends StatelessWidget {
   const _AppleRewardDialog();
 

@@ -1,4 +1,7 @@
+// NEXT TODO : 잼 바르고 완료 됐을 때 효과음
+
 // 레벨1 열매 2 잼 그리기(곡선) 서버 연결 완료
+// lib/main/studyView/writeStudy/page/level1/jam_write.dart
 import 'dart:math';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
@@ -8,7 +11,7 @@ import 'package:sinabro/config.dart'; // baseUrl 사용을 위해 추가
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show rootBundle;
-
+import 'package:audioplayers/audioplayers.dart'; // 오디오 패키지 import
 
 /* ───────── assets ───────── */
 const _dir = 'assets/img/contents/studyWrite/';
@@ -30,6 +33,15 @@ const _jamIntroJar = '${_dir}jam.png'; // 인트로 잼 이미지
 /* 빵이 차지하는 영역(화면 정규화 좌표) + 가이드 5% 인세트 */
 const Rect _kBreadRectNorm = Rect.fromLTWH(0.14, 0.16, 0.72, 0.60);
 const double _kGuideInsetPct = 0.05;
+
+// 오디오 에셋 경로 (경로 수정됨)
+const _audioDir = 'audio/tts/studyWrite/level1/';
+const _audioIntro = '${_audioDir}write3_jam_intro.mp3';
+// ❗ 'write3_jam_press.mp3'는 현재 UI 흐름(onPanStart)에 넣으면
+// ❗ 그릴 때마다 재생되어 부자연스러울 수 있어 제외하기로 함..
+const _audioDraw = '${_audioDir}write3_jam_draw.mp3';
+const _audioDone = '${_audioDir}write3_jam_done.mp3';
+const _audioFinish = '${_audioDir}write3_jam_finish.mp3';
 
 /* 스텝/페이즈 */
 enum _Phase {
@@ -59,6 +71,9 @@ class _JamSpreadFlowPageState extends State<JamSpreadFlowPage>
   int _nonce = 0; // 레이어 강제 리셋 키
   bool _preloaded = false;
 
+  // 오디오 플레이어 인스턴스
+  final AudioPlayer _audioPlayer = AudioPlayer();
+
   // ✅ 학습 시작 시간 기록 변수
   DateTime? _startTime;
 
@@ -72,9 +87,9 @@ class _JamSpreadFlowPageState extends State<JamSpreadFlowPage>
   Future<void> _uploadStudyWritingResult() async {
     // 실제 이 학습에 해당하는 정확한 fruit_id로 바꿔주세요!
     const String fruitIdForThisStudy = 'FR_WR_002';
-    
-    // ✅ 학습 시간 계산
-    int timeSpentSeconds = 0; 
+
+    // 학습 시간 계산
+    int timeSpentSeconds = 0;
     if (_startTime != null) {
       timeSpentSeconds = DateTime.now().difference(_startTime!).inSeconds;
     }
@@ -84,7 +99,7 @@ class _JamSpreadFlowPageState extends State<JamSpreadFlowPage>
       'childId': widget.childId, // State 위젯의 childId 사용
       'fruitId': fruitIdForThisStudy,
       'timeSpentSecs': timeSpentSeconds, // 계산된 시간 사용
-      'isCompleted': true,  // 학습을 정상적으로 완료했으므로 true
+      'isCompleted': true, // 학습을 정상적으로 완료했으므로 true
     });
 
     try {
@@ -107,10 +122,35 @@ class _JamSpreadFlowPageState extends State<JamSpreadFlowPage>
     }
   }
 
+  // ------------------ 오디오 ------------------
+  @override
+  void initState() {
+    super.initState();
+    // 인트로 오디오 자동 재생
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _playAudio(_audioIntro);
+      }
+    });
+  }
+
   @override
   void dispose() {
     _revealCtrl.dispose();
+    // 오디오 플레이어 리소스 해제
+    _audioPlayer.dispose();
     super.dispose();
+  }
+
+  /// 오디오 재생 헬퍼 함수
+  Future<void> _playAudio(String assetPath, {bool isLooping = false}) async {
+    // 위젯이 dispose된 후에 호출되는 것을 방지
+    if (!mounted) return;
+    await _audioPlayer.stop(); // 기존 오디오가 있다면 중지
+    _audioPlayer
+        .setReleaseMode(isLooping ? ReleaseMode.loop : ReleaseMode.release);
+    await _audioPlayer.play(AssetSource(assetPath));
+    return _audioPlayer.onPlayerComplete.first;
   }
 
   /* ───────── precache ───────── */
@@ -173,14 +213,23 @@ class _JamSpreadFlowPageState extends State<JamSpreadFlowPage>
 
   /* ───────── flow helpers ───────── */
   void _startDraw() {
+    // "선에 맞춰 잼을 발라주세요" 오디오 재생
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _playAudio(_audioDraw);
+      }
+    });
+
     setState(() {
-       _phase = _Phase.draw;
-       // ✅ 학습 시작 시간 기록
-       _startTime = DateTime.now(); 
+      _phase = _Phase.draw;
+      // ✅ 학습 시작 시간 기록
+      _startTime = DateTime.now();
     });
   }
 
   void _reset() {
+    // ✅ (재시도 시) 그리기 오디오 다시 재생
+    _playAudio(_audioDraw);
     setState(() {
       _progress = 0;
       _phase = _Phase.draw;
@@ -197,10 +246,20 @@ class _JamSpreadFlowPageState extends State<JamSpreadFlowPage>
     await _revealCtrl.forward();
 
     if (_stage == 2) {
+      // "맛있게 완성되었어요" 오디오 재생
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
+        await _playAudio(_audioDone);
+      });
       setState(() => _phase = _Phase.revealText1);
-      await Future.delayed(const Duration(seconds: 2));
+      await Future.delayed(const Duration(milliseconds: 3500));
       if (!mounted) return;
 
+      // "잘 먹겠습니다" 오디오 재생
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          _playAudio(_audioFinish);
+        }
+      });
       setState(() => _phase = _Phase.revealText2);
       await Future.delayed(const Duration(seconds: 2));
       if (!mounted) return;
@@ -222,6 +281,12 @@ class _JamSpreadFlowPageState extends State<JamSpreadFlowPage>
     await Future.delayed(const Duration(seconds: 2));
     if (!mounted) return;
 
+    // 다음 단계 그리기 오디오 재생
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _playAudio(_audioDraw);
+      }
+    });
     setState(() {
       _stage++;
       _progress = 0;
@@ -242,10 +307,10 @@ class _JamSpreadFlowPageState extends State<JamSpreadFlowPage>
           final dpr = MediaQuery.of(context).devicePixelRatio;
 
           ResizeImage _bg(String path) => ResizeImage(
-            AssetImage(path),
-            width: (size.width * dpr).toInt().clamp(0, 4096),
-            height: (size.height * dpr).toInt().clamp(0, 4096),
-          );
+                AssetImage(path),
+                width: (size.width * dpr).toInt().clamp(0, 4096),
+                height: (size.height * dpr).toInt().clamp(0, 4096),
+              );
 
           return Stack(
             fit: StackFit.expand,
@@ -286,11 +351,10 @@ class _JamSpreadFlowPageState extends State<JamSpreadFlowPage>
                     AnimatedBuilder(
                       animation: _revealCtrl,
                       builder: (_, __) {
-                        final t =
-                            CurvedAnimation(
-                              parent: _revealCtrl,
-                              curve: Curves.easeInOutCubic,
-                            ).value;
+                        final t = CurvedAnimation(
+                          parent: _revealCtrl,
+                          curve: Curves.easeInOutCubic,
+                        ).value;
                         final scale =
                             0.92 + 0.08 * Curves.easeOutBack.transform(t);
                         return Opacity(
@@ -308,10 +372,9 @@ class _JamSpreadFlowPageState extends State<JamSpreadFlowPage>
                     if (_phase == _Phase.revealText1 ||
                         _phase == _Phase.revealText2)
                       _BottomBannerText(
-                        text:
-                            _phase == _Phase.revealText2
-                                ? '잘 먹겠습니다~'
-                                : '맛있게 완성되었어요!',
+                        text: _phase == _Phase.revealText2
+                            ? '잘 먹겠습니다~'
+                            : '맛있게 완성되었어요!',
                       ),
                   ],
                 ),
@@ -384,6 +447,7 @@ class _JamSpreadFlowPageState extends State<JamSpreadFlowPage>
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Text(
+                        // ❗ 여기 텍스트는 오디오 파일명과 관계 없습니다.
                         '선에 맞춰 잼을 발라주세요!  ${(min(1.0, _progress) * 100).round()}%',
                         style: const TextStyle(
                           color: Colors.white,
@@ -756,27 +820,25 @@ class _JamImageGuideLayerState extends State<JamImageGuideLayer> {
 
   // 화면→마스크/마스크→화면
   Offset _toMask(Offset screenPt) => Offset(
-    (screenPt.dx - _guideRect.left) * _mx,
-    (screenPt.dy - _guideRect.top) * _my,
-  );
+        (screenPt.dx - _guideRect.left) * _mx,
+        (screenPt.dy - _guideRect.top) * _my,
+      );
 
   Offset _toScreen(Offset maskPt) => Offset(
-    _guideRect.left + maskPt.dx / _mx,
-    _guideRect.top + maskPt.dy / _my,
-  );
+        _guideRect.left + maskPt.dx / _mx,
+        _guideRect.top + maskPt.dy / _my,
+      );
 
   // 점-사각형 최소거리
   double _distanceToRect(Offset p, Rect r) {
-    final dx =
-        (p.dx < r.left)
-            ? (r.left - p.dx)
-            : (p.dx > r.right)
+    final dx = (p.dx < r.left)
+        ? (r.left - p.dx)
+        : (p.dx > r.right)
             ? (p.dx - r.right)
             : 0.0;
-    final dy =
-        (p.dy < r.top)
-            ? (r.top - p.dy)
-            : (p.dy > r.bottom)
+    final dy = (p.dy < r.top)
+        ? (r.top - p.dy)
+        : (p.dy > r.bottom)
             ? (p.dy - r.bottom)
             : 0.0;
     return sqrt(dx * dx + dy * dy);
@@ -917,9 +979,9 @@ class _JamImageGuideLayerState extends State<JamImageGuideLayer> {
                 if (_useHorizontal) {
                   // X 밴드 + Y 슬랙
                   final bandGX = (_gridW * _kEndBandPct).ceil().clamp(
-                    1,
-                    _gridW,
-                  );
+                        1,
+                        _gridW,
+                      );
                   final leftBandMaxX = (_minGXEdge + bandGX).clamp(
                     0,
                     _gridW - 1,
@@ -940,9 +1002,9 @@ class _JamImageGuideLayerState extends State<JamImageGuideLayer> {
                 } else {
                   // Y 밴드 + X 슬랙  ← 세로형 가이드
                   final bandGY = (_gridH * _kEndBandPct).ceil().clamp(
-                    1,
-                    _gridH,
-                  );
+                        1,
+                        _gridH,
+                      );
                   final topBandMaxY = (_minGYEdge + bandGY).clamp(
                     0,
                     _gridH - 1,
@@ -974,6 +1036,12 @@ class _JamImageGuideLayerState extends State<JamImageGuideLayer> {
               if (success) {
                 widget.onDone();
               } else {
+                // ✅ 실패 시 오디오 다시 재생
+                // ❗ State 위젯(_JamSpreadFlowPageState)의 메서드를 호출
+                if (mounted) {
+                  (context.findAncestorStateOfType<_JamSpreadFlowPageState>())
+                      ?._playAudio(_audioDraw);
+                }
                 _resetAttempt();
               }
             },
@@ -1031,12 +1099,11 @@ class _JamStrokePainter extends CustomPainter {
 
     // 3) 스트로크 먼저 그리기 (사용자 펜 컬러)
     final baseWidth = max(20.0, size.shortestSide * 0.028);
-    final strokePaint =
-        Paint()
-          ..color = strokeColor
-          ..style = PaintingStyle.stroke
-          ..strokeCap = StrokeCap.round
-          ..strokeWidth = baseWidth;
+    final strokePaint = Paint()
+      ..color = strokeColor
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round
+      ..strokeWidth = baseWidth;
     canvas.drawPath(path, strokePaint);
 
     // 4) 가이드 알파로 "클립"만 — 가이드 색을 보이지 않게(dstIn)

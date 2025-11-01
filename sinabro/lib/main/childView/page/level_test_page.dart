@@ -20,17 +20,44 @@ class LevelTestPage extends StatefulWidget {
 
 class _LevelTestPageState extends State<LevelTestPage> {
   late Future<LevelTestResponse> futureData;
-  int stepIndex = 0; // 0 = 부모 안내(img1), 1..N = 부모문항(이미지 매핑), 그 다음 = 자녀 안내(img7) → 자녀문항 → 결과(img8)
+  int stepIndex =
+      0; // 0 = 부모 안내(img1), 1..N = 부모문항(이미지 매핑), 그 다음 = 자녀 안내(img7) → 자녀문항 → 결과(img8)
 
   final List<Map<String, dynamic>> parentChoices = [];
   final List<Map<String, dynamic>> levelChoices = [];
 
   final AudioPlayer _player = AudioPlayer();
+  // 오디오 재생 상태 추적 변수 유지 (재생 로직에 필요)
+  PlayerState _playerState = PlayerState.stopped;
+
+  // 💡 백엔드 URL을 로컬 에셋 경로로 매핑하는 함수 (유지됨)
+  String _getAssetPath(String audioUrl) {
+    // 예: /audio/apple.mp3 에서 파일 이름(apple.mp3)만 추출
+    final fileName = audioUrl.substring(audioUrl.lastIndexOf('/') + 1);
+
+    // 로컬 에셋 경로와 파일 이름을 조합하여 반환
+    return 'audio/tts/levelTest/$fileName';
+  }
 
   @override
   void initState() {
     super.initState();
     futureData = fetchLevelTestData(widget.childId);
+
+    // 오디오 플레이어 상태 변경 리스너 유지 (재생/정지 판단에 필요)
+    _player.onPlayerStateChanged.listen((state) {
+      if (mounted) {
+        setState(() {
+          _playerState = state;
+        });
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _player.dispose(); // 위젯 종료 시 플레이어 리소스 해제
+    super.dispose();
   }
 
   void _next() => setState(() => stepIndex++);
@@ -80,8 +107,10 @@ class _LevelTestPageState extends State<LevelTestPage> {
         const SizedBox(height: 24),
         Image.asset('assets/img/leveltest/img1.png', height: 220),
         const SizedBox(height: 20),
-        const Text('부모 영역',
-            style: TextStyle(fontSize: 32, fontWeight: FontWeight.w700)),
+        const Text(
+          '부모 영역',
+          style: TextStyle(fontSize: 32, fontWeight: FontWeight.w700),
+        ),
         const SizedBox(height: 16),
         const Padding(
           padding: EdgeInsets.symmetric(horizontal: 24),
@@ -106,8 +135,10 @@ class _LevelTestPageState extends State<LevelTestPage> {
                 borderRadius: BorderRadius.circular(16),
               ),
             ),
-            child: const Text('지금 레벨테스트를 진행하는 사람은 부모입니다',
-                style: TextStyle(fontWeight: FontWeight.w700)),
+            child: const Text(
+              '지금 레벨테스트를 진행하는 사람은 부모입니다',
+              style: TextStyle(fontWeight: FontWeight.w700),
+            ),
           ),
         ),
       ],
@@ -134,16 +165,15 @@ class _LevelTestPageState extends State<LevelTestPage> {
               padding: const EdgeInsets.symmetric(vertical: 8),
               child: GestureDetector(
                 onTap: () {
-                  parentChoices.add({
-                    'questionId': q.id,
-                    'optionId': opt.id,
-                  });
+                  parentChoices.add({'questionId': q.id, 'optionId': opt.id});
                   _next();
                 },
                 child: Container(
                   width: double.infinity,
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 16,
+                  ),
                   decoration: BoxDecoration(
                     color: const Color(0xFFF5F5F7),
                     borderRadius: BorderRadius.circular(16),
@@ -171,8 +201,10 @@ class _LevelTestPageState extends State<LevelTestPage> {
         const SizedBox(height: 24),
         Image.asset('assets/img/leveltest/img7.png', height: 220),
         const SizedBox(height: 20),
-        const Text('자녀 영역',
-            style: TextStyle(fontSize: 32, fontWeight: FontWeight.w700)),
+        const Text(
+          '자녀 영역',
+          style: TextStyle(fontSize: 32, fontWeight: FontWeight.w700),
+        ),
         const SizedBox(height: 16),
         const Padding(
           padding: EdgeInsets.symmetric(horizontal: 24),
@@ -200,8 +232,10 @@ class _LevelTestPageState extends State<LevelTestPage> {
                 borderRadius: BorderRadius.circular(16),
               ),
             ),
-            child: const Text('아이를 도와 레벨테스트를 진행하겠습니다',
-                style: TextStyle(fontWeight: FontWeight.w700)),
+            child: const Text(
+              '아이를 도와 레벨테스트를 진행하겠습니다',
+              style: TextStyle(fontWeight: FontWeight.w700),
+            ),
           ),
         ),
       ],
@@ -212,6 +246,11 @@ class _LevelTestPageState extends State<LevelTestPage> {
   Widget _optionCard(LevelTestOption opt) {
     return GestureDetector(
       onTap: () {
+        // 오디오 재생 중이면 중지 로직 유지
+        if (_playerState != PlayerState.stopped) {
+          _player.stop();
+        }
+
         levelChoices.add({
           'questionId': _currentQuestionId,
           'optionId': opt.id,
@@ -230,7 +269,7 @@ class _LevelTestPageState extends State<LevelTestPage> {
               color: Color(0x11000000),
               blurRadius: 6,
               offset: Offset(0, 2),
-            )
+            ),
           ],
         ),
         child: Column(
@@ -263,8 +302,10 @@ class _LevelTestPageState extends State<LevelTestPage> {
       children: [
         _progressBar(ratio),
         const SizedBox(height: 8),
-        Text(q.type,
-            style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w800)),
+        Text(
+          q.type,
+          style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w800),
+        ),
         const SizedBox(height: 8),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -280,7 +321,14 @@ class _LevelTestPageState extends State<LevelTestPage> {
             padding: const EdgeInsets.only(top: 8),
             child: InkWell(
               onTap: () async {
-                await _player.play(UrlSource('$baseUrl${q.audioUrl!}'));
+                // ✅ 수정된 로직: 재생 중이면 멈추고, 아니면 로컬 에셋 재생
+                if (_playerState == PlayerState.playing) {
+                  await _player.stop();
+                } else {
+                  final assetPath = _getAssetPath(q.audioUrl!);
+                  // AssetSource를 사용하여 로컬 파일 재생
+                  await _player.play(AssetSource(assetPath));
+                }
               },
               child: Container(
                 padding: const EdgeInsets.all(24),
@@ -316,8 +364,13 @@ class _LevelTestPageState extends State<LevelTestPage> {
                   children: List.generate(q.options.length, (i) {
                     final opt = q.options[i];
                     return Padding(
-                      padding: EdgeInsets.only(right: i < q.options.length - 1 ? spacing : 0),
-                      child: SizedBox(width: itemWidth, child: _optionCard(opt)),
+                      padding: EdgeInsets.only(
+                        right: i < q.options.length - 1 ? spacing : 0,
+                      ),
+                      child: SizedBox(
+                        width: itemWidth,
+                        child: _optionCard(opt),
+                      ),
                     );
                   }),
                 );
@@ -339,16 +392,22 @@ class _LevelTestPageState extends State<LevelTestPage> {
         const SizedBox(height: 24),
         Image.asset('assets/img/leveltest/img8.png', height: 240),
         const SizedBox(height: 20),
-        const Text('레벨 테스트 종료',
-            style: TextStyle(fontSize: 32, fontWeight: FontWeight.w800)),
+        const Text(
+          '레벨 테스트 종료',
+          style: TextStyle(fontSize: 32, fontWeight: FontWeight.w800),
+        ),
         const SizedBox(height: 12),
-        const Text('이제 아이와 함께 즐거운 학습을 시작해보세요!',
-            style: TextStyle(fontSize: 16)),
+        const Text('이제 아이와 함께 즐거운 학습을 시작해보세요!', style: TextStyle(fontSize: 16)),
         const SizedBox(height: 32),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 24),
           child: ElevatedButton(
             onPressed: () async {
+              // 오디오 재생 중이면 중지 로직 유지
+              if (_playerState != PlayerState.stopped) {
+                _player.stop();
+              }
+
               await _submitLevelChoices();
               if (!mounted) return;
               Navigator.pushReplacement(
@@ -366,8 +425,10 @@ class _LevelTestPageState extends State<LevelTestPage> {
                 borderRadius: BorderRadius.circular(16),
               ),
             ),
-            child: const Text('다음으로 넘어가기',
-                style: TextStyle(fontWeight: FontWeight.w700)),
+            child: const Text(
+              '다음으로 넘어가기',
+              style: TextStyle(fontWeight: FontWeight.w700),
+            ),
           ),
         ),
       ],
@@ -392,9 +453,11 @@ class _LevelTestPageState extends State<LevelTestPage> {
           }
 
           final allParents = List<ParentQuestion>.from(
-              snapshot.data!.parentQuestions);
-          allParents.sort((a, b) =>
-              (a.questionOrder).compareTo(b.questionOrder));
+            snapshot.data!.parentQuestions,
+          );
+          allParents.sort(
+            (a, b) => (a.questionOrder).compareTo(b.questionOrder),
+          );
 
           List<ParentQuestion> parentQs = allParents;
           if (allParents.isNotEmpty &&
@@ -406,8 +469,7 @@ class _LevelTestPageState extends State<LevelTestPage> {
           final levelQs = snapshot.data!.levelTestQuestions;
 
           // 단계 계산: 부모 안내(1) + 부모문항(5) + 자녀 안내(1) + 자녀문항(M) + 결과(1)
-          final totalSteps =
-              1 + parentQs.length + 1 + levelQs.length + 1;
+          final totalSteps = 1 + parentQs.length + 1 + levelQs.length + 1;
           final ratio = stepIndex / (totalSteps - 1);
 
           if (stepIndex == 0) return _parentIntro();
@@ -416,7 +478,10 @@ class _LevelTestPageState extends State<LevelTestPage> {
             final q = parentQs[stepIndex - 1];
             final imgNumber = stepIndex + 1; // 1→img2, 5→img6
             return _parentQuestion(
-                q, 'assets/img/leveltest/img$imgNumber.png', ratio);
+              q,
+              'assets/img/leveltest/img$imgNumber.png',
+              ratio,
+            );
           }
 
           if (stepIndex == parentQs.length + 1) {
