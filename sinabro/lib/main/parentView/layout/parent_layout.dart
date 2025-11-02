@@ -60,7 +60,7 @@ class _ParentLayoutState extends State<ParentLayout> {
         elevation: 0,
         iconTheme: const IconThemeData(color: Colors.black),
         title: const TranslatedText(
-          "SINABRO 부모용 페이지",
+          "SINABRO Parents' Page",
           style: TextStyle(color: Colors.black),
         ),
         leading: Row(
@@ -178,17 +178,20 @@ class _MenuList extends StatelessWidget {
   Widget build(BuildContext context) {
     final items = <_MenuItem>[
       _MenuItem(
-        title: '공지사항',
+        title: 'announcement',
+        koreanTitle: '공지사항',
         icon: Icons.campaign_outlined,
         destination: NoticePage(parentUserId: parentUserId),
       ),
       _MenuItem(
-        title: '마이페이지',
+        title: 'My Page',
+        koreanTitle: '마이페이지',
         icon: Icons.account_circle_outlined,
         destination: MyPage(parentUserId: parentUserId),
       ),
       _MenuItem(
-        title: "자녀페이지",
+        title: "Children's Page",
+        koreanTitle: '자녀페이지',
         icon: Icons.family_restroom_outlined,
         destination: ChildrenPage(
           parentUserId: parentUserId ?? '',
@@ -196,12 +199,14 @@ class _MenuList extends StatelessWidget {
         ),
       ),
       _MenuItem(
-        title: '문의사항',
+        title: 'inquiry',
+        koreanTitle: '문의사항',
         icon: Icons.mail_outline,
         destination: FaqPage(parentUserId: parentUserId),
       ),
       _MenuItem(
-        title: '설정',
+        title: 'setting',
+        koreanTitle: '설정',
         icon: Icons.settings_outlined,
         destination: psettings.SettingsPage(
           parentUserId: parentUserId,
@@ -217,7 +222,7 @@ class _MenuList extends StatelessWidget {
       itemCount: items.length,
       itemBuilder: (_, i) {
         final it = items[i];
-        final isActive = it.title == activeMenu;
+        final isActive = it.koreanTitle == activeMenu;
         return _MenuTile(item: it, collapsed: collapsed, isActive: isActive);
       },
     );
@@ -226,11 +231,13 @@ class _MenuList extends StatelessWidget {
 
 class _MenuItem {
   final String title;
+  final String koreanTitle;
   final IconData icon;
   final Widget destination;
 
   const _MenuItem({
     required this.title,
+    required this.koreanTitle,
     required this.icon,
     required this.destination,
   });
@@ -321,6 +328,6 @@ class _MenuTile extends StatelessWidget {
       ),
     );
 
-    return collapsed ? Tooltip(message: item.title, child: tile) : tile;
+    return collapsed ? Tooltip(message: item.koreanTitle, child: tile) : tile;
   }
 }

@@ -92,10 +92,7 @@ class _SettingsPageState extends State<SettingsPage> {
       );
 
       // 2. 성공 시, TranslationService를 다시 초기화하여 변경된 언어를 즉시 앱에 적용합니다.
-      await TranslationService.instance.initialize(
-        widget.parentUserId!,
-        force: true,
-      );
+      await TranslationService.instance.initialize(widget.parentUserId!);
 
       if (!mounted) return;
       print('[설정 저장 성공]');
@@ -374,6 +371,7 @@ class _SettingsPageState extends State<SettingsPage> {
       ),
     );
   }
+
 
   // (파일 1의 기존 다이얼로그)
   Future<bool?> _showConfirmDialog({
@@ -676,6 +674,7 @@ class _SettingsPageState extends State<SettingsPage> {
                               borderRadius: BorderRadius.circular(10),
                             ),
                           ),
+
                           child: Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 22),
                             child: _saving // 저장 중 로딩 인디케이터
@@ -693,6 +692,7 @@ class _SettingsPageState extends State<SettingsPage> {
                                     '저장하기',
                                     style: TextStyle(color: Colors.white),
                                   ),
+
                           ),
                         ),
                       ),

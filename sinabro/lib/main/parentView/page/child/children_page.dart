@@ -11,9 +11,10 @@ import 'package:flutter/material.dart';
 import 'package:sinabro/main/parentView/layout/parent_layout.dart';
 import 'package:sinabro/main/parentView/page/child/add_child_form.dart';
 import 'package:sinabro/main/parentView/api/parent_api.dart'; // ChildSummary
+// ⭐️ [수정] sub 브랜치의 경로와 import를 사용 (children_state.dart, child_report_page.dart)
 import 'package:sinabro/main/parentView/page/child/children_state.dart'; // 세션 + 상태 저장소
 import 'package:sinabro/main/parentView/page/child/child_report_page.dart';
-import 'package:sinabro/main/parentView/widget/translated_text.dart'; // ✨
+import 'package:sinabro/main/parentView/widget/translated_text.dart'; // ✨ sub 브랜치 import
 
 class ChildrenPage extends StatefulWidget {
   final String? parentUserId; // (옵션) 외부에서 명시 전달 가능
@@ -32,23 +33,26 @@ class _ChildrenPageState extends State<ChildrenPage> {
   @override
   void initState() {
     super.initState();
-
-    // ✅ 안전하게: 빌드 이후에 실행
-    // ✅ 변경: 첫 프레임 끝난 뒤 실행
+    // 첫 프레임 빌드 후에 상태 로드 및 이름 설정
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _store.loadOnce(widget.parentUserId);
       setState(() {
-        _nameFuture = _ensureName(); //
+        _nameFuture = _ensureName();
       });
     });
   }
 
-  /// 🔥 추가: 페이지 다시 들어올 때마다 최신 자녀목록을 불러오기
+  // 페이지가 다시 활성화될 때마다 자녀 목록 새로고침
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    // 현재 라우트가 활성화될 때 새로고침 (선택적: 필요 없다면 제거 가능)
+    // ModalRoute.of(context)?.isCurrent ?? false 로 확인 가능
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _store.refresh();
+       // 최초 로드 시 중복 호출 방지 위해 조건 추가 가능
+       if (!_store.loading) {
+         _store.refresh();
+       }
     });
   }
 
@@ -59,13 +63,12 @@ class _ChildrenPageState extends State<ChildrenPage> {
     return (_store.sessionUserId ?? '').trim();
   }
 
+  // 부모 이름 확보 로직 (기존과 동일)
   Future<String> _ensureName() async {
     final propName = (widget.parentDisplayName ?? '').trim();
     if (propName.isNotEmpty) return propName;
-
     final sessName = (_store.sessionUserName ?? '').trim();
     if (sessName.isNotEmpty) return sessName;
-
     final uid = _resolvedUid();
     if (uid.isEmpty) return '부모';
     final name = await ParentApi.fetchParentName(uid);
@@ -75,11 +78,12 @@ class _ChildrenPageState extends State<ChildrenPage> {
     return name.isEmpty ? '부모' : name.trim();
   }
 
+  // 자녀 추가 페이지로 이동
   Future<void> _goAdd() async {
     final uid = _resolvedUid();
     if (uid.isEmpty) {
       if (mounted) {
-        // 1번 코드의 mounted 체크 적용
+        // ⭐️ [수정] sub 브랜치의 mounted 체크 방식 사용
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(
@@ -87,31 +91,34 @@ class _ChildrenPageState extends State<ChildrenPage> {
       }
       return;
     }
+    // 자녀 추가 후 돌아왔을 때 true 값이 넘어오면 목록 새로고침
     final ok = await Navigator.push<bool>(
       context,
       MaterialPageRoute(builder: (_) => AddChildFormPage(parentUserId: uid)),
     );
     if (ok == true && mounted) {
       await _store.refresh(); // 목록 새로고침
-      setState(() => _nameFuture = _ensureName()); // 이름도 다시 보장
+      setState(() => _nameFuture = _ensureName()); // 이름 다시 확인
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final sidebarUid = _resolvedUid(); // ParentLayout/Sidebar로 전달
+    final sidebarUid = _resolvedUid();
 
     return ParentLayout(
       activeMenu: '자녀페이지', // ✨ (향후 번역 키 'child_page'로 변경)
       parentUserId: sidebarUid,
-      content: AnimatedBuilder(
+      content: AnimatedBuilder( // ChildrenState 변경 감지하여 UI 업데이트
         animation: _store,
         builder: (_, __) {
           final uid = _resolvedUid();
 
+          // 로딩 상태 처리
           if (uid.isEmpty && _store.loading) {
             return const Center(child: CircularProgressIndicator());
           }
+          // 로그인 정보 없을 때 에러 뷰
           if (uid.isEmpty) {
             return _ErrorView(
               message: '로그인 정보가 없습니다. (userId 비어 있음)', // ✨ (향후 번역 키로 변경)
@@ -121,10 +128,12 @@ class _ChildrenPageState extends State<ChildrenPage> {
               },
             );
           }
+          // 초기 로딩 중일 때 (아이템 없을 때만)
           if (_store.loading && _store.items.isEmpty) {
             return const Center(child: CircularProgressIndicator());
           }
 
+          // 부모 이름 로드 후 자녀 목록 또는 빈 상태 표시
           return FutureBuilder<String>(
             future: _nameFuture,
             builder: (context, snap) {
@@ -132,10 +141,12 @@ class _ChildrenPageState extends State<ChildrenPage> {
                   ? snap.data!.trim()
                   : '부모'; // ✨ (향후 번역 키로 변경)
 
+              // 자녀 목록이 비어있으면 EmptyState 표시
               if (_store.items.isEmpty) {
                 return _EmptyState(parentName: parentName, onAdd: _goAdd);
               }
 
+              // 자녀 목록이 있으면 ChildList 표시
               return _ChildList(
                 parentName: parentName,
                 parentUserId: sidebarUid,
@@ -152,6 +163,7 @@ class _ChildrenPageState extends State<ChildrenPage> {
 
 /* ---------------- 리스트 / 카드 / 상태뷰 ---------------- */
 
+// 자녀 목록 GridView 위젯
 class _ChildList extends StatelessWidget {
   final String parentName;
   final String parentUserId;
@@ -167,6 +179,7 @@ class _ChildList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // 화면 너비에 따라 GridView 컬럼 수 조절
     final isWide = MediaQuery.of(context).size.width >= 900;
     final crossAxisCount = isWide ? 4 : 2;
 
@@ -175,10 +188,11 @@ class _ChildList extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // 상단 헤더 (타이틀 + 추가하기 버튼)
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              // ✨ 2번 코드의 번역 적용 구조 (Wrap)
+              // ⭐️ [수정] sub 브랜치의 번역 지원 구조 (Wrap) 사용
               Wrap(
                 crossAxisAlignment: WrapCrossAlignment.center,
                 children: [
@@ -194,14 +208,11 @@ class _ChildList extends StatelessWidget {
                 ],
               ),
               ElevatedButton(
-                onPressed: onAdd,
+                onPressed: onAdd, // 추가하기 버튼 클릭 시 _goAdd 함수 호출
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFFE9DAB7),
                   foregroundColor: Colors.brown,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 10,
-                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
@@ -211,6 +222,7 @@ class _ChildList extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 16),
+          // 자녀 카드 목록 (GridView)
           Expanded(
             child: Container(
               padding: const EdgeInsets.all(16),
@@ -220,14 +232,14 @@ class _ChildList extends StatelessWidget {
                 border: Border.all(color: Colors.black12),
               ),
               child: GridView.builder(
-                itemCount: items.length,
+                itemCount: items.length, // 자녀 수만큼 아이템 생성
                 gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: crossAxisCount,
-                  mainAxisSpacing: 18,
-                  crossAxisSpacing: 18,
-                  childAspectRatio: 0.88,
+                  crossAxisCount: crossAxisCount, // 화면 너비에 따른 컬럼 수
+                  mainAxisSpacing: 18, // 카드 세로 간격
+                  crossAxisSpacing: 18, // 카드 가로 간격
+                  childAspectRatio: 0.88, // 카드 가로세로 비율
                 ),
-                // ⭐️ 1번과 2번 코드의 로직 병합
+                // ⭐️ [수정] HEAD와 sub 브랜치 로직 병합
                 itemBuilder: (_, i) {
                   final c = items[i];
 
@@ -238,21 +250,22 @@ class _ChildList extends StatelessWidget {
                   // 1번 코드 로직: level 기본값 0
                   const int lvl = 0;
 
+                  // 각 자녀 정보를 _ChildCard 위젯에 전달하여 생성
                   return _ChildCard(
                     name: c.childName,
-                    age: ageForCard, // ✨ 2번 코드의 nullable int? 전달
+                    age: ageForCard, // ✨ sub 브랜치의 nullable int? 전달
                     onTap: () async {
                       // 1번 코드 로직: push<bool> 및 mounted 확인
                       final updated =
                           await Navigator.of(context, rootNavigator: true)
                               .push<bool>(
-                        // ⭐️ <bool> 타입 명시 (1번)
+                        // ⭐️ <bool> 타입 명시 (HEAD)
                         MaterialPageRoute(
                           builder: (_) => ChildReportPage(
                             parentUserId: parentUserId,
                             childId: c.childId,
                             childName: c.childName,
-                            childAge: ageForReport, // ⭐️ 1번 로직
+                            childAge: ageForReport, // ⭐️ HEAD 로직
                             level: lvl,
                           ),
                         ),
@@ -275,7 +288,7 @@ class _ChildList extends StatelessWidget {
   }
 }
 
-// 2번 코드의 _ChildCard (번역 지원)
+// ⭐️ [수정] sub 브랜치의 _ChildCard (번역 지원) 사용
 class _ChildCard extends StatelessWidget {
   final String name;
   final int? age; // ✨ String ageLabel -> int? age로 변경
@@ -293,20 +306,21 @@ class _ChildCard extends StatelessWidget {
       color: Colors.white,
       borderRadius: BorderRadius.circular(12),
       clipBehavior: Clip.antiAlias,
-      child: InkWell(
+      child: InkWell( // 탭 효과
         onTap: onTap,
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
+              // 기본 프로필 아이콘 (향후 이미지로 대체 가능)
               const CircleAvatar(
                 radius: 42,
                 backgroundColor: Color(0xFFE0E0E0),
                 child: Icon(Icons.person, size: 40, color: Colors.white),
               ),
               const SizedBox(height: 10),
-              // ✨ 2번 코드의 나이 표시 로직 (번역 가능)
+              // ✨ sub 브랜치의 나이 표시 로직 (번역 가능)
               age == null
                   ? const TranslatedText(
                       '나이 정보 없음', // ✨ (향후 번역 키로 변경)
@@ -326,13 +340,11 @@ class _ChildCard extends StatelessWidget {
                         ),
                       ],
                     ),
+              // 자녀 이름
               Text(
                 name,
-                style: const TextStyle(
-                  fontSize: 17,
-                  fontWeight: FontWeight.w800,
-                ),
-                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w800),
+                overflow: TextOverflow.ellipsis, // 이름 길면 ... 처리
               ),
             ],
           ),
@@ -342,7 +354,7 @@ class _ChildCard extends StatelessWidget {
   }
 }
 
-// 2번 코드의 _EmptyState (번역 지원)
+// ⭐️ [수정] sub 브랜치의 _EmptyState (번역 지원) 사용
 class _EmptyState extends StatelessWidget {
   final String parentName;
   final VoidCallback onAdd;
@@ -354,13 +366,9 @@ class _EmptyState extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(
-            Icons.warning_amber_rounded,
-            size: 48,
-            color: Colors.brown,
-          ),
+          const Icon(Icons.warning_amber_rounded, size: 48, color: Colors.brown),
           const SizedBox(height: 12),
-          // ✨ 2번 코드의 번역 적용 구조 (Wrap)
+          // ✨ sub 브랜치의 번역 적용 구조 (Wrap)
           Wrap(
             crossAxisAlignment: WrapCrossAlignment.center,
             spacing: 4,
@@ -382,13 +390,11 @@ class _EmptyState extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           ElevatedButton(
-            onPressed: onAdd,
+            onPressed: onAdd, // 버튼 클릭 시 자녀 추가 함수 호출
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFFE9DAB7),
               foregroundColor: Colors.brown,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 12),
             ),
             child: const TranslatedText('아이 추가하기'), // ✨ (향후 번역 키로 변경)
@@ -399,7 +405,7 @@ class _EmptyState extends StatelessWidget {
   }
 }
 
-// 2번 코드의 _ErrorView (번역 지원)
+// ⭐️ [수정] sub 브랜치의 _ErrorView (번역 지원) 사용
 class _ErrorView extends StatelessWidget {
   final String message;
   final VoidCallback onRetry;
