@@ -19,6 +19,8 @@ import 'package:sinabro/main/childView/page/level_test_page.dart';
 import 'package:sinabro/config.dart';
 import 'package:sinabro/main/gameView/writeGame/api/child_state.dart';
 
+import 'package:sinabro/main/studyView/common/mixin/sticker_reward_handler.dart'; // 도감 테스트 끝나면 이거 지우슨
+
 class LoginChildScreen extends StatefulWidget {
   const LoginChildScreen({super.key});
 
@@ -340,33 +342,45 @@ Widget build(BuildContext context) {
         ),
 
         const SizedBox(height: 50),
-
-        // ✅ 자녀 로비로 이동 버튼 추가
-        ElevatedButton(
-          onPressed: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => const LobbyChildScreen(childId: 'test_child_id',),
+// 여기서부터 지우기
+ElevatedButton(
+  onPressed: () {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => StickerRewardHandler(
+          stageKey: 'write1',
+          newlyUnlockedIndex: 1,
+          isAllCleared: false,
+          onFinish: () {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('스티커 핸들러 완료!'),
               ),
             );
           },
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.brown,
-            padding: const EdgeInsets.symmetric(horizontal: 60, vertical: 20),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(30),
-            ),
-          ),
-          child: const Text(
-            '자녀 로비로 이동',
-            style: TextStyle(
-              fontSize: 20,
-              color: Colors.white,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
         ),
+      ),
+    );
+  },
+  style: ElevatedButton.styleFrom(
+    backgroundColor: Colors.brown,
+    padding: const EdgeInsets.symmetric(horizontal: 60, vertical: 20),
+    shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(30),
+    ),
+  ),
+  child: const Text(
+    '🎁 스티커 핸들러 테스트',
+    style: TextStyle(
+      fontSize: 20,
+      color: Colors.white,
+      fontWeight: FontWeight.bold,
+    ),
+  ),
+)
+
+// 여기까지 지우기
       ],
     ),
   );
