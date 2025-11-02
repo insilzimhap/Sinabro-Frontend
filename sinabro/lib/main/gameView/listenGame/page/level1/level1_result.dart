@@ -6,10 +6,17 @@
  * ----------------------------------------------------------------
  */
 
+
 import 'package:flutter/material.dart';
+import 'package:sinabro/main/gameView/writeGame/api/child_state.dart';
+
 //changed-start
 import 'package:sinabro/main/gameView/listenGame/page/level1/level1_flow.dart';
+import 'package:sinabro/main/gameView/writeGame/api/fruit_state.dart';
 //changed-end
+
+
+
 class Level1ResultPage extends StatelessWidget {
   final int themeId;
   final bool success;
@@ -43,6 +50,8 @@ class Level1ResultPage extends StatelessWidget {
         fit: StackFit.expand,
         children: [
           Image.asset(imagePath, fit: BoxFit.cover),
+
+          // 오른쪽 위 말풍선
           Positioned(
             right: 20,
             top: 120,
@@ -89,15 +98,21 @@ class Level1ResultPage extends StatelessWidget {
               ),
             ),
           ),
+
+          // 오른쪽 아래 버튼
           Positioned(
             right: 32,
             bottom: 32,
             child: ElevatedButton(
               onPressed: () {
+                FruitState.instance.clear(); // ✅ 이전 세션 초기화
+
                 Navigator.of(context).pushAndRemoveUntil( //changed-start
                   PageRouteBuilder(
                     pageBuilder: (context, animation, secondaryAnimation) =>
-                        const Level1Flow(),
+                        Level1Flow(
+                          childId: ChildState.instance.childId ?? '',
+                        ),
                     transitionsBuilder:
                         (context, animation, secondaryAnimation, child) {
                       return FadeTransition(opacity: animation, child: child);

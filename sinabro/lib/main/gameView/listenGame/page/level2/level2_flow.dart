@@ -19,17 +19,32 @@ import 'package:sinabro/main/gameView/listenGame/page/level2/level2_result.dart'
 import 'package:sinabro/main/gameView/listenGame/data/level2_data.dart';
 import 'package:sinabro/main/gameView/common/layout/listen_game_transition.dart';
 
+import 'package:sinabro/main/gameView/writeGame/api/child_state.dart';
+
 class Level2Flow extends StatefulWidget {
-  const Level2Flow({super.key});
+  final String childId;
+
+  const Level2Flow({
+    super.key,
+    required this.childId,
+    });
+  
 
   @override
   State<Level2Flow> createState() => _Level2FlowState();
 }
 
 class _Level2FlowState extends State<Level2Flow> {
+
   void _onThemeSelected(BuildContext context, int themeIndex) {
+    // 🔹 각 테마(열매)에 해당하는 문제 5개 세트 추출
     final startIndex = themeIndex * 5;
     final selectedSet = level2GameData.sublist(startIndex, startIndex + 5);
+
+    // ✅ (추가) 각 테마별 fruitId 매핑
+    final fruitIds = ['FR_LG_006', 'FR_LG_007', 'FR_LG_008'];
+    final fruitId = fruitIds[themeIndex];
+
 
     Navigator.push(
       context,
@@ -60,6 +75,7 @@ class _Level2FlowState extends State<Level2Flow> {
   Widget build(BuildContext context) {
     return Level2ThemeSelectPage(
       onThemeSelected: (index) => _onThemeSelected(context, index),
+      childId: widget.childId, // ✅ 위에서 받은 childId 그대로 전달
     );
   }
 }

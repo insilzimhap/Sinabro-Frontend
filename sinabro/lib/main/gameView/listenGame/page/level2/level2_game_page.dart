@@ -13,6 +13,9 @@ import 'package:flutter/material.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:sinabro/main/gameView/listenGame/model/listen_game_content.dart';
 
+import 'package:sinabro/main/gameView/writeGame/api/child_game_api.dart';
+import 'package:sinabro/main/gameView/writeGame/api/fruit_state.dart';
+
 class ListenGamePage extends StatefulWidget {
   final List<ListenGameContent> gameData;
   final void Function(int correctCount) onFinished;
@@ -39,12 +42,21 @@ class _ListenGamePageState extends State<ListenGamePage> {
 
   final AudioPlayer _player = AudioPlayer();
 
+  DateTime? _startTime; // 게임 시작 시점 기록
+
+  @override
+  void initState() {
+    super.initState();
+    _startTime = DateTime.now(); // 시작 시간 저장
+  }
+
   @override
   void dispose() {
     _player.dispose();
     super.dispose();
   }
 
+  // ───────────────────── 오디오/이미지 관련 ─────────────────────
   String _normalizeAudioAsset(String path) {
     if (path.startsWith('assets/')) {
       return path.split('assets/').last;
@@ -67,6 +79,7 @@ class _ListenGamePageState extends State<ListenGamePage> {
     await _player.play(AssetSource(assetPath));
   }
 
+  // ───────────────────────── 정답 선택 로직 ─────────────────────────
   void _checkAnswer(int index) async {
     if (_answered) return;
 
@@ -84,6 +97,26 @@ class _ListenGamePageState extends State<ListenGamePage> {
       }
     });
 
+    // ✅ 서버에 선택 결과 기록
+    final resultId = FruitState.instance.resultId;
+    if (resultId != null) {
+      try {
+        final questionId = current.questionId;
+        final optionId = current.optionIds[index];
+        await ChildGameApi.recordListeningChoice(
+          resultId: resultId,
+          questionId: questionId,
+          optionId: optionId,
+        );
+        debugPrint('[Level2Game] ✅ 선택 기록 완료: $questionId / $optionId');
+      } catch (e) {
+        debugPrint('[Level2Game] ⚠️ 선택 기록 실패: $e');
+      }
+    } else {
+      debugPrint('[Level2Game] ⚠️ resultId 없음 (record 생략)');
+    }
+
+
     await Future.delayed(const Duration(seconds: 2));
 
     if (_currentIndex < widget.gameData.length - 1) {
@@ -93,11 +126,32 @@ class _ListenGamePageState extends State<ListenGamePage> {
         _selected = null;
       });
     } else {
+      // ✅ 모든 문제 완료 시 /complete 호출
+      final endTime = DateTime.now();
+      final elapsedSecs =
+          _startTime != null ? endTime.difference(_startTime!).inSeconds : 0;
+
+      if (resultId != null) {
+        try {
+          final data = await ChildGameApi.completeListeningGame(
+            resultId: resultId,
+            timeSpentSecs: elapsedSecs,
+          );
+          debugPrint('[Level2Game] ✅ completeListeningGame 성공: $data');
+        } catch (e) {
+          debugPrint('[Level2Game] ⚠️ completeListeningGame 실패: $e');
+        }
+      } else {
+        debugPrint('[Level2Game] ⚠️ resultId 없음 (complete 생략)');
+      }
+
+
       widget.onFinished(_correctCount); // ✅ 정답 개수 전달
     }
 
   }
 
+  // ───────────────────────── UI 구성 ─────────────────────────
   @override
   Widget build(BuildContext context) {
     final data = widget.gameData[_currentIndex];

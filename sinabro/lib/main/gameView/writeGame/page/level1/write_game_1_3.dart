@@ -6,7 +6,10 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:sinabro/main/gameView/writeGame/page/write_game_main.dart';
-import 'package:sinabro/main/gameView/writeGame/api/write_game_api.dart';
+// 열매ID, 게임 api
+import 'package:sinabro/main/gameView/writeGame/api/fruit_state.dart';
+import 'package:sinabro/main/gameView/writeGame/api/child_game_api.dart';
+
 // ⬇️ AUDIO IMPORT
 import 'package:audioplayers/audioplayers.dart';
 
@@ -97,8 +100,13 @@ const double kSpiralGap = 20;
 
 /* ───────────────── page ───────────────── */
 class WriteGameLevel1_3Page extends StatefulWidget {
-  const WriteGameLevel1_3Page({super.key, required this.childId});
+  const WriteGameLevel1_3Page({
+    super.key, 
+    required this.childId,
+    this.resultId
+    });
   final String childId;
+  final String? resultId;
 
   @override
   State<WriteGameLevel1_3Page> createState() => _WriteGameLevel1_3PageState();
@@ -121,7 +129,7 @@ class _WriteGameLevel1_3PageState extends State<WriteGameLevel1_3Page> {
   static const double coverageRatio = 0.72;
 
   // API/시간
-  String? _resultId;
+  String? resultId;
   final _sw = Stopwatch();
   bool _completed = false;
 
@@ -144,7 +152,9 @@ class _WriteGameLevel1_3PageState extends State<WriteGameLevel1_3Page> {
   void initState() {
     super.initState();
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
-    _startGame();
+
+    _initAndStart();
+
     // ⬇️ 씬 A (Birds) 시작 오디오 재생 (수정됨: COMMON_1 + INTRO_3 재생)
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       _playAssetAudio(LEVEL3_AUDIO_ASSETS_1_3['COMMON_1']!);
@@ -162,32 +172,29 @@ class _WriteGameLevel1_3PageState extends State<WriteGameLevel1_3Page> {
   }
   // ⬆️ AUDIO PLAYBACK LOGIC
 
-  Future<void> _startGame() async {
+  Future<void> _initAndStart() async {
     try {
-      _resultId = await WriteGameApi.start(
-        childId: widget.childId,
-        stageCode: 'FR_WG_003', // Level1-3
-      );
-    } catch (_) {
-      _resultId = null;
+      // ✅ 부모(WriteGameMainPage)에서 이미 /start 호출로 resultId 전달됨
+      resultId = widget.resultId ?? FruitState.instance.resultId;
+      if (resultId == null) {
+        throw Exception('resultId 없음 (/start 누락)');
+      }
+
+      // 게임 시작 시각 기록
+      _sw.start();
+      debugPrint('[1-3] 🎯 resultId=$resultId → 게임 시작 타이머 시작');
+
+    } catch (e) {
+      debugPrint('[1-3] ⚠️ 초기화 실패: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('네트워크 오류. 잠시 후 다시 시도하세요.')),
+        );
+        Navigator.of(context).pop();
+      }
     }
-    _sw.start();
   }
 
-  Future<void> _completeGame() async {
-    if (_completed) return;
-    _completed = true;
-    _sw.stop();
-    try {
-      if (_resultId != null) {
-        await WriteGameApi.complete(
-          resultId: _resultId!,
-          totalQuestions: 4, // 새 3 + 달팽이 1
-          timeSpentSecs: _sw.elapsed.inSeconds,
-        );
-      }
-    } catch (_) {}
-  }
 
   /* ───────────────── guides (씬 B) ───────────────── */
   List<_GuidePath> _buildSnailGuide(Size size) {
@@ -249,7 +256,25 @@ class _WriteGameLevel1_3PageState extends State<WriteGameLevel1_3Page> {
       activeLine = null;
       setState(() {});
       if (_allPassed) {
-        await _completeGame();
+        // ✅ 씬 B 완료 → choice 1회 + complete 전송 (1-1과 동일 패턴)
+        if (resultId != null) {
+          await ChildGameApi.recordWritingChoice(
+            resultId: resultId!,
+            questionId: 'WG_Q3_01',     // ← 레벨1-3의 questionId (DB와 일치 확인)
+            childWrittenText: null,
+            isCorrect: true,
+          );
+          debugPrint('[1-3] ✅ choice 기록 완료 (WG_Q3_01)');
+
+          await ChildGameApi.completeWritingGame(
+            resultId: resultId!,
+            timeSpentSecs: _sw.elapsed.inSeconds,
+          );
+          debugPrint('[1-3] 🎉 complete 전송 완료');
+        } else {
+          debugPrint('[1-3] ⚠️ resultId 없음으로 choice/complete 생략');
+        }
+
         if (!mounted) return;
         setState(() => scene = _Scene.outro);
       }

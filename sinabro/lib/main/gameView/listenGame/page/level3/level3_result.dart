@@ -9,6 +9,10 @@
 import 'package:flutter/material.dart';
 //changed-start
 import 'package:sinabro/main/gameView/listenGame/page/level3/level3_flow.dart';
+import 'package:sinabro/main/gameView/writeGame/api/child_state.dart';
+import 'package:sinabro/main/gameView/listenGame/page/level1/level1_flow.dart';
+import 'package:sinabro/main/gameView/writeGame/api/fruit_state.dart';
+
 //changed-end
 class Level3ResultPage extends StatelessWidget {
   final int themeId;
@@ -45,10 +49,14 @@ class Level3ResultPage extends StatelessWidget {
             top: 36,
             child: ElevatedButton(
               onPressed: () {
+                FruitState.instance.clear(); // ✅ 이전 세션 초기화
+
                 Navigator.of(context).pushAndRemoveUntil(
                   PageRouteBuilder( //changed-start
                     pageBuilder: (context, animation, secondaryAnimation) =>
-                        const Level3Flow(),
+                        Level3Flow(
+                          childId: ChildState.instance.childId ?? '', //추가
+                        ),
                     transitionsBuilder:
                         (context, animation, secondaryAnimation, child) {
                       final offsetAnimation = Tween<Offset>(

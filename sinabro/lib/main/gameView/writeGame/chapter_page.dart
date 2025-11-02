@@ -3,6 +3,9 @@ import 'package:sinabro/main/gameView/writeGame/page/write_game_main.dart';
 import 'package:sinabro/main/gameView/writeGame/page/write_game_main2.dart';
 import 'package:sinabro/main/gameView/writeGame/page/write_game_main3.dart';
 
+/// ✏️ 쓰기 게임 챕터 선택 화면
+/// - 챕터 1~3 (=나무 1~3) 섬 선택 가능
+/// - 각 섬을 누르면 캐릭터가 이동하며 다음 단계로 전환
 class GameWriteChapterScreen extends StatefulWidget {
   final String childId; // ✅ 자녀 ID 추가
 
@@ -62,7 +65,8 @@ class _GameWriteChapterScreenState extends State<GameWriteChapterScreen>
       backgroundColor: const Color(0xFFFFF7E9),
       body: Stack(
         children: [
-          // 🏝️ 챕터 섬 1
+          // ────────────────────────────────
+          // 🏝️ 챕터 섬 1 (나무1=ST010)
           Positioned(
             left: size.width * 0.08,
             top: size.height * 0.28,
@@ -78,7 +82,7 @@ class _GameWriteChapterScreenState extends State<GameWriteChapterScreen>
             ),
           ),
 
-          // 🏝️ 챕터 섬 2
+          // 🏝️ 챕터 섬 2 (나무2=ST011)
           Positioned(
             left: size.width * 0.38,
             top: size.height * 0.28,
@@ -94,7 +98,7 @@ class _GameWriteChapterScreenState extends State<GameWriteChapterScreen>
             ),
           ),
 
-          // 🏝️ 챕터 섬 3
+          // 🏝️ 챕터 섬 3 (나무3=ST012)
           Positioned(
             right: size.width * 0.08,
             top: size.height * 0.28,

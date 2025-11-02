@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:sinabro/main/gameView/listenGame/page/level1/level1_theme_select.dart';
 import 'package:sinabro/main/gameView/listenGame/page/level2/level2_theme_select.dart';
 import 'package:sinabro/main/gameView/listenGame/page/level3/level3_theme_select.dart';
+import 'package:sinabro/main/gameView/writeGame/api/child_state.dart';
 
 /// 🎉 일반 클리어 팝업
 /// - 5초 후 현재 레벨의 테마 선택 페이지로 자동 이동
@@ -75,12 +76,14 @@ Future<void> showClearPopup(BuildContext context, int level) async {
   Navigator.of(context, rootNavigator: true).pop(); // 팝업 닫기
 
   Widget nextPage;
+  final childId = ChildState.instance.childId ?? ''; // ✅ 추가
   switch (level) {
     case 1:
       nextPage = Level1ThemeSelectPage(
         onThemeSelected: (index) {
           debugPrint("레벨1 테마 선택: $index");
         },
+        childId: childId, // ✅ 추가
       );
       break;
     case 2:
@@ -88,6 +91,8 @@ Future<void> showClearPopup(BuildContext context, int level) async {
         onThemeSelected: (index) {
           debugPrint("레벨2 테마 선택: $index");
         },
+        childId: childId, // ✅ 추가
+        
       );
       break;
     case 3:
@@ -95,6 +100,7 @@ Future<void> showClearPopup(BuildContext context, int level) async {
         onThemeSelected: (index) {
           debugPrint("레벨3 테마 선택: $index");
         },
+        childId: childId, // ✅ 추가
       );
       break;
     default:

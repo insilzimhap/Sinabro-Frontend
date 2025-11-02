@@ -9,6 +9,9 @@
 import 'package:flutter/material.dart';
 //changed-start
 import 'package:sinabro/main/gameView/listenGame/page/level2/level2_flow.dart';
+import 'package:sinabro/main/gameView/writeGame/api/child_state.dart';
+import 'package:sinabro/main/gameView/writeGame/api/fruit_state.dart';
+
 //changed-end
 class Level2ResultPage extends StatelessWidget {
   final int themeId;
@@ -94,10 +97,15 @@ class Level2ResultPage extends StatelessWidget {
             right: 24,
             child: ElevatedButton(
               onPressed: () {
+                //changed-start ✅ 게임 세션 초기화
+                FruitState.instance.clear();
+
                 Navigator.of(context).pushAndRemoveUntil( //changed-start
                   PageRouteBuilder(
                     pageBuilder: (context, animation, secondaryAnimation) =>
-                        const Level2Flow(),
+                        Level2Flow(
+                          childId: ChildState.instance.childId ?? '',
+                        ),
                     transitionsBuilder:
                         (context, animation, secondaryAnimation, child) {
                       return FadeTransition(opacity: animation, child: child);

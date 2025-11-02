@@ -1,17 +1,22 @@
 // lib/main/gameView/writeGame/page/write_game_main3.dart
 import 'package:flutter/material.dart';
 
-// Level3 단계별 페이지 import (경로 고정)
+// Level3 (ST012) 단계별 페이지 import (경로 고정)
 import 'package:sinabro/main/gameView/writeGame/page/level3/write_game_3_1.dart';
 import 'package:sinabro/main/gameView/writeGame/page/level3/write_game_3_2.dart';
 import 'package:sinabro/main/gameView/writeGame/page/level3/write_game_3_3.dart';
 import 'package:sinabro/main/gameView/writeGame/page/level3/write_game_3_4.dart';
 
+// 열매ID, 게임 api
+import 'package:sinabro/main/gameView/writeGame/api/fruit_state.dart';
+import 'package:sinabro/main/gameView/writeGame/api/child_game_api.dart';
+
 class WriteGameMain3Page extends StatelessWidget {
   const WriteGameMain3Page({super.key, required this.childId});
   final String childId;
 
-  static const routeName = '/write/game/main3';
+  static const String routeName = '/write/game/hub3';
+  static const String stageId = 'ST012'; // ✅ 쓰기게임 나무3(Stage 3)
 
   @override
   Widget build(BuildContext context) {
@@ -44,61 +49,124 @@ class WriteGameMain3Page extends StatelessWidget {
           // 아래 예시는 '정규화(비율) 방식'으로 균형 잡힌 배치값을 넣어둔 상태야.
           // 각 컵마다 width/height/alignX/alignY 숫자만 바꿔 미세 조정하면 됨.
           _CupButton(
+            // 동물 컵 -> FR_WG_008
             asset: 'assets/img/contents/gameWrite/write_game_3_cup_red.png',
             width: 370,
             height: 390,
             alignX: -0.92, // 왼쪽
             alignY: 0.82, // 아래쪽
-            onTap: (context) {
+            onTap: (context) async {
+
+              FruitState.instance //changed
+                ..setStage(stageId) 
+                ..setFruit('FR_WG_008'); 
+
+              final resultId = await ChildGameApi.startWritingGame(); 
+              if (resultId == null) { 
+                _showSnack(context, '⚠️ 입장할 수 없는 열매입니다.'); 
+                return; 
+              } 
+              FruitState.instance.setResult(resultId); 
+
+              
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (_) => WriteGameLevel3_1Page(childId: childId),
+                  builder: (_) => WriteGameLevel3_1Page(
+                    childId: childId,
+                    resultId: resultId,
+                  ),
                 ),
               );
             },
           ),
           _CupButton(
+            // 과일 컵 -> FR_WG_009
             asset: 'assets/img/contents/gameWrite/write_game_3_cup_blue.png',
             width: 370,
             height: 390,
             alignX: -0.34,
             alignY: 0.82,
-            onTap: (context) {
+            onTap: (context) async {
+
+              FruitState.instance //changed
+                ..setStage(stageId)
+                ..setFruit('FR_WG_009');
+
+              final resultId = await ChildGameApi.startWritingGame(); //changed
+              if (resultId == null) {
+                _showSnack(context, '⚠️ 입장할 수 없는 열매입니다.');
+                return;
+              }
+              FruitState.instance.setResult(resultId); //changed
+
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (_) => WriteGameLevel3_2Page(childId: childId),
+                  builder: (_) => WriteGameLevel3_2Page(
+                    childId: childId,
+                    resultId: resultId,
+                  ),
                 ),
               );
             },
           ),
           _CupButton(
+            // 채소 컵 -> FR_WG_010
             asset: 'assets/img/contents/gameWrite/write_game_3_cup_yellow.png',
             width: 370,
             height: 390,
             alignX: 0.28,
             alignY: 0.82,
-            onTap: (context) {
+            onTap: (context) async {
+              FruitState.instance //changed
+                ..setStage(stageId) 
+                ..setFruit('FR_WG_010'); 
+
+              final resultId = await ChildGameApi.startWritingGame(); 
+              if (resultId == null) { 
+                _showSnack(context, '⚠️ 입장할 수 없는 열매입니다.'); 
+                return; 
+              } 
+              FruitState.instance.setResult(resultId); 
+
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (_) => WriteGameLevel3_3Page(childId: childId),
+                  builder: (_) => WriteGameLevel3_3Page(
+                    childId: childId,
+                    resultId: resultId,
+                  ),
                 ),
               );
             },
           ),
           _CupButton(
+            // 우리 몸 컵 -> FR_WG_011
             asset: 'assets/img/contents/gameWrite/write_game_3_cup_green.png',
             width: 310,
             height: 310,
             alignX: 0.8,
             alignY: 0.72,
-            onTap: (context) {
+            onTap: (context) async {
+              FruitState.instance //changed
+                ..setStage(stageId) 
+                ..setFruit('FR_WG_011'); 
+
+              final resultId = await ChildGameApi.startWritingGame(); 
+              if (resultId == null) { 
+                _showSnack(context, '⚠️ 입장할 수 없는 열매입니다.'); 
+                return; 
+              } 
+              FruitState.instance.setResult(resultId); 
+
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (_) => WriteGameLevel3_4Page(childId: childId),
+                  builder: (_) => WriteGameLevel3_4Page(
+                    childId: childId,
+                    resultId: resultId,
+                  ),
                 ),
               );
             },
@@ -117,6 +185,16 @@ class WriteGameMain3Page extends StatelessWidget {
       ),
     );
   }
+  // SnackBar 헬퍼 
+  void _showSnack(BuildContext context, String msg) { 
+    ScaffoldMessenger.of(context).showSnackBar( 
+      SnackBar( 
+        content: Text(msg), 
+        backgroundColor: Colors.brown.shade400, 
+        duration: const Duration(seconds: 2), 
+      ),
+    ); 
+  } 
 }
 
 /* ───────────── 분리 위젯들 ───────────── */

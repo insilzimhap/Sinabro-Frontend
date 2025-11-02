@@ -20,14 +20,23 @@ import 'package:sinabro/main/gameView/listenGame/data/level3_data.dart';
 import 'package:sinabro/main/gameView/common/layout/listen_game_transition.dart';
 
 class Level3Flow extends StatefulWidget {
-  const Level3Flow({super.key});
+  final String childId;
+
+  const Level3Flow({
+    super.key,
+    required this.childId, // ✅ 생성자 수정
+  });
 
   @override
   State<Level3Flow> createState() => _Level3FlowState();
 }
 
 class _Level3FlowState extends State<Level3Flow> {
+
+  // 🎯 테마(열매)가 선택되었을 때 호출됨
   void _onThemeSelected(BuildContext context, int themeIndex) {
+
+    //테마 번호(index)에 맞춰 문제 5개 세트 가져오기
     final startIndex = themeIndex * 5;
     final selectedSet = level3GameData.sublist(startIndex, startIndex + 5);
 
@@ -60,6 +69,7 @@ class _Level3FlowState extends State<Level3Flow> {
   Widget build(BuildContext context) {
     return Level3ThemeSelectPage(
       onThemeSelected: (index) => _onThemeSelected(context, index),
+      childId: widget.childId, // ✅ 위에서 받은 childId 그대로 전달
     );
   }
 }
