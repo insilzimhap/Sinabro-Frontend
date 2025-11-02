@@ -3,8 +3,12 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:sinabro/main/gameView/writeGame/page/write_game_main.dart';
-import 'package:sinabro/main/gameView/writeGame/api/write_game_api.dart';
+import 'package:sinabro/main/gameView/common/api/write_game_api.dart';
 import 'package:audioplayers/audioplayers.dart';
+
+// 열매ID, 게임 api
+import 'package:sinabro/main/gameView/common/api/fruit_state.dart';
+import 'package:sinabro/main/gameView/common/api/child_game_api.dart';
 
 // 오디오 에셋 경로
 const String _audioDir = 'audio/tts/gameWrite/level1/';
@@ -21,8 +25,13 @@ const Map<String, String> LEVEL3_AUDIO_ASSETS_1_1 = {
 enum _Scene { cars, monkeys }
 
 class WriteGameLevel1Page extends StatefulWidget {
-  const WriteGameLevel1Page({super.key, required this.childId});
+  const WriteGameLevel1Page({
+    super.key, 
+    required this.childId,
+    this.resultId,
+    });
   final String childId;
+  final String? resultId;
 
   @override
   State<WriteGameLevel1Page> createState() => _WriteGameLevel1PageState();
@@ -34,7 +43,7 @@ class _WriteGameLevel1PageState extends State<WriteGameLevel1Page> {
   bool _showOutro = false;
 
   // 서버 기록용
-  String? _resultId;
+  String? resultId;
   final _sw = Stopwatch();
   bool _completing = false;
 
@@ -60,7 +69,9 @@ class _WriteGameLevel1PageState extends State<WriteGameLevel1Page> {
   void initState() {
     super.initState();
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
-    _startGame();
+    
+    _initAndStart();
+
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       // 씬 A (Cars) 시작 오디오 재생 (수정됨: COMMON_1 + INTRO_1 재생)
       _playAssetAudio(LEVEL3_AUDIO_ASSETS_1_1['COMMON_1']!);
@@ -85,32 +96,31 @@ class _WriteGameLevel1PageState extends State<WriteGameLevel1Page> {
     _audioPlayer.dispose();
     super.dispose();
   }
-  // ⬆️ AUDIO PLAYBACK LOGIC (수정 및 추가 끝)
 
-  Future<void> _startGame() async {
+
+  Future<void> _initAndStart() async {
     try {
-      _resultId = await WriteGameApi.start(
-        childId: widget.childId,
-        stageCode: 'FR_WG_001', // ✅ Level1-1 코드
-      );
-    } catch (_) {
-      _resultId = null;
+      // ✅ 부모(WriteGameMainPage)에서 이미 /start 호출로 resultId 전달됨
+      resultId = widget.resultId ?? FruitState.instance.resultId;
+      if (resultId == null) {
+        throw Exception('resultId 없음 (/start 누락)');
+      }
+
+      // 게임 시작 시각 기록
+      _sw.start();
+      debugPrint('[1-1] 🎯 resultId=$resultId → 게임 시작 타이머 시작');
+
+    } catch (e) {
+      debugPrint('[1-1] ⚠️ 초기화 실패: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('네트워크 오류. 잠시 후 다시 시도하세요.')),
+        );
+        Navigator.of(context).pop();
+      }
     }
-    _sw.start();
   }
 
-  Future<void> _completeGame() async {
-    if (_resultId == null || _completing) return;
-    _completing = true;
-    _sw.stop();
-    try {
-      await WriteGameApi.complete(
-        resultId: _resultId!,
-        totalQuestions: lineCount * 2,
-        timeSpentSecs: _sw.elapsed.inSeconds,
-      );
-    } catch (_) {}
-  }
 
   // ─────────────────────────────────────────────
   List<_HGuide> _buildGuidesA(Size size) {
@@ -152,6 +162,7 @@ class _WriteGameLevel1PageState extends State<WriteGameLevel1Page> {
   // ─────────────────────────────────────────────
   void _onPanStart(DragStartDetails d, Size size) {
     if (_showOutro || allPassed) return;
+
     final line = (scene == _Scene.cars)
         ? _pickLineH(d.localPosition, size)
         : _pickLineV(d.localPosition, size);
@@ -199,8 +210,23 @@ class _WriteGameLevel1PageState extends State<WriteGameLevel1Page> {
             _playAssetAudio(LEVEL3_AUDIO_ASSETS_1_1['INTRO_1']!);
           });
         } else {
-          // ✅ 씬 B 완료 시 서버 완료 기록 + 아웃트로 실행
-          await _completeGame();
+          // ✅ 씬 B 완료 → 두 번째 choice + complete 전송
+          if (resultId != null) {
+            await ChildGameApi.recordWritingChoice(
+              resultId: resultId!,
+              questionId: 'WG_Q1_01',
+              childWrittenText: null,
+              isCorrect: true,
+            );
+            debugPrint('[1-1] ✅ choice 기록 완료 (WG_Q1_02)');
+
+            await ChildGameApi.completeWritingGame(
+              resultId: resultId!,
+              timeSpentSecs: _sw.elapsed.inSeconds,
+            );
+            debugPrint('[1-1] 🎉 complete 전송 완료');
+          }
+
           // ⬇️ 게임 완료 오디오 재생 (수정됨: 최종 완료 시 오디오 재생 로직 제거)
           if (!mounted) return;
           setState(() => _showOutro = true);

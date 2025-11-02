@@ -9,8 +9,8 @@ import 'package:sinabro/selvy_example_view/selvy_service.dart'
 // ▼ 추가: 매핑/API
 import 'package:sinabro/main/gameView/writeGame/data/wg_question_map.dart'
     as WG;
-import 'package:sinabro/main/gameView/writeGame/api/child_game_api.dart'; //changed
-import 'package:sinabro/main/gameView/writeGame/api/fruit_state.dart'; //changed
+import 'package:sinabro/main/gameView/common/api/child_game_api.dart'; //changed
+import 'package:sinabro/main/gameView/common/api/fruit_state.dart'; //changed
 // ⬇️ AUDIO IMPORT
 import 'package:audioplayers/audioplayers.dart';
 
@@ -601,16 +601,14 @@ class _WriteGameLevel2_3PageState extends State<WriteGameLevel2_3Page> {
   // 채점 결과 서버 전송 (_sendChoice)
   Future<bool> _sendChoice({
     required String shownChar, //changed
-    required _TargetType type, //changed
+    required String correctChar, // 정답 기준 (랜덤 문제의 자음)
     required bool isCorrect,   //changed
   }) async {
     if (_resultId == null) return false; //changed
 
     final questionId = WG.requireWgQuestionId( //changed
-      type == _TargetType.consonant
-          ? WG.consonantQuestionMap
-          : WG.vowelQuestionMap,
-      shownChar,
+      WG.consonantVowelQuestionMap,
+      correctChar,
       ctx: 'Stage2-3',
     );
 
@@ -662,7 +660,7 @@ class _WriteGameLevel2_3PageState extends State<WriteGameLevel2_3Page> {
     // 1️⃣ 서버에 개별 문제 기록
     await _sendChoice( //changed
       shownChar: mine,
-      type: current.type, //changed
+      correctChar: current.char, 
       isCorrect: isCorrect,
     );
 

@@ -7,8 +7,8 @@ import 'package:sinabro/main/gameView/writeGame/page/level2/write_game_2_2.dart'
 import 'package:sinabro/main/gameView/writeGame/page/level2/write_game_2_3.dart';
 
 // 열매ID, 게임 api
-import 'package:sinabro/main/gameView/writeGame/api/fruit_state.dart';
-import 'package:sinabro/main/gameView/writeGame/api/child_game_api.dart';
+import 'package:sinabro/main/gameView/common/api/fruit_state.dart';
+import 'package:sinabro/main/gameView/common/api/child_game_api.dart';
 
 class WriteGameMain2Page extends StatelessWidget {
   const WriteGameMain2Page({super.key, required this.childId});

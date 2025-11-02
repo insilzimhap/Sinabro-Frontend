@@ -12,8 +12,8 @@ import 'package:sinabro/main/gameView/writeGame/data/wg_question_map.dart'
 
 // ▼ 추가: 매핑/API
 import 'package:sinabro/main/gameView/writeGame/data/wg_question_map.dart' as WG; //changed: consonant → vowel 매핑 사용
-import 'package:sinabro/main/gameView/writeGame/api/child_game_api.dart'; //changed: ChildGameApi 사용
-import 'package:sinabro/main/gameView/writeGame/api/fruit_state.dart'; //changed: resultId 공유
+import 'package:sinabro/main/gameView/common/api/child_game_api.dart'; //changed: ChildGameApi 사용
+import 'package:sinabro/main/gameView/common/api/fruit_state.dart'; //changed: resultId 공유
 
 
 
@@ -325,6 +325,7 @@ class _WriteGameLevel2_2PageState extends State<WriteGameLevel2_2Page> {
   // ---------------------------------------------------------------------------
   Future<bool> _sendChoice({
     required String shownChar,  //자녀가 쓴 글씨를 셀비가 인식한 결과값(후보 1순위)
+    required String correctChar, // 정답 기준 (랜덤 문제의 자음)
     required bool isCorrect,    // 프론트에서 판정한 결과 그대로 전달
   }) async {
     if (_resultId == null) return false; // 방어
@@ -332,7 +333,7 @@ class _WriteGameLevel2_2PageState extends State<WriteGameLevel2_2Page> {
     // 문제ID 매핑
     final questionId = WG.requireWgQuestionId(
       WG.vowelQuestionMap,
-      shownChar,
+      correctChar,
       ctx: 'Stage2-2',
     );
 
@@ -387,7 +388,11 @@ class _WriteGameLevel2_2PageState extends State<WriteGameLevel2_2Page> {
     final isCorrect = mine == current.char;
 
     final choiceSaved =
-        await _sendChoice(shownChar: mine, isCorrect: isCorrect); //changed
+        await _sendChoice(
+          shownChar: mine, 
+          correctChar: current.char, 
+          isCorrect: isCorrect
+        ); //changed
     if (!mounted) return;
     if (choiceSaved) {
       _results.add(isCorrect);
