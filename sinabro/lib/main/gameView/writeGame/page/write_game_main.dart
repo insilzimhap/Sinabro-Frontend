@@ -7,17 +7,16 @@ import 'package:sinabro/main/gameView/writeGame/page/level1/write_game_1_2.dart'
 import 'package:sinabro/main/gameView/writeGame/page/level1/write_game_1_3.dart';
 import 'package:sinabro/main/gameView/writeGame/page/level1/write_game_1_4.dart';
 
-// ⬇️ 메인2, 메인3 이동
-import 'package:sinabro/main/gameView/writeGame/page/write_game_main2.dart'
-    show WriteGameMain2Page;
-import 'package:sinabro/main/gameView/writeGame/page/write_game_main3.dart'
-    show WriteGameMain3Page;
+// 열매ID, 게임 api
+import 'package:sinabro/main/gameView/writeGame/api/fruit_state.dart';
+import 'package:sinabro/main/gameView/writeGame/api/child_game_api.dart';
 
 class WriteGameMainPage extends StatefulWidget {
   const WriteGameMainPage({super.key, required this.childId});
   final String childId;
 
   static const routeName = '/write/game/hub';
+  static const String stageId = 'ST010'; // 쓰기게임 나무1(Stage 1)
 
   @override
   State<WriteGameMainPage> createState() => _WriteGameMainPageState();
@@ -33,60 +32,107 @@ class _WriteGameMainPageState extends State<WriteGameMainPage> {
           builder: (context, c) {
             return Stack(
               children: [
-                // 풍선 (좌상)
+                // 사다리 (좌상) -> write_game_1_1.dart (FR_WG_001)
                 _ObjectTile(
-                  id: 'balloons',
+                  id: 'ladder',
                   rect: const Rect.fromLTWH(40, 30, 180, 180),
                   imageAsset:
                       'assets/img/contents/gameWrite/write_game_1_1.png',
-                  onTap: () {
+                  onTap: () async {
+                    // fruitId + stageId 저장
+                    FruitState.instance
+                      ..setStage(WriteGameMainPage.stageId)
+                      ..setFruit('FR_WG_001');
+
+                    // start API 호출
+                    final resultId = await ChildGameApi.startWritingGame();
+                    if (resultId == null) {
+                      _showSnack('⚠️ 입장할 수 없는 열매입니다.');
+                      return;
+                    }
+                    // startAPI로 생성된 resultId를 저장해둠 → 다음 페이지에서 사용
+                    FruitState.instance.setResult(resultId);
+
                     Navigator.push(
                       context,
                       MaterialPageRoute(
                         builder: (_) =>
-                            WriteGameLevel1Page(childId: widget.childId),
+                            WriteGameLevel1Page(
+                              childId: widget.childId,
+                              resultId: resultId,
+                            ),
                       ),
                     );
                   },
                 ),
 
-                // 비행기 (우상)
+                // 풍선 (우상) -> write_game_1_2.dart (FR_WG_002)
                 _ObjectTile(
-                  id: 'airplane',
+                  id: 'ballon',
                   rect: Rect.fromLTWH(c.maxWidth - 240, 30, 220, 170),
                   imageAsset:
                       'assets/img/contents/gameWrite/write_game_1_2.png',
-                  onTap: () {
+                  onTap: () async {
+                    FruitState.instance
+                      ..setStage(WriteGameMainPage.stageId)
+                      ..setFruit('FR_WG_002');
+
+                    final resultId = await ChildGameApi.startWritingGame();
+                    if (resultId == null) {
+                      _showSnack('⚠️ 입장할 수 없는 열매입니다.');
+                      return;
+                    }
+
+                    FruitState.instance.setResult(resultId);
+
                     Navigator.push(
                       context,
                       MaterialPageRoute(
                         builder: (_) =>
-                            WriteGameLevel1_2Page(childId: widget.childId),
+                            WriteGameLevel1_2Page(
+                              childId: widget.childId,
+                              resultId: resultId,
+                            ),
                       ),
                     );
                   },
                 ),
 
-                // 달팽이 (좌하)
+                // 바행기 (좌하) -> write_game_1_3.dart (FR_WG_003)
                 _ObjectTile(
-                  id: 'airplane2',
+                  id: 'airplane1',
                   rect: Rect.fromLTWH(30, c.maxHeight - 240, 220, 170),
                   imageAsset:
                       'assets/img/contents/gameWrite/write_game_1_3.png',
-                  onTap: () {
+                  onTap: () async {
+                    FruitState.instance
+                      ..setStage(WriteGameMainPage.stageId)
+                      ..setFruit('FR_WG_003');
+
+                    final resultId = await ChildGameApi.startWritingGame();
+                    if (resultId == null) {
+                      _showSnack('⚠️ 입장할 수 없는 열매입니다.');
+                      return;
+                    }
+
+                    FruitState.instance.setResult(resultId);
+
                     Navigator.push(
                       context,
                       MaterialPageRoute(
                         builder: (_) =>
-                            WriteGameLevel1_3Page(childId: widget.childId),
+                            WriteGameLevel1_3Page(
+                              childId: widget.childId,
+                              resultId: resultId,
+                            ),
                       ),
                     );
                   },
                 ),
 
-                // 도형 (우하)
+                // 블록 (우하) -> write_game_1_4.dart (FR_WG_004)
                 _ObjectTile(
-                  id: 'shapes',
+                  id: 'block',
                   rect: Rect.fromLTWH(
                     c.maxWidth - 260,
                     c.maxHeight - 240,
@@ -95,90 +141,45 @@ class _WriteGameMainPageState extends State<WriteGameMainPage> {
                   ),
                   imageAsset:
                       'assets/img/contents/gameWrite/write_game_1_4.png',
-                  onTap: () {
+                  onTap: () async {
+                    FruitState.instance
+                      ..setStage(WriteGameMainPage.stageId)
+                      ..setFruit('FR_WG_004');
+
+                    final resultId = await ChildGameApi.startWritingGame();
+                    if (resultId == null) {
+                      _showSnack('⚠️ 입장할 수 없는 열매입니다.');
+                      return;
+                    }
+
+                    FruitState.instance.setResult(resultId);
+
                     Navigator.push(
                       context,
                       MaterialPageRoute(
                         builder: (_) =>
-                            WriteGameLevel1_4Page(childId: widget.childId),
+                            WriteGameLevel1_4Page(
+                              childId: widget.childId,
+                              resultId: resultId,
+                            ),
                       ),
                     );
                   },
-                ),
-
-                // 중앙 버튼 영역
-                Positioned.fill(
-                  child: Center(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        // 🔵 메인2 이동 버튼
-                        ElevatedButton(
-                          onPressed: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => WriteGameMain2Page(
-                                  childId: widget.childId,
-                                ),
-                              ),
-                            );
-                          },
-                          style: ElevatedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 24,
-                              vertical: 14,
-                            ),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(14),
-                            ),
-                          ),
-                          child: const Text(
-                            '다음 메인으로 가기',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        // 🟢 메인3 이동 버튼 (추가됨)
-                        ElevatedButton(
-                          onPressed: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => WriteGameMain3Page(
-                                  childId: widget.childId,
-                                ),
-                              ),
-                            );
-                          },
-                          style: ElevatedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 24,
-                              vertical: 14,
-                            ),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(14),
-                            ),
-                          ),
-                          child: const Text(
-                            '쓰기게임 메인3로 가기',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
                 ),
               ],
             );
           },
         ),
+      ),
+    );
+  }
+  // SnackBar 헬퍼
+  void _showSnack(String msg) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(msg),
+        backgroundColor: Colors.brown.shade400,
+        duration: const Duration(seconds: 2),
       ),
     );
   }

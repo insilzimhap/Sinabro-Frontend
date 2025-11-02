@@ -6,11 +6,18 @@ import 'package:sinabro/main/gameView/writeGame/page/level2/write_game_2_1.dart'
 import 'package:sinabro/main/gameView/writeGame/page/level2/write_game_2_2.dart';
 import 'package:sinabro/main/gameView/writeGame/page/level2/write_game_2_3.dart';
 
+// 열매ID, 게임 api
+import 'package:sinabro/main/gameView/writeGame/api/fruit_state.dart';
+import 'package:sinabro/main/gameView/writeGame/api/child_game_api.dart';
+
 class WriteGameMain2Page extends StatelessWidget {
   const WriteGameMain2Page({super.key, required this.childId});
   final String childId;
 
+  
+
   static const String routeName = '/write/game/hub2';
+  static const String stageId = 'ST011'; // ✅ 쓰기게임 나무2(Stage 2)
 
   // 에셋 경로
   static const _dir = 'assets/img/contents/gameWrite/';
@@ -92,46 +99,96 @@ class WriteGameMain2Page extends StatelessWidget {
                   ),
                 ),
 
-                // 왼쪽 주머니 → write_game_2_1.dart
+                // 왼쪽 주머니 → write_game_2_1.dart (FR_WG_005)
                 _BagButton(
                   rect: leftBagRect,
                   imageAsset: _bagLeft,
                   semanticLabel: '왼쪽 과자 주머니',
-                  onTap: () {
+                  onTap: () async {
+                    // ✅ fruitId + stageId 저장
+                    FruitState.instance
+                      ..setStage(stageId)
+                      ..setFruit('FR_WG_005');
+
+                    // start API 호출
+                    final resultId = await ChildGameApi.startWritingGame();
+                    if (resultId == null) {
+                      _showSnack(context, '⚠️ 입장할 수 없는 열매입니다.');
+                      return;
+                    }
+                    // ✅ 저장해둠 → 다음 페이지에서 사용
+                    FruitState.instance.setResult(resultId);
+                    
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (_) => WriteGameLevel2_1Page(childId: childId),
+                        builder: (_) => WriteGameLevel2_1Page(
+                          childId: childId,
+                          resultId: resultId,
+                        ),
                       ),
                     );
                   },
                 ),
 
-                // 오른쪽 위 주머니 → write_game_2_2.dart
+                // 오른쪽 위 주머니 → write_game_2_2.dart (FR_WG_006)
                 _BagButton(
                   rect: rightTopBagRect,
                   imageAsset: _bagRightTop,
                   semanticLabel: '오른쪽 위 과자 주머니',
-                  onTap: () {
+                  onTap: () async {
+                    FruitState.instance  // ✅ fruitId + stageId 저장
+                      ..setStage(stageId)
+                      ..setFruit('FR_WG_006');
+
+                    // start API 호출
+                    final resultId = await ChildGameApi.startWritingGame();
+                    if (resultId == null) {
+                      _showSnack(context, '⚠️ 입장할 수 없는 열매입니다.');
+                      return;
+                    }
+                    // ✅ 저장해둠 → 다음 페이지에서 사용
+                    FruitState.instance.setResult(resultId);
+
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (_) => WriteGameLevel2_2Page(childId: childId),
+                        builder: (_) => WriteGameLevel2_2Page(
+                          childId: childId,
+                          resultId: resultId,
+                        ),
                       ),
                     );
                   },
                 ),
 
-                // 오른쪽 아래 주머니 → write_game_2_3.dart
+                // 오른쪽 아래 주머니 → write_game_2_3.dart (FR_WG_007)
                 _BagButton(
                   rect: rightBottomBagRect,
                   imageAsset: _bagRightBottom,
                   semanticLabel: '오른쪽 아래 과자 주머니',
-                  onTap: () {
+                  onTap: () async {
+                    FruitState.instance  // ✅ fruitId + stageId 저장
+                      ..setStage(stageId)
+                      ..setFruit('FR_WG_007');
+
+                    // start API 호출
+                    final resultId = await ChildGameApi.startWritingGame();
+                    if (resultId == null) {
+                      _showSnack(context, '⚠️ 입장할 수 없는 열매입니다.');
+                      return;
+                    }
+
+                    // ✅ 저장해둠 → 다음 페이지에서 사용
+                    FruitState.instance.setResult(resultId);
+                    
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (_) => WriteGameLevel2_3Page(childId: childId),
+                        builder: (_) => WriteGameLevel2_3Page(
+                          childId: childId,
+                          resultId: resultId,
+                        ),
                       ),
                     );
                   },
@@ -140,6 +197,17 @@ class WriteGameMain2Page extends StatelessWidget {
             );
           },
         ),
+      ),
+    );
+  }
+
+  // changed: SnackBar 헬퍼 추가
+  void _showSnack(BuildContext context, String msg) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(msg),
+        backgroundColor: Colors.brown.shade400,
+        duration: const Duration(seconds: 2),
       ),
     );
   }
@@ -191,4 +259,6 @@ class _BagButtonState extends State<_BagButton> {
       ),
     );
   }
+
+  
 }

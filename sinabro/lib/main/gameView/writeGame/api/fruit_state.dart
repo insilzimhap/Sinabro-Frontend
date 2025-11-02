@@ -9,6 +9,13 @@ class FruitState extends ChangeNotifier {
   String? _fruitId;
   String? get fruitId => _fruitId;
 
+  String? _stageId; // stageId 필드 추가
+  String? get stageId => _stageId; // getter 추가
+
+  String? _resultId; // resultId 추가
+  String? get resultId => _resultId;
+
+
   /// 사과 클릭 시 설정
   void setFruit(String id) {
     _fruitId = id;
@@ -20,6 +27,22 @@ class FruitState extends ChangeNotifier {
   void clear() {
     debugPrint('[FruitState] clear');
     _fruitId = null;
+    _stageId = null;
+    _resultId = null;
+    notifyListeners();
+  }
+
+  // changed+추가
+  void setResult(String id) {
+    _resultId = id;
+    debugPrint('[FruitState] setResult → $id');
+    notifyListeners();
+  }
+
+  /// 🌳 스테이지 선택 시 설정
+  void setStage(String id) { // changed: 새 메서드 추가
+    _stageId = id;
+    debugPrint('[FruitState] setStage → $id');
     notifyListeners();
   }
 }

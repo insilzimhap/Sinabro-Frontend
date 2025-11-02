@@ -63,8 +63,8 @@ class _ListenGameTransitionState extends State<ListenGameTransition>
               scale: _scale,
               child: Image.asset(
                 "assets/img/contents/gameListen/transition.png",
-                width: 200,
-                height: 200,
+                width: 300,
+                height: 300,
               ),
             ),
             const SizedBox(height: 24),

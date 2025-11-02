@@ -10,7 +10,7 @@ class ChildState extends ChangeNotifier {
 
   void setChild(String id) {
     _childId = id;
-    debugPrint('[ChildState] setChild → $id');
+    debugPrint('[ChildState] 현재 로그인한 자녀 ID: $id');
     notifyListeners();
   }
 
