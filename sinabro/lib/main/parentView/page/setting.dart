@@ -372,6 +372,7 @@ class _SettingsPageState extends State<SettingsPage> {
     );
   }
 
+
   // (파일 1의 기존 다이얼로그)
   Future<bool?> _showConfirmDialog({
     required String title,
@@ -673,6 +674,7 @@ class _SettingsPageState extends State<SettingsPage> {
                               borderRadius: BorderRadius.circular(10),
                             ),
                           ),
+
                           child: Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 22),
                             child: _saving // 저장 중 로딩 인디케이터
@@ -690,6 +692,7 @@ class _SettingsPageState extends State<SettingsPage> {
                                     '저장하기',
                                     style: TextStyle(color: Colors.white),
                                   ),
+
                           ),
                         ),
                       ),

@@ -1,4 +1,8 @@
 // lib/main/studyView/listenStudy/page/level1/animals/animal_study_entry.dart
+// 듣기 학습 레벨 1 (동물) - 열매 3,4,5 api 연동 완료
+import 'dart:convert';
+import 'package:sinabro/common/auth_client.dart';
+import 'package:sinabro/config.dart';
 
 import 'package:flutter/material.dart';
 import 'package:sinabro/main/studyView/common/layout/study_back_layout.dart';
@@ -36,9 +40,17 @@ class _AnimalStudyEntryState extends State<AnimalStudyEntry> {
   int _currentAnimalIndex = 0;
   bool _isLoading = true;
 
+  // ⭐️ [추가] API 호출 클라이언트 및 학습 시작 시간
+  final AuthClient _authClient = AuthClient();
+  late final DateTime _startTime;
+
   @override
   void initState() {
     super.initState();
+
+    // ⭐️ [추가] 학습 시작 시간 기록
+    _startTime = DateTime.now();
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadGroupData();
     });
@@ -92,8 +104,51 @@ class _AnimalStudyEntryState extends State<AnimalStudyEntry> {
       });
     } else {
       // 모든 동물 학습 완료 -> 팝업 호출
+
+      // ⭐️ [추가] 1. 백엔드에 완료 API 호출 (팝업 띄우기 전)
+      _completeStudy();
+
       // ✅ [수정] 파라미터 대신 widget.childId 사용
       showApplePopup(context, isGold: widget.isGold, childId: widget.childId);
+    }
+  }
+
+  // ⭐️ [신규 추가] 학습 완료 API 호출 함수
+  Future<void> _completeStudy() async {
+    // 1. 학습 시간 계산
+    final int timeSpentSecs = DateTime.now().difference(_startTime).inSeconds;
+
+    // 2. DTO (JSON Body) 구성
+    //    (백엔드 StudyCompletionDto와 필드명 일치 확인)
+    final body = jsonEncode({
+      'childId': widget.childId,
+      'fruitId': widget.fruitId, // 예: "FR_LS_003"
+      'isCompleted': true,
+      'timeSpentSecs': timeSpentSecs,
+    });
+
+  // 3. API 엔드포인트
+    //    (요약본에 명시된 '/api/study/listening/complete' 사용)
+    final uri = Uri.parse('$baseUrl/api/study/listening/complete');
+
+  // 4. API 호출
+    try {
+      debugPrint('[AnimalStudyEntry] 듣기 학습 완료 API 호출: $body');
+      final response = await _authClient.post(
+        uri,
+        headers: {'Content-Type': 'application/json'},
+        body: body,
+      );
+
+      if (response.statusCode == 200) {
+        debugPrint('[AnimalStudyEntry] 듣기 학습 완료 처리 성공 (fruitId: ${widget.fruitId})');
+      } else {
+        // 백엔드에서 오류가 발생한 경우
+        debugPrint('[AnimalStudyEntry] 학습 완료 처리 실패: (${response.statusCode}) ${response.body}');
+      }
+    } catch (e) {
+      // 네트워크 오류 등 예외 발생
+      debugPrint('[AnimalStudyEntry] 학습 완료 API 호출 중 예외 발생: $e');
     }
   }
 

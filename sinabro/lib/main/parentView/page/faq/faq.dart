@@ -1,11 +1,12 @@
 /*
- * 파일: lib/main/parentView/page/faq_page.dart (FaqPage)
+ * 파일: lib/main/parentView/page/faq.dart (FaqPage)
  * 개요: 부모용 문의사항 목록 화면.
  * @ 채영: JWT+api 연결 완료
  * @연수: 언어팩 지원을 위해 수정중 // ✨
  */
-import 'dart:convert';
 import 'package:flutter/material.dart';
+// ⭐️ [수정] sub 브랜치의 import 사용 (API 연동)
+import 'dart:convert';
 import 'package:sinabro/common/auth_client.dart';
 import 'package:sinabro/config.dart';
 import 'package:sinabro/main/parentView/layout/parent_layout.dart';
@@ -13,6 +14,7 @@ import 'package:sinabro/main/parentView/page/faq/faq_write.dart';
 import 'package:sinabro/main/parentView/widget/translated_text.dart'; // ✨
 
 /* ---------------- 모델 ---------------- */
+// ⭐️ [수정] sub 브랜치의 API 연동 모델 사용
 
 /// 목록 행 데이터 (답변 여부만 상태로 표시)
 class InquiryRow {
@@ -98,6 +100,7 @@ class FaqPage extends StatefulWidget {
 }
 
 class _FaqPageState extends State<FaqPage> {
+  // ⭐️ [수정] sub 브랜치의 API 연동 상태 변수 사용
   final List<InquiryRow> _rows = [];
   final Map<String, InquiryDetail> _detailCache = {};
   int _page = 0;
@@ -105,7 +108,7 @@ class _FaqPageState extends State<FaqPage> {
   bool _hasNext = true;
   bool _isLoadingList = false;
   String? _loadingDetailId;
-  int _openIndex = -1;
+  int _openIndex = -1; // ⭐️ ExpansionPanelList.radio는 이게 필요 없음 (나중에 정리)
 
   String? _err;
   bool _ready = false;
@@ -200,6 +203,11 @@ class _FaqPageState extends State<FaqPage> {
   // --------------- UI -------------------
   @override
   Widget build(BuildContext context) {
+    // ⭐️ [수정] sub 브랜치의 build 로직 (에러/로딩 처리) 사용
+    
+    // ⭐️ 키보드 올라왔을 때 하단 여백 계산 (HEAD 코드에서 가져옴)
+    final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+    
     if (_err != null) {
       return ParentLayout(
         activeMenu: '문의사항',
@@ -219,9 +227,12 @@ class _FaqPageState extends State<FaqPage> {
     }
 
     if (!_ready) {
+      // ⭐️ [수정] Scaffold로 감싸서 ParentLayout 없이 로딩 표시 (sub 코드)
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
-
+    
+    // ⭐️ [수정] HEAD 브랜치의 ParentLayout + Column 구조와
+    //           sub 브랜치의 '문의하기' 버튼 로직 결합
     return ParentLayout(
       activeMenu: '문의사항',
       parentUserId: widget.parentUserId,
@@ -231,14 +242,20 @@ class _FaqPageState extends State<FaqPage> {
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 980),
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 20, 16, 24),
+              // 하단 여백에 키보드/안전영역 반영
+              padding: EdgeInsets.fromLTRB(16, 20, 16, bottomInset + 24),
               child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
+                  // ✅ 상단 고정 헤더
                   _headerBar(),
                   const SizedBox(height: 12),
-                  // ✨ Expanded로 감싸서 남은 공간 모두 차지하도록 수정
+                  
+                  // ✨ Expanded로 감싸서 남은 공간 모두 차지 (sub 코드)
                   Expanded(child: _listCard()),
                   const SizedBox(height: 12),
+                  
+                  // '문의하기' 버튼 (sub 코드)
                   Align(
                     alignment: Alignment.centerRight,
                     child: SizedBox(
@@ -253,8 +270,9 @@ class _FaqPageState extends State<FaqPage> {
                               ),
                             ),
                           );
+                          // ⭐️ [수정] sub 코드: 문의 등록 후 목록 새로고침
                           if (created == true && mounted) {
-                            await _loadFirstPage();
+                            await _loadFirstPage(); 
                           }
                         },
                         style: FilledButton.styleFrom(
@@ -283,6 +301,7 @@ class _FaqPageState extends State<FaqPage> {
     );
   }
 
+  // 상단 녹색 헤더(고정)
   Widget _headerBar() {
     return Container(
       height: 72,
@@ -305,6 +324,7 @@ class _FaqPageState extends State<FaqPage> {
   }
 
   Widget _listCard() {
+    // ⭐️ [수정] sub 브랜치: 목록 비었을 때 처리
     if (_rows.isEmpty) {
       return Container(
         width: double.infinity,
@@ -321,6 +341,8 @@ class _FaqPageState extends State<FaqPage> {
         ),
       );
     }
+    
+    // ⭐️ [수정] sub 브랜치: API 데이터(_rows)로 ExpansionPanelList 생성
     return Card(
       elevation: 1,
       clipBehavior: Clip.antiAlias,
@@ -332,11 +354,12 @@ class _FaqPageState extends State<FaqPage> {
         elevation: 0,
         expandIconColor: Colors.grey[700],
         animationDuration: const Duration(milliseconds: 200),
-        children: _rows.map((row) {
+        children: _rows.map((row) { // ⭐️ items -> _rows
           return ExpansionPanelRadio(
-            value: row.id,
+            value: row.id, // ⭐️ item.id -> row.id
             canTapOnHeader: true,
-            headerBuilder: (context, isExpanded) => _rowHeader(row),
+            headerBuilder: (context, isExpanded) => _rowHeader(row), // ⭐️ item -> row
+            // ⭐️ [수정] sub 브랜치: 상세 내용 비동기 로드
             body: FutureBuilder<InquiryDetail?>(
               future: _loadDetail(row.id),
               builder: (context, snap) {
@@ -352,7 +375,7 @@ class _FaqPageState extends State<FaqPage> {
                     child: TranslatedText('상세를 불러올 수 없습니다.'), // ✨
                   );
                 }
-                return _rowBody(row, snap.data!);
+                return _rowBody(row, snap.data!); // ⭐️ item -> row, detail
               },
             ),
           );
@@ -361,8 +384,9 @@ class _FaqPageState extends State<FaqPage> {
     );
   }
 
-  Widget _rowHeader(InquiryRow row) {
-    final isAnswered = row.status == '답변 완료';
+  // ⭐️ [수정] sub 브랜치: _InquiryItem 대신 InquiryRow 사용
+  Widget _rowHeader(InquiryRow item) { // ⭐️ _InquiryItem -> InquiryRow
+    final isAnswered = item.status == '답변 완료'; // ⭐️ enum -> String
     return Container(
       color: Colors.white,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
@@ -373,7 +397,7 @@ class _FaqPageState extends State<FaqPage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  row.title,
+                  item.title,
                   style: const TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.w900,
@@ -382,7 +406,8 @@ class _FaqPageState extends State<FaqPage> {
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  '${row.author}   ${_dateLabel(row.createdAt)}',
+                  // ⭐️ item.date -> item.createdAt
+                  '${item.author}   ${_dateLabel(item.createdAt)}', 
                   style: const TextStyle(fontSize: 12, color: Colors.black54),
                 ),
               ],
@@ -410,6 +435,7 @@ class _FaqPageState extends State<FaqPage> {
     );
   }
 
+  // ⭐️ [수정] sub 브랜치: _InquiryItem 대신 InquiryRow, InquiryDetail 사용
   Widget _rowBody(InquiryRow row, InquiryDetail detail) {
     final isAnswered = row.status == '답변 완료';
     return Column(
@@ -419,11 +445,11 @@ class _FaqPageState extends State<FaqPage> {
           color: const Color(0xFFF7F7F7),
           padding: const EdgeInsets.fromLTRB(16, 14, 16, 18),
           child: Text(
-            detail.content,
+            detail.content, // ⭐️ item.question -> detail.content
             style: const TextStyle(fontSize: 15, height: 1.5),
           ),
         ),
-        if (isAnswered && detail.reply != null) ...[
+        if (isAnswered && detail.reply != null) ...[ // ⭐️ null 체크 추가
           const Divider(height: 1, thickness: 1, color: Color(0xFFE9ECEF)),
           Container(
             color: const Color(0xFFF1F5F9),
@@ -433,7 +459,7 @@ class _FaqPageState extends State<FaqPage> {
               children: [
                 Row(
                   children: [
-                    // ✨ 동적 텍스트 번역
+                    // ✨ 동적 텍스트 번역 (sub 코드)
                     Wrap(
                       crossAxisAlignment: WrapCrossAlignment.center,
                       spacing: 4,
@@ -456,6 +482,7 @@ class _FaqPageState extends State<FaqPage> {
                     ),
                     const SizedBox(width: 8),
                     Text(
+                      // ⭐️ item.answerDate -> detail.reply!.createdAt
                       '·  ${_dateLabel(detail.reply!.createdAt)}',
                       style: const TextStyle(
                         fontSize: 12,
@@ -466,7 +493,7 @@ class _FaqPageState extends State<FaqPage> {
                 ),
                 const SizedBox(height: 10),
                 Text(
-                  detail.reply!.content,
+                  detail.reply!.content, // ⭐️ item.answer -> detail.reply!.content
                   style: const TextStyle(fontSize: 15, height: 1.5),
                 ),
               ],
@@ -480,3 +507,5 @@ class _FaqPageState extends State<FaqPage> {
   String _dateLabel(DateTime d) =>
       '${d.year.toString().padLeft(4, '0')}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
 }
+
+// ⭐️ [수정] HEAD 브랜치의 더미 데이터용 모델(_InquiryItem, InquiryStatus) 삭제
