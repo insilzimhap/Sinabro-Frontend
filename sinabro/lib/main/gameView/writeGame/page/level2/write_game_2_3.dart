@@ -501,17 +501,19 @@ class _WriteGameLevel2_3PageState extends State<WriteGameLevel2_3Page> {
   /// Selvy 후보셋을 현재 자음 하나로 고정
   Future<void> _applyCandidate() async {
     try {
-      final isConsonant = current.type == _TargetType.consonant;
-      final typeLabel =
-        current.type == _TargetType.consonant ? "consonant" : "vowel";
+      debugPrint('🟡 [Selvy] 후보셋 적용 시작');
+      // ✅ Selvy 완전 재초기화 (문제별로 다시 셋팅)
+      await _canvasKey.currentState?.reinitializeSelvy();
 
-      debugPrint('[2-3] 현재 문제: ${current.char} → 인식 모드=$typeLabel');
+      // 🕒 딜레이 추가 (언어 버퍼 교체 대기)
+      await Future.delayed(const Duration(milliseconds: 120));
 
-      // 🔥 [필수 수정]: setLanguage를 통해 인식 타입(1:자음, 2:모음)을 명시
-      await SelvyRecognizer.setLanguage(0, isConsonant ? 1 : 2); 
+      await SelvyRecognizer.clearInk(); // 버퍼 비우기
 
+      //debugPrint('🟡🟢 [Selvy] reinitialize 완료');
+      //Selvy 후보셋 설정
       await SelvyRecognizer.setCandidateSet([current.char]);
-      debugPrint('[2-3] Selvy 모드/후보셋 설정 완료 → [$typeLabel | ${current.char}]');
+      debugPrint('🎯 [Selvy] candidateSet 적용 완료 (${current.char})');
     } catch (e) {
       debugPrint('[2-3] Selvy 후보셋/모드 설정 실패: $e');
     }
@@ -970,6 +972,7 @@ class _WriteGameLevel2_3PageState extends State<WriteGameLevel2_3Page> {
                                           ),
                                         ),
                                         SizedBox(
+                                          key: ValueKey(current.key), // ✅ 문제마다 새롭게 rebuild 유도
                                           width: pad * 0.98,
                                           height: pad * 0.98,
                                           child: WritingCanvas(

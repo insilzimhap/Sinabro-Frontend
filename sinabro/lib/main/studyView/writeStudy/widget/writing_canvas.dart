@@ -90,6 +90,11 @@ class WritingCanvasState extends State<WritingCanvas> {
     }
   }
 
+  // --- Selvy 재초기화 public wrapper --- //추가!!!!!!!!!!!!!!!!
+  Future<void> reinitializeSelvy() async {
+    await _initializeSelvy();
+  }
+
   void _onPanStart(DragStartDetails details) {
     final pos = details.localPosition;
     _currentStroke.clear(); // changed: 리스트 초기화
