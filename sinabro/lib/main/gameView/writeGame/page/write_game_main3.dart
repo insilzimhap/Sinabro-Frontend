@@ -118,10 +118,10 @@ class _WriteGameMain3PageState extends State<WriteGameMain3Page> {
             // 우리 몸 컵 -> FR_WG_011
             fruitId: 'FR_WG_011',
             isActive: progress.isFruitActive('FR_WG_011'),
-            width: 310,
-            height: 310,
+            width: 370,
+            height: 390,
             alignX: 0.8,
-            alignY: 0.72,
+            alignY: 0.844,
             onTap: (context) async {
               await _startGame(context, 'FR_WG_011', WriteGameLevel3_4Page.new);
             },

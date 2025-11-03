@@ -49,6 +49,7 @@ flutter:
     - assets/audio/tts/
     - assets/img/contents/gameWrite/end_succes.png
     - assets/img/contents/gameWrite/theme/write_game_3_cup_deactivation.png
+    - assets/img/contents/gameWrite/theme/
     - assets/img/auth/
     - assets/img/character/
     - assets/img/logo/
