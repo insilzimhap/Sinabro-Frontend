@@ -10,10 +10,10 @@ import 'package:sinabro/main/studyView/writeStudy/page/main_apple_tree.dart';
 
 // 게임 페이지 import 
 import 'package:sinabro/main/gameView/listenGame/chapter_page.dart';
-import 'package:sinabro/main/gameView/writeGame/chapter_page.dart';
+import 'package:sinabro/main/gameView/writeGame/chapter_page.dart'; // ✅ [수정 안 함] 첫 번째 코드의 import 유지
 
 // 도감 페이지 import 
-import 'package:sinabro/main/childView/page/sticker_Book.dart';
+import 'package:sinabro/main/childView/page/sticker_Book.dart'; // ✅ [수정 안 함] 첫 번째 코드의 import 유지
 
 // 한 곳에서 서버 주소 관리 (추가)
 import 'package:sinabro/config.dart';
@@ -209,6 +209,7 @@ class _LobbyChildScreenState extends State<LobbyChildScreen> {
                               ),
                             ),
                             const SizedBox(width: 18),
+                            // ✅ [수정 안 함] 첫 번째 코드의 '도감' 버튼 로직 유지
                             _pillButton(
                               label: '도감',
                               onTap: () {
@@ -309,34 +310,38 @@ class _LobbyChildScreenState extends State<LobbyChildScreen> {
                                             );
                                           }),
                                           const SizedBox(width: kColsGap),
+                                          
+                                          // ✅ [수정됨] '듣기 학습' 부분만 두 번째 코드의 내용(주석 포함)으로 교체
                                           _bigAction('듣기 학습', () {
-                                            Navigator.push(
+                                            // ⭐️ [수정] MaterialPageRoute 대신 pushNamed 사용
+                                            Navigator.pushNamed(
                                               context,
-                                              MaterialPageRoute(
-                                                builder: (_) =>
-                                                    ListenAppleSelect(
-                                                  childId: widget.childId,
-                                                ),
-                                              ),
+                                              ListenAppleSelect.routeName, // ⭐️ '/listen-apple-select' 이름표 사용
+                                              arguments: { // ⭐️ main.dart의 onGenerateRoute가 받을 수 있게 arguments로 전달
+                                                'childId': widget.childId
+                                              },
                                             );
                                           }),
+
                                         ],
                                       ),
                                       const SizedBox(height: kRowsGap),
                                       Row(
                                         children: [
+                                          // ✅ [수정 안 함] 첫 번째 코드의 '쓰기 게임' 로직 유지 (GameWriteChapterScreen)
                                           _bigAction('쓰기 게임', () {
                                             Navigator.push(
                                               context,
                                               MaterialPageRoute(
                                                 builder: (_) =>
-                                                GameWriteChapterScreen(
+                                                    GameWriteChapterScreen(
                                                   childId: widget.childId,
                                                 ),
                                               ),
                                             );
                                           }),
                                           const SizedBox(width: kColsGap),
+                                          // ✅ [수정 안 함] 첫 번째 코드의 '듣기 게임' 로직 유지
                                           _bigAction('듣기 게임', () {
                                             Navigator.push(
                                               context,
