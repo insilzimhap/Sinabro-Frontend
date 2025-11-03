@@ -72,7 +72,7 @@ final Map<String, FruitImageEntry> fruitImageMap = {
   ),
   'FR_WG_003': const FruitImageEntry(
     active: 'assets/img/contents/gameWrite/write_game_1_3.png',
-    inactive: 'assets/img/contents/gameWrite/theme/write_game_1_3_deactivation.png',
+    inactive: 'assets/img/contents/gameWrite/theme/write_game_1_3__deactivation.png',
   ),
   'FR_WG_004': const FruitImageEntry(
     active: 'assets/img/contents/gameWrite/write_game_1_4.png',
