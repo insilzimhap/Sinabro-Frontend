@@ -49,10 +49,27 @@ class _ParentLayoutState extends State<ParentLayout> {
 
   void _toggleSidebar() => setState(() => _collapsed = !_collapsed);
 
+
+    // 1. ✅ initState 추가: 초기화 로직을 이곳으로 이동합니다.
+    @override
+    void initState() {
+      super.initState();
+      // 위젯이 완전히 빌드된 후 (다음 프레임에) 안전하게 실행되도록 예약합니다.
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        final userId = widget.parentUserId;
+        if (userId != null && userId.isNotEmpty && mounted) {
+          // listen: false 로 context를 통해 Provider에 접근합니다.
+          // Provider를 통해 TranslationService 인스턴스를 가져와 호출합니다.
+          Provider.of<TranslationService>(context, listen: false)
+              .initialize(userId);
+        }
+      });
+    }
+
   @override
   Widget build(BuildContext context) {
     final green = Colors.green.shade200;
-
+    
     // Scaffold를 직접 반환합니다.
     return Scaffold(
       appBar: AppBar(
@@ -86,14 +103,14 @@ class _ParentLayoutState extends State<ParentLayout> {
       // Consumer 위젯으로 body를 감싸서 TranslationService의 상태를 감지합니다.
       body: Consumer<TranslationService>(
         builder: (context, translationService, child) {
-          // 위젯이 빌드될 때 초기화 함수를 한번만 안전하게 호출합니다.
-          final userId = widget.parentUserId;
-          if (userId != null && userId.isNotEmpty) {
-            // isInitialized 플래그를 사용하여 중복 호출 방지
-            // ⭐️ (참고) translationService.initialize(userId);
-            // ⭐️ (수정) translation_service.dart의 최신 코드는 isInitialized 체크를 알아서 함
-            translationService.initialize(userId);
-          }
+          // // 위젯이 빌드될 때 초기화 함수를 한번만 안전하게 호출합니다.
+          // final userId = widget.parentUserId;
+          // if (userId != null && userId.isNotEmpty) {
+          //   // isInitialized 플래그를 사용하여 중복 호출 방지
+          //   // ⭐️ (참고) translationService.initialize(userId);
+          //   // ⭐️ (수정) translation_service.dart의 최신 코드는 isInitialized 체크를 알아서 함
+          //   translationService.initialize(userId);
+          // }
 
           // 언어 설정을 불러오는 동안 로딩 화면을 보여줍니다.
           if (translationService.isLoading) {
