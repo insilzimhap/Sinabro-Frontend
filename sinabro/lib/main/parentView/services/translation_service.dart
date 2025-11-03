@@ -25,6 +25,7 @@ class TranslationService extends ChangeNotifier {
     // force가 false이고 이미 초기화되었거나 로딩 중이면 중복 실행 방지
     if (!force && (_isInitialized || _isLoading)) return;
 
+
     if (userId.isEmpty) {
       print('[TranslationService] 초기화 실패: userId가 없습니다.');
       return;
@@ -34,6 +35,7 @@ class TranslationService extends ChangeNotifier {
 
     try {
       final apiLang = await ParentApi.fetchParentLanguage(userId);
+
       // NOTE: 언어 설정이 변경되었을 경우, 캐시를 지우고 새로운 언어 코드를 설정합니다.
       final newLanguageCode = _mapApiLangToGoogleCode(apiLang);
 
@@ -50,6 +52,7 @@ class TranslationService extends ChangeNotifier {
       // 메뉴 항목에 대한 초기 번역 요청을 시작하여 UI가 즉시 번역되도록 합니다.
       await _fetchInitialTranslations(
           ['announcement', 'My Page', "Children's Page", 'inquiry', 'setting']);
+
     } catch (e) {
       print('[TranslationService] 언어 설정 로드 실패: $e');
       _targetLanguageCode = 'ko';
