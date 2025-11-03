@@ -19,16 +19,15 @@
 
 import 'package:flutter/material.dart';
 import 'package:audioplayers/audioplayers.dart';
-import 'package:sinabro/main/gameView/listenGame/controller/audio_helper.dart';
 import 'package:sinabro/main/gameView/listenGame/model/listen_game_content.dart';
 
-import 'package:sinabro/main/gameView/writeGame/api/child_game_api.dart';
-import 'package:sinabro/main/gameView/writeGame/api/fruit_state.dart';
+import 'package:sinabro/main/gameView/common/api/child_game_api.dart';
+import 'package:sinabro/main/gameView/common/api/fruit_state.dart';
 
 class ListenGamePage extends StatefulWidget {
-  final List<ListenGameContent>
-      gameData; // 🔹 문제 세트 (각 문제: 오디오 + 보기 이미지 + 정답 인덱스)
+  final List<ListenGameContent> gameData;           // 🔹 문제 세트 (각 문제: 오디오 + 보기 이미지 + 정답 인덱스)
   final void Function(int correctCount) onFinished; // 🔹 모든 문제 완료 후 상위로 결과 전달
+
 
   const ListenGamePage({
     super.key,
@@ -41,7 +40,7 @@ class ListenGamePage extends StatefulWidget {
 }
 
 class _ListenGamePageState extends State<ListenGamePage> {
-  int _currentIndex = 0; // 현재 문제 인덱스
+  int _currentIndex = 0;   // 현재 문제 인덱스
 
   // 선택 및 정답 처리 상태
   bool _answered = false;
@@ -65,12 +64,11 @@ class _ListenGamePageState extends State<ListenGamePage> {
     //changed-start
     _startTime = DateTime.now(); // 시작 시점 기록
     //changed-end
-    _playAudio(widget.gameData[_currentIndex].audioPath); // ✅ 첫 문제 오디오 재생
   }
 
   @override
   void dispose() {
-    AudioHelper.stopAudio(); // ✅ dispose 시 오디오 중지
+    _player.dispose();
     super.dispose();
   }
 
@@ -114,9 +112,9 @@ class _ListenGamePageState extends State<ListenGamePage> {
       _answered = true;
       _isCorrect = correct;
       if (correct) {
-        _correctCount++; // 정답 수 증가
+        _correctCount++;  // 정답 수 증가
       } else {
-        _wrongCount++; // 오답 수 증가
+        _wrongCount++;    // 오답 수 증가
       }
     });
 
@@ -151,13 +149,13 @@ class _ListenGamePageState extends State<ListenGamePage> {
         _answered = false;
         _selected = null;
       });
-      _playAudio(widget.gameData[_currentIndex].audioPath); // ✅ 다음 문제 오디오 자동 재생
     } else {
       //changed-start
       // ✅ 게임 완료 처리 (completeListeningGame)
       final endTime = DateTime.now();
-      final elapsedSecs =
-          _startTime != null ? endTime.difference(_startTime!).inSeconds : 0;
+      final elapsedSecs = _startTime != null
+          ? endTime.difference(_startTime!).inSeconds
+          : 0;
 
       final resultId = FruitState.instance.resultId;
       if (resultId != null) {
@@ -171,14 +169,16 @@ class _ListenGamePageState extends State<ListenGamePage> {
       } else {
         debugPrint('[ListenGamePage] ⚠️ resultId 없음 (complete 생략)');
       }
-      AudioHelper.stopAudio(); // ✅ 게임 종료 전 오디오 중지
+
+      
       widget.onFinished(_correctCount); // ✅ 모든 문제 완료 → 상위 Flow로 결과(정답 개수) 전달
     }
+
   }
 
   @override
   Widget build(BuildContext context) {
-    final data = widget.gameData[_currentIndex]; // 현재 문제 데이터
+    final data = widget.gameData[_currentIndex];  // 현재 문제 데이터
     final size = MediaQuery.of(context).size;
     final isTablet = size.width >= 700;
 
@@ -197,8 +197,7 @@ class _ListenGamePageState extends State<ListenGamePage> {
                 constraints: BoxConstraints(minHeight: constraints.maxHeight),
                 child: IntrinsicHeight(
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 24, vertical: 16),
+                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
                     child: Column(
                       children: [
                         // 🔹 상단 영역: 뒤로가기 + 진행 상태 표시
@@ -245,15 +244,13 @@ class _ListenGamePageState extends State<ListenGamePage> {
                             const SizedBox(width: 16),
                             // 오른쪽: 캐릭터 대사
                             ConstrainedBox(
-                              constraints:
-                                  BoxConstraints(maxWidth: dialogueMaxWidth),
+                              constraints: BoxConstraints(maxWidth: dialogueMaxWidth),
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   // 캐릭터 이름 말풍선
                                   Container(
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: 10, vertical: 6),
+                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                                     decoration: BoxDecoration(
                                       color: const Color(0xFFFFCC80),
                                       borderRadius: BorderRadius.circular(12),
@@ -269,8 +266,7 @@ class _ListenGamePageState extends State<ListenGamePage> {
                                   const SizedBox(height: 8),
                                   // 대사 텍스트
                                   Container(
-                                    padding: const EdgeInsets.symmetric(
-                                        vertical: 14, horizontal: 18),
+                                    padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 18),
                                     decoration: BoxDecoration(
                                       color: const Color(0xFFFFF3E0),
                                       borderRadius: BorderRadius.circular(16),
@@ -330,16 +326,13 @@ class _ListenGamePageState extends State<ListenGamePage> {
 
                         // 🔹 보기(선택지 3개) 영역
                         Padding(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 4, vertical: 12),
+                          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 12),
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: List.generate(3, (i) {
                               final isSelected = (_selected == i);
-                              final isCorrect =
-                                  _answered && (i == data.correctIndex);
-                              final isWrong =
-                                  _answered && isSelected && !isCorrect;
+                              final isCorrect = _answered && (i == data.correctIndex);
+                              final isWrong = _answered && isSelected && !isCorrect;
 
                               // 선택지 테두리 색상
                               Color borderColor = Colors.grey.shade400;
@@ -348,20 +341,17 @@ class _ListenGamePageState extends State<ListenGamePage> {
 
                               return Expanded(
                                 child: Container(
-                                  margin:
-                                      const EdgeInsets.symmetric(horizontal: 8),
+                                  margin: const EdgeInsets.symmetric(horizontal: 8),
                                   child: GestureDetector(
                                     onTap: () => _checkAnswer(i),
                                     child: AnimatedContainer(
-                                      duration:
-                                          const Duration(milliseconds: 250),
+                                      duration: const Duration(milliseconds: 250),
                                       width: optionBoxSize,
                                       height: optionBoxSize * 0.75,
                                       decoration: BoxDecoration(
                                         color: Colors.white,
                                         borderRadius: BorderRadius.circular(12),
-                                        border: Border.all(
-                                            color: borderColor, width: 3),
+                                        border: Border.all(color: borderColor, width: 3),
                                         boxShadow: const [
                                           BoxShadow(
                                             color: Colors.black12,
@@ -393,8 +383,7 @@ class _ListenGamePageState extends State<ListenGamePage> {
                                             child: Padding(
                                               padding: const EdgeInsets.all(10),
                                               child: Image.asset(
-                                                _normalizeImageAsset(
-                                                    data.optionImages[i]),
+                                                _normalizeImageAsset(data.optionImages[i]),
                                                 fit: BoxFit.contain,
                                                 width: optionBoxSize * 0.5,
                                                 height: optionBoxSize * 0.5,

@@ -7,11 +7,11 @@
  */
 
 import 'package:flutter/material.dart';
-import 'package:sinabro/main/gameView/writeGame/api/child_state.dart';
+import 'package:sinabro/main/gameView/common/api/child_state.dart';
 
 //changed-start
 import 'package:sinabro/main/gameView/listenGame/page/level1/level1_flow.dart';
-import 'package:sinabro/main/gameView/writeGame/api/fruit_state.dart';
+import 'package:sinabro/main/gameView/common/api/fruit_state.dart';
 //changed-end
 
 import 'package:sinabro/main/gameView/listenGame/controller/audio_helper.dart'; // ✅ 추가
