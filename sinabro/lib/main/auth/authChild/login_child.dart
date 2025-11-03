@@ -17,7 +17,7 @@ import 'dart:convert';
 import 'package:sinabro/main/childView/page/lobby_child.dart';
 import 'package:sinabro/main/childView/page/level_test_page.dart';
 import 'package:sinabro/config.dart';
-import 'package:sinabro/main/gameView/writeGame/api/child_state.dart';
+import 'package:sinabro/main/gameView/common/api/child_state.dart';
 
 class LoginChildScreen extends StatefulWidget {
   const LoginChildScreen({super.key});
