@@ -501,14 +501,20 @@ class _WriteGameLevel2_3PageState extends State<WriteGameLevel2_3Page> {
   /// Selvy 후보셋을 현재 자음 하나로 고정
   Future<void> _applyCandidate() async {
     try {
+      final isConsonant = current.type == _TargetType.consonant;
       final typeLabel =
         current.type == _TargetType.consonant ? "consonant" : "vowel";
-        
+
       debugPrint('[2-3] 현재 문제: ${current.char} → 인식 모드=$typeLabel');
+
+      // 🔥 [필수 수정]: setLanguage를 통해 인식 타입(1:자음, 2:모음)을 명시
+      await SelvyRecognizer.setLanguage(0, isConsonant ? 1 : 2); 
+
       await SelvyRecognizer.setCandidateSet([current.char]);
+      debugPrint('[2-3] Selvy 모드/후보셋 설정 완료 → [$typeLabel | ${current.char}]');
     } catch (e) {
-    debugPrint('[2-3] Selvy 후보셋 설정 실패: $e');
-    } 
+      debugPrint('[2-3] Selvy 후보셋/모드 설정 실패: $e');
+    }
   }
 
   /// ---------------------------------------------------------------------------

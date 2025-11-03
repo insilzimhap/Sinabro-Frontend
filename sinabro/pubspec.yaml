@@ -46,6 +46,8 @@ flutter:
 
   assets:
     # --- 공통 Img ---
+    - - assets/img/contents/gameWrite/end_success.png
+    
     - assets/img/auth/
     - assets/img/character/
     - assets/img/logo/
