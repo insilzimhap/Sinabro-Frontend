@@ -3,6 +3,10 @@ import 'package:sinabro/main/gameView/writeGame/page/write_game_main.dart';
 import 'package:sinabro/main/gameView/writeGame/page/write_game_main2.dart';
 import 'package:sinabro/main/gameView/writeGame/page/write_game_main3.dart';
 
+import 'package:sinabro/main/gameView/tree_progress.dart';
+import 'package:sinabro/main/gameView/tree_progress_loader.dart';
+import 'package:sinabro/main/gameView/tree_fruit_renderer.dart';
+
 /// ✏️ 쓰기 게임 챕터 선택 화면
 /// - 챕터 1~3 (=나무 1~3) 섬 선택 가능
 /// - 각 섬을 누르면 캐릭터가 이동하며 다음 단계로 전환
@@ -24,6 +28,9 @@ class _GameWriteChapterScreenState extends State<GameWriteChapterScreen>
   Offset _charPosition = const Offset(60, 520);
   late AnimationController _controller;
 
+  // ✅ TreeProgress 추가
+  late Future<TreeProgress> _progressFuture;
+
   @override
   void initState() {
     super.initState();
@@ -31,7 +38,13 @@ class _GameWriteChapterScreenState extends State<GameWriteChapterScreen>
       vsync: this,
       duration: const Duration(milliseconds: 400),
     )..forward();
+
+
+    // ✅ 쓰기게임 진행도 로드
+    _progressFuture = TreeProgressLoader.load('writing_game');
   }
+
+  
 
   @override
   void dispose() {
@@ -63,77 +76,102 @@ class _GameWriteChapterScreenState extends State<GameWriteChapterScreen>
 
     return Scaffold(
       backgroundColor: const Color(0xFFFFF7E9),
-      body: Stack(
-        children: [
-          // ────────────────────────────────
-          // 🏝️ 챕터 섬 1 (나무1=ST010)
-          Positioned(
-            left: size.width * 0.08,
-            top: size.height * 0.28,
-            child: GestureDetector(
-              onTap: () => _moveCharacterTo(
-                Offset(size.width * 0.18, size.height * 0.58),
-                WriteGameMainPage(childId: widget.childId),
-              ),
-              child: Image.asset(
-                'assets/img/contents/gameWrite/chapter/level1.png',
-                width: size.width * 0.25,
-              ),
-            ),
-          ),
 
-          // 🏝️ 챕터 섬 2 (나무2=ST011)
-          Positioned(
-            left: size.width * 0.38,
-            top: size.height * 0.28,
-            child: GestureDetector(
-              onTap: () => _moveCharacterTo(
-                Offset(size.width * 0.48, size.height * 0.58),
-                WriteGameMain2Page(childId: widget.childId),
-              ),
-              child: Image.asset(
-                'assets/img/contents/gameWrite/chapter/level2.png',
-                width: size.width * 0.25,
-              ),
-            ),
-          ),
+      body: FutureBuilder<TreeProgress>(
+        future: _progressFuture,
+        builder: (context, snapshot) {
+          if (!snapshot.hasData) {
+            return const Center(child: CircularProgressIndicator());
+          }
 
-          // 🏝️ 챕터 섬 3 (나무3=ST012)
-          Positioned(
-            right: size.width * 0.08,
-            top: size.height * 0.28,
-            child: GestureDetector(
-              onTap: () => _moveCharacterTo(
-                Offset(size.width * 0.78, size.height * 0.58),
-                WriteGameMain3Page(childId: widget.childId),
-              ),
-              child: Image.asset(
-                'assets/img/contents/gameWrite/chapter/level3.png',
-                width: size.width * 0.25,
-              ),
-            ),
-          ),
+          final progress = snapshot.data!;
+          progress.debugPrintStatus(); // ✅ 디버깅용
 
-          // 🎈 캐릭터 (토숨)
-          AnimatedPositioned(
-            duration: const Duration(milliseconds: 600),
-            left: _charPosition.dx,
-            top: _charPosition.dy,
-            child: AnimatedOpacity(
-              opacity: _isVisible ? 1 : 0,
-              duration: const Duration(milliseconds: 300),
-              child: ScaleTransition(
-                scale: Tween<double>(begin: 0.0, end: 1.0).animate(
-                  CurvedAnimation(parent: _controller, curve: Curves.easeOutBack),
-                ),
-                child: Image.asset(
-                  'assets/img/pageMain/tosoom.png',
-                  width: size.width * 0.13,
+          return Stack(
+            children: [
+              // ────────────────────────────────
+              // 🏝️ 챕터 섬 1 (나무1=ST010)
+              Positioned(
+                left: size.width * 0.08,
+                top: size.height * 0.28,
+                child: GestureDetector(
+                  onTap: progress.isStageUnlocked('ST010')
+                    ? () => _moveCharacterTo(
+                    Offset(size.width * 0.18, size.height * 0.58),
+                    WriteGameMainPage(childId: widget.childId),
+                    ) 
+                    : null, // 🔒 잠긴 상태면 터치 비활성화
+                  child: Image.asset(
+                    progress.isStageUnlocked('ST010')
+                            ? 'assets/img/contents/gameWrite/chapter/level1.png'
+                            : 'assets/img/contents/gameWrite/chapter/theme_1_deactivation.png',
+                    width: size.width * 0.25,
+                  ),
                 ),
               ),
-            ),
-          ),
-        ],
+
+              // 🏝️ 챕터 섬 2 (나무2=ST011)
+              Positioned(
+                left: size.width * 0.38,
+                top: size.height * 0.28,
+                child: GestureDetector(
+                  onTap: progress.isStageUnlocked('ST011')
+                    ? () => _moveCharacterTo(
+                      Offset(size.width * 0.48, size.height * 0.58),
+                      WriteGameMain2Page(childId: widget.childId),
+                    )
+                    : null,
+                  child: Image.asset(
+                    progress.isStageUnlocked('ST011')
+                            ? 'assets/img/contents/gameWrite/chapter/level2.png'
+                            : 'assets/img/contents/gameWrite/chapter/theme_2_deactivation.png',
+                    width: size.width * 0.25,
+                  ),
+                ),
+              ),
+
+              // 🏝️ 챕터 섬 3 (나무3=ST012)
+              Positioned(
+                right: size.width * 0.08,
+                top: size.height * 0.28,
+                child: GestureDetector(
+                  onTap: progress.isStageUnlocked('ST012')
+                    ? () => _moveCharacterTo(
+                        Offset(size.width * 0.78, size.height * 0.58),
+                        WriteGameMain3Page(childId: widget.childId),
+                      )
+                    : null,
+                  child: Image.asset(
+                    progress.isStageUnlocked('ST012')
+                            ? 'assets/img/contents/gameWrite/chapter/level3.png'
+                            : 'assets/img/contents/gameWrite/chapter/theme_3_deactivation.png',
+                    width: size.width * 0.25,
+                  ),
+                ),
+              ),
+
+              // 🎈 캐릭터 (토숨)
+              AnimatedPositioned(
+                duration: const Duration(milliseconds: 600),
+                left: _charPosition.dx,
+                top: _charPosition.dy,
+                child: AnimatedOpacity(
+                  opacity: _isVisible ? 1 : 0,
+                  duration: const Duration(milliseconds: 300),
+                  child: ScaleTransition(
+                    scale: Tween<double>(begin: 0.0, end: 1.0).animate(
+                      CurvedAnimation(parent: _controller, curve: Curves.easeOutBack),
+                    ),
+                    child: Image.asset(
+                      'assets/img/pageMain/tosoom.png',
+                      width: size.width * 0.13,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          );
+        },
       ),
     );
   }

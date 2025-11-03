@@ -10,8 +10,8 @@ import 'package:sinabro/selvy_example_view/selvy_service.dart'
 // 매핑
 import 'package:sinabro/main/gameView/writeGame/data/wg_question_map.dart';
 // 추가
-import 'package:sinabro/main/gameView/writeGame/api/fruit_state.dart';   // ✅ resultId 공유용
-import 'package:sinabro/main/gameView/writeGame/api/child_game_api.dart'; // ✅ 서버 통신용
+import 'package:sinabro/main/gameView/common/api/fruit_state.dart';   // ✅ resultId 공유용
+import 'package:sinabro/main/gameView/common/api/child_game_api.dart'; // ✅ 서버 통신용
 
 // ⬇️ AUDIO IMPORT
 import 'package:audioplayers/audioplayers.dart';
@@ -223,11 +223,26 @@ class _WriteGameLevel3_3PageState extends State<WriteGameLevel3_3Page> {
     }
   }
 
+
+  // ---------------------------------------------------------------------------
+  // 글씨 인식 결과 정규화 (_normalize)
+  String _normalize(String raw) {
+    final top =
+        raw.split('\n').first.replaceAll(RegExp(r'\[\d+\]\s*'), '').trim();
+    return top;
+  }
+
   // ---------------------------------------------------------------------------
   // [2] 채점 결과 서버 전송 (_sendChoice)
-  Future<void> _sendChoice(String word, bool isCorrect) async {
+  Future<void> _sendChoice(
+    String word, 
+    String correctChar,
+    bool isCorrect
+    ) async {
+
     if (_resultId == null) return;
-    final qid = requireWgQuestionId(vegetableQuestionMap, word, ctx: 'Stage3-3'); //changed
+    final qid = requireWgQuestionId(vegetableQuestionMap, correctChar, ctx: 'Stage3-3'); //changed
+
     try {
       await ChildGameApi.recordWritingChoice( //changed
         resultId: _resultId!, //changed
@@ -273,7 +288,10 @@ class _WriteGameLevel3_3PageState extends State<WriteGameLevel3_3Page> {
   void _onRecognizeWord(String recognized) async {
     final mine = _normalize(recognized);
     final isCorrect = mine == _targetWord;
-    await _sendChoice(mine, isCorrect); //changed
+    await _sendChoice(
+      mine, 
+      _targetWord,
+      isCorrect); //changed
 
     _results.add(isCorrect);
     if (!mounted) return;
@@ -283,45 +301,47 @@ class _WriteGameLevel3_3PageState extends State<WriteGameLevel3_3Page> {
       await _prepareProblem();
     } else {
       debugPrint('[3-3][_onRecognizeWord] 모든 문제 완료 → 서버 complete 요청 시작');
+
       final frontCount = _results.where((e) => e).length;
       final frontSuccess = frontCount >= 3;
       debugPrint('[3-3] 🎯 프론트 success=$frontSuccess (정답 $frontCount/${_problems.length})');
 
+      // 서버에 기록 (성공여부 리턴 없음)
       final serverSuccess = await _completeAndGetSuccess(); //changed
-      if (!mounted) return;
 
-      final isConsistent = (frontSuccess == serverSuccess);
-      final finalSuccess = frontSuccess && serverSuccess && isConsistent;
-      debugPrint('[3-3] ✅ 최종 success=$finalSuccess (front=$frontSuccess / server=$serverSuccess / 일치=$isConsistent)');
-      await _showEndSequence(finalSuccess);
+      // ✅ 불일치 로그 추가
+      if (serverSuccess != frontSuccess) {
+        debugPrint('⚠️ [3-3] 서버/프론트 성공 불일치 → front=$frontSuccess, server=$serverSuccess');
+      } else {
+        debugPrint('✅ [3-3] 서버/프론트 성공 일치 → front=$frontSuccess, server=$serverSuccess');
+      }
+
+
+
+      if (!mounted) return;
+      await _showEndSequence(frontSuccess, serverSuccess);
     }
   }
 
-  // ---------------------------------------------------------------------------
-  // 글씨 인식 결과 정규화 (_normalize)
-  String _normalize(String raw) {
-    final top =
-        raw.split('\n').first.replaceAll(RegExp(r'\[\d+\]\s*'), '').trim();
-    return top;
-  }
 
-  /// ✅ 최종본 아웃트로 로직
   // ---------------------------------------------------------------------------
   // 엔딩 시퀀스 (성공 / 실패 UI)
-  Future<void> _showEndSequence(bool finalSuccess) async {
-
-    // 1) 성공 배경
-    showDialog<void>(
-      context: context,
-      barrierDismissible: false,
-      builder: (_) => const _FullImageDialog(imageAsset: _OUTRO_SUCCESS_BG),
-    );
-    await Future.delayed(const Duration(milliseconds: 3000));
-    if (!mounted) return;
-    Navigator.of(context, rootNavigator: true).pop();
+  Future<void> _showEndSequence(bool frontSuccess, bool serverSuccess) async {
+    // 1) 최종 성공 판정: 기본은 프론트 기준(≥3 정답)
+    final bool finalSuccess = frontSuccess;
 
     if (finalSuccess) {
-      // 2) 팝업
+      // (A) 성공 배경 (3초)
+      showDialog<void>(
+        context: context,
+        barrierDismissible: false,
+        builder: (_) => const _FullImageDialog(imageAsset: _OUTRO_SUCCESS_BG),
+      );
+      await Future.delayed(const Duration(milliseconds: 3000));
+      if (!mounted) return;
+      Navigator.of(context, rootNavigator: true).pop();
+
+      // (B) 성공 팝업 (2.5초)
       showDialog<void>(
         context: context,
         barrierDismissible: false,
@@ -331,28 +351,25 @@ class _WriteGameLevel3_3PageState extends State<WriteGameLevel3_3Page> {
         ),
       );
 
-      // ⬇️ 성공 오디오 재생 시점 : 다이얼로그 표시 후 재생
-      WidgetsBinding.instance.addPostFrameCallback((_) async {
-        await Future.delayed(const Duration(milliseconds: 100)); // 다이얼로그 표시 지연
-        final successAudio = kLevel5CommonAssets['SUCCESS_1'];
-        if (successAudio != null) {
-          await _playAssetAudio(successAudio);
-        }
+      // 오디오 재생 (표시 직후)
+      Future.microtask(() async {
+        final s = kLevel5CommonAssets['SUCCESS_1'];
+        if (s != null) await _playAssetAudio(s);
       });
-      // ⬆️ 성공 오디오 재생 시점
 
-      // 3) 2.5초 후 메인3 이동
       await Future.delayed(const Duration(milliseconds: 2500));
       if (!mounted) return;
       Navigator.of(context, rootNavigator: true).pop();
+
+      // 다음 페이지 이동
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(
           builder: (_) => WriteGameMain3Page(childId: widget.childId),
         ),
       );
     } else {
-      // 실패
-      await showDialog<void>(
+      // 실패 다이얼로그 (버튼으로 복귀)
+      showDialog<void>(
         context: context,
         barrierDismissible: false,
         builder: (_) => _FullImageDialog(
@@ -372,10 +389,7 @@ class _WriteGameLevel3_3PageState extends State<WriteGameLevel3_3Page> {
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFFE7D3A6),
                 foregroundColor: const Color(0xFF5B3D20),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 18,
-                  vertical: 10,
-                ),
+                padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
@@ -390,15 +404,11 @@ class _WriteGameLevel3_3PageState extends State<WriteGameLevel3_3Page> {
         ),
       );
 
-      // ⬇️ 실패 오디오 재생 시점 : 다이얼로그 표시 후 재생
-      WidgetsBinding.instance.addPostFrameCallback((_) async {
-        await Future.delayed(const Duration(milliseconds: 100)); // 다이얼로그 표시 지연
-        final failAudio = kLevel5CommonAssets['FAIL_1'];
-        if (failAudio != null) {
-          await _playAssetAudio(failAudio);
-        }
+      // 실패 오디오 (표시 직후)
+      Future.microtask(() async {
+        final f = kLevel5CommonAssets['FAIL_1'];
+        if (f != null) await _playAssetAudio(f);
       });
-      // ⬆️ 실패 오디오 재생 시점
     }
   }
 

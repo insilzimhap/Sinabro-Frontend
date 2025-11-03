@@ -4,33 +4,30 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:sinabro/main/studyView/writeStudy/widget/writing_canvas.dart';
 import 'package:sinabro/main/gameView/writeGame/page/write_game_main3.dart';
-import 'package:sinabro/selvy_example_view/selvy_service.dart'
-    show SelvyRecognizer;
+import 'package:sinabro/selvy_example_view/selvy_service.dart' show SelvyRecognizer;
 
-// 매핑
+// 매핑/API
 import 'package:sinabro/main/gameView/writeGame/data/wg_question_map.dart';
-// API
-import 'package:sinabro/main/gameView/writeGame/api/write_game_api.dart';
-// ⬇️ AUDIO IMPORT
+import 'package:sinabro/main/gameView/common/api/child_game_api.dart';
+import 'package:sinabro/main/gameView/common/api/fruit_state.dart';
+
+// 오디오
 import 'package:audioplayers/audioplayers.dart';
 
-// ⬇️ AUDIO ASSET DEFINITIONS
-// 오디오 플레이어 사용 시 위치: 공통 오디오 에셋 경로
+/// ✅ 통일 플로우 스위치: true면 3-1과 같은 "단일 캔버스 · 단어 인식" 흐름.
+///    false로 바꾸면 파일 하단에 남겨둔 기존 멀티-타일 로직 경로로 동작.
+const bool kUnifiedFlow = true;
+
+/* ───────────── 에셋 경로 ───────────── */
 const String kGameWriteAudioDir = 'audio/tts/gameWrite/level3/';
-// 오디오 플레이어 사용 시 위치: 학습 단어 오디오 에셋 경로
 const String kStudyWriteAudioDir = 'audio/tts/studyWrite/level3/';
 
-// 5세 쓰기 게임 공통 대사 에셋
 const Map<String, String> kLevel5CommonAssets = {
-  // 구분: 공통 | 대사: 과연 이것도 쓸 수 있을까? 글글글...
   'COMMON_1': kGameWriteAudioDir + 'write5_game_common_1.mp3',
-  // 구분: 공통 | 대사: 대단하군...이렇게 잘할 줄이야!
   'SUCCESS_1': kGameWriteAudioDir + 'write5_game_success_1.mp3',
-  // 구분: 공통 | 대사: 아쉽게도 퀴즈를 맞추지 못했네
   'FAIL_1': kGameWriteAudioDir + 'write5_game_fail_1.mp3',
 };
 
-// 5세 쓰기 학습 신체 단어 에셋
 const Map<String, String> kLevel5BodyAssets = {
   '눈': kStudyWriteAudioDir + 'body_eye.mp3',
   '코': kStudyWriteAudioDir + 'body_nose.mp3',
@@ -39,81 +36,46 @@ const Map<String, String> kLevel5BodyAssets = {
   '손': kStudyWriteAudioDir + 'body_hand.mp3',
   '발': kStudyWriteAudioDir + 'body_foot.mp3',
 };
-// ⬆️ AUDIO ASSET DEFINITIONS
 
 const _IMG_DIR = 'assets/img/contents/gameWrite/';
-
-// 아웃트로 배경
 const _OUTRO_SUCCESS_BG = '${_IMG_DIR}outro_success.png';
 const _OUTRO_FAIL_BG = '${_IMG_DIR}outro_fail.png';
 const _CLAP = '${_IMG_DIR}clap.png';
-
-// 상단 얼굴/말풍선 이미지
 const _PROF_HEAD = '${_IMG_DIR}write_game_professor_head.png';
 const _BALLOON = '${_IMG_DIR}text_balloon1.png';
 
+/* ───────────── 모델 ───────────── */
 class _BodyItem {
   final String key;
-  final String nameKo; // 매핑 key로 사용
+  final String nameKo; // 매핑 key
   final String image;
   final List<String> syllables;
-  // final String? audio; // (혼란 방지를 위해 주석 처리됨)
   const _BodyItem({
     required this.key,
     required this.nameKo,
     required this.image,
     required this.syllables,
-    // this.audio, // (혼란 방지를 위해 주석 처리됨)
   });
-
   String get word => syllables.join();
 }
 
 const List<_BodyItem> _POOL = [
-  _BodyItem(
-    key: 'eye',
-    nameKo: '눈',
-    image: '${_IMG_DIR}eye.png',
-    syllables: ['눈'],
-  ),
-  _BodyItem(
-    key: 'nose',
-    nameKo: '코',
-    image: '${_IMG_DIR}nose.png',
-    syllables: ['코'],
-  ),
-  _BodyItem(
-    key: 'mouth',
-    nameKo: '입',
-    image: '${_IMG_DIR}mouth.png',
-    syllables: ['입'],
-  ),
-  _BodyItem(
-    key: 'ear',
-    nameKo: '귀',
-    image: '${_IMG_DIR}ear.png',
-    syllables: ['귀'],
-  ),
-  _BodyItem(
-    key: 'hand',
-    nameKo: '손',
-    image: '${_IMG_DIR}hand.png',
-    syllables: ['손'],
-  ),
-  _BodyItem(
-    key: 'foot',
-    nameKo: '발',
-    image: '${_IMG_DIR}foot.png',
-    syllables: ['발'],
-  ),
+  _BodyItem(key: 'eye',  nameKo: '눈', image: '${_IMG_DIR}eye.png',  syllables: ['눈']),
+  _BodyItem(key: 'nose', nameKo: '코', image: '${_IMG_DIR}nose.png', syllables: ['코']),
+  _BodyItem(key: 'mouth',nameKo: '입', image: '${_IMG_DIR}mouth.png',syllables: ['입']),
+  _BodyItem(key: 'ear',  nameKo: '귀', image: '${_IMG_DIR}ear.png',  syllables: ['귀']),
+  _BodyItem(key: 'hand', nameKo: '손', image: '${_IMG_DIR}hand.png', syllables: ['손']),
+  _BodyItem(key: 'foot', nameKo: '발', image: '${_IMG_DIR}foot.png', syllables: ['발']),
 ];
 
+/* ───────────── 페이지 ───────────── */
 class WriteGameLevel3_4Page extends StatefulWidget {
   const WriteGameLevel3_4Page({
-    super.key, 
+    super.key,
     required this.childId,
-    required this.resultId
-    });
+    required this.resultId,
+  });
+
   final String childId;
   final String? resultId;
 
@@ -124,63 +86,68 @@ class WriteGameLevel3_4Page extends StatefulWidget {
 }
 
 class _WriteGameLevel3_4PageState extends State<WriteGameLevel3_4Page> {
+  // 기존 멀티-타일 유지용(삭제 금지)
   final List<GlobalKey<WritingCanvasState>> _canvasKeys = [];
   List<Completer<String>> _recognizeWaiters = [];
 
-  // ⬇️ AUDIO PLAYER INSTANCE
+  // 단일 캔버스 키 (통일 흐름)
+  final _singleCanvasKey = GlobalKey<WritingCanvasState>();
+
   final AudioPlayer _audioPlayer = AudioPlayer();
+  final _sw = Stopwatch();
 
   late List<_BodyItem> _problems;
   int _index = 0;
   final List<bool> _results = [];
+
   String? _resultId;
-  final _sw = Stopwatch();
+  bool _booting = true;
 
   _BodyItem get current => _problems[_index];
 
-  // ⬇️ AUDIO HELPER FUNCTION
+  /* ───────── 오디오 도우미 ───────── */
   Future<void> _playAssetAudio(String assetPath) async {
     if (!mounted) return;
-    await _audioPlayer.stop(); // 기존 오디오 중지
+    await _audioPlayer.stop();
     await _audioPlayer.play(AssetSource(assetPath));
-    debugPrint('🎶 오디오 재생 시작 (3-4): $assetPath');
+    debugPrint('🎶 오디오 재생 (3-4): $assetPath');
   }
 
+  /* ───────── 라이프사이클 ───────── */
   @override
   void initState() {
     super.initState();
-    _startGame();
-    // ⬇️ 공통 오디오 재생
+    _initAndStart();
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       final commonAudio = kLevel5CommonAssets['COMMON_1'];
-      if (commonAudio != null) {
-        await _playAssetAudio(commonAudio);
-      }
+      if (commonAudio != null) await _playAssetAudio(commonAudio);
     });
   }
 
   @override
   void dispose() {
     _sw.stop();
-    // ⬇️ AUDIO PLAYER DISPOSE
     _audioPlayer.dispose();
     super.dispose();
   }
 
-  Future<void> _startGame() async {
+  Future<void> _initAndStart() async {
     try {
-      _resultId = await WriteGameApi.start(
-        childId: widget.childId,
-        stageCode: 'FR_WG_011', // 몸 랜덤 스테이지 코드
-      );
+      _resultId = widget.resultId ?? FruitState.instance.resultId;
+      if (_resultId == null) throw Exception('resultId 없음');
+
+      _resetGame();
       _sw.start();
+      debugPrint('[3-4] 🎯 게임 시작 → ${DateTime.now()}');
     } catch (e) {
-      debugPrint('[3-4] start error: $e');
-      _resultId = null;
+      debugPrint('[3-4] 초기화 실패: $e');
+      if (mounted) Navigator.of(context).pop();
+    } finally {
+      if (mounted) setState(() => _booting = false);
     }
-    _resetGame();
   }
 
+  /* ───────── 문제 셔플 ───────── */
   void _resetGame() {
     final rnd = Random();
     _problems = [..._POOL]..shuffle(rnd);
@@ -193,41 +160,127 @@ class _WriteGameLevel3_4PageState extends State<WriteGameLevel3_4Page> {
     });
   }
 
+  /* ───────── 문제 준비 ───────── */
   Future<void> _prepareProblem() async {
+    // 통일 흐름: 단일 캔버스 후보셋은 "단어" 전체
+    try {
+      if (kUnifiedFlow) {
+        await SelvyRecognizer.setCandidateSet([current.word]);
+      } else {
+        // 기존 동작(보존): 음절 후보셋
+        await SelvyRecognizer.setCandidateSet(current.syllables);
+      }
+    } catch (_) {}
+
+    // 단일/멀티 모두 캔버스 비우기
+    await _singleCanvasKey.currentState?.clearCanvas();
+
+    // (보존용) 기존 멀티-타일 키 구성
     _canvasKeys
       ..clear()
-      ..addAll(
-        List.generate(
-          current.syllables.length,
-          (_) => GlobalKey<WritingCanvasState>(),
-        ),
-      );
-    try {
-      await SelvyRecognizer.setCandidateSet(current.syllables);
-    } catch (_) {}
+      ..addAll(List.generate(
+        kUnifiedFlow ? 1 : current.syllables.length,
+        (_) => GlobalKey<WritingCanvasState>(),
+      ));
     for (final k in _canvasKeys) {
       await k.currentState?.clearCanvas();
     }
   }
 
+  /* ───────── 발음 재생 ───────── */
   Future<void> _playPronounce() async {
-    // ⬇️ 기존 로직 수정: 실제 오디오 에셋을 찾아 재생
     final audioPath = kLevel5BodyAssets[current.nameKo];
     if (audioPath != null) {
       await _playAssetAudio(audioPath);
     } else {
-      debugPrint(
-        '[3-4] audio: ${current.nameKo} (Audio not mapped)',
-      );
+      debugPrint('[3-4] audio 미매핑: ${current.nameKo}');
     }
-    // ⬆️ 기존 로직 수정
   }
 
+  /* ───────── 인식 + 다음 ───────── */
   Future<void> _onCheckAndNext() async {
-    _recognizeWaiters = List.generate(
-      _canvasKeys.length,
-      (_) => Completer<String>(),
-    );
+    if (kUnifiedFlow) {
+      // ✅ 3-1과 동일한 처리
+      final completer = Completer<String>();
+      _recognizeWaiters = [completer];
+
+      _singleCanvasKey.currentState?.recognizeAndCheckText();
+
+      String mine = '';
+      try {
+        final s = await completer.future.timeout(const Duration(seconds: 3));
+        mine = _normalize(s);
+      } catch (_) {
+        mine = '';
+      }
+
+      final bool isCorrect = (mine == current.word);
+
+      // 매핑 questionId 조회
+      String questionId;
+      try {
+        questionId = requireWgQuestionId(
+          bodyQuestionMap,
+          current.nameKo,
+          ctx: 'Stage3-4',
+        );
+      } catch (e) {
+        debugPrint('[3-4] 매핑 실패(${current.nameKo}): $e');
+        questionId = 'UNKNOWN';
+      }
+
+      // 서버 기록
+      try {
+        if (_resultId != null && questionId != 'UNKNOWN') {
+          await ChildGameApi.recordWritingChoice(
+            resultId: _resultId!,
+            questionId: questionId,
+            childWrittenText: mine,
+            isCorrect: isCorrect,
+          );
+          debugPrint('[3-4] recordWritingChoice OK');
+        }
+      } catch (e) {
+        debugPrint('[3-4] recordWritingChoice error: $e');
+      }
+
+      _results.add(isCorrect);
+      if (!mounted) return;
+
+      if (_index < _problems.length - 1) {
+        setState(() => _index += 1);
+        await _prepareProblem();
+      } else {
+        // 완료: 서버에는 시간 기록만(성공/실패는 프론트 기준)
+        try {
+          if (_resultId != null) {
+            final data = await ChildGameApi.completeWritingGame(
+              resultId: _resultId!,
+              timeSpentSecs: _sw.elapsed.inSeconds,
+            );
+            if (data != null) {
+              final success = data['success'] == true;
+              final score = data['score'];
+              final total = data['totalQuestions'];
+              debugPrint('[3-4][_complete] ✅ 서버 success=$success (score=$score/$total)');
+            } else {
+              debugPrint('[3-4][_complete] ⚠️ 서버 응답 없음');
+            }
+          }
+        } catch (e) {
+          debugPrint('[3-4] completeWritingGame error: $e');
+        }
+
+        final localSuccess = _results.where((e) => e).length >= 3;
+        await _showEndSequence(localSuccess);
+      }
+      return;
+    }
+
+    // ▼▼▼ (보존) 기존 멀티-타일 로직 ▼▼▼
+    _recognizeWaiters =
+        List.generate(_canvasKeys.length, (_) => Completer<String>());
+
     for (final key in _canvasKeys) {
       key.currentState?.recognizeAndCheckText();
     }
@@ -251,77 +304,25 @@ class _WriteGameLevel3_4PageState extends State<WriteGameLevel3_4Page> {
       }
     }
 
-    // wg_question_id 조회
-    String questionId;
-    try {
-      questionId = requireWgQuestionId(
-        bodyQuestionMap,
-        current.nameKo,
-        ctx: 'Stage3-4',
-      );
-    } catch (e) {
-      debugPrint('[3-4] mapping not found for "${current.nameKo}": $e');
-      questionId = 'UNKNOWN';
-    }
-
-    // 서버로 정답 전송
-    try {
-      if (_resultId != null && questionId != 'UNKNOWN') {
-        await WriteGameApi.sendChoice(
-          resultId: _resultId!,
-          questionId: questionId,
-          childWrittenText: results.join(),
-          isCorrect: isCorrect,
-        );
-      }
-    } catch (e) {
-      debugPrint('[3-4] sendChoice error: $e');
-    }
-
     _results.add(isCorrect);
-    if (!mounted) return;
-
-    if (_index < _problems.length - 1) {
-      setState(() => _index += 1);
-      await _prepareProblem();
-    } else {
-      // 완료
-      bool apiSuccess = false;
-      try {
-        if (_resultId != null) {
-          final res = await WriteGameApi.complete(
-            resultId: _resultId!,
-            totalQuestions: _problems.length,
-            timeSpentSecs: _sw.elapsed.inSeconds,
-          );
-          apiSuccess = res.success;
-        }
-      } catch (e) {
-        debugPrint('[3-4] complete error: $e');
-      }
-
-      final localSuccess = _results.where((e) => e).length >= 3;
-      await _showEndSequence(apiSuccess || localSuccess); // bool 전달
-    }
+    // (기존 흐름의 다음/완료 처리 생략 — 실행 경로 아님)
   }
 
+  /* ───────── 인식 콜백(보존용) ───────── */
   void _onRecognizeAt(int slotIndex, String recognized) {
     if (slotIndex >= 0 && slotIndex < _recognizeWaiters.length) {
-      if (!_recognizeWaiters[slotIndex].isCompleted) {
-        _recognizeWaiters[slotIndex].complete(recognized);
-      }
+      final c = _recognizeWaiters[slotIndex];
+      if (!c.isCompleted) c.complete(recognized);
     }
   }
 
-  String _normalize(String raw) {
-    final top =
-        raw.split('\n').first.replaceAll(RegExp(r'\[\d+\]\s*'), '').trim();
-    return top;
-  }
+  /* ───────── 정규화 ───────── */
+  String _normalize(String raw) =>
+      raw.split('\n').first.replaceAll(RegExp(r'\[\d+\]\s*'), '').trim();
 
-  // ✅ 시그니처를 bool로 변경
+  /* ───────── 엔딩 시퀀스 ───────── */
   Future<void> _showEndSequence(bool success) async {
-    // 1) 인트로 다이얼로그
+    // 배경 3초
     showDialog<void>(
       context: context,
       barrierDismissible: false,
@@ -332,7 +333,7 @@ class _WriteGameLevel3_4PageState extends State<WriteGameLevel3_4Page> {
     Navigator.of(context, rootNavigator: true).pop();
 
     if (success) {
-      // 2) 팝업
+      // 성공 팝업 + 오디오
       showDialog<void>(
         context: context,
         barrierDismissible: false,
@@ -341,18 +342,10 @@ class _WriteGameLevel3_4PageState extends State<WriteGameLevel3_4Page> {
           overlay: _ClearPopup(),
         ),
       );
-
-      // ⬇️ 성공 오디오 재생 시점: 다이얼로그 표시 후 재생
-      WidgetsBinding.instance.addPostFrameCallback((_) async {
-        await Future.delayed(const Duration(milliseconds: 100)); // 다이얼로그 표시 지연
-        final successAudio = kLevel5CommonAssets['SUCCESS_1'];
-        if (successAudio != null) {
-          await _playAssetAudio(successAudio);
-        }
+      Future.microtask(() async {
+        final s = kLevel5CommonAssets['SUCCESS_1'];
+        if (s != null) await _playAssetAudio(s);
       });
-      // ⬆️ 성공 오디오 재생 시점
-
-      // 3) 2.5초 후 메인3 이동
       await Future.delayed(const Duration(milliseconds: 2500));
       if (!mounted) return;
       Navigator.of(context, rootNavigator: true).pop();
@@ -362,7 +355,7 @@ class _WriteGameLevel3_4PageState extends State<WriteGameLevel3_4Page> {
         ),
       );
     } else {
-      // 실패
+      // 실패 팝업 + 오디오
       await showDialog<void>(
         context: context,
         barrierDismissible: false,
@@ -383,40 +376,33 @@ class _WriteGameLevel3_4PageState extends State<WriteGameLevel3_4Page> {
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFFE7D3A6),
                 foregroundColor: const Color(0xFF5B3D20),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 18,
-                  vertical: 10,
-                ),
+                padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
                 elevation: 0,
               ),
-              child: const Text(
-                '다시하기',
-                style: TextStyle(fontWeight: FontWeight.w800),
-              ),
+              child: const Text('다시하기', style: TextStyle(fontWeight: FontWeight.w800)),
             ),
           ),
         ),
       );
-
-      // ⬇️ 실패 오디오 재생 시점: 다이얼로그 표시 후 재생
-      WidgetsBinding.instance.addPostFrameCallback((_) async {
-        await Future.delayed(const Duration(milliseconds: 100)); // 다이얼로그 표시 지연
-        final failAudio = kLevel5CommonAssets['FAIL_1'];
-        if (failAudio != null) {
-          await _playAssetAudio(failAudio);
-        }
+      Future.microtask(() async {
+        final f = kLevel5CommonAssets['FAIL_1'];
+        if (f != null) await _playAssetAudio(f);
       });
-      // ⬆️ 실패 오디오 재생 시점
     }
   }
 
+  /* ───────── UI ───────── */
   @override
   Widget build(BuildContext context) {
-    // 초기 한 프레임 방어: 캔버스 키 아직 생성 전일 수 있음
-    final hasCanvas = _canvasKeys.isNotEmpty;
+    if (_booting) {
+      return const Scaffold(
+        backgroundColor: Color(0xFFF7EFE6),
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
 
     return Scaffold(
       backgroundColor: const Color(0xFFF7EFE6),
@@ -424,16 +410,10 @@ class _WriteGameLevel3_4PageState extends State<WriteGameLevel3_4Page> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(
-            Icons.arrow_back_ios_new_rounded,
-            color: Colors.brown,
-          ),
+          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.brown),
           onPressed: () => Navigator.of(context).pop(),
         ),
-        title: const Text(
-          '쓰기 게임 3-4 (몸 랜덤)',
-          style: TextStyle(color: Colors.brown),
-        ),
+        title: const Text('쓰기 게임 3-4 (몸 랜덤)', style: TextStyle(color: Colors.brown)),
       ),
       body: SafeArea(
         child: Padding(
@@ -480,14 +460,13 @@ class _WriteGameLevel3_4PageState extends State<WriteGameLevel3_4Page> {
               Expanded(
                 child: Row(
                   children: [
+                    // 좌측 이미지/발음
                     Expanded(
                       flex: 4,
                       child: LayoutBuilder(
                         builder: (context, c) {
-                          final side = (c.biggest.shortestSide * 0.72).clamp(
-                            180.0,
-                            280.0,
-                          );
+                          final side =
+                              (c.biggest.shortestSide * 0.72).clamp(180.0, 280.0);
                           return Stack(
                             children: [
                               const Positioned(
@@ -513,41 +492,74 @@ class _WriteGameLevel3_4PageState extends State<WriteGameLevel3_4Page> {
                       ),
                     ),
                     const SizedBox(width: 20),
+                    // 우측 캔버스
                     Expanded(
                       flex: 6,
                       child: LayoutBuilder(
                         builder: (context, c) {
-                          final canvasW = (c.maxWidth * 0.86).clamp(
-                            320.0,
-                            c.maxWidth,
-                          );
-                          final canvasH = (c.maxHeight * 0.62).clamp(
-                            240.0,
-                            c.maxHeight,
-                          );
-                          final tileSize = Size(canvasW, canvasH);
+                          final cw = (c.maxWidth * 0.86).clamp(320.0, c.maxWidth);
+                          final ch = (c.maxHeight * 0.62).clamp(240.0, c.maxHeight);
+                          final caption = (ch * 0.12).clamp(18.0, 28.0);
 
                           return Center(
                             child: Column(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                // 캔버스가 단일 타일로 표시되는 로직
-                                if (hasCanvas)
-                                  _CanvasTile(
-                                    size: tileSize,
-                                    canvasKey: _canvasKeys.first,
-                                    childId: widget.childId,
-                                    target: current.syllables.first,
-                                    onRecognize: (s) => _onRecognizeAt(0, s),
-                                  )
-                                else
-                                  SizedBox(
-                                    width: canvasW,
-                                    height: canvasH,
-                                    child: const Center(
-                                      child: CircularProgressIndicator(),
-                                    ),
+                                SizedBox(
+                                  width: cw,
+                                  height: ch,
+                                  child: Stack(
+                                    alignment: Alignment.center,
+                                    children: [
+                                      Container(
+                                        margin: const EdgeInsets.all(4),
+                                        decoration: BoxDecoration(
+                                          color: Colors.white,
+                                          borderRadius: BorderRadius.circular(10),
+                                          boxShadow: const [
+                                            BoxShadow(
+                                              color: Color(0x14000000),
+                                              blurRadius: 10,
+                                              offset: Offset(0, 4),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      SizedBox(
+                                        width: cw * 0.98,
+                                        height: ch * 0.98,
+                                        child: WritingCanvas(
+                                          key: _singleCanvasKey,
+                                          childId: widget.childId,
+                                          targetChar: kUnifiedFlow
+                                              ? current.word
+                                              : current.syllables.first,
+                                          candidateSet: kUnifiedFlow
+                                              ? [current.word]
+                                              : current.syllables,
+                                          targetType:
+                                              kUnifiedFlow ? "word" : "syllable",
+                                          autoRecognizeOnEnd: false,
+                                          onRecognize: (s) => _onRecognizeAt(0, s),
+                                          penWidth: 20,
+                                        ),
+                                      ),
+                                      Positioned(
+                                        bottom: ch * 0.06,
+                                        child: Text(
+                                          kUnifiedFlow
+                                              ? '단어를 한 번에 써보세요!'
+                                              : '글자를 써보세요!',
+                                          style: TextStyle(
+                                            fontSize: caption,
+                                            fontWeight: FontWeight.w900,
+                                            color: const Color(0xFF8D6E63),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
                                   ),
+                                ),
                                 const SizedBox(height: 12),
                                 SizedBox(
                                   height: 42,
@@ -556,10 +568,6 @@ class _WriteGameLevel3_4PageState extends State<WriteGameLevel3_4Page> {
                                     style: ElevatedButton.styleFrom(
                                       backgroundColor: const Color(0xFFD9CCFF),
                                       foregroundColor: Colors.black87,
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 18,
-                                        vertical: 10,
-                                      ),
                                       shape: RoundedRectangleBorder(
                                         borderRadius: BorderRadius.circular(14),
                                       ),
@@ -591,7 +599,7 @@ class _WriteGameLevel3_4PageState extends State<WriteGameLevel3_4Page> {
   }
 }
 
-/* 상단 얼굴 + 말풍선 */
+/* ───────────── 재사용 위젯 ───────────── */
 class _ProfessorHeader extends StatelessWidget {
   const _ProfessorHeader({
     required this.text,
@@ -600,28 +608,20 @@ class _ProfessorHeader extends StatelessWidget {
     this.balloonHeight = 88,
     this.textSize = 18,
   });
-
   final String text;
   final double faceSize;
   final double balloonWidth;
   final double balloonHeight;
   final double textSize;
-
   @override
   Widget build(BuildContext context) {
     final maxBalloonW = MediaQuery.of(context).size.width - faceSize - 40;
     final bw = balloonWidth.clamp(100, maxBalloonW);
-
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        Image.asset(
-          _PROF_HEAD,
-          width: faceSize,
-          height: faceSize,
-          fit: BoxFit.contain,
-        ),
+        Image.asset(_PROF_HEAD, width: faceSize, height: faceSize),
         const SizedBox(width: 10),
         SizedBox(
           width: bw.toDouble(),
@@ -640,7 +640,6 @@ class _ProfessorHeader extends StatelessWidget {
                       fontSize: textSize,
                       fontWeight: FontWeight.w700,
                       color: const Color(0xFF5B4634),
-                      height: 1.2,
                     ),
                   ),
                 ),
@@ -653,64 +652,6 @@ class _ProfessorHeader extends StatelessWidget {
   }
 }
 
-/* 재사용 위젯들 */
-class _CanvasTile extends StatelessWidget {
-  const _CanvasTile({
-    required this.size,
-    required this.canvasKey,
-    required this.childId,
-    required this.target,
-    required this.onRecognize,
-  });
-
-  final Size size;
-  final GlobalKey<WritingCanvasState> canvasKey;
-  final String childId;
-  final String target;
-  final ValueChanged<String> onRecognize;
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      width: size.width,
-      height: size.height,
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          Container(
-            margin: const EdgeInsets.all(4),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(10),
-              boxShadow: const [
-                BoxShadow(
-                  color: Color(0x14000000),
-                  blurRadius: 10,
-                  offset: Offset(0, 4),
-                ),
-              ],
-            ),
-          ),
-          SizedBox(
-            width: size.width * 0.98,
-            height: size.height * 0.98,
-            child: WritingCanvas(
-              key: canvasKey,
-              childId: childId,
-              targetChar: target,
-              candidateSet: [target],
-              targetType: "syllable",
-              autoRecognizeOnEnd: false,
-              onRecognize: onRecognize,
-              penWidth: 20,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
 class _SpeechHint extends StatelessWidget {
   const _SpeechHint({
     this.width = 240,
@@ -718,12 +659,10 @@ class _SpeechHint extends StatelessWidget {
     this.fontSize = 18,
     this.text = '누르면 음성이 출력돼요!',
   });
-
   final double width;
   final double height;
   final double fontSize;
   final String text;
-
   @override
   Widget build(BuildContext context) {
     return SizedBox(
@@ -741,7 +680,6 @@ class _SpeechHint extends StatelessWidget {
                 fontSize: fontSize,
                 color: const Color(0xFF7A614B),
                 fontWeight: FontWeight.w700,
-                height: 1.1,
               ),
             ),
           ),
@@ -760,8 +698,7 @@ class _BalloonPainter extends CustomPainter {
     );
     final paint = Paint()..color = const Color(0xFFF2E2CF);
     canvas.drawRRect(r, paint);
-
-    final double tailBaseX = 26, tailTopY = size.height - 10;
+    final tailBaseX = 26.0, tailTopY = size.height - 10;
     final path = Path()
       ..moveTo(tailBaseX, tailTopY)
       ..relativeLineTo(14, 10)
@@ -776,16 +713,13 @@ class _BalloonPainter extends CustomPainter {
 
 class _FullImageDialog extends StatelessWidget {
   const _FullImageDialog({required this.imageAsset, this.overlay, this.onTap});
-
   final String imageAsset;
   final Widget? overlay;
   final VoidCallback? onTap;
-
   @override
   Widget build(BuildContext context) {
     final w = MediaQuery.of(context).size.width;
     final h = MediaQuery.of(context).size.height;
-
     return Dialog(
       insetPadding: EdgeInsets.zero,
       backgroundColor: Colors.black,
@@ -809,15 +743,12 @@ class _FullImageDialog extends StatelessWidget {
   }
 }
 
-/// 성공 팝업
 class _ClearPopup extends StatelessWidget {
   const _ClearPopup();
-
   @override
   Widget build(BuildContext context) {
     final w = MediaQuery.of(context).size.width;
     final cardW = (w * 0.72).clamp(300.0, 520.0);
-
     return Center(
       child: Material(
         color: Colors.transparent,
@@ -858,7 +789,6 @@ class _ClearPopup extends StatelessWidget {
                   color: Color(0xFF5A4032),
                   fontWeight: FontWeight.w800,
                   fontSize: 20,
-                  height: 1.3,
                 ),
               ),
               const SizedBox(height: 6),

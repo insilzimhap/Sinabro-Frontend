@@ -3,12 +3,11 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:sinabro/main/gameView/writeGame/page/write_game_main.dart';
-import 'package:sinabro/main/gameView/writeGame/api/write_game_api.dart';
 import 'package:audioplayers/audioplayers.dart';
 
 // 열매ID, 게임 api
-import 'package:sinabro/main/gameView/writeGame/api/fruit_state.dart';
-import 'package:sinabro/main/gameView/writeGame/api/child_game_api.dart';
+import 'package:sinabro/main/gameView/common/api/fruit_state.dart';
+import 'package:sinabro/main/gameView/common/api/child_game_api.dart';
 
 // 오디오 에셋 경로
 const String _audioDir = 'audio/tts/gameWrite/level1/';

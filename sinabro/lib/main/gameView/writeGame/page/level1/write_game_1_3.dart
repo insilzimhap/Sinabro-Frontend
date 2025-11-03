@@ -7,8 +7,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:sinabro/main/gameView/writeGame/page/write_game_main.dart';
 // 열매ID, 게임 api
-import 'package:sinabro/main/gameView/writeGame/api/fruit_state.dart';
-import 'package:sinabro/main/gameView/writeGame/api/child_game_api.dart';
+import 'package:sinabro/main/gameView/common/api/fruit_state.dart';
+import 'package:sinabro/main/gameView/common/api/child_game_api.dart';
 
 // ⬇️ AUDIO IMPORT
 import 'package:audioplayers/audioplayers.dart';

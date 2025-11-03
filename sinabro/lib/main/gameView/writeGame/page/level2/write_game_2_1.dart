@@ -12,8 +12,8 @@ import 'package:sinabro/main/gameView/writeGame/data/wg_question_map.dart'
     as WG;
 
 // 열매ID, 게임 api
-import 'package:sinabro/main/gameView/writeGame/api/fruit_state.dart';
-import 'package:sinabro/main/gameView/writeGame/api/child_game_api.dart';
+import 'package:sinabro/main/gameView/common/api/fruit_state.dart';
+import 'package:sinabro/main/gameView/common/api/child_game_api.dart';
 
 
 // ⬇️ AUDIO IMPORT
@@ -410,6 +410,7 @@ class _WriteGameLevel2_1PageState extends State<WriteGameLevel2_1Page> {
 
   Future<bool> _sendChoice({
     required String shownChar,  //자녀가 쓴 글씨를 셀비가 인식한 결과값(후보 1순위)
+    required String correctChar, // 정답 기준 (랜덤 문제의 자음)
     required bool isCorrect,    // 프론트에서 판정한 결과 그대로 전달
   }) async {
     if (_resultId == null) return false; // 방어
@@ -417,7 +418,7 @@ class _WriteGameLevel2_1PageState extends State<WriteGameLevel2_1Page> {
     // 문제ID 매핑
     final questionId = WG.requireWgQuestionId(
       WG.consonantQuestionMap,
-      shownChar,
+      correctChar,
       ctx: 'Stage2-1',
     );
 
@@ -482,7 +483,7 @@ class _WriteGameLevel2_1PageState extends State<WriteGameLevel2_1Page> {
 
     // 1️⃣ 서버에 개별 문제 기록
     // 🔥 [WriteGameApi] 선택 결과 기록 부분
-    final choiceSaved = await _sendChoice(shownChar: mine, isCorrect: isCorrect);
+    final choiceSaved = await _sendChoice(shownChar: mine, correctChar: current.char,  isCorrect: isCorrect);
     if (!mounted) return;
     if (choiceSaved) {
       _results.add(isCorrect);
@@ -822,7 +823,36 @@ class _WriteGameLevel2_1PageState extends State<WriteGameLevel2_1Page> {
                                     ),
                                   ),
                                 ),
+                                //<다시쓰기>버튼 = 캔버스 초기화 버튼 추가
+                                // UI 신경 안쓰고 걍 붙엿슨
                                 const SizedBox(height: 12),
+                                SizedBox(
+                                  height: 42,
+                                  child: ElevatedButton(
+                                    onPressed: () async {
+                                      await _canvasKey.currentState?.clearCanvas();
+                                      debugPrint('[2-1] ✍️ 다시쓰기 버튼 클릭 → 캔버스 초기화');
+                                    },
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: const Color(0xFFEADBC8),
+                                      foregroundColor: const Color(0xFF5B4634),
+                                      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(14),
+                                      ),
+                                      elevation: 0,
+                                    ),
+                                    child: const Text(
+                                      '다시쓰기',
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+
+                                const SizedBox(height: 8), // 살짝 여백 추가
                                 SizedBox(
                                   height: 42,
                                   child: ElevatedButton(

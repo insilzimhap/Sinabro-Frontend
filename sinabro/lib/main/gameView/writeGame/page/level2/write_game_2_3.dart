@@ -9,8 +9,8 @@ import 'package:sinabro/selvy_example_view/selvy_service.dart'
 // ▼ 추가: 매핑/API
 import 'package:sinabro/main/gameView/writeGame/data/wg_question_map.dart'
     as WG;
-import 'package:sinabro/main/gameView/writeGame/api/child_game_api.dart'; //changed
-import 'package:sinabro/main/gameView/writeGame/api/fruit_state.dart'; //changed
+import 'package:sinabro/main/gameView/common/api/child_game_api.dart'; //changed
+import 'package:sinabro/main/gameView/common/api/fruit_state.dart'; //changed
 // ⬇️ AUDIO IMPORT
 import 'package:audioplayers/audioplayers.dart';
 
@@ -138,7 +138,7 @@ const _END_FAIL = '${_IMG_DIR}end_fail.png'; // 3번
 // const _CONS_AUD = 'assets/audio/gameWrite2/cons/';
 // const _VOW_AUD = 'assets/audio/gameWrite2/vowels/';
 
-enum _TargetType { consonant, vowel }
+enum _TargetType { consonant, vowel }  //타입 보내기
 
 class _Item {
   final String key; // 식별 키
@@ -501,8 +501,20 @@ class _WriteGameLevel2_3PageState extends State<WriteGameLevel2_3Page> {
   /// Selvy 후보셋을 현재 자음 하나로 고정
   Future<void> _applyCandidate() async {
     try {
+      final isConsonant = current.type == _TargetType.consonant;
+      final typeLabel =
+        current.type == _TargetType.consonant ? "consonant" : "vowel";
+
+      debugPrint('[2-3] 현재 문제: ${current.char} → 인식 모드=$typeLabel');
+
+      // 🔥 [필수 수정]: setLanguage를 통해 인식 타입(1:자음, 2:모음)을 명시
+      await SelvyRecognizer.setLanguage(0, isConsonant ? 1 : 2); 
+
       await SelvyRecognizer.setCandidateSet([current.char]);
-    } catch (_) {}
+      debugPrint('[2-3] Selvy 모드/후보셋 설정 완료 → [$typeLabel | ${current.char}]');
+    } catch (e) {
+      debugPrint('[2-3] Selvy 후보셋/모드 설정 실패: $e');
+    }
   }
 
   /// ---------------------------------------------------------------------------
@@ -601,16 +613,14 @@ class _WriteGameLevel2_3PageState extends State<WriteGameLevel2_3Page> {
   // 채점 결과 서버 전송 (_sendChoice)
   Future<bool> _sendChoice({
     required String shownChar, //changed
-    required _TargetType type, //changed
+    required String correctChar, // 정답 기준 (랜덤 문제의 자음)
     required bool isCorrect,   //changed
   }) async {
     if (_resultId == null) return false; //changed
 
     final questionId = WG.requireWgQuestionId( //changed
-      type == _TargetType.consonant
-          ? WG.consonantQuestionMap
-          : WG.vowelQuestionMap,
-      shownChar,
+      WG.consonantVowelQuestionMap,
+      correctChar,
       ctx: 'Stage2-3',
     );
 
@@ -662,7 +672,7 @@ class _WriteGameLevel2_3PageState extends State<WriteGameLevel2_3Page> {
     // 1️⃣ 서버에 개별 문제 기록
     await _sendChoice( //changed
       shownChar: mine,
-      type: current.type, //changed
+      correctChar: current.char, 
       isCorrect: isCorrect,
     );
 
