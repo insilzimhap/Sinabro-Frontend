@@ -39,23 +39,140 @@ class AudioHelper {
       case 'loading':
         return 'listen_game_loading'; // 게임으로 이동 중입니다. 잠시만 기다려주세요!
 
-      // ----------------- 레벨 1 결과 TTS (양지) -----------------
+      // ----------------- ✅ 레벨 1 인트로 (Theme Intro) & 진행 TTS (추가) -----------------
+      // Theme 1
+      case 'intro_t1':
+        return 'listen3_game_1_intro';
+      case 'progress_t1_1':
+        return 'listen3_game_1_progress1';
+      case 'progress_t1_2':
+        return 'listen3_game_1_progress2';
+      case 'progress_t1_3':
+        return 'listen3_game_1_progress3';
+      case 'progress_t1_4':
+        return 'listen3_game_1_progress4';
       case 'success_t1':
-        return 'listen3_game_1_success'; // 드디어 무지개를 만들었어요! 감사해요
+        return 'listen3_game_1_success';
+
+      // Theme 2
+      case 'intro_t2':
+        return 'listen3_game_2_intro';
+      case 'progress_t2_1':
+        return 'listen3_game_2_progress1';
+      case 'progress_t2_2':
+        return 'listen3_game_2_progress2';
+      case 'progress_t2_3':
+        return 'listen3_game_2_progress3';
+      case 'progress_t2_4':
+        return 'listen3_game_2_progress4';
       case 'success_t2':
-        return 'listen3_game_2_success'; // 덕분에 사탕을 많이 만들 수 있었어요!
+        return 'listen3_game_2_success';
+
+      // Theme 3
+      case 'intro_t3':
+        return 'listen3_game_3_intro';
+      case 'progress_t3_1':
+        return 'listen3_game_3_progress1';
+      case 'progress_t3_2':
+        return 'listen3_game_3_progress2';
+      case 'progress_t3_3':
+        return 'listen3_game_3_progress3';
+      case 'progress_t3_4':
+        return 'listen3_game_3_progress4';
       case 'success_t3':
-        return 'listen3_game_3_success'; // 제 친구들보다 마법을 더 잘 쓸 거예요!
+        return 'listen3_game_3_success';
+
+      // Theme 4
+      case 'intro_t4':
+        return 'listen3_game_4_intro'; // 👈 누락된 키 추가
+      case 'progress_t4_1':
+        return 'listen3_game_4_progress1';
+      case 'progress_t4_2':
+        return 'listen3_game_4_progress2';
+      case 'progress_t4_3':
+        return 'listen3_game_4_progress3';
+      case 'progress_t4_4':
+        return 'listen3_game_4_progress4';
       case 'success_t4':
-        return 'listen3_game_4_success'; // 이번 시험도 걱정 없을 것 같아요
+        return 'listen3_game_4_success';
+
+      // Theme 5
+      case 'intro_t5':
+        return 'listen3_game_5_intro';
+      case 'progress_t5_1':
+        return 'listen3_game_5_progress1';
+      case 'progress_t5_2':
+        return 'listen3_game_5_progress2';
+      case 'progress_t5_3':
+        return 'listen3_game_5_progress3';
+      case 'progress_t5_4':
+        return 'listen3_game_5_progress4';
       case 'success_t5':
-        return 'listen3_game_5_success'; // 도와주신 덕분에 마법 만점이에요~!
+        return 'listen3_game_5_success';
+
+      // 공통 실패
       case 'fail':
-        return 'listen3_game_fail'; // 앗! 마법으로 만들어지지 않았어요… 만드는걸 다시 도와주실래요?
+        return 'listen3_game_fail';
+      // ----------------- ✅ 레벨 1 TTS 끝 -----------------
+
+      // ----------------- ✅ 정답 이름 오디오 (answer_X) 추가 -----------------
+      // 색깔
+      case 'answer_black':
+        return 'color_black';
+      case 'answer_blue':
+        return 'color_blue';
+      case 'answer_yellow':
+        return 'color_yellow';
+      case 'answer_white':
+        return 'color_white';
+      case 'answer_red':
+        return 'color_red';
+      case 'answer_brown':
+        return 'color_brown';
+      case 'answer_orange':
+        return 'color_orange';
+      case 'answer_purple':
+        return 'color_purple';
+      case 'answer_green':
+        return 'color_green';
+      case 'answer_pink':
+        return 'color_pink';
+      // 동물
+      case 'answer_dog':
+        return 'animal_dog';
+      case 'answer_cat':
+        return 'animal_cat';
+      case 'answer_chicken':
+        return 'animal_chicken';
+      case 'answer_pig':
+        return 'animal_pig';
+      case 'answer_mouse':
+        return 'animal_mouse';
+      case 'answer_elephant':
+        return 'animal_elephant';
+      case 'answer_sheep':
+        return 'animal_sheep';
+      case 'answer_monkey':
+        return 'animal_monkey';
+      case 'answer_tiger':
+        return 'animal_tiger';
+      case 'answer_penguin':
+        return 'animal_penguin';
+      case 'answer_chick':
+        return 'animal_chick';
+      case 'answer_turtle':
+        return 'animal_turtle';
+      case 'answer_rabbit':
+        return 'animal_rabbit';
+      case 'answer_frog':
+        return 'animal_frog';
+      case 'answer_duck':
+        return 'animal_duck';
+      // ----------------- ✅ 정답 이름 오디오 끝 -----------------
 
       default:
         debugPrint('⚠️ AudioHelper: 알 수 없는 TTS 키: $key');
-        return '';
+        return ''; // 키를 못 찾으면 빈 문자열 반환 (경로 오류의 원인)
     }
   }
 
@@ -80,20 +197,40 @@ class AudioHelper {
       // 💡 TTS 재생 시, 새로운 플레이어 인스턴스 생성
       ttsPlayer = AudioPlayer();
 
+      // 💡 안전 장치: TTS 키 매핑에 실패하면 재생 중단
+      if (fileName.isEmpty) {
+        debugPrint('❌ 오디오 재생 실패: TTS 키 매핑 오류 (파일 이름이 비어있음)');
+        ttsPlayer?.dispose();
+        return;
+      }
+
       // themeId를 사용하여 레벨 폴더를 구분 (level1은 themeId 1~5를 사용)
-      if (fileName.startsWith('listen3_')) {
+      // ✅ 'listen3_'로 시작하거나, 정답 오디오('answer_') 키인 경우 level1 폴더 사용
+      if (fileName.startsWith('listen3_') ||
+          audioKeyOrPath.startsWith('answer_')) {
         folder = 'level1';
       }
 
       // 💡 listen_game_loading.mp3 파일이 'assets/audio/tts/gameListen/' 바로 아래 있다고 가정
+      // 💡 튜토리얼/로딩 TTS 경로
       if (fileName == 'listen_game_loading') {
         fullPath = 'assets/audio/tts/gameListen/$fileName.mp3';
+      } else if (fileName.startsWith('listen_game_practice')) {
+        // ✅ 튜토리얼 오디오 (practice 폴더 사용)
+        fullPath = 'assets/audio/tts/gameListen/practice/$fileName.mp3';
       } else {
+        // 💡 레벨 1 테마별 TTS 및 정답 오디오 경로
         fullPath = 'assets/audio/tts/gameListen/$folder/$fileName.mp3';
       }
     } else {
       // Level1GamePage의 `data.audioPath`와 같은 일반 게임 문제 오디오
-      fullPath = audioKeyOrPath; // 이미 전체 assets 경로가 포함되어 있다고 가정
+
+      // ✅ 일반 오디오 경로를 TTS 폴더로 리디렉션
+      // ListenGamePage에서 'assets/audio/gameListen/...' 형태로 넘어온 경로를
+      // 실제 파일 위치인 'assets/audio/tts/gameListen/...'으로 수정합니다.
+      fullPath = audioKeyOrPath.replaceFirst('assets/audio/gameListen/',
+          'assets/audio/tts/gameListen/' // 👈 "tts/"를 추가하여 리디렉션
+          );
     }
 
     // 2. 오디오 재생

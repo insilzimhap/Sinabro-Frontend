@@ -3,17 +3,16 @@
 /*
  * ----------------------------------------------------------------
  * [듣기 학습 - 게임 진행 화면]
- *  - 듣기 학습 게임의 실제 문제 풀이 화면
- *  - 문제별 오디오 재생 및 정답 선택 기능 포함
- *  - 구성 요소
- *      1. 캐릭터 대화 및 음성 듣기 버튼
- *      2. 보기(이미지 3개) 중 정답 선택
- *      3. 정답 확인 후 다음 문제로 자동 이동
- *      4. 모든 문제 완료 시 onFinished 콜백으로 결과 전달
- * 
- *  - 전달 데이터
- *    - [gameData] : 문제 세트(List<ListenGameContent>)
- *    - [onFinished] : 전체 게임 종료 시 상위 Flow로 정답 개수 전달
+ * - 듣기 학습 게임의 실제 문제 풀이 화면
+ * - 문제별 오디오 재생 및 정답 선택 기능 포함
+ * - 구성 요소
+ * 1. 캐릭터 대화 및 음성 듣기 버튼
+ * 2. 보기(이미지 3개) 중 정답 선택
+ * 3. 정답 확인 후 다음 문제로 자동 이동
+ * 4. 모든 문제 완료 시 onFinished 콜백으로 결과 전달
+ * * - 전달 데이터
+ * - [gameData] : 문제 세트(List<ListenGameContent>)
+ * - [onFinished] : 전체 게임 종료 시 상위 Flow로 정답 개수 전달
  * ----------------------------------------------------------------
  */
 
@@ -23,11 +22,12 @@ import 'package:sinabro/main/gameView/listenGame/model/listen_game_content.dart'
 
 import 'package:sinabro/main/gameView/common/api/child_game_api.dart';
 import 'package:sinabro/main/gameView/common/api/fruit_state.dart';
+import 'package:sinabro/main/gameView/listenGame/controller/audio_helper.dart'; // AudioHelper import 유지
 
 class ListenGamePage extends StatefulWidget {
-  final List<ListenGameContent> gameData;           // 🔹 문제 세트 (각 문제: 오디오 + 보기 이미지 + 정답 인덱스)
+  final List<ListenGameContent>
+      gameData; // 🔹 문제 세트 (각 문제: 오디오 + 보기 이미지 + 정답 인덱스)
   final void Function(int correctCount) onFinished; // 🔹 모든 문제 완료 후 상위로 결과 전달
-
 
   const ListenGamePage({
     super.key,
@@ -40,7 +40,7 @@ class ListenGamePage extends StatefulWidget {
 }
 
 class _ListenGamePageState extends State<ListenGamePage> {
-  int _currentIndex = 0;   // 현재 문제 인덱스
+  int _currentIndex = 0; // 현재 문제 인덱스
 
   // 선택 및 정답 처리 상태
   bool _answered = false;
@@ -55,8 +55,35 @@ class _ListenGamePageState extends State<ListenGamePage> {
   DateTime? _startTime; // 게임 시작 시각
   //changed-end
 
-  // 오디오 플레이어 (문제별 음성 재생)
-  final AudioPlayer _player = AudioPlayer();
+  // ✅ 정답 이미지 파일명 -> AudioHelper TTS 키 매핑 (추가)
+  // 이 맵은 정답 보기 이미지가 나타내는 단어의 오디오를 재생하는 데 사용됩니다.
+  final Map<String, String> _answerAudioMap = {
+    'black.png': 'answer_black',
+    'blue.png': 'answer_blue',
+    'yellow.png': 'answer_yellow',
+    'white.png': 'answer_white',
+    'red.png': 'answer_red',
+    'brown.png': 'answer_brown',
+    'orange.png': 'answer_orange',
+    'purple.png': 'answer_purple',
+    'green.png': 'answer_green',
+    'pink.png': 'answer_pink',
+    'dog.png': 'answer_dog',
+    'cat.png': 'answer_cat',
+    'chicken.png': 'answer_chicken',
+    'pig.png': 'answer_pig',
+    'mouse.png': 'answer_mouse',
+    'elephant.png': 'answer_elephant',
+    'sheep.png': 'answer_sheep',
+    'monkey.png': 'answer_monkey',
+    'tiger.png': 'answer_tiger',
+    'penguin.png': 'answer_penguin',
+    'bird.png': 'answer_chick',
+    'turtle.png': 'answer_turtle',
+    'rabbit.png': 'answer_rabbit',
+    'frog.png': 'answer_frog',
+    'duck.png': 'answer_duck',
+  };
 
   @override
   void initState() {
@@ -64,22 +91,35 @@ class _ListenGamePageState extends State<ListenGamePage> {
     //changed-start
     _startTime = DateTime.now(); // 시작 시점 기록
     //changed-end
+
+    // ✅ 첫 문제 오디오 (캐릭터 대사 TTS) 재생 요청
+    _playAudio(widget.gameData[_currentIndex].audioPath);
   }
 
   @override
   void dispose() {
-    _player.dispose();
+    AudioHelper.dispose(); // AudioHelper의 싱글톤 플레이어 해제
     super.dispose();
   }
 
   // ───────────────────── 오디오/이미지 관련 ─────────────────────
+  /*
   // 오디오 경로 정규화 (assets/ 접두어 제거)
   String _normalizeAudioAsset(String path) {
-    if (path.startsWith('assets/')) {
-      return path.split('assets/').last;
-    }
-    return path;
+    // path 예시: 'assets/audio/gameListen/level1/t4_q1.mp3'
+
+    // 1. 'assets/' 접두어 제거 (기존 로직)
+    String normalizedPath =
+        path.startsWith('assets/') ? path.split('assets/').last : path;
+
+    // 2. ❌ 에러를 일으키는 경로(gameListen/)를 제거하고 파일명만 추출
+    // t4_q1.mp3 만 남게 됩니다.
+    final fileName = normalizedPath.split('/').last;
+
+    // 3. ✅ 실제 오디오 파일이 있는 TTS 폴더 경로를 앞에 붙여줍니다.
+    return 'audio/tts/gameListen/level1/$fileName'; // 👈 이 부분을 수정합니다.
   }
+  */
 
   // 이미지 경로 정규화 (폴더 경로 자동 보정)
   String _normalizeImageAsset(String path) {
@@ -91,11 +131,9 @@ class _ListenGamePageState extends State<ListenGamePage> {
     return 'assets/img/contents/gameListen/level1/$path';
   }
 
-  // 오디오 재생 함수
+  // 오디오 재생 함수 (캐릭터 대사 TTS 재생용)
   Future<void> _playAudio(String path) async {
-    await _player.stop();
-    final assetPath = _normalizeAudioAsset(path);
-    await _player.play(AssetSource(assetPath));
+    AudioHelper.playAudio(path, isTts: true);
   }
 
   // ───────────────────────────────────────────────────
@@ -112,9 +150,9 @@ class _ListenGamePageState extends State<ListenGamePage> {
       _answered = true;
       _isCorrect = correct;
       if (correct) {
-        _correctCount++;  // 정답 수 증가
+        _correctCount++; // 정답 수 증가
       } else {
-        _wrongCount++;    // 오답 수 증가
+        _wrongCount++; // 오답 수 증가
       }
     });
 
@@ -149,13 +187,14 @@ class _ListenGamePageState extends State<ListenGamePage> {
         _answered = false;
         _selected = null;
       });
+      // ✅ 다음 문제의 TTS 재생 요청
+      _playAudio(widget.gameData[_currentIndex].audioPath);
     } else {
       //changed-start
       // ✅ 게임 완료 처리 (completeListeningGame)
       final endTime = DateTime.now();
-      final elapsedSecs = _startTime != null
-          ? endTime.difference(_startTime!).inSeconds
-          : 0;
+      final elapsedSecs =
+          _startTime != null ? endTime.difference(_startTime!).inSeconds : 0;
 
       final resultId = FruitState.instance.resultId;
       if (resultId != null) {
@@ -170,21 +209,26 @@ class _ListenGamePageState extends State<ListenGamePage> {
         debugPrint('[ListenGamePage] ⚠️ resultId 없음 (complete 생략)');
       }
 
-      
       widget.onFinished(_correctCount); // ✅ 모든 문제 완료 → 상위 Flow로 결과(정답 개수) 전달
     }
-
   }
 
   @override
   Widget build(BuildContext context) {
-    final data = widget.gameData[_currentIndex];  // 현재 문제 데이터
+    final data = widget.gameData[_currentIndex]; // 현재 문제 데이터
     final size = MediaQuery.of(context).size;
     final isTablet = size.width >= 700;
 
     final optionBoxSize = isTablet ? 180.0 : size.width * 0.28;
     final leftCharWidth = isTablet ? size.width * 0.20 : size.width * 0.22;
     final dialogueMaxWidth = size.width - leftCharWidth - 64;
+
+    // ✅ 오디오 버튼 클릭 시 재생할 정답 오디오 키 계산
+    final correctImagePath = data.optionImages[data.correctIndex];
+    // 'assets/.../elephant.png' -> 'elephant.png'
+    final correctImageFileName = correctImagePath.split('/').last;
+    // 'elephant.png' -> 'answer_elephant'
+    final answerAudioKey = _answerAudioMap[correctImageFileName] ?? '';
 
     return Scaffold(
       backgroundColor: const Color(0xFFFFF8EE),
@@ -197,7 +241,8 @@ class _ListenGamePageState extends State<ListenGamePage> {
                 constraints: BoxConstraints(minHeight: constraints.maxHeight),
                 child: IntrinsicHeight(
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 24, vertical: 16),
                     child: Column(
                       children: [
                         // 🔹 상단 영역: 뒤로가기 + 진행 상태 표시
@@ -244,13 +289,15 @@ class _ListenGamePageState extends State<ListenGamePage> {
                             const SizedBox(width: 16),
                             // 오른쪽: 캐릭터 대사
                             ConstrainedBox(
-                              constraints: BoxConstraints(maxWidth: dialogueMaxWidth),
+                              constraints:
+                                  BoxConstraints(maxWidth: dialogueMaxWidth),
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   // 캐릭터 이름 말풍선
                                   Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 10, vertical: 6),
                                     decoration: BoxDecoration(
                                       color: const Color(0xFFFFCC80),
                                       borderRadius: BorderRadius.circular(12),
@@ -266,7 +313,8 @@ class _ListenGamePageState extends State<ListenGamePage> {
                                   const SizedBox(height: 8),
                                   // 대사 텍스트
                                   Container(
-                                    padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 18),
+                                    padding: const EdgeInsets.symmetric(
+                                        vertical: 14, horizontal: 18),
                                     decoration: BoxDecoration(
                                       color: const Color(0xFFFFF3E0),
                                       borderRadius: BorderRadius.circular(16),
@@ -307,7 +355,17 @@ class _ListenGamePageState extends State<ListenGamePage> {
                                 child: IconButton(
                                   icon: const Icon(Icons.volume_up, size: 48),
                                   color: const Color(0xFF4A2E16),
-                                  onPressed: () => _playAudio(data.audioPath),
+                                  onPressed: () {
+                                    // ❌ 기존: _playAudio(data.audioPath), // 캐릭터 대사 TTS 재생
+                                    // ✅ 수정: 정답 동물의 이름을 읽어주는 오디오 재생
+                                    if (answerAudioKey.isNotEmpty) {
+                                      AudioHelper.playAudio(answerAudioKey,
+                                          isTts: true);
+                                    } else {
+                                      // 정답 키 매핑에 실패하면 기본 캐릭터 대사 재생
+                                      _playAudio(data.audioPath);
+                                    }
+                                  },
                                 ),
                               ),
                               const SizedBox(height: 8),
@@ -326,13 +384,16 @@ class _ListenGamePageState extends State<ListenGamePage> {
 
                         // 🔹 보기(선택지 3개) 영역
                         Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 12),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 4, vertical: 12),
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: List.generate(3, (i) {
                               final isSelected = (_selected == i);
-                              final isCorrect = _answered && (i == data.correctIndex);
-                              final isWrong = _answered && isSelected && !isCorrect;
+                              final isCorrect =
+                                  _answered && (i == data.correctIndex);
+                              final isWrong =
+                                  _answered && isSelected && !isCorrect;
 
                               // 선택지 테두리 색상
                               Color borderColor = Colors.grey.shade400;
@@ -341,17 +402,20 @@ class _ListenGamePageState extends State<ListenGamePage> {
 
                               return Expanded(
                                 child: Container(
-                                  margin: const EdgeInsets.symmetric(horizontal: 8),
+                                  margin:
+                                      const EdgeInsets.symmetric(horizontal: 8),
                                   child: GestureDetector(
                                     onTap: () => _checkAnswer(i),
                                     child: AnimatedContainer(
-                                      duration: const Duration(milliseconds: 250),
+                                      duration:
+                                          const Duration(milliseconds: 250),
                                       width: optionBoxSize,
                                       height: optionBoxSize * 0.75,
                                       decoration: BoxDecoration(
                                         color: Colors.white,
                                         borderRadius: BorderRadius.circular(12),
-                                        border: Border.all(color: borderColor, width: 3),
+                                        border: Border.all(
+                                            color: borderColor, width: 3),
                                         boxShadow: const [
                                           BoxShadow(
                                             color: Colors.black12,
@@ -383,7 +447,8 @@ class _ListenGamePageState extends State<ListenGamePage> {
                                             child: Padding(
                                               padding: const EdgeInsets.all(10),
                                               child: Image.asset(
-                                                _normalizeImageAsset(data.optionImages[i]),
+                                                _normalizeImageAsset(
+                                                    data.optionImages[i]),
                                                 fit: BoxFit.contain,
                                                 width: optionBoxSize * 0.5,
                                                 height: optionBoxSize * 0.5,
