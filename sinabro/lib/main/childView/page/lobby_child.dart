@@ -4,11 +4,18 @@ import 'package:http/http.dart' as http;
 import 'package:sinabro/main/gameView/writeGame/page/write_game_main.dart';
 import 'dart:convert';
 
-// ✅ 학습 페이지 import
+// 학습 페이지 import
 import 'package:sinabro/main/studyView/listenStudy/page/listen_study_apple.dart';
 import 'package:sinabro/main/studyView/writeStudy/page/main_apple_tree.dart';
 
-// ✅ 한 곳에서 서버 주소 관리 (추가)
+// 게임 페이지 import 
+import 'package:sinabro/main/gameView/listenGame/chapter_page.dart';
+import 'package:sinabro/main/gameView/writeGame/chapter_page.dart'; // ✅ [수정 안 함] 첫 번째 코드의 import 유지
+
+// 도감 페이지 import 
+import 'package:sinabro/main/childView/page/sticker_Book.dart'; // ✅ [수정 안 함] 첫 번째 코드의 import 유지
+
+// 한 곳에서 서버 주소 관리 (추가)
 import 'package:sinabro/config.dart';
 
 class LobbyChildScreen extends StatefulWidget {
@@ -202,7 +209,18 @@ class _LobbyChildScreenState extends State<LobbyChildScreen> {
                               ),
                             ),
                             const SizedBox(width: 18),
-                            _pillButton(label: '도감', onTap: () {}),
+                            // ✅ [수정 안 함] 첫 번째 코드의 '도감' 버튼 로직 유지
+                            _pillButton(
+                              label: '도감',
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => const StickerBookPage(),
+                                  ),
+                                );
+                              },
+                            ),
                           ],
                         ),
                         const SizedBox(height: 28),
@@ -226,7 +244,7 @@ class _LobbyChildScreenState extends State<LobbyChildScreen> {
                                           16,
                                         ),
                                       ),
-                                      alignment: Alignment.center,
+                                      alignment: Alignment.center, //여기에 캐릭터 이미지
                                       child: Text(
                                         characterName.isNotEmpty
                                             ? characterName
@@ -292,6 +310,8 @@ class _LobbyChildScreenState extends State<LobbyChildScreen> {
                                             );
                                           }),
                                           const SizedBox(width: kColsGap),
+                                          
+                                          // ✅ [수정됨] '듣기 학습' 부분만 두 번째 코드의 내용(주석 포함)으로 교체
                                           _bigAction('듣기 학습', () {
                                             // ⭐️ [수정] MaterialPageRoute 대신 pushNamed 사용
                                             Navigator.pushNamed(
@@ -302,25 +322,36 @@ class _LobbyChildScreenState extends State<LobbyChildScreen> {
                                               },
                                             );
                                           }),
+
                                         ],
                                       ),
                                       const SizedBox(height: kRowsGap),
                                       Row(
                                         children: [
+                                          // ✅ [수정 안 함] 첫 번째 코드의 '쓰기 게임' 로직 유지 (GameWriteChapterScreen)
                                           _bigAction('쓰기 게임', () {
                                             Navigator.push(
                                               context,
                                               MaterialPageRoute(
                                                 builder: (_) =>
-                                                    WriteGameMainPage(
+                                                    GameWriteChapterScreen(
                                                   childId: widget.childId,
                                                 ),
                                               ),
                                             );
                                           }),
                                           const SizedBox(width: kColsGap),
+                                          // ✅ [수정 안 함] 첫 번째 코드의 '듣기 게임' 로직 유지
                                           _bigAction('듣기 게임', () {
-                                            // TODO
+                                            Navigator.push(
+                                              context,
+                                              MaterialPageRoute(
+                                                builder: (_) =>
+                                                    GameListenChapterScreen(
+                                                  childId: widget.childId,
+                                                ),
+                                              ),
+                                            );
                                           }),
                                         ],
                                       ),
@@ -434,4 +465,3 @@ class _LobbyChildScreenState extends State<LobbyChildScreen> {
     );
   }
 }
-

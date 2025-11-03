@@ -3,7 +3,10 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:sinabro/main/gameView/writeGame/page/write_game_main.dart';
-import 'package:sinabro/main/gameView/writeGame/api/write_game_api.dart';
+// 열매ID, 게임 api
+import 'package:sinabro/main/gameView/common/api/fruit_state.dart';
+import 'package:sinabro/main/gameView/common/api/child_game_api.dart';
+
 // ⬇️ AUDIO IMPORT
 import 'package:audioplayers/audioplayers.dart';
 
@@ -40,8 +43,13 @@ const double kStringBottomPad = 120;
 const List<double> kBalloonRatios = [0.10, 0.30, 0.50, 0.70, 0.90];
 
 class WriteGameLevel1_2Page extends StatefulWidget {
-  const WriteGameLevel1_2Page({super.key, required this.childId});
+  const WriteGameLevel1_2Page({
+    super.key,
+    required this.childId,
+    this.resultId,
+    });
   final String childId;
+  final String? resultId;
 
   @override
   State<WriteGameLevel1_2Page> createState() => _WriteGameLevel1_2PageState();
@@ -62,7 +70,7 @@ class _WriteGameLevel1_2PageState extends State<WriteGameLevel1_2Page> {
   static const double coverageRatio = 0.70;
 
   // API/시간
-  String? _resultId;
+  String? resultId;
   final _sw = Stopwatch();
   bool _completing = false;
 
@@ -87,7 +95,9 @@ class _WriteGameLevel1_2PageState extends State<WriteGameLevel1_2Page> {
   void initState() {
     super.initState();
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
-    _startGame();
+
+    _initAndStart();
+
     // ⬇️ 씬 A (Swim) 시작 오디오 재생 (수정됨: COMMON_1 + INTRO_2 재생)
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       _playAssetAudio(LEVEL3_AUDIO_ASSETS_1_2['COMMON_1']!);
@@ -105,29 +115,27 @@ class _WriteGameLevel1_2PageState extends State<WriteGameLevel1_2Page> {
   }
   // ⬆️ AUDIO PLAYBACK LOGIC
 
-  Future<void> _startGame() async {
+  Future<void> _initAndStart() async {
     try {
-      _resultId = await WriteGameApi.start(
-        childId: widget.childId,
-        stageCode: 'FR_WG_002', // Level1-2 코드
-      );
-    } catch (_) {
-      _resultId = null;
-    }
-    _sw.start();
-  }
+      // ✅ 부모(WriteGameMainPage)에서 이미 /start 호출로 resultId 전달됨
+      resultId = widget.resultId ?? FruitState.instance.resultId;
+      if (resultId == null) {
+        throw Exception('resultId 없음 (/start 누락)');
+      }
 
-  Future<void> _completeGame() async {
-    if (_resultId == null || _completing) return;
-    _completing = true;
-    _sw.stop();
-    try {
-      await WriteGameApi.complete(
-        resultId: _resultId!,
-        totalQuestions: 3 + 5,
-        timeSpentSecs: _sw.elapsed.inSeconds,
-      );
-    } catch (_) {}
+      // 게임 시작 시각 기록
+      _sw.start();
+      debugPrint('[1-2] 🎯 resultId=$resultId → 게임 시작 타이머 시작');
+
+    } catch (e) {
+      debugPrint('[1-2] ⚠️ 초기화 실패: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('네트워크 오류. 잠시 후 다시 시도하세요.')),
+        );
+        Navigator.of(context).pop();
+      }
+    }
   }
 
   // ───────────── 가이드 생성 (폴리라인) ─────────────
@@ -253,8 +261,10 @@ class _WriteGameLevel1_2PageState extends State<WriteGameLevel1_2Page> {
       stroke.clear();
       activeLine = null;
       setState(() {});
+
       if (_allPassed) {
         if (scene == _Scene.swim) {
+
           Future.delayed(const Duration(milliseconds: 350), () {
             if (!mounted) return;
             setState(() {
@@ -268,8 +278,23 @@ class _WriteGameLevel1_2PageState extends State<WriteGameLevel1_2Page> {
             });
           });
         } else {
-          // 풍선 완료 → 서버 완료 기록 후 아웃트로
-          await _completeGame();
+          // ✅ 씬 B 완료 → 두 번째 choice + complete 전송
+          if (resultId != null) {
+            await ChildGameApi.recordWritingChoice(
+              resultId: resultId!,
+              questionId: 'WG_Q2_01',
+              childWrittenText: null,
+              isCorrect: true,
+            );
+            debugPrint('[1-2] ✅ choice 기록 완료 (WG_Q2_01)');
+
+            await ChildGameApi.completeWritingGame(
+              resultId: resultId!,
+              timeSpentSecs: _sw.elapsed.inSeconds,
+            );
+            debugPrint('[1-2] 🎉 complete 전송 완료');
+          }
+         
           if (!mounted) return;
           setState(() => scene = _Scene.outro);
         }
@@ -281,6 +306,7 @@ class _WriteGameLevel1_2PageState extends State<WriteGameLevel1_2Page> {
     }
   }
 
+  // ─────────────────────────────────────────────
   bool _gradeStroke(List<Offset> pts, _GuidePath guide) {
     if (pts.length < 6) return false;
 

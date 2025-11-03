@@ -17,6 +17,7 @@ import 'dart:convert';
 import 'package:sinabro/main/childView/page/lobby_child.dart';
 import 'package:sinabro/main/childView/page/level_test_page.dart';
 import 'package:sinabro/config.dart';
+import 'package:sinabro/main/gameView/common/api/child_state.dart';
 
 class LoginChildScreen extends StatefulWidget {
   const LoginChildScreen({super.key});
@@ -140,8 +141,11 @@ class _LoginChildScreenState extends State<LoginChildScreen> {
         // 공백 제거
         childId = childId.trim();
 
-        // ignore: avoid_print
+        // ✅ 로그인 성공 로그
         print('[login_child] 로그인 성공 childId=$childId');
+
+        // ✅ 🔥 전역 상태에 childId 저장
+        ChildState.instance.setChild(childId);
 
         // (중요) 여기서만 캐릭터 여부 확인/분기. 실패시 이동하지 않음.
         final info = await _fetchChildInfo(childId);
