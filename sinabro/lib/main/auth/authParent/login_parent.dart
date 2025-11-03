@@ -45,7 +45,7 @@ class _LoginPageState extends State<LoginParentScreen> {
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(
-        builder: (_) => const MyPage(), // MyPage로 이동
+        builder: (_) => MyPage(parentUserId: parentUserId), //마이페이지로 이동
       ),
     );
   }
