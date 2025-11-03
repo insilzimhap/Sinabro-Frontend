@@ -11,7 +11,6 @@ import 'package:sinabro/main/gameView/writeGame/page/level3/write_game_3_4.dart'
 import 'package:sinabro/main/gameView/common/api/fruit_state.dart';
 import 'package:sinabro/main/gameView/common/api/child_game_api.dart';
 
-
 // 진행도 관련
 import 'package:sinabro/main/gameView/tree_progress.dart';
 import 'package:sinabro/main/gameView/tree_progress_loader.dart';
@@ -24,7 +23,7 @@ class WriteGameMain3Page extends StatefulWidget {
   static const String routeName = '/write/game/hub3';
   static const String stageId = 'ST012'; // ✅ 쓰기게임 나무3(Stage 3)
 
-@override
+  @override
   State<WriteGameMain3Page> createState() => _WriteGameMain3PageState();
 }
 
@@ -49,104 +48,108 @@ class _WriteGameMain3PageState extends State<WriteGameMain3Page> {
 
           final progress = snapshot.data!;
 
+          return Stack(
+            children: [
+              // 배경
+              Positioned.fill(
+                child: Image.asset(
+                  'assets/img/contents/gameWrite/write_game_3_bg.png',
+                  fit: BoxFit.cover,
+                ),
+              ),
 
+              // 한글박사 (독립 배치)
+              const Positioned(top: 25, left: 0, right: 0, child: _Professor()),
 
-      return Stack(
-        children: [
-          // 배경
-          Positioned.fill(
-            child: Image.asset(
-              'assets/img/contents/gameWrite/write_game_3_bg.png',
-              fit: BoxFit.cover,
-            ),
-          ),
+              // 말풍선 (독립 배치: 위치/크기 여기서 조절)
+              const Positioned(
+                top: 60, // 화면 위에서부터 거리
+                right: 120, // 오른쪽 여백
+                child: _Balloon(
+                  width: 380,
+                  height: 220,
+                  text: '벌써 마지막까지...\n대단한 아이로군',
+                ),
+              ),
 
-          // 한글박사 (독립 배치)
-          const Positioned(top: 25, left: 0, right: 0, child: _Professor()),
+              // ── 컵 4개 ─────────────────────────────────────────
+              // 아래 예시는 '정규화(비율) 방식'으로 균형 잡힌 배치값을 넣어둔 상태야.
+              // 각 컵마다 width/height/alignX/alignY 숫자만 바꿔 미세 조정하면 됨.
+              _CupButton(
+                // 동물 컵 -> FR_WG_008
+                fruitId: 'FR_WG_008',
+                isActive: progress.isFruitActive('FR_WG_008'),
+                width: 370,
+                height: 390,
+                alignX: -0.92, // 왼쪽
+                alignY: 0.82, // 아래쪽
+                onTap: (context) async {
+                  await _startGame(
+                      context, 'FR_WG_008', WriteGameLevel3_1Page.new);
+                },
+              ),
+              _CupButton(
+                // 과일 컵 -> FR_WG_009
+                fruitId: 'FR_WG_009',
+                isActive: progress.isFruitActive('FR_WG_009'),
+                width: 370,
+                height: 390,
+                alignX: -0.34,
+                alignY: 0.82,
+                onTap: (context) async {
+                  await _startGame(
+                      context, 'FR_WG_009', WriteGameLevel3_2Page.new);
+                },
+              ),
+              _CupButton(
+                // 채소 컵 -> FR_WG_010
+                fruitId: 'FR_WG_010',
+                isActive: progress.isFruitActive('FR_WG_010'),
+                width: 370,
+                height: 390,
+                alignX: 0.28,
+                alignY: 0.82,
+                onTap: (context) async {
+                  await _startGame(
+                      context, 'FR_WG_010', WriteGameLevel3_3Page.new);
+                },
+              ),
+              _CupButton(
+                // 우리 몸 컵 -> FR_WG_011
+                fruitId: 'FR_WG_011',
+                isActive: progress.isFruitActive('FR_WG_011'),
+                width: 370,
+                height: 390,
+                alignX: 0.8,
+                alignY: 0.844,
+                onTap: (context) async {
+                  await _startGame(
+                      context, 'FR_WG_011', WriteGameLevel3_4Page.new);
+                },
+              ),
 
-          // 말풍선 (독립 배치: 위치/크기 여기서 조절)
-          const Positioned(
-            top: 60, // 화면 위에서부터 거리
-            right: 120, // 오른쪽 여백
-            child: _Balloon(
-              width: 380,
-              height: 220,
-              text: '벌써 마지막까지...\n대단한 아이로군',
-            ),
-          ),
-
-          // ── 컵 4개 ─────────────────────────────────────────
-          // 아래 예시는 '정규화(비율) 방식'으로 균형 잡힌 배치값을 넣어둔 상태야.
-          // 각 컵마다 width/height/alignX/alignY 숫자만 바꿔 미세 조정하면 됨.
-          _CupButton(
-            // 동물 컵 -> FR_WG_008
-            fruitId: 'FR_WG_008',
-            isActive: progress.isFruitActive('FR_WG_008'),
-            width: 370,
-            height: 390,
-            alignX: -0.92, // 왼쪽
-            alignY: 0.82, // 아래쪽
-            onTap: (context) async {
-              await _startGame(context, 'FR_WG_008', WriteGameLevel3_1Page.new);
-            },
-          ),
-          _CupButton(
-            // 과일 컵 -> FR_WG_009
-            fruitId: 'FR_WG_009',
-            isActive: progress.isFruitActive('FR_WG_009'),
-            width: 370,
-            height: 390,
-            alignX: -0.34,
-            alignY: 0.82,
-            onTap: (context) async {
-              await _startGame(context, 'FR_WG_009', WriteGameLevel3_2Page.new);
-            },
-          ),
-          _CupButton(
-            // 채소 컵 -> FR_WG_010
-            fruitId: 'FR_WG_010',
-            isActive: progress.isFruitActive('FR_WG_010'),
-            width: 370,
-            height: 390,
-            alignX: 0.28,
-            alignY: 0.82,
-            onTap: (context) async {
-              await _startGame(context, 'FR_WG_010', WriteGameLevel3_3Page.new);
-            },
-          ),
-          _CupButton(
-            // 우리 몸 컵 -> FR_WG_011
-            fruitId: 'FR_WG_011',
-            isActive: progress.isFruitActive('FR_WG_011'),
-            width: 310,
-            height: 310,
-            alignX: 0.8,
-            alignY: 0.72,
-            onTap: (context) async {
-              await _startGame(context, 'FR_WG_011', WriteGameLevel3_4Page.new);
-            },
-          ),
-
-          // 만약 픽셀 기준으로 움직이고 싶으면 이렇게도 가능(alignX/Y 미지정):
-          // _CupButton(
-          //   asset: '...',
-          //   width: 170,
-          //   height: 190,
-          //   left: 60,      // px
-          //   bottom: 40,    // px
-          //   onTap: ...
-          // ),
-        ],
-      );
+              // 만약 픽셀 기준으로 움직이고 싶으면 이렇게도 가능(alignX/Y 미지정):
+              // _CupButton(
+              //   asset: '...',
+              //   width: 170,
+              //   height: 190,
+              //   left: 60,      // px
+              //   bottom: 40,    // px
+              //   onTap: ...
+              // ),
+            ],
+          );
         },
       ),
     );
   }
+
   /// ✅ 공통 시작 로직
   Future<void> _startGame(
     BuildContext context,
     String fruitId,
-    Widget Function({required String childId, required String resultId}) pageBuilder,
+    Widget Function({required String childId, required String resultId})
+        pageBuilder,
   ) async {
     try {
       FruitState.instance
@@ -175,16 +178,17 @@ class _WriteGameMain3PageState extends State<WriteGameMain3Page> {
       _showSnack(context, '⚠️ 네트워크 오류가 발생했습니다.');
     }
   }
-  // SnackBar 헬퍼 
-  void _showSnack(BuildContext context, String msg) { 
-    ScaffoldMessenger.of(context).showSnackBar( 
-      SnackBar( 
-        content: Text(msg), 
-        backgroundColor: Colors.brown.shade400, 
-        duration: const Duration(seconds: 2), 
+
+  // SnackBar 헬퍼
+  void _showSnack(BuildContext context, String msg) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(msg),
+        backgroundColor: Colors.brown.shade400,
+        duration: const Duration(seconds: 2),
       ),
-    ); 
-  } 
+    );
+  }
 }
 
 /* ───────────── 분리 위젯들 ───────────── */
@@ -292,7 +296,6 @@ class _CupButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-
     final entry = fruitImageMap[fruitId];
     if (entry == null) {
       debugPrint('⚠️ [CupButton] 이미지 매핑 없음: $fruitId');
@@ -303,14 +306,14 @@ class _CupButton extends StatelessWidget {
 
     final image = GestureDetector(
       onTap: isActive
-        ? () => onTap(context)
-        : () => ScaffoldMessenger.of(context).showSnackBar(
+          ? () => onTap(context)
+          : () => ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: const Text('🔒 잠긴 테마입니다.'),
                   backgroundColor: Colors.brown.shade400,
                   duration: const Duration(seconds: 2),
                 ),
-          ),
+              ),
       child: Image.asset(
         path,
         width: width,

@@ -138,7 +138,7 @@ const _END_FAIL = '${_IMG_DIR}end_fail.png'; // 3번
 // const _CONS_AUD = 'assets/audio/gameWrite2/cons/';
 // const _VOW_AUD = 'assets/audio/gameWrite2/vowels/';
 
-enum _TargetType { consonant, vowel }  //타입 보내기
+enum _TargetType { consonant, vowel } //타입 보내기
 
 class _Item {
   final String key; // 식별 키
@@ -456,7 +456,6 @@ class _WriteGameLevel2_3PageState extends State<WriteGameLevel2_3Page> {
 
   Future<void> _initAndStart() async {
     try {
-
       // resultId는 부모 페이지에서 전달됨
       _resultId = widget.resultId ?? FruitState.instance.resultId;
 
@@ -470,7 +469,6 @@ class _WriteGameLevel2_3PageState extends State<WriteGameLevel2_3Page> {
       // ✅ 게임 시작 시점 기록
       _startTime = DateTime.now();
       debugPrint('[2-1] 🎯 게임 시작 시각 기록됨 → $_startTime');
-
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -501,17 +499,19 @@ class _WriteGameLevel2_3PageState extends State<WriteGameLevel2_3Page> {
   /// Selvy 후보셋을 현재 자음 하나로 고정
   Future<void> _applyCandidate() async {
     try {
-      final isConsonant = current.type == _TargetType.consonant;
-      final typeLabel =
-        current.type == _TargetType.consonant ? "consonant" : "vowel";
+      debugPrint('🟡 [Selvy] 후보셋 적용 시작');
+      // ✅ Selvy 완전 재초기화 (문제별로 다시 셋팅)
+      await _canvasKey.currentState?.reinitializeSelvy();
 
-      debugPrint('[2-3] 현재 문제: ${current.char} → 인식 모드=$typeLabel');
+      // 🕒 딜레이 추가 (언어 버퍼 교체 대기)
+      await Future.delayed(const Duration(milliseconds: 120));
 
-      // 🔥 [필수 수정]: setLanguage를 통해 인식 타입(1:자음, 2:모음)을 명시
-      await SelvyRecognizer.setLanguage(0, isConsonant ? 1 : 2); 
+      await SelvyRecognizer.clearInk(); // 버퍼 비우기
 
+      //debugPrint('🟡🟢 [Selvy] reinitialize 완료');
+      //Selvy 후보셋 설정
       await SelvyRecognizer.setCandidateSet([current.char]);
-      debugPrint('[2-3] Selvy 모드/후보셋 설정 완료 → [$typeLabel | ${current.char}]');
+      debugPrint('🎯 [Selvy] candidateSet 적용 완료 (${current.char})');
     } catch (e) {
       debugPrint('[2-3] Selvy 후보셋/모드 설정 실패: $e');
     }
@@ -614,17 +614,19 @@ class _WriteGameLevel2_3PageState extends State<WriteGameLevel2_3Page> {
   Future<bool> _sendChoice({
     required String shownChar, //changed
     required String correctChar, // 정답 기준 (랜덤 문제의 자음)
-    required bool isCorrect,   //changed
+    required bool isCorrect, //changed
   }) async {
     if (_resultId == null) return false; //changed
 
-    final questionId = WG.requireWgQuestionId( //changed
+    final questionId = WG.requireWgQuestionId(
+      //changed
       WG.consonantVowelQuestionMap,
       correctChar,
       ctx: 'Stage2-3',
     );
 
-    final success = await ChildGameApi.recordWritingChoice( //changed
+    final success = await ChildGameApi.recordWritingChoice(
+      //changed
       resultId: _resultId!, //changed
       questionId: questionId, //changed
       childWrittenText: shownChar, //changed
@@ -635,21 +637,22 @@ class _WriteGameLevel2_3PageState extends State<WriteGameLevel2_3Page> {
         ? '[2-3][_sendChoice] ✅ 서버 기록 성공'
         : '[2-3][_sendChoice] ⚠️ 서버 기록 실패'); //changed
     return success; //changed
-    }
+  }
 
   // ---------------------------------------------------------------------------
   // [3] 게임 완료 후 성공/실패 판정 (_completeAndGetSuccess)
   // ---------------------------------------------------------------------------
-  Future<bool> _completeAndGetSuccess({required int timeSpentSecs}) async { //changed
-    if (_resultId == null) return false; 
+  Future<bool> _completeAndGetSuccess({required int timeSpentSecs}) async {
+    //changed
+    if (_resultId == null) return false;
 
-    final data = await ChildGameApi.completeWritingGame( 
-      resultId: _resultId!, 
-      timeSpentSecs: timeSpentSecs, 
+    final data = await ChildGameApi.completeWritingGame(
+      resultId: _resultId!,
+      timeSpentSecs: timeSpentSecs,
     );
 
     if (data == null) {
-      debugPrint('[2-3][_completeAndGetSuccess] ⚠️ 서버 응답 없음'); 
+      debugPrint('[2-3][_completeAndGetSuccess] ⚠️ 서버 응답 없음');
       return false;
     }
 
@@ -657,7 +660,7 @@ class _WriteGameLevel2_3PageState extends State<WriteGameLevel2_3Page> {
     final score = data['score'];
     final total = data['totalQuestions'];
     debugPrint('[2-3][_completeAndGetSuccess] ✅ 서버 success=$success '
-              '(score=$score / total=$total)'); 
+        '(score=$score / total=$total)');
     return success;
   }
 
@@ -667,12 +670,14 @@ class _WriteGameLevel2_3PageState extends State<WriteGameLevel2_3Page> {
   void _onRecognize(String recognized) async {
     final mine = _normalize(recognized); //changed
     final isCorrect = mine == current.char; //changed
-    debugPrint('[2-3][_onRecognize] 🔍 인식결과: $mine → 정답=${current.char}'); //changed
+    debugPrint(
+        '[2-3][_onRecognize] 🔍 인식결과: $mine → 정답=${current.char}'); //changed
 
     // 1️⃣ 서버에 개별 문제 기록
-    await _sendChoice( //changed
+    await _sendChoice(
+      //changed
       shownChar: mine,
-      correctChar: current.char, 
+      correctChar: current.char,
       isCorrect: isCorrect,
     );
 
@@ -698,7 +703,8 @@ class _WriteGameLevel2_3PageState extends State<WriteGameLevel2_3Page> {
       // ✅ 프론트 성공 여부 계산
       final correctCount = _results.where((e) => e).length; //changed
       final frontSuccess = correctCount >= 3; //changed
-      debugPrint('[2-3] 🎯 프론트 success=$frontSuccess (정답 $correctCount/4)'); //changed
+      debugPrint(
+          '[2-3] 🎯 프론트 success=$frontSuccess (정답 $correctCount/4)'); //changed
 
       // ✅ 서버 성공 여부 요청
       final serverSuccess =
@@ -707,10 +713,11 @@ class _WriteGameLevel2_3PageState extends State<WriteGameLevel2_3Page> {
 
       // ✅ 최종 비교 로직
       final isConsistent = (frontSuccess == serverSuccess); //changed
-      final finalSuccess = frontSuccess && serverSuccess && isConsistent; //changed
+      final finalSuccess =
+          frontSuccess && serverSuccess && isConsistent; //changed
 
       debugPrint('[2-3] ✅ 최종 success=$finalSuccess '
-                '(front=$frontSuccess / server=$serverSuccess / 일치=$isConsistent)'); //changed
+          '(front=$frontSuccess / server=$serverSuccess / 일치=$isConsistent)'); //changed
 
       // ✅ 엔딩 화면 호출
       await _showEndSequence(finalSuccess: frontSuccess); //changed
@@ -970,6 +977,8 @@ class _WriteGameLevel2_3PageState extends State<WriteGameLevel2_3Page> {
                                           ),
                                         ),
                                         SizedBox(
+                                          key: ValueKey(current
+                                              .key), // ✅ 문제마다 새롭게 rebuild 유도
                                           width: pad * 0.98,
                                           height: pad * 0.98,
                                           child: WritingCanvas(

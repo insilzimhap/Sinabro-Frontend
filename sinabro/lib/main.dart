@@ -102,24 +102,29 @@ class MyApp extends StatelessWidget {
               final list = args['lessonsToShow'];
               final isGold = args['isGold'];
               final childId = args['childId']; // ✅ childId 추출
+              final fruitId = args['fruitId']; // ⭐️ [수정] 네(HEAD) 브랜치 코드 유지
 
               // 데이터 타입이 모두 맞는지 확인
               if (list is List<ColorLessonData> &&
                   isGold is bool &&
-                  childId is String) {
+                  childId is String &&
+                  fruitId is String) { // ⭐️ [수정] 네(HEAD) 브랜치 코드 유지 (fruitId String 체크)
+
                 // ColorEntryPage 생성 및 반환
                 return MaterialPageRoute(
                   builder: (_) => ColorEntryPage(
                     lessonsToShow: list,
                     isGold: isGold,
                     childId: childId, // ✅ 생성자에 childId 전달
+                    fruitId: fruitId, // ⭐️ [수정] 네(HEAD) 브랜치 코드 유지 (fruitId 전달)
                   ),
                   settings: settings,
                 );
               }
               // 데이터가 없거나 타입이 틀리면 에러 페이지 반환
-              return error(
-                  'ColorEntryPage: arguments (lessonsToShow, isGold, childId) 누락 또는 타입 오류');
+              // ⭐️ 에러 메시지도 fruitId 포함하도록 수정
+              return error( 
+                  'ColorEntryPage: arguments (lessonsToShow, isGold, childId, fruitId) 누락 또는 타입 오류');
             }
 
           // --- AnimalStudyEntry ---
@@ -163,3 +168,4 @@ class MyApp extends StatelessWidget {
     ); // MaterialApp 끝
   } // build 끝
 } // MyApp 끝
+

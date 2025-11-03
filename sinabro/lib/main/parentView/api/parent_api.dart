@@ -11,11 +11,13 @@ import 'package:http/http.dart' as http;
 import 'package:sinabro/config.dart';
 import 'package:sinabro/common/auth_client.dart';
 
-final _client = AuthClient.instance;
+//final _client = AuthClient.instance;
 
 class ParentApi {
   // 부모 프로필 조회
   static Future<String> fetchParentName(String userId) async {
+    final _client = AuthClient.instance; // 💡 이 줄을 추가합니다.
+
     final uri = Uri.parse('$baseUrl/api/users/profile'); // ❌ userId 쿼리 제거
     final res = await _client.get(
       uri,
@@ -37,6 +39,8 @@ class ParentApi {
 
   // 부모 기준 자녀 목록 조회
   static Future<List<ChildSummary>> fetchChildren(String userId) async {
+    final _client = AuthClient.instance; // 💡 이 줄을 추가합니다.
+
     final uri = Uri.parse('$baseUrl/api/children'); // ❌ userId 쿼리 제거
     final res = await _client.get(
       uri,
@@ -77,6 +81,8 @@ class ParentApi {
 
   // 마이페이지 프리필: GET /api/app/mypage/parent/{userId}
   static Future<ParentProfile> fetchParentProfile(String userId) async {
+    final _client = AuthClient.instance; // 💡 이 줄을 추가합니다.
+
     final uri = Uri.parse('$baseUrl/api/app/mypage/parent/$userId');
     final res = await _client.get(
       uri,
@@ -100,6 +106,8 @@ class ParentApi {
     String userId,
     String currentPassword,
   ) async {
+    final _client = AuthClient.instance; // 💡 이 줄을 추가합니다.
+
     final uri = Uri.parse(
       '$baseUrl/api/app/mypage/parent/$userId/verify-password',
     );
@@ -129,6 +137,8 @@ class ParentApi {
     String? newPassword,
     String? newPasswordConfirm,
   }) async {
+    final _client = AuthClient.instance; // 💡 이 줄을 추가합니다.
+
     final uri = Uri.parse('$baseUrl/api/app/mypage/parent/$userId');
     final payload = {
       'userEmail': userEmail,
@@ -166,6 +176,8 @@ class ParentApi {
 
   // 부모 설정 조회: GET /api/app/mypage/parent/{userId}/settings
   static Future<ParentSettings> fetchSettings(String userId) async {
+    final _client = AuthClient.instance; // 💡 이 줄을 추가합니다.
+
     final uri = Uri.parse('$baseUrl/api/app/mypage/parent/$userId/settings');
     final res = await _client.get(
       uri,
@@ -190,6 +202,8 @@ class ParentApi {
     required bool emailSubscription,
     required String userLanguage,
   }) async {
+    final _client = AuthClient.instance; // 💡 이 줄을 추가합니다.
+
     final uri = Uri.parse('$baseUrl/api/app/mypage/parent/$userId/settings');
     final payload = {
       'allowNotifications': allowNotifications,
@@ -221,6 +235,8 @@ class ParentApi {
     String userId,
     String currentPassword,
   ) async {
+    final _client = AuthClient.instance; // 💡 이 줄을 추가합니다.
+
     final uri = Uri.parse(
       '$baseUrl/api/app/mypage/parent/$userId/verify-delete',
     );
@@ -244,6 +260,8 @@ class ParentApi {
     String userId,
     String currentPassword,
   ) async {
+    final _client = AuthClient.instance; // 💡 이 줄을 추가합니다.
+
     final uri = Uri.parse('$baseUrl/api/app/mypage/parent/$userId');
     final res = await _client.delete(
       uri,
@@ -262,6 +280,8 @@ class ParentApi {
 
   // 로그아웃: POST /api/users/logout //changed
   static Future<void> logout() async {
+    final _client = AuthClient.instance; // 💡 이 줄을 추가합니다.
+
     final uri = Uri.parse('$baseUrl/api/users/logout');
     final res = await _client.post(
       uri,
@@ -274,6 +294,8 @@ class ParentApi {
 
   // 부모 언어 조회: GET /api/app/mypage/parent/{userId}/language -> for 연슈슈!!!
   static Future<String> fetchParentLanguage(String userId) async {
+    final _client = AuthClient.instance; // 💡 이 줄을 추가합니다.
+    
     final uri = Uri.parse('$baseUrl/api/app/mypage/parent/$userId/language');
     print(
       '[ParentApi] 부모 언어 조회 요청: GET /api/app/mypage/parent/$userId/language',

@@ -17,6 +17,11 @@
  */
 import 'package:flutter/material.dart';
 
+// ⭐️ [추가] API 연동을 위한 3개 import
+import 'dart:convert';
+import 'package:sinabro/common/auth_client.dart';
+import 'package:sinabro/config.dart';
+
 // 공통 위젯 import (절대 경로)
 import 'package:sinabro/main/studyView/common/widget/apple_popup.dart';
 // 레벨 3 관련 페이지, 모델, 데이터 import (절대 경로)
@@ -35,6 +40,40 @@ const routeNameLevel3IntroTopic = '/level3-intro-topic';
 const routeNameLevel3MainTopic = '/level3-main-topic';
 const routeNameLevel3MainKeyword = '/level3-main-keyword';
 
+// ======================================================
+// ⭐️ 공용 API 함수 및 클라이언트
+// ======================================================
+
+final AuthClient _authClient = AuthClient();
+
+Future<void> _completeStudy(String childId, String fruitId, DateTime startTime) async {
+  final int timeSpentSecs = DateTime.now().difference(startTime).inSeconds;
+  final body = jsonEncode({
+    'childId': childId,
+    'fruitId': fruitId,
+    'isCompleted': true,
+    'timeSpentSecs': timeSpentSecs,
+  });
+  final uri = Uri.parse('$baseUrl/api/study/listening/complete');
+
+  try {
+    debugPrint('[Level3 Flow] 듣기 학습 완료 API 호출: $body');
+    final response = await _authClient.post(
+      uri,
+      headers: {'Content-Type': 'application/json'},
+      body: body,
+    );
+    if (response.statusCode == 200) {
+      debugPrint('[Level3 Flow] 듣기 학습 완료 처리 성공 (fruitId: $fruitId)');
+    } else {
+      debugPrint('[Level3 Flow] 학습 완료 처리 실패: (${response.statusCode}) ${response.body}');
+    }
+  } catch (e) {
+    debugPrint('[Level3 Flow] 학습 완료 API 호출 중 예외 발생: $e');
+  }
+}
+
+
 /// 🍎 레벨 3 듣기 학습 시작 함수
 /// - `listen_study_router`에서 호출됩니다.
 /// - 해당 일상 주제(아침/점심/놀이/저녁)의 학습 흐름을 시작합니다.
@@ -48,7 +87,13 @@ Future<void> startLevel3Routine(
   int routineIndex, {
   required bool isGold,
   required String childId, // ✅ 자녀 ID 추가됨
+  required String fruitId,
 }) async {
+  // ⭐️ [추가] 학습 시작 시간 기록
+  final DateTime startTime = DateTime.now();
+  // ⭐️ [추가] 완료 플래그 (중복 호출 방지)
+  bool isCompleted = false;
+  
   // routineIndex에 해당하는 데이터 필터링 (e.g., "1-"로 시작하는 ID들)
   final routineData = routineContents
       .where((r) => r.id.startsWith("${routineIndex + 1}-"))
@@ -91,9 +136,21 @@ Future<void> startLevel3Routine(
                 onTap: () {
                   debugPrint(
                       '[Level3 Flow] Main Topic finished. Starting keyword flow.');
-                  // 3. 메인 토픽 완료 후, 첫 번째 키워드부터 실제 학습 흐름 시작
-                  startLevel3RoutineFlow(topicContext, routineData, 0,
-                      routineIndex, isGold, childId); // ✅ childId 전달
+                  startLevel3RoutineFlow(
+                    topicContext, 
+                    routineData, 
+                    0, // keywordIndex
+                    routineIndex, 
+                    isGold, 
+                    childId,
+                    fruitId,   // ⭐️ [추가]
+                    startTime, // ⭐️ [추가]
+                    () { // ⭐️ [추가] 완료 콜백 함수 전달
+                        if (isCompleted) return;
+                        isCompleted = true;
+                        _completeStudy(childId, fruitId, startTime);
+                      }
+                    );
                 },
               ),
             ),
@@ -120,11 +177,18 @@ Future<void> startLevel3RoutineFlow(
   int routineIndex,
   bool isGold,
   String childId, // ✅ 자녀 ID 추가됨
+  // ⭐️ [추가] API 연동 파라미터
+  String fruitId,
+  DateTime startTime,
+  VoidCallback onCompleteApiCall,
 ) async {
   // 4. 종료 조건: 모든 키워드 학습 완료 시
   if (keywordIndex >= routineData.length) {
     debugPrint('[Level3 Flow] All keywords finished. Showing popup.');
     // 완료 팝업 표시 후 종료
+    // ⭐️ [수정] 1. API 호출
+    onCompleteApiCall();
+
     await showApplePopup(flowContext,
         isGold: isGold, childId: childId); // ✅ childId 전달
     return;
@@ -162,7 +226,11 @@ Future<void> startLevel3RoutineFlow(
               0, // 첫 번째 스토리부터 시작
               routineIndex,
               isGold,
-              childId); // ✅ childId 전달
+              childId,
+              fruitId,   // ⭐️ [추가]
+              startTime, // ⭐️ [추가]
+              onCompleteApiCall
+            ); // ✅ childId 전달
         },
       ),
     ),
@@ -187,6 +255,10 @@ void startStoryFlow(
   int routineIndex,
   bool isGold,
   String childId, // ✅ 자녀 ID 추가됨
+  // ⭐️ [추가] API 연동 파라미터
+  String fruitId,
+  DateTime startTime,
+  VoidCallback onCompleteApiCall,
 ) {
   final currentKeyword = routineData[keywordIndex];
 
@@ -200,8 +272,18 @@ void startStoryFlow(
     // pop 후 활성화된 이전 페이지(MainKeywordPage)의 context를 사용해야 하지만,
     // 직접 접근이 어려우므로 pop 전의 context(currentStoryContext)를 그대로 사용.
     // pushReplacement는 스택 최상단을 교체하므로 이 방식도 동작함.
-    startLevel3RoutineFlow(currentStoryContext, routineData, keywordIndex + 1,
-        routineIndex, isGold, childId); // ✅ childId 전달
+    // ⭐️ [수정] 다음 키워드로 이동하는 재귀 호출
+    startLevel3RoutineFlow(
+      currentStoryContext, // pop 됐지만 context는 유효함 (MainKeywordPage의 context)
+      routineData, 
+      keywordIndex + 1, // 다음 키워드
+      routineIndex, 
+      isGold, 
+      childId,
+      fruitId,   // ⭐️ [추가]
+      startTime, // ⭐️ [추가]
+      onCompleteApiCall // ⭐️ [추가]
+    );
     return;
   }
 
@@ -232,6 +314,9 @@ void startStoryFlow(
             routineIndex,
             isGold,
             childId, // ✅ childId 전달
+            fruitId,   // ⭐️ [추가]
+            startTime, // ⭐️ [추가]
+            onCompleteApiCall // ⭐️ [추가]
           );
         }
       },

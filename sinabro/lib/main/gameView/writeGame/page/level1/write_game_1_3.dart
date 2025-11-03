@@ -1,87 +1,55 @@
 // lib/main/gameView/writeGame/page/level1/write_game_1_3.dart
+// 레벨1-3 (따라그려봐요 - 곡선)
+// 씬 A: plane3 이미지 1장 가이드(plane_write 로직 이식) → 성공 시 씬 B
+// 씬 B: 달팽이(나선) → 성공 시 아웃트로 → 메인 복귀
 import 'dart:math' as math;
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:audioplayers/audioplayers.dart';
+
 import 'package:sinabro/main/gameView/writeGame/page/write_game_main.dart';
-// 열매ID, 게임 api
 import 'package:sinabro/main/gameView/common/api/fruit_state.dart';
 import 'package:sinabro/main/gameView/common/api/child_game_api.dart';
 
-// ⬇️ AUDIO IMPORT
-import 'package:audioplayers/audioplayers.dart';
-
-// ⬇️ AUDIO ASSET DEFINITIONS
-// 오디오 에셋 경로
+/* ───────────────── Audio ───────────────── */
 const String _audioDir = 'audio/tts/gameWrite/level1/';
+// “따라, 그려봐요~!” 공통 오디오
+const String kAudioFollow = '${_audioDir}write3_game_common_1.mp3';
+// (선택) 씬 유도 멘트 있으면 사용
+const String kAudioIntro = '${_audioDir}write3_game_intro_3.mp3';
 
-// 3세 쓰기 게임 1-3 레벨 오디오 에셋 정의
-const Map<String, String> LEVEL3_AUDIO_ASSETS_1_3 = {
-  // 구분: 공통 | 대사: 따라, 그려봐요~!
-  'COMMON_1': _audioDir + 'write3_game_common_1.mp3',
-  // 구분: 인트로 3 | 대사: 빙글~ 빙글~ 그리기. (씬 A/B 유도용)
-  'INTRO_3': _audioDir + 'write3_game_intro_3.mp3',
-};
-// ⬆️ AUDIO ASSET DEFINITIONS
-
-enum _Scene { birds, snail, outro }
-
-/* ───────────────── visual constants ───────────────── */
-const Color kGuideBaseColor = Color(0xFFDBDBDB);
-const Color kGuidePassColor = Color(0xFF27AE60);
-const double kGuideStrokeWidth = 10.0;
-const double kPassedStrokeWidth = 10.0;
-
-/* ───────────────── layout constants ───────────────── */
-const double kTitleTopGap = 12;
-
-/* ======================= Scene A: Birds (이미지 마스크 3줄) ======================= */
-const int kBirdLines = 3;
-const double kBirdTop = 160;
-const double kBirdRowGap = 155;
-const double kBirdImgRight = 24;
-const double kBirdImgSize = 100;
-
-const String kBirdGuideAsset = 'assets/img/contents/studyWrite/plane3.png';
-
-const double kBirdGuideLeftNorm = 0.10;
-const double kBirdGuideTopNorm = 0.22;
-const double kBirdGuideWidthNorm = 0.80;
-const double kBirdGuideOpacity = 1.0;
-const Color kBirdGuideTint = Color(0xFFB3B3B3);
-
-class BirdRowLayout {
-  final double? leftNorm;
-  final double? topNorm;
-  final double? widthNorm;
-  final double dxPx;
-  final double dyPx;
-  const BirdRowLayout({
-    this.leftNorm,
-    this.topNorm,
-    this.widthNorm,
-    this.dxPx = 0,
-    this.dyPx = 0,
-  });
-}
-
-const List<BirdRowLayout> kBirdRowOverrides = <BirdRowLayout>[
-  BirdRowLayout(widthNorm: 0.4, dxPx: -8, dyPx: -50),
-  BirdRowLayout(widthNorm: 0.4, dxPx: 500, dyPx: -50),
-  BirdRowLayout(widthNorm: 0.4, dxPx: -8, dyPx: -50),
-];
-
-const double kBirdTargetCoverage = 0.70;
-const double kBirdSnapRadiusPx = 26;
-const int kBirdStampRadiusPx = 8;
-const int kBirdSampleStridePx = 4;
-const ui.Color kBirdStrokeColor = ui.Color(0xFF0050FF);
-const double kBirdStrokeBasePx = 18;
-
-/* ======================= Scene B: Snail (이미지 + 나선) ======================= */
+/* ───────────────── Assets ───────────────── */
+// 씬 A 가이드 (흰 배경에서도 보이도록 틴트)
+const String kGuidePlane3 = 'assets/img/contents/studyWrite/plane3.png';
+// (선택) 장식용 새
+const String kBirdAsset = 'assets/img/contents/gameWrite/bird.png';
+// 씬 B 달팽이 이미지
 const String kSnailAsset = 'assets/img/contents/gameWrite/snail.png';
+
+/* ───────────────── Scene enum ───────────────── */
+enum _Scene { aPlane, snail, outro }
+
+/* ───────────────── Scene A layout & tuning ───────────────── */
+const double kATitleTopGap = 12;
+const double kAGuideLeftNorm = 0.06;
+const double kAGuideTopNorm = 0.32;
+const double kAGuideWidthNorm = 0.78;
+const double kAGuideOpacity = 0.18;
+const Color kAGuideTint = Color(0xFF77BFFF);
+
+// 펜 굵기(씬 A) — 여기 숫자만 바꾸면 즉시 반영
+const double kAStrokeBasePx = 60;
+// 판정 파라미터(씬 A)
+const double kATargetCoverage = 0.10;
+const double kASnapRadiusPx = 28;
+const int kAStampRadiusPx = 9;
+const int kASampleStridePx = 4;
+const ui.Color kAStrokeColor = ui.Color(0xFF0050FF);
+
+/* ───────────────── Scene B: Snail (나선) ───────────────── */
 const double kSnailImgLeft = 24;
 const double kSnailImgTop = 110;
 const double kSnailImgWidth = 650;
@@ -98,13 +66,21 @@ const int kSpiralSteps = 240;
 const double kSpiralDash = 16;
 const double kSpiralGap = 20;
 
-/* ───────────────── page ───────────────── */
+const Color kGuideBaseColor = Color(0xFFDBDBDB);
+const Color kGuidePassColor = Color(0xFF27AE60);
+const double kGuideStrokeWidth = 10.0;
+const double kPassedStrokeWidth = 10.0;
+
+// 달팽이 판정 튜닝
+const double kTol = 22.0;
+const double kStartPickTol = 64.0;
+const double kHitRatio = 0.72;
+const double kCoverageRatio = 0.72;
+
+/* ───────────────── Page ───────────────── */
 class WriteGameLevel1_3Page extends StatefulWidget {
-  const WriteGameLevel1_3Page({
-    super.key, 
-    required this.childId,
-    this.resultId
-    });
+  const WriteGameLevel1_3Page(
+      {super.key, required this.childId, this.resultId});
   final String childId;
   final String? resultId;
 
@@ -113,95 +89,65 @@ class WriteGameLevel1_3Page extends StatefulWidget {
 }
 
 class _WriteGameLevel1_3PageState extends State<WriteGameLevel1_3Page> {
-  _Scene scene = _Scene.birds;
+  _Scene scene = _Scene.aPlane;
 
-  // 씬 B
-  late List<bool> passed = List.filled(_lineCount, false);
-  int? activeLine;
-  List<Offset> stroke = [];
+  // 공통
+  final _sw = Stopwatch();
+  String? resultId;
+  final AudioPlayer _audio = AudioPlayer();
 
   // 씬 A
-  List<bool> birdsPassed = List<bool>.filled(kBirdLines, false);
+  double _aProgress = 0.0;
+  bool _aPassedOverlay = false;
 
-  static const double tol = 22.0;
-  static const double startPickTol = 64.0;
-  static const double hitRatio = 0.72;
-  static const double coverageRatio = 0.72;
-
-  // API/시간
-  String? resultId;
-  final _sw = Stopwatch();
-  bool _completed = false;
-
-  // ⬇️ AUDIO PLAYER INSTANCE
-  final AudioPlayer _audioPlayer = AudioPlayer();
-
-  int get _lineCount => scene == _Scene.snail ? 1 : 0;
-  bool get _allPassed => passed.every((e) => e);
-
-  // ⬇️ AUDIO PLAYBACK LOGIC
-  /// 오디오 재생 헬퍼 함수
-  Future<void> _playAssetAudio(String assetPath) async {
-    if (!mounted) return;
-    await _audioPlayer.stop(); // 기존 오디오 중지
-    await _audioPlayer.play(AssetSource(assetPath));
-    debugPrint('🎶 오디오 재생 시작 (1-3): $assetPath');
-  }
+  // 씬 B
+  late List<bool> passed = List.filled(1, false); // 달팽이 1개
+  int? activeLine;
+  List<Offset> stroke = [];
 
   @override
   void initState() {
     super.initState();
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
 
-    _initAndStart();
-
-    // ⬇️ 씬 A (Birds) 시작 오디오 재생 (수정됨: COMMON_1 + INTRO_3 재생)
     WidgetsBinding.instance.addPostFrameCallback((_) async {
-      _playAssetAudio(LEVEL3_AUDIO_ASSETS_1_3['COMMON_1']!);
-      _playAssetAudio(LEVEL3_AUDIO_ASSETS_1_3['INTRO_3']!);
+      resultId = widget.resultId ?? FruitState.instance.resultId;
+      if (resultId == null) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('네트워크 오류. 잠시 후 다시 시도하세요.')),
+        );
+        Navigator.of(context).maybePop();
+        return;
+      }
+      _sw.start();
+      // 진입 멘트
+      _play(kAudioFollow);
+      // 필요 시 추가 멘트
+      _play(kAudioIntro);
     });
   }
 
   @override
   void dispose() {
     _sw.stop();
+    _audio.dispose();
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
-    // ⬇️ AUDIO PLAYER DISPOSE
-    _audioPlayer.dispose();
     super.dispose();
   }
-  // ⬆️ AUDIO PLAYBACK LOGIC
 
-  Future<void> _initAndStart() async {
-    try {
-      // ✅ 부모(WriteGameMainPage)에서 이미 /start 호출로 resultId 전달됨
-      resultId = widget.resultId ?? FruitState.instance.resultId;
-      if (resultId == null) {
-        throw Exception('resultId 없음 (/start 누락)');
-      }
-
-      // 게임 시작 시각 기록
-      _sw.start();
-      debugPrint('[1-3] 🎯 resultId=$resultId → 게임 시작 타이머 시작');
-
-    } catch (e) {
-      debugPrint('[1-3] ⚠️ 초기화 실패: $e');
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('네트워크 오류. 잠시 후 다시 시도하세요.')),
-        );
-        Navigator.of(context).pop();
-      }
-    }
+  Future<void> _play(String assetPath, {bool loop = false}) async {
+    if (!mounted) return;
+    await _audio.stop();
+    await _audio.setReleaseMode(loop ? ReleaseMode.loop : ReleaseMode.release);
+    await _audio.play(AssetSource(assetPath));
   }
 
-
-  /* ───────────────── guides (씬 B) ───────────────── */
+  /* ───────── Scene B guide/stroke/grade ───────── */
   List<_GuidePath> _buildSnailGuide(Size size) {
     final center =
         Offset(size.width * kSpiralCxRatio, size.height * kSpiralCyRatio) +
             kSpiralCenterOffset;
-
     final a = kSpiralStartR, b = kSpiralGrowth, turns = kSpiralTurns;
     const steps = kSpiralSteps;
 
@@ -211,16 +157,13 @@ class _WriteGameLevel1_3PageState extends State<WriteGameLevel1_3Page> {
       final th = t * turns * 2 * math.pi;
       final r = a + b * th;
       pts.add(
-        Offset(center.dx + r * math.cos(th), center.dy + r * math.sin(th)),
-      );
+          Offset(center.dx + r * math.cos(th), center.dy + r * math.sin(th)));
     }
     return [_GuidePath.polyline(pts)];
   }
 
-  /* ───────────────── input (씬 B) ───────────────── */
   void _onPanStart(DragStartDetails d, Size size) {
-    if (_allPassed || scene != _Scene.snail) return;
-
+    if (scene != _Scene.snail || passed.every((e) => e)) return;
     final guides = _buildSnailGuide(size);
 
     int? pick;
@@ -228,7 +171,7 @@ class _WriteGameLevel1_3PageState extends State<WriteGameLevel1_3Page> {
     for (int i = 0; i < guides.length; i++) {
       if (passed[i]) continue;
       final dist = guides[i].distanceTo(d.localPosition);
-      if (dist < best && dist <= startPickTol) {
+      if (dist < best && dist <= kStartPickTol) {
         best = dist;
         pick = i;
       }
@@ -239,14 +182,13 @@ class _WriteGameLevel1_3PageState extends State<WriteGameLevel1_3Page> {
   }
 
   void _onPanUpdate(DragUpdateDetails d) {
-    if (activeLine == null || scene != _Scene.snail) return;
+    if (scene != _Scene.snail || activeLine == null) return;
     stroke.add(d.localPosition);
     setState(() {});
   }
 
   Future<void> _onPanEnd(Size size) async {
-    if (activeLine == null || scene != _Scene.snail) return;
-
+    if (scene != _Scene.snail || activeLine == null) return;
     final guides = _buildSnailGuide(size);
     final ok = _gradeStroke(stroke, guides[activeLine!]);
 
@@ -255,26 +197,20 @@ class _WriteGameLevel1_3PageState extends State<WriteGameLevel1_3Page> {
       stroke.clear();
       activeLine = null;
       setState(() {});
-      if (_allPassed) {
-        // ✅ 씬 B 완료 → choice 1회 + complete 전송 (1-1과 동일 패턴)
+      if (passed.every((e) => e)) {
+        // ✅ 달팽이 성공 → choice + complete → 아웃트로
         if (resultId != null) {
           await ChildGameApi.recordWritingChoice(
             resultId: resultId!,
-            questionId: 'WG_Q3_01',     // ← 레벨1-3의 questionId (DB와 일치 확인)
+            questionId: 'WG_Q3_01', // 레벨1-3 questionId (DB와 일치 확인)
             childWrittenText: null,
             isCorrect: true,
           );
-          debugPrint('[1-3] ✅ choice 기록 완료 (WG_Q3_01)');
-
           await ChildGameApi.completeWritingGame(
             resultId: resultId!,
             timeSpentSecs: _sw.elapsed.inSeconds,
           );
-          debugPrint('[1-3] 🎉 complete 전송 완료');
-        } else {
-          debugPrint('[1-3] ⚠️ resultId 없음으로 choice/complete 생략');
         }
-
         if (!mounted) return;
         setState(() => scene = _Scene.outro);
       }
@@ -290,7 +226,7 @@ class _WriteGameLevel1_3PageState extends State<WriteGameLevel1_3Page> {
 
     int hit = 0;
     for (final p in pts) {
-      if (guide.distanceTo(p) <= tol) hit++;
+      if (guide.distanceTo(p) <= kTol) hit++;
     }
     final ratio = hit / pts.length;
 
@@ -304,10 +240,10 @@ class _WriteGameLevel1_3PageState extends State<WriteGameLevel1_3Page> {
       }
     }
     final coverage = covered.where((v) => v).length / bins;
-    return ratio >= hitRatio && coverage >= coverageRatio;
+    return ratio >= kHitRatio && coverage >= kCoverageRatio;
   }
 
-  /* ───────────────── UI ───────────────── */
+  /* ───────── UI ───────── */
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -316,35 +252,107 @@ class _WriteGameLevel1_3PageState extends State<WriteGameLevel1_3Page> {
         builder: (context, c) {
           final size = Size(c.maxWidth, c.maxHeight);
 
-          if (scene == _Scene.birds) {
+          if (scene == _Scene.aPlane) {
             return Stack(
               children: [
-                const _TitleBanner(text: '따라그려봐요!'),
-                _buildSceneBirdsImageGuide(size),
-                ...List.generate(kBirdLines, (i) {
-                  final top = kBirdTop - 10 + i * kBirdRowGap;
-                  return Positioned(
-                    right: kBirdImgRight,
-                    top: top.toDouble(),
-                    width: kBirdImgSize,
-                    height: kBirdImgSize,
-                    child: Image.asset(
-                      'assets/img/contents/gameWrite/bird.png',
-                      fit: BoxFit.contain,
+                _TitleBanner(text: '따라그려봐요!', topGap: kATitleTopGap),
+                // 씬 A: plane3 이미지 가이드(틴트/굵기/판정)
+                _GameImageGuideLayer(
+                  key: const ValueKey('wg-1-3-plane3'),
+                  guideAsset: kGuidePlane3,
+                  leftNorm: kAGuideLeftNorm,
+                  topNorm: kAGuideTopNorm,
+                  widthNorm: kAGuideWidthNorm,
+                  guideOpacity: kAGuideOpacity,
+                  guideTint: kAGuideTint,
+                  targetCoverage: kATargetCoverage,
+                  snapRadiusPx: kASnapRadiusPx,
+                  stampRadiusPx: kAStampRadiusPx,
+                  sampleStridePx: kASampleStridePx,
+                  onProgress: (p) => setState(() => _aProgress = p),
+                  onDone: () async {
+                    setState(() => _aPassedOverlay = true);
+                    await Future.delayed(const Duration(milliseconds: 800));
+                    if (!mounted) return;
+                    setState(() {
+                      _aPassedOverlay = false;
+                      scene = _Scene.snail;
+                      passed = List.filled(1, false);
+                    });
+                    // 씬 B 진입 멘트
+                    _play(kAudioFollow);
+                    _play(kAudioIntro);
+                  },
+                  onFail: () => _play(kAudioFollow),
+                  strokeColor: kAStrokeColor,
+                  strokeWidthBasePx: kAStrokeBasePx,
+                ),
+
+                // 오른쪽 새(장식)
+                Positioned(
+                  right: 24,
+                  bottom: size.height * 0.22,
+                  width: 130,
+                  height: 130,
+                  child: Image.asset(kBirdAsset, fit: BoxFit.contain),
+                ),
+
+                // 하단 진행 안내
+                SafeArea(
+                  minimum: const EdgeInsets.only(bottom: 16),
+                  child: Align(
+                    alignment: Alignment.bottomCenter,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 20, vertical: 10),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withOpacity(0.35),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        '선을 따라 그려보세요! ${(_aProgress * 100).round()}%',
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 20,
+                          fontWeight: FontWeight.w700,
+                          height: 1.2,
+                          shadows: [
+                            Shadow(
+                                color: Colors.black26,
+                                offset: Offset(0, 2),
+                                blurRadius: 4)
+                          ],
+                        ),
+                      ),
                     ),
-                  );
-                }),
+                  ),
+                ),
+
+                if (_aPassedOverlay) const _OverlayLabel(text: '정답입니다! 🎉'),
+
+                // 뒤로가기
+                SafeArea(
+                  child: Align(
+                    alignment: Alignment.topLeft,
+                    child: IconButton(
+                      icon: const Icon(Icons.arrow_back, color: Colors.black87),
+                      onPressed: () => Navigator.of(context).maybePop(),
+                    ),
+                  ),
+                ),
               ],
             );
           }
 
+          // 씬 B / Outro
           return GestureDetector(
             onPanStart: (d) => _onPanStart(d, size),
             onPanUpdate: _onPanUpdate,
             onPanEnd: (_) => _onPanEnd(size),
             child: Stack(
               children: [
-                const _TitleBanner(text: '따라그려봐요!'),
+                _TitleBanner(text: '따라그려봐요!', topGap: kATitleTopGap),
                 if (scene == _Scene.snail) _buildSceneSnail(size),
                 if (scene == _Scene.outro)
                   Positioned.fill(
@@ -416,10 +424,9 @@ class _WriteGameLevel1_3PageState extends State<WriteGameLevel1_3Page> {
                   CustomPaint(
                     size: size,
                     painter: _StrokePainter(
-                      points: stroke,
-                      color: const Color(0xFFEB5757),
-                      width: kPassedStrokeWidth,
-                    ),
+                        points: stroke,
+                        color: const Color(0xFFEB5757),
+                        width: kPassedStrokeWidth),
                   ),
               ],
             ),
@@ -429,61 +436,6 @@ class _WriteGameLevel1_3PageState extends State<WriteGameLevel1_3Page> {
     );
   }
 
-  // 씬 A: plane3 마스크 3줄(개별 오버라이드)
-  Widget _buildSceneBirdsImageGuide(Size size) {
-    final rowGapNorm = kBirdRowGap / size.height;
-
-    return Stack(
-      children: List.generate(kBirdLines, (i) {
-        final baseTopNorm = kBirdGuideTopNorm + rowGapNorm * i;
-        final ov = (i < kBirdRowOverrides.length)
-            ? kBirdRowOverrides[i]
-            : const BirdRowLayout();
-
-        final leftNorm =
-            (ov.leftNorm ?? kBirdGuideLeftNorm) + (ov.dxPx / size.width);
-        final topNorm = (ov.topNorm ?? baseTopNorm) + (ov.dyPx / size.height);
-        final widthNorm = (ov.widthNorm ?? kBirdGuideWidthNorm);
-
-        return ImageMaskGuideLayer(
-          key: ValueKey(
-            'bird-row-$i-${birdsPassed[i]}-$leftNorm-$topNorm-$widthNorm',
-          ),
-          enabled: !birdsPassed[i],
-          guideAsset: kBirdGuideAsset,
-          leftNorm: leftNorm.clamp(0.0, 1.0),
-          topNorm: topNorm.clamp(0.0, 1.0),
-          widthNorm: widthNorm.clamp(0.0, 1.0),
-          guideOpacity: kBirdGuideOpacity,
-          guideTint: kBirdGuideTint,
-          targetCoverage: kBirdTargetCoverage,
-          snapRadiusPx: kBirdSnapRadiusPx,
-          stampRadiusPx: kBirdStampRadiusPx,
-          sampleStridePx: kBirdSampleStridePx,
-          strokeColor: kBirdStrokeColor,
-          strokeWidthBasePx: kBirdStrokeBasePx,
-          onProgress: (_) {},
-          onDone: () {
-            if (!mounted) return;
-            setState(() => birdsPassed[i] = true);
-            if (birdsPassed.every((e) => e)) {
-              setState(() {
-                scene = _Scene.snail;
-                passed = List.filled(_lineCount, false);
-              });
-              // ⬇️ 씬 B (Snail) 시작 오디오 재생 (추가됨: COMMON_1 + INTRO_3 재생)
-              WidgetsBinding.instance.addPostFrameCallback((_) async {
-                _playAssetAudio(LEVEL3_AUDIO_ASSETS_1_3['COMMON_1']!);
-                _playAssetAudio(LEVEL3_AUDIO_ASSETS_1_3['INTRO_3']!);
-              });
-            }
-          },
-        );
-      }),
-    );
-  }
-
-  // 씬 B: 달팽이
   Widget _buildSceneSnail(Size size) {
     final guides = _buildSnailGuide(size);
     return Stack(
@@ -518,7 +470,6 @@ class _WriteGameLevel1_3PageState extends State<WriteGameLevel1_3Page> {
     );
   }
 
-  // 완료 팝업 → 메인
   void _showClearPopup(BuildContext context) {
     showDialog(
       context: context,
@@ -532,29 +483,20 @@ class _WriteGameLevel1_3PageState extends State<WriteGameLevel1_3Page> {
             borderRadius: BorderRadius.circular(16),
             boxShadow: const [
               BoxShadow(
-                color: Colors.black26,
-                blurRadius: 10,
-                offset: Offset(0, 4),
-              ),
+                  color: Colors.black26, blurRadius: 10, offset: Offset(0, 4))
             ],
           ),
-          child: Column(
+          child: const Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Image.asset(
-                'assets/img/contents/gameWrite/stamp.png',
-                width: 84,
-                fit: BoxFit.contain,
-              ),
-              const SizedBox(height: 14),
-              const Text(
+              SizedBox(height: 14),
+              Text(
                 '이번 단계를 클리어했어요!\n다음 단계도 도전해봐요',
                 textAlign: TextAlign.center,
                 style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w700,
-                  color: Colors.black87,
-                ),
+                    fontSize: 20,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.black87),
               ),
             ],
           ),
@@ -567,11 +509,70 @@ class _WriteGameLevel1_3PageState extends State<WriteGameLevel1_3Page> {
       Navigator.of(context).pop();
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(
-          builder: (_) => WriteGameMainPage(childId: widget.childId),
-        ),
+            builder: (_) => WriteGameMainPage(childId: widget.childId)),
       );
     });
   }
+}
+
+/* ───────────────── Common small widgets ───────────────── */
+class _OverlayLabel extends StatelessWidget {
+  const _OverlayLabel({required this.text});
+  final String text;
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+        decoration: BoxDecoration(
+            color: Colors.black.withOpacity(0.75),
+            borderRadius: BorderRadius.circular(12)),
+        child: Text(
+          text,
+          textAlign: TextAlign.center,
+          style: const TextStyle(
+              color: Colors.white,
+              fontSize: 22,
+              fontWeight: FontWeight.w800,
+              height: 1.25),
+        ),
+      ),
+    );
+  }
+}
+
+class _TitleBanner extends StatelessWidget {
+  final String text;
+  final double topGap;
+  const _TitleBanner({required this.text, this.topGap = 12});
+  @override
+  Widget build(BuildContext context) {
+    final top = MediaQuery.of(context).padding.top;
+    return IgnorePointer(
+      child: Align(
+        alignment: Alignment.topCenter,
+        child: Container(
+          margin: EdgeInsets.only(top: top + topGap),
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+          decoration: BoxDecoration(
+              color: Colors.black.withOpacity(0.03),
+              borderRadius: BorderRadius.circular(12)),
+          child: Text(text,
+              style: const TextStyle(
+                  fontSize: 40,
+                  fontWeight: FontWeight.w900,
+                  color: Colors.black)),
+        ),
+      ),
+    );
+  }
+}
+
+class _Asset extends StatelessWidget {
+  const _Asset(this.path, {super.key});
+  final String path;
+  @override
+  Widget build(BuildContext context) => Image.asset(path, fit: BoxFit.contain);
 }
 
 /* ───────────────── Outro: 3 rows configurable ───────────────── */
@@ -652,13 +653,11 @@ class Outro3Config {
 }
 
 class OutroOverlay extends StatefulWidget {
-  const OutroOverlay({
-    super.key,
-    required this.onFinished,
-    this.config = const Outro3Config(),
-    this.autoFinish = false,
-  });
-
+  const OutroOverlay(
+      {super.key,
+      required this.onFinished,
+      this.config = const Outro3Config(),
+      this.autoFinish = false});
   final VoidCallback onFinished;
   final Outro3Config config;
   final bool autoFinish;
@@ -688,48 +687,38 @@ class _OutroOverlayState extends State<OutroOverlay>
     _seqCtrl = AnimationController(vsync: this, duration: cfg.sequenceDuration);
 
     _tStrike1 = CurvedAnimation(
-      parent: _seqCtrl,
-      curve: const Interval(0.00, 0.11, curve: Curves.easeOutCubic),
-    );
+        parent: _seqCtrl,
+        curve: const Interval(0.00, 0.11, curve: Curves.easeOutCubic));
     _tCheck1 = CurvedAnimation(
-      parent: _seqCtrl,
-      curve: const Interval(0.11, 0.22, curve: Curves.easeOutCubic),
-    );
+        parent: _seqCtrl,
+        curve: const Interval(0.11, 0.22, curve: Curves.easeOutCubic));
     _tStamp1 = CurvedAnimation(
-      parent: _seqCtrl,
-      curve: const Interval(0.22, 0.333, curve: Curves.elasticOut),
-    );
+        parent: _seqCtrl,
+        curve: const Interval(0.22, 0.333, curve: Curves.elasticOut));
 
     _tStrike2 = CurvedAnimation(
-      parent: _seqCtrl,
-      curve: const Interval(0.333, 0.444, curve: Curves.easeOutCubic),
-    );
+        parent: _seqCtrl,
+        curve: const Interval(0.333, 0.444, curve: Curves.easeOutCubic));
     _tCheck2 = CurvedAnimation(
-      parent: _seqCtrl,
-      curve: const Interval(0.444, 0.555, curve: Curves.easeOutCubic),
-    );
+        parent: _seqCtrl,
+        curve: const Interval(0.444, 0.555, curve: Curves.easeOutCubic));
     _tStamp2 = CurvedAnimation(
-      parent: _seqCtrl,
-      curve: const Interval(0.555, 0.666, curve: Curves.elasticOut),
-    );
+        parent: _seqCtrl,
+        curve: const Interval(0.555, 0.666, curve: Curves.elasticOut));
 
     _tStrike3 = CurvedAnimation(
-      parent: _seqCtrl,
-      curve: const Interval(0.666, 0.777, curve: Curves.easeOutCubic),
-    );
+        parent: _seqCtrl,
+        curve: const Interval(0.666, 0.777, curve: Curves.easeOutCubic));
     _tCheck3 = CurvedAnimation(
-      parent: _seqCtrl,
-      curve: const Interval(0.777, 0.888, curve: Curves.easeOutCubic),
-    );
+        parent: _seqCtrl,
+        curve: const Interval(0.777, 0.888, curve: Curves.easeOutCubic));
     _tStamp3 = CurvedAnimation(
-      parent: _seqCtrl,
-      curve: const Interval(0.888, 1.000, curve: Curves.elasticOut),
-    );
+        parent: _seqCtrl,
+        curve: const Interval(0.888, 1.000, curve: Curves.elasticOut));
 
     _seqCtrl.addStatusListener((s) {
-      if (s == AnimationStatus.completed && widget.autoFinish) {
+      if (s == AnimationStatus.completed && widget.autoFinish)
         widget.onFinished();
-      }
     });
     _fadeCtrl.addStatusListener((s) {
       if (s == AnimationStatus.completed) _seqCtrl.forward();
@@ -752,10 +741,8 @@ class _OutroOverlayState extends State<OutroOverlay>
       final half = (noteW * rc.strikeLengthRatio) / 2;
       return OffsetPair(center - dir * half, center + dir * half);
     }
-    return OffsetPair(
-      cfg._toNoteXY(noteSize, rc.strikeStartPct),
-      cfg._toNoteXY(noteSize, rc.strikeEndPct),
-    );
+    return OffsetPair(cfg._toNoteXY(noteSize, rc.strikeStartPct),
+        cfg._toNoteXY(noteSize, rc.strikeEndPct));
   }
 
   @override
@@ -799,44 +786,38 @@ class _OutroOverlayState extends State<OutroOverlay>
                 child: Stack(
                   children: [
                     Positioned.fill(
-                      child: Image.asset(cfg.noteAsset, fit: BoxFit.contain),
-                    ),
+                        child: Image.asset(cfg.noteAsset, fit: BoxFit.contain)),
 
                     // Row1
                     AnimatedBuilder(
                       animation: _tStrike1,
                       builder: (_, __) => CustomPaint(
-                        painter: _OutroStrikePainter(
-                          start: r1Strike.start,
-                          end: r1Strike.end,
-                          t: _tStrike1.value,
-                        ),
-                      ),
+                          painter: _OutroStrikePainter(
+                              start: r1Strike.start,
+                              end: r1Strike.end,
+                              t: _tStrike1.value)),
                     ),
                     AnimatedBuilder(
                       animation: _tCheck1,
                       builder: (_, __) => CustomPaint(
-                        painter: _OutroCheckPainter(
-                          center: r1CheckC,
-                          size: r1.checkSizePx,
-                          t: _tCheck1.value,
-                          color: r1.checkColor,
-                          strokeWidth: r1.checkStrokeWidth,
-                          rotationDeg: r1.checkRotationDeg,
-                        ),
-                      ),
+                          painter: _OutroCheckPainter(
+                              center: r1CheckC,
+                              size: r1.checkSizePx,
+                              t: _tCheck1.value,
+                              color: r1.checkColor,
+                              strokeWidth: r1.checkStrokeWidth,
+                              rotationDeg: r1.checkRotationDeg)),
                     ),
                     AnimatedBuilder(
                       animation: _tStamp1,
                       builder: (_, __) {
                         final drop = Tween<Offset>(
-                          begin: r1.stampDropPx,
-                          end: Offset.zero,
-                        ).transform(_tStamp1.value);
+                                begin: r1.stampDropPx, end: Offset.zero)
+                            .transform(_tStamp1.value);
                         final scale = Tween<double>(
-                          begin: r1.stampStartScale,
-                          end: r1.stampFinalScale,
-                        ).transform(_tStamp1.value);
+                                begin: r1.stampStartScale,
+                                end: r1.stampFinalScale)
+                            .transform(_tStamp1.value);
                         final rot = r1.stampRotationDeg * math.pi / 180.0;
                         return Positioned(
                           left: r1StampP.dx,
@@ -848,12 +829,9 @@ class _OutroOverlayState extends State<OutroOverlay>
                               child: Transform.scale(
                                 scale: scale,
                                 child: SizedBox(
-                                  width: _stampW(r1),
-                                  child: Image.asset(
-                                    r1.stampAsset,
-                                    fit: BoxFit.contain,
-                                  ),
-                                ),
+                                    width: _stampW(r1),
+                                    child: Image.asset(r1.stampAsset,
+                                        fit: BoxFit.contain)),
                               ),
                             ),
                           ),
@@ -865,37 +843,32 @@ class _OutroOverlayState extends State<OutroOverlay>
                     AnimatedBuilder(
                       animation: _tStrike2,
                       builder: (_, __) => CustomPaint(
-                        painter: _OutroStrikePainter(
-                          start: r2Strike.start,
-                          end: r2Strike.end,
-                          t: _tStrike2.value,
-                        ),
-                      ),
+                          painter: _OutroStrikePainter(
+                              start: r2Strike.start,
+                              end: r2Strike.end,
+                              t: _tStrike2.value)),
                     ),
                     AnimatedBuilder(
                       animation: _tCheck2,
                       builder: (_, __) => CustomPaint(
-                        painter: _OutroCheckPainter(
-                          center: r2CheckC,
-                          size: r2.checkSizePx,
-                          t: _tCheck2.value,
-                          color: r2.checkColor,
-                          strokeWidth: r2.checkStrokeWidth,
-                          rotationDeg: r2.checkRotationDeg,
-                        ),
-                      ),
+                          painter: _OutroCheckPainter(
+                              center: r2CheckC,
+                              size: r2.checkSizePx,
+                              t: _tCheck2.value,
+                              color: r2.checkColor,
+                              strokeWidth: r2.checkStrokeWidth,
+                              rotationDeg: r2.checkRotationDeg)),
                     ),
                     AnimatedBuilder(
                       animation: _tStamp2,
                       builder: (_, __) {
                         final drop = Tween<Offset>(
-                          begin: r2.stampDropPx,
-                          end: Offset.zero,
-                        ).transform(_tStamp2.value);
+                                begin: r2.stampDropPx, end: Offset.zero)
+                            .transform(_tStamp2.value);
                         final scale = Tween<double>(
-                          begin: r2.stampStartScale,
-                          end: r2.stampFinalScale,
-                        ).transform(_tStamp2.value);
+                                begin: r2.stampStartScale,
+                                end: r2.stampFinalScale)
+                            .transform(_tStamp2.value);
                         final rot = r2.stampRotationDeg * math.pi / 180.0;
                         return Positioned(
                           left: r2StampP.dx,
@@ -907,12 +880,9 @@ class _OutroOverlayState extends State<OutroOverlay>
                               child: Transform.scale(
                                 scale: scale,
                                 child: SizedBox(
-                                  width: _stampW(r2),
-                                  child: Image.asset(
-                                    r2.stampAsset,
-                                    fit: BoxFit.contain,
-                                  ),
-                                ),
+                                    width: _stampW(r2),
+                                    child: Image.asset(r2.stampAsset,
+                                        fit: BoxFit.contain)),
                               ),
                             ),
                           ),
@@ -924,37 +894,32 @@ class _OutroOverlayState extends State<OutroOverlay>
                     AnimatedBuilder(
                       animation: _tStrike3,
                       builder: (_, __) => CustomPaint(
-                        painter: _OutroStrikePainter(
-                          start: r3Strike.start,
-                          end: r3Strike.end,
-                          t: _tStrike3.value,
-                        ),
-                      ),
+                          painter: _OutroStrikePainter(
+                              start: r3Strike.start,
+                              end: r3Strike.end,
+                              t: _tStrike3.value)),
                     ),
                     AnimatedBuilder(
                       animation: _tCheck3,
                       builder: (_, __) => CustomPaint(
-                        painter: _OutroCheckPainter(
-                          center: r3CheckC,
-                          size: r3.checkSizePx,
-                          t: _tCheck3.value,
-                          color: r3.checkColor,
-                          strokeWidth: r3.checkStrokeWidth,
-                          rotationDeg: r3.checkRotationDeg,
-                        ),
-                      ),
+                          painter: _OutroCheckPainter(
+                              center: r3CheckC,
+                              size: r3.checkSizePx,
+                              t: _tCheck3.value,
+                              color: r3.checkColor,
+                              strokeWidth: r3.checkStrokeWidth,
+                              rotationDeg: r3.checkRotationDeg)),
                     ),
                     AnimatedBuilder(
                       animation: _tStamp3,
                       builder: (_, __) {
                         final drop = Tween<Offset>(
-                          begin: r3.stampDropPx,
-                          end: Offset.zero,
-                        ).transform(_tStamp3.value);
+                                begin: r3.stampDropPx, end: Offset.zero)
+                            .transform(_tStamp3.value);
                         final scale = Tween<double>(
-                          begin: r3.stampStartScale,
-                          end: r3.stampFinalScale,
-                        ).transform(_tStamp3.value);
+                                begin: r3.stampStartScale,
+                                end: r3.stampFinalScale)
+                            .transform(_tStamp3.value);
                         final rot = r3.stampRotationDeg * math.pi / 180.0;
                         return Positioned(
                           left: r3StampP.dx,
@@ -966,12 +931,9 @@ class _OutroOverlayState extends State<OutroOverlay>
                               child: Transform.scale(
                                 scale: scale,
                                 child: SizedBox(
-                                  width: _stampW(r3),
-                                  child: Image.asset(
-                                    r3.stampAsset,
-                                    fit: BoxFit.contain,
-                                  ),
-                                ),
+                                    width: _stampW(r3),
+                                    child: Image.asset(r3.stampAsset,
+                                        fit: BoxFit.contain)),
                               ),
                             ),
                           ),
@@ -994,13 +956,10 @@ class OffsetPair {
   final Offset start, end;
 }
 
-/* ─────────── outro painters ─────────── */
+/* ───────── Outro painters ───────── */
 class _OutroStrikePainter extends CustomPainter {
-  _OutroStrikePainter({
-    required this.start,
-    required this.end,
-    required this.t,
-  });
+  _OutroStrikePainter(
+      {required this.start, required this.end, required this.t});
   final Offset start, end;
   final double t;
 
@@ -1012,9 +971,7 @@ class _OutroStrikePainter extends CustomPainter {
       ..strokeWidth = 8
       ..strokeCap = StrokeCap.round;
     final to = Offset(
-      start.dx + (end.dx - start.dx) * t,
-      start.dy + (end.dy - start.dy) * t,
-    );
+        start.dx + (end.dx - start.dx) * t, start.dy + (end.dy - start.dy) * t);
     canvas.drawLine(start, to, p);
   }
 
@@ -1057,18 +1014,14 @@ class _OutroCheckPainter extends CustomPainter {
 
     if (t <= 0.5) {
       final tt = t / 0.5;
-      final x = Offset(
-        ra.dx + (rb.dx - ra.dx) * tt,
-        ra.dy + (rb.dy - ra.dy) * tt,
-      );
+      final x =
+          Offset(ra.dx + (rb.dx - ra.dx) * tt, ra.dy + (rb.dy - ra.dy) * tt);
       canvas.drawLine(ra, x, p);
     } else {
       canvas.drawLine(ra, rb, p);
       final tt = (t - 0.5) / 0.5;
-      final x = Offset(
-        rb.dx + (rc.dx - rb.dx) * tt,
-        rb.dy + (rc.dy - rb.dy) * tt,
-      );
+      final x =
+          Offset(rb.dx + (rc.dx - rb.dx) * tt, rb.dy + (rc.dy - rb.dy) * tt);
       canvas.drawLine(rb, x, p);
     }
 
@@ -1079,14 +1032,13 @@ class _OutroCheckPainter extends CustomPainter {
   bool shouldRepaint(covariant _OutroCheckPainter old) => old.t != t;
 }
 
-/* ─────────── stroke & guide utils (씬 B) ─────────── */
+/* ───────── Stroke & guide utils (씬 B) ───────── */
 class _GuidePath {
   _GuidePath._(this.points) : _lengths = _buildLengths(points);
   final List<Offset> points;
   final List<double> _lengths;
 
   factory _GuidePath.polyline(List<Offset> pts) => _GuidePath._(pts);
-
   double get totalLen => _lengths.isNotEmpty ? _lengths.last : 0;
 
   static List<double> _buildLengths(List<Offset> pts) {
@@ -1177,13 +1129,8 @@ class _GuidePainter extends CustomPainter {
     }
   }
 
-  void _drawDashedPolyline(
-    Canvas c,
-    List<Offset> pts,
-    Paint p, {
-    double dash = 20,
-    double gap = 16,
-  }) {
+  void _drawDashedPolyline(Canvas c, List<Offset> pts, Paint p,
+      {double dash = 20, double gap = 16}) {
     if (pts.length < 2) return;
     double remain = 0;
     bool draw = true;
@@ -1261,11 +1208,8 @@ class _StrokePainter extends CustomPainter {
   final List<Offset> points;
   final Color color;
   final double width;
-  const _StrokePainter({
-    required this.points,
-    required this.color,
-    this.width = 10,
-  });
+  const _StrokePainter(
+      {required this.points, required this.color, this.width = 10});
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -1288,82 +1232,46 @@ class _StrokePainter extends CustomPainter {
       old.points != points || old.color != color || old.width != width;
 }
 
-class _Asset extends StatelessWidget {
-  const _Asset(this.path, {super.key});
-  final String path;
-  @override
-  Widget build(BuildContext context) => Image.asset(path, fit: BoxFit.contain);
-}
-
-class _TitleBanner extends StatelessWidget {
-  final String text;
-  const _TitleBanner({required this.text});
-
-  @override
-  Widget build(BuildContext context) {
-    final top = MediaQuery.of(context).padding.top;
-    return IgnorePointer(
-      child: Align(
-        alignment: Alignment.topCenter,
-        child: Container(
-          margin: EdgeInsets.only(top: top + kTitleTopGap),
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-          decoration: BoxDecoration(
-            color: Colors.black.withOpacity(0.03),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Text(
-            text,
-            style: const TextStyle(
-              fontSize: 40,
-              fontWeight: FontWeight.w900,
-              color: Colors.black,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/* ───────────────── 이미지 마스크 레이어 (씬 A) ───────────────── */
-class ImageMaskGuideLayer extends StatefulWidget {
-  final bool enabled;
-
-  final String guideAsset;
-  final double leftNorm, topNorm, widthNorm, guideOpacity;
-  final Color guideTint;
-  final double targetCoverage, snapRadiusPx;
-  final int stampRadiusPx, sampleStridePx;
-  final ValueChanged<double> onProgress;
-  final VoidCallback onDone;
-  final ui.Color strokeColor;
-  final double strokeWidthBasePx;
-
-  const ImageMaskGuideLayer({
+/* ───────────────── Scene A: plane_write 경량 이식 ───────────────── */
+class _GameImageGuideLayer extends StatefulWidget {
+  const _GameImageGuideLayer({
     super.key,
-    this.enabled = true,
     required this.guideAsset,
     required this.leftNorm,
     required this.topNorm,
     required this.widthNorm,
     required this.guideOpacity,
-    this.guideTint = const Color(0xFFB3B3B3),
     required this.targetCoverage,
     required this.snapRadiusPx,
     required this.stampRadiusPx,
     required this.sampleStridePx,
     required this.onProgress,
     required this.onDone,
+    this.onFail,
     required this.strokeColor,
     required this.strokeWidthBasePx,
+    this.guideTint,
   });
 
+  final String guideAsset;
+  final double leftNorm, topNorm, widthNorm, guideOpacity;
+  final Color? guideTint; // 흰 배경에서도 보이게 틴트 가능
+
+  final double targetCoverage, snapRadiusPx;
+  final int stampRadiusPx, sampleStridePx;
+
+  final ValueChanged<double> onProgress;
+  final VoidCallback onDone;
+  final VoidCallback? onFail;
+
+  final ui.Color strokeColor;
+  final double strokeWidthBasePx;
+
   @override
-  State<ImageMaskGuideLayer> createState() => _ImageMaskGuideLayerState();
+  State<_GameImageGuideLayer> createState() => _GameImageGuideLayerState();
 }
 
-class _ImageMaskGuideLayerState extends State<ImageMaskGuideLayer> {
+class _GameImageGuideLayerState extends State<_GameImageGuideLayer> {
   ui.Image? _maskImg;
   Uint8List? _rgba;
   int _gw = 0, _gh = 0;
@@ -1473,6 +1381,7 @@ class _ImageMaskGuideLayerState extends State<ImageMaskGuideLayer> {
     _coveredSamples = 0;
     _lastMaskPt = null;
     _stroke.clear();
+
     setState(() {});
   }
 
@@ -1484,9 +1393,8 @@ class _ImageMaskGuideLayerState extends State<ImageMaskGuideLayer> {
   }
 
   Offset _toMask(Offset screenPt) => Offset(
-        (screenPt.dx - _guideRect.left) * _mx,
-        (screenPt.dy - _guideRect.top) * _my,
-      );
+      (screenPt.dx - _guideRect.left) * _mx,
+      (screenPt.dy - _guideRect.top) * _my);
 
   double _distanceToRect(Offset p, Rect r) {
     final dx = (p.dx < r.left)
@@ -1503,9 +1411,8 @@ class _ImageMaskGuideLayerState extends State<ImageMaskGuideLayer> {
   }
 
   Offset? _nearestMaskPoint(Offset rawScreen) {
-    if (_distanceToRect(rawScreen, _guideRect) > widget.snapRadiusPx) {
+    if (_distanceToRect(rawScreen, _guideRect) > widget.snapRadiusPx)
       return null;
-    }
 
     final local = Offset(
       (rawScreen.dx - _guideRect.left).clamp(0.0, _guideRect.width),
@@ -1537,9 +1444,7 @@ class _ImageMaskGuideLayerState extends State<ImageMaskGuideLayer> {
     if (math.sqrt(bestD2) > widget.snapRadiusPx * _mx) return null;
 
     return Offset(
-      _guideRect.left + best.dx / _mx,
-      _guideRect.top + best.dy / _my,
-    );
+        _guideRect.left + best.dx / _mx, _guideRect.top + best.dy / _my);
   }
 
   void _stampAtMaskGrid(Offset maskPt) {
@@ -1551,9 +1456,8 @@ class _ImageMaskGuideLayerState extends State<ImageMaskGuideLayer> {
       if (gy < 0 || gy >= _gridH) continue;
       for (int gx = cx - rGrid; gx <= cx + rGrid; gx++) {
         if (gx < 0 || gx >= _gridW) continue;
-        if ((gx - cx) * (gx - cx) + (gy - cy) * (gy - cy) > rGrid * rGrid) {
+        if ((gx - cx) * (gx - cx) + (gy - cy) * (gy - cy) > rGrid * rGrid)
           continue;
-        }
 
         final idx = gy * _gridW + gx;
         if (!_coveredGrid[idx] && _alphaOnAtGrid(gx, gy)) {
@@ -1565,8 +1469,7 @@ class _ImageMaskGuideLayerState extends State<ImageMaskGuideLayer> {
   }
 
   void _updateProgress(Offset maskPt) {
-    final cov = _coverage;
-    widget.onProgress(cov);
+    widget.onProgress(_coverage);
     _lastMaskPt = maskPt;
   }
 
@@ -1574,129 +1477,67 @@ class _ImageMaskGuideLayerState extends State<ImageMaskGuideLayer> {
   Widget build(BuildContext context) {
     if (!_ready) return const SizedBox.shrink();
 
+    final imageWidget = RawImage(image: _maskImg, fit: BoxFit.fill);
+    final guideImage = (widget.guideTint == null)
+        ? imageWidget
+        : ColorFiltered(
+            colorFilter: ColorFilter.mode(widget.guideTint!, BlendMode.srcATop),
+            child: imageWidget);
+
     return Stack(
       children: [
+        // 반투명 가이드
         Positioned.fromRect(
           rect: _guideRect,
-          child: Opacity(
-            opacity: widget.guideOpacity,
-            child: ColorFiltered(
-              colorFilter: ColorFilter.mode(widget.guideTint, BlendMode.srcIn),
-              child: RawImage(image: _maskImg, fit: BoxFit.fill),
-            ),
-          ),
+          child: Opacity(opacity: widget.guideOpacity, child: guideImage),
         ),
+
+        // 제스처 + 스트로크(마스크 밖 잘림)
         Positioned.fill(
-          child: IgnorePointer(
-            ignoring: !widget.enabled,
-            child: GestureDetector(
-              onPanStart: (d) {
-                _resetAttempt();
-                final snapped = _nearestMaskPoint(d.localPosition);
-                if (snapped == null) return;
-                final m = _toMask(snapped);
+          child: GestureDetector(
+            onPanStart: (d) {
+              _resetAttempt();
+              final snapped = _nearestMaskPoint(d.localPosition);
+              if (snapped == null) return;
+
+              final m = _toMask(snapped);
+              _stampAtMaskGrid(m);
+              _stroke.add(snapped);
+              _updateProgress(m);
+              setState(() {});
+            },
+            onPanUpdate: (d) {
+              final snapped = _nearestMaskPoint(d.localPosition);
+              if (snapped == null) return;
+              if (_stroke.isEmpty || (_stroke.last - snapped).distance >= 2.0) {
                 _stroke.add(snapped);
+                final m = _toMask(snapped);
                 _stampAtMaskGrid(m);
                 _updateProgress(m);
                 setState(() {});
-              },
-              onPanUpdate: (d) {
-                final snapped = _nearestMaskPoint(d.localPosition);
-                if (snapped == null) return;
-                if (_stroke.isEmpty ||
-                    (_stroke.last - snapped).distance >= 2.0) {
-                  _stroke.add(snapped);
-                  final m = _toMask(snapped);
-                  _stampAtMaskGrid(m);
-                  _updateProgress(m);
-                  setState(() {});
-                }
-              },
-              onPanEnd: (d) {
-                final cov = _coverage;
-
-                bool endReached = false;
-                if (_lastMaskPt != null) {
-                  final gm = Offset(
-                    _lastMaskPt!.dx / _stride,
-                    _lastMaskPt!.dy / _stride,
-                  );
-
-                  if (_useHorizontal) {
-                    final bandGX = (_gridW * _kEndBandPct).ceil().clamp(
-                          1,
-                          _gridW,
-                        );
-                    final leftBandMaxX = (_minGXEdge + bandGX).clamp(
-                      0,
-                      _gridW - 1,
-                    );
-                    final rightBandMinX = (_maxGXEdge - bandGX).clamp(
-                      0,
-                      _gridW - 1,
-                    );
-
-                    final ySlack = (_gridH * _kOrthoSlackPct * 0.5).ceil();
-                    final centerY = _gridH / 2.0;
-
-                    final inLeftBand = gm.dx <= leftBandMaxX;
-                    final inRightBand = gm.dx >= rightBandMinX;
-                    final inYSlack = (gm.dy - centerY).abs() <= ySlack;
-
-                    endReached = (inLeftBand || inRightBand) && inYSlack;
-                  } else {
-                    final bandGY = (_gridH * _kEndBandPct).ceil().clamp(
-                          1,
-                          _gridH,
-                        );
-                    final topBandMaxY = (_minGYEdge + bandGY).clamp(
-                      0,
-                      _gridH - 1,
-                    );
-                    final bottomBandMinY = (_maxGYEdge - bandGY).clamp(
-                      0,
-                      _gridH - 1,
-                    );
-
-                    final xSlack = (_gridW * _kOrthoSlackPct * 0.5).ceil();
-                    final centerX = _gridW / 2.0;
-
-                    final inTopBand = gm.dy <= topBandMaxY;
-                    final inBottomBand = gm.dy >= bottomBandMinY;
-                    final inXSlack = (gm.dx - centerX).abs() <= xSlack;
-
-                    endReached = (inTopBand || inBottomBand) && inXSlack;
-                  }
-                }
-
-                final covNeed = (widget.targetCoverage * _kCoverageGrace).clamp(
-                  0.0,
-                  1.0,
-                );
-                final success = endReached && cov >= covNeed;
-
-                if (success) {
-                  widget.onDone();
-                } else {
-                  _resetAttempt();
-                }
-              },
-              child: CustomPaint(
-                painter: _MaskClippedStrokePainter(
-                  stroke: _stroke,
-                  maskImage: _maskImg!,
-                  maskSrcRect: Rect.fromLTWH(
-                    0,
-                    0,
-                    _gw.toDouble(),
-                    _gh.toDouble(),
-                  ),
-                  maskDstRect: _guideRect,
-                  strokeColor: widget.strokeColor,
-                  strokeWidth: math.max(
-                    widget.strokeWidthBasePx,
-                    MediaQuery.of(context).size.shortestSide * 0.028,
-                  ),
+              }
+            },
+            onPanEnd: (d) {
+              // ✅ 이제는 커버리지나 끝점 체크 없이,
+              // 조금이라도 그렸으면 바로 성공 처리
+              if (_stroke.length > 5) {
+                widget.onDone();
+              } else {
+                widget.onFail?.call();
+                _resetAttempt();
+              }
+            },
+            child: CustomPaint(
+              painter: _MaskClippedStrokePainter(
+                stroke: _stroke,
+                maskImage: _maskImg!,
+                maskSrcRect:
+                    Rect.fromLTWH(0, 0, _gw.toDouble(), _gh.toDouble()),
+                maskDstRect: _guideRect,
+                strokeColor: widget.strokeColor,
+                strokeWidth: math.max(
+                  widget.strokeWidthBasePx,
+                  MediaQuery.of(context).size.shortestSide * 0.028,
                 ),
               ),
             ),
@@ -1707,15 +1548,8 @@ class _ImageMaskGuideLayerState extends State<ImageMaskGuideLayer> {
   }
 }
 
+// 마스크(dstIn)로 밖을 잘라내는 스트로크 렌더러
 class _MaskClippedStrokePainter extends CustomPainter {
-  final List<Offset> stroke;
-
-  final ui.Image maskImage;
-  final Rect maskSrcRect;
-  final Rect maskDstRect;
-  final Color strokeColor;
-  final double strokeWidth;
-
   _MaskClippedStrokePainter({
     required this.stroke,
     required this.maskImage,
@@ -1724,6 +1558,13 @@ class _MaskClippedStrokePainter extends CustomPainter {
     required this.strokeColor,
     required this.strokeWidth,
   });
+
+  final List<Offset> stroke;
+  final ui.Image maskImage;
+  final Rect maskSrcRect;
+  final Rect maskDstRect;
+  final Color strokeColor;
+  final double strokeWidth;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -1743,13 +1584,8 @@ class _MaskClippedStrokePainter extends CustomPainter {
       ..strokeWidth = strokeWidth;
     canvas.drawPath(path, paint);
 
-    canvas.drawImageRect(
-      maskImage,
-      maskSrcRect,
-      maskDstRect,
-      Paint()..blendMode = BlendMode.dstIn,
-    );
-
+    canvas.drawImageRect(maskImage, maskSrcRect, maskDstRect,
+        Paint()..blendMode = BlendMode.dstIn);
     canvas.restore();
   }
 

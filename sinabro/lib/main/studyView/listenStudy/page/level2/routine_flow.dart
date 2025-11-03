@@ -2,6 +2,11 @@
 import 'package:flutter/material.dart';
 import 'package:sinabro/main/studyView/common/widget/apple_popup.dart';
 
+// ⭐️ [추가] API 연동을 위한 3개 import
+import 'dart:convert';
+import 'package:sinabro/common/auth_client.dart';
+import 'package:sinabro/config.dart';
+
 /*
  * ----------------------------------------------------------------
  * [듣기 학습 - 레벨 2 학습 흐름 관리]
@@ -64,6 +69,42 @@ import 'package:sinabro/main/studyView/listenStudy/page/level2/story3/data/routi
 // 🍎 레벨 2 - Story 1: 가족 (FR_LS_006)
 // ========================================================================
 
+// ⭐️ [추가] API 호출용 클라이언트 (파일 최상단에 하나만)
+final AuthClient _authClient = AuthClient();
+
+// ⭐️ [추가] 공용 완료 API 호출 함수
+Future<void> _completeStudy(String childId, String fruitId, DateTime startTime) async {
+  // 1. 학습 시간 계산
+  final int timeSpentSecs = DateTime.now().difference(startTime).inSeconds;
+  // 2. DTO (JSON Body) 구성
+  final body = jsonEncode({
+    'childId': childId,
+    'fruitId': fruitId, // ⭐️ "FR_LS_007", "FR_LS_008" 등...
+    'isCompleted': true,
+    'timeSpentSecs': timeSpentSecs,
+  });
+
+  // 3. API 엔드포인트
+  final uri = Uri.parse('$baseUrl/api/study/listening/complete');
+
+  // 4. API 호출 (중복 호출 방지는 각 '두목' 위젯/함수에서 알아서)
+  try {
+    debugPrint('[Level2 Flow] 듣기 학습 완료 API 호출: $body');
+    final response = await _authClient.post(
+      uri,
+      headers: {'Content-Type': 'application/json'},
+      body: body,
+    );
+    if (response.statusCode == 200) {
+      debugPrint('[Level2 Flow] 듣기 학습 완료 처리 성공 (fruitId: $fruitId)');
+    } else {
+      debugPrint('[Level2 Flow] 학습 완료 처리 실패: (${response.statusCode}) ${response.body}');
+    }
+  } catch (e) {
+    debugPrint('[Level2 Flow] 학습 완료 API 호출 중 예외 발생: $e');
+  }
+}
+
 /// 레벨 2 가족 학습 시작 함수
 /// - `listen_study_router`에서 호출됩니다.
 /// - 가족 학습의 전체 흐름(Intro -> 성별 선택 -> (키워드 -> 스토리) * 6 -> 완료 팝업)을 시작합니다.
@@ -75,7 +116,14 @@ Future<void> startLevel2Routine(
   BuildContext context, {
   required bool isGold,
   required String childId, // ✅ 자녀 ID 추가됨
+  required String fruitId,
 }) async {
+
+  // ⭐️ [추가] 학습 시작 시간 기록
+  final DateTime startTime = DateTime.now();
+  // ⭐️ [추가] 완료 플래그 (중복 호출 방지)
+  bool isCompleted = false;
+  
   debugPrint(
       '[Level2 Story1 Flow] Starting Routine for child $childId. Gold: $isGold');
   // 1. 인트로 페이지 표시
@@ -98,7 +146,19 @@ Future<void> startLevel2Routine(
                       '[Level2 Story1 Flow] Gender selected: $gender. Starting keywords.');
                   // 3. 성별 선택 완료 후 첫 번째 가족 구성원(index 1)부터 흐름 시작
                   _startStory1Flow(
-                      context, gender, 1, isGold, childId); // ✅ childId 전달
+                      context,
+                      gender,
+                      1,
+                      isGold,
+                      childId,
+                      fruitId,
+                      startTime,
+                      () { // ⭐️ [추가] 완료 콜백 함수 전달
+                      if (isCompleted) return;
+                      isCompleted = true;
+                      _completeStudy(childId, fruitId, startTime);
+                      }
+                    ); // ✅ childId 전달
                 },
               ),
             ),
@@ -123,10 +183,16 @@ Future<void> _startStory1Flow(
   int index, // 현재 가족 구성원 인덱스 (1 ~ 6)
   bool isGold,
   String childId, // ✅ 자녀 ID 추가됨
+  String fruitId,   // ⭐️ [추가]
+  DateTime startTime,
+  VoidCallback onCompleteApiCall, // ⭐️ [추가] 완료 시 호출할 함수
 ) async {
   // 4. 종료 조건: 모든 가족 구성원(6명) 학습 완료 시
   if (index > 6) {
     debugPrint('[Level2 Story1 Flow] All keywords finished. Showing popup.');
+    
+    // ⭐️ [수정] 1. API 호출
+    onCompleteApiCall();
     // 완료 팝업 표시 후 함수 종료
     await showApplePopup(context,
         isGold: isGold, childId: childId); // ✅ childId 전달
@@ -159,8 +225,15 @@ Future<void> _startStory1Flow(
                   // 7. 스토리 페이지 완료 후 (onFinished 콜백)
                   //    _startStory1Flow 함수를 다음 인덱스(index + 1)로 재귀 호출
                   //    -> 다음 가족 구성원 학습 시작
-                  _startStory1Flow(context, gender, index + 1, isGold,
-                      childId); // ✅ childId 전달
+                  _startStory1Flow(
+                    context,
+                     gender,
+                      index + 1,
+                       isGold,
+                      childId,
+                      fruitId,   // ⭐️ [추가]
+                      startTime, // ⭐️ [추가]
+                      onCompleteApiCall ); // ✅ childId 전달
                 },
               ),
             ),
@@ -186,12 +259,17 @@ Future<void> _startStory1Flow(
 /// @param routineIndex 감정 데이터 세트를 구분 (0: 기본 감정 FR_LS_007, 1: 복잡 감정 FR_LS_008).
 /// @param isGold 현재 학습이 황금 사과(스테이지 마지막)인지 여부.
 /// @param childId 현재 학습을 진행하는 자녀의 고유 ID.
+
 Future<void> startLevel2Routine2(
   BuildContext context,
   int routineIndex, {
   required bool isGold,
   required String childId, // 자녀 ID
+  required String fruitId, // ⭐️ 받음
 }) async {
+  final DateTime startTime = DateTime.now();
+  bool isCompleted = false;
+
   // routineIndex에 따라 '기본 감정' 또는 '복잡 감정' 데이터 소스 선택
   final dataSource = (routineIndex == 0)
       ? story2Data1.keywordRoutine // 기본 감정 데이터 (e.g., 좋아요, 슬퍼요)
@@ -202,12 +280,23 @@ Future<void> startLevel2Routine2(
     context,
     MaterialPageRoute(
       builder: (_) => Story2IntroPage(
-        // TODO: Story2IntroPage 생성자에 childId 추가 필요
         childId: childId, // 자녀 ID 전달
         onNext: () {
           // 2. 인트로 페이지 완료 후 (onNext 콜백)
           //    _startTopicFlow 함수를 호출하여 첫 번째 감정(index 0)부터 학습 시작
-          _startTopicFlow(context, 0, dataSource, isGold, childId); // 자녀 ID 전달
+          _startTopicFlow(
+              context,
+              0,
+              dataSource,
+              isGold,
+              childId,
+              fruitId,
+              startTime,() { // ⭐️ 넘김
+                if (isCompleted) return;
+                isCompleted = true;
+                _completeStudy(childId, fruitId, startTime);
+              },
+            ); // 자녀 ID 전달
         },
       ),
     ),
@@ -228,9 +317,13 @@ Future<void> _startTopicFlow(
   List<Map<String, dynamic>> dataSource, // 감정 데이터 목록
   bool isGold,
   String childId, // 자녀 ID
+  String fruitId,   // ⭐️ [추가]
+  DateTime startTime,
+  VoidCallback onCompleteApiCall,
 ) async {
   // 3. 종료 조건: dataSource의 모든 감정을 학습했으면 (index가 목록 크기 이상)
   if (index >= dataSource.length) {
+    onCompleteApiCall(); // ⭐️ API 호출
     // 완료 팝업 표시 후 함수 종료
     await showApplePopup(context, isGold: isGold, childId: childId); // 자녀 ID 전달
     return;
@@ -274,8 +367,14 @@ Future<void> _startTopicFlow(
                           // 7. 스토리 페이지의 모든 스토리 재생 완료 후 (onFinished 콜백)
                           //    _startTopicFlow 함수를 다음 인덱스(index + 1)로 재귀 호출
                           //    -> 다음 감정 학습 시작
-                          _startTopicFlow(context, index + 1, dataSource,
-                              isGold, childId); // 자녀 ID 전달
+                          _startTopicFlow(
+                            context, index + 1, dataSource,
+                            isGold, 
+                            childId,
+                            fruitId,   // ⭐️ 넘김
+                            startTime, // ⭐️ 넘김
+                            onCompleteApiCall // ⭐️ 넘김
+                          );
                         },
                       ),
                     ),
@@ -307,7 +406,12 @@ Future<void> startLevel2Routine3(
   // 2 또는 3
   required bool isGold,
   required String childId, // ✅ 자녀 ID 추가됨
+  required String fruitId,
+
 }) async {
+  final DateTime startTime = DateTime.now();
+  bool isCompleted = false;
+
   // routineIndex에 따라 '숫자 1~5' 또는 '숫자 6~10' 데이터 소스 선택
   final dataSource = (routineIndex == 2)
       ? story3Data1.numberRoutine // 숫자 1~5 데이터
@@ -327,7 +431,14 @@ Future<void> startLevel2Routine3(
           debugPrint('[Level2 Story3 Flow] Intro finished. Starting numbers.');
           // 2. 인트로 완료 후 첫 번째 숫자(index 0)부터 흐름 시작
           _startNumberFlow(
-              context, 0, routineIndex, isGold, childId); // ✅ childId 전달
+              context, 0, routineIndex, isGold, childId,
+              fruitId,   // ⭐️ 넘김
+              startTime, // ⭐️ 넘김
+              () { // ⭐️ 넘김
+                if (isCompleted) return;
+                isCompleted = true;
+                _completeStudy(childId, fruitId, startTime);
+              });
         },
       ),
     ),
@@ -348,6 +459,9 @@ void _startNumberFlow(
   int routineIndex, // 2 또는 3
   bool isGold,
   String childId, // ✅ 자녀 ID 추가됨
+  String fruitId,   // ⭐️ [추가]
+  DateTime startTime,
+  VoidCallback onCompleteApiCall,
 ) {
   // routineIndex에 따라 데이터 소스 재확인
   final dataSource = (routineIndex == 2)
@@ -356,6 +470,7 @@ void _startNumberFlow(
 
   // 3. 종료 조건: dataSource의 모든 숫자(5개)를 학습했으면
   if (index >= dataSource.length) {
+    onCompleteApiCall(); // ⭐️ API 호출
     debugPrint('[Level2 Story3 Flow] All numbers finished. Showing popup.');
     // 완료 팝업 표시 후 함수 종료
     showApplePopup(context, isGold: isGold, childId: childId); // ✅ childId 전달
@@ -400,8 +515,14 @@ void _startNumberFlow(
                   // 6. 정리 페이지 완료 후 (onNext 콜백 - 사용자가 탭하면)
                   //    _startNumberFlow 함수를 다음 인덱스(index + 1)로 재귀 호출
                   //    -> 다음 숫자 학습 시작
-                  _startNumberFlow(context, index + 1, routineIndex, isGold,
-                      childId); // ✅ childId 전달
+                  _startNumberFlow(
+                    context, index + 1, routineIndex, 
+                    isGold, 
+                    childId,
+                    fruitId,   // ⭐️ 넘김
+                    startTime, // ⭐️ 넘김
+                    onCompleteApiCall // ⭐️ 넘김
+                  );
                 },
               ),
             ),

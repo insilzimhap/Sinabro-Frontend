@@ -45,7 +45,7 @@ class _LoginPageState extends State<LoginParentScreen> {
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(
-        builder: (_) => const MyPage(), // MyPage로 이동
+        builder: (_) => MyPage(parentUserId: parentUserId), //마이페이지로 이동
       ),
     );
   }
@@ -285,6 +285,9 @@ class _LoginPageState extends State<LoginParentScreen> {
         final rt = body['refreshToken'] as String?;
 
         if (at != null && at.isNotEmpty) {
+          // 🚨 [핵심 수정]: AuthClient에도 토큰을 저장해야 합니다!
+          await AuthClient.instance.setAuthToken(at, refreshToken: rt);
+
           await ChildrenState.instance.setToken(
             accessToken: at,
             refreshToken: (rt != null && rt.isNotEmpty) ? rt : null,
