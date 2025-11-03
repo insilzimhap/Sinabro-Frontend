@@ -62,6 +62,7 @@ class _ParentLayoutState extends State<ParentLayout> {
         title: const TranslatedText(
           // ⭐️ 첫 번째 코드의 AppBar Title 사용
           "SINABRO Parents' Page", 
+
           style: TextStyle(color: Colors.black),
         ),
         leading: Row(
@@ -92,6 +93,7 @@ class _ParentLayoutState extends State<ParentLayout> {
             // isInitialized 플래그를 사용하여 중복 호출 방지
             // ⭐️ (참고) translationService.initialize(userId);
             // ⭐️ (수정) translation_service.dart의 최신 코드는 isInitialized 체크를 알아서 함
+
             translationService.initialize(userId);
           }
 
@@ -184,6 +186,7 @@ class _MenuList extends StatelessWidget {
       _MenuItem(
         title: 'announcement', // ⭐️ 번역 키 (영어)
         koreanTitle: '공지사항', // ⭐️ 한글 (툴팁 및 activeMenu 비교용)
+
         icon: Icons.campaign_outlined,
         destination: NoticePage(parentUserId: parentUserId),
       ),
@@ -228,6 +231,7 @@ class _MenuList extends StatelessWidget {
         final it = items[i];
         // ⭐️ [수정] activeMenu 비교 대상을 'title'이 아닌 'koreanTitle'로 함
         final isActive = it.koreanTitle == activeMenu; 
+
         return _MenuTile(item: it, collapsed: collapsed, isActive: isActive);
       },
     );
@@ -238,6 +242,7 @@ class _MenuList extends StatelessWidget {
 class _MenuItem {
   final String title;       // ⭐️ 번역 키 (영어)
   final String koreanTitle; // ⭐️ 한글 (툴팁 및 activeMenu 비교용)
+
   final IconData icon;
   final Widget destination;
 
@@ -320,6 +325,7 @@ class _MenuTile extends StatelessWidget {
                   ),
                   child: TranslatedText( // ⭐️ [수정] 번역 위젯 사용
                     item.title, // ⭐️ 영어 키(title)를 넘겨서 번역
+
                     style: TextStyle(
                       fontSize: 15,
                       fontWeight: isActive ? FontWeight.w700 : FontWeight.w400,
@@ -333,8 +339,10 @@ class _MenuTile extends StatelessWidget {
         ),
       ),
     );
+
     
     // ⭐️ [수정] 툴팁에는 한글(koreanTitle) 사용
+
     return collapsed ? Tooltip(message: item.koreanTitle, child: tile) : tile;
   }
 }
