@@ -293,14 +293,13 @@ class _LobbyChildScreenState extends State<LobbyChildScreen> {
                                           }),
                                           const SizedBox(width: kColsGap),
                                           _bigAction('듣기 학습', () {
-                                            Navigator.push(
+                                            // ⭐️ [수정] MaterialPageRoute 대신 pushNamed 사용
+                                            Navigator.pushNamed(
                                               context,
-                                              MaterialPageRoute(
-                                                builder: (_) =>
-                                                    ListenAppleSelect(
-                                                  childId: widget.childId,
-                                                ),
-                                              ),
+                                              ListenAppleSelect.routeName, // ⭐️ '/listen-apple-select' 이름표 사용
+                                              arguments: { // ⭐️ main.dart의 onGenerateRoute가 받을 수 있게 arguments로 전달
+                                                'childId': widget.childId
+                                              },
                                             );
                                           }),
                                         ],
