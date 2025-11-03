@@ -13,7 +13,6 @@
  * ----------------------------------------------------------------
  */
 
-
 import 'package:flutter/material.dart';
 
 // 🔹 공통 상태/API import
@@ -24,7 +23,8 @@ import 'package:sinabro/main/gameView/tree_progress.dart';
 import 'package:sinabro/main/gameView/tree_progress_loader.dart';
 import 'package:sinabro/main/gameView/fruit_image_map.dart'; // ✅ 추가 (이미지 매핑)
 
-class Level1ThemeSelectPage extends StatefulWidget { //changed: Stateful로 변경
+class Level1ThemeSelectPage extends StatefulWidget {
+  //changed: Stateful로 변경
   final Function(int) onThemeSelected;
   final String childId;
 
@@ -37,17 +37,18 @@ class Level1ThemeSelectPage extends StatefulWidget { //changed: Stateful로 변�
   static const String stageId = 'ST007'; // 듣기게임 나무1(Stage 1)
 
   @override
-  State<Level1ThemeSelectPage> createState() => _Level1ThemeSelectPageState(); //changed
+  State<Level1ThemeSelectPage> createState() =>
+      _Level1ThemeSelectPageState(); //changed
 }
 
-class _Level1ThemeSelectPageState extends State<Level1ThemeSelectPage> { //changed
+class _Level1ThemeSelectPageState extends State<Level1ThemeSelectPage> {
+  //changed
   late Future<TreeProgress> _progressFuture; //changed
 
   @override
   void initState() {
     super.initState();
     _progressFuture = TreeProgressLoader.load('listening_game');
-  
   }
 
   @override
@@ -58,11 +59,11 @@ class _Level1ThemeSelectPageState extends State<Level1ThemeSelectPage> { //chang
     );
 
     final rects = [
-      const Rect.fromLTWH(40, 120, 100, 100),   // 1번 위치
-      const Rect.fromLTWH(160, 90, 100, 100),   // 2번 위치
-      const Rect.fromLTWH(280, 140, 100, 100),  // 3번 위치
-      const Rect.fromLTWH(100, 260, 100, 100),  // 4번 위치
-      const Rect.fromLTWH(230, 280, 100, 100),  // 5번 위치 (특별)
+      const Rect.fromLTWH(40, 120, 100, 100), // 1번 위치
+      const Rect.fromLTWH(160, 90, 100, 100), // 2번 위치
+      const Rect.fromLTWH(280, 140, 100, 100), // 3번 위치
+      const Rect.fromLTWH(100, 260, 100, 100), // 4번 위치
+      const Rect.fromLTWH(230, 280, 100, 100), // 5번 위치 (특별)
     ];
 
     // ✅ fruitId 매핑 (열매별로 start 요청 구분용)
@@ -77,7 +78,8 @@ class _Level1ThemeSelectPageState extends State<Level1ThemeSelectPage> { //chang
     return Scaffold(
       backgroundColor: const Color(0xFFFFF8EE),
       body: SafeArea(
-        child: FutureBuilder<TreeProgress>(  //추가
+        child: FutureBuilder<TreeProgress>(
+          //추가
           future: _progressFuture,
           builder: (context, snapshot) {
             if (!snapshot.hasData) {
@@ -158,7 +160,7 @@ class _Level1ThemeSelectPageState extends State<Level1ThemeSelectPage> { //chang
                     await _handleStart(context, fruitIds[3], 3);
                   },
                 ),
-    
+
                 // 오른쪽 아래 책 → theme_5.png (특별) (열매 FR_LG_005, 연못/강가 동물)
                 _ThemeButton(
                   rect: rects[4],
@@ -181,6 +183,7 @@ class _Level1ThemeSelectPageState extends State<Level1ThemeSelectPage> { //chang
       ),
     );
   }
+
   // ✅ start 호출 + 상태 저장 + 콜백 호출
   Future<void> _handleStart(
       BuildContext context, String fruitId, int themeIndex) async {
@@ -196,7 +199,7 @@ class _Level1ThemeSelectPageState extends State<Level1ThemeSelectPage> { //chang
       }
 
       FruitState.instance.setResult(resultId);
-      widget.onThemeSelected(themeIndex);// ✅ 기존 구조 그대로
+      widget.onThemeSelected(themeIndex); // ✅ 기존 구조 그대로
     } catch (e) {
       debugPrint('⚠️ startListeningGame 실패: $e');
       _showSnack(context, '⚠️ 네트워크 오류가 발생했습니다.');
@@ -271,7 +274,6 @@ class _ThemeButtonState extends State<_ThemeButton>
       width: widget.rect.width,
       height: widget.rect.height,
       child: GestureDetector(
-
         onTap: widget.isActive ? widget.onTap : null, // 🔒 잠긴 상태는 클릭 막기
         child: ScaleTransition(
           scale: Tween(begin: 0.98, end: 1.05).animate(

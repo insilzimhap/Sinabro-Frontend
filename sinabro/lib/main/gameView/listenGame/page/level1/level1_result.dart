@@ -6,7 +6,6 @@
  * ----------------------------------------------------------------
  */
 
-
 import 'package:flutter/material.dart';
 import 'package:sinabro/main/gameView/common/api/child_state.dart';
 
@@ -15,7 +14,7 @@ import 'package:sinabro/main/gameView/listenGame/page/level1/level1_flow.dart';
 import 'package:sinabro/main/gameView/common/api/fruit_state.dart';
 //changed-end
 
-
+import 'package:sinabro/main/gameView/listenGame/controller/audio_helper.dart'; // ✅ 추가
 
 class Level1ResultPage extends StatelessWidget {
   final int themeId;
@@ -27,8 +26,19 @@ class Level1ResultPage extends StatelessWidget {
     required this.success,
   });
 
+  // 💡 TTS 재생 키 결정
+  String _getTtsKey(int themeId, bool success) {
+    if (!success) return 'fail';
+    return 'success_t$themeId';
+  }
+
   @override
   Widget build(BuildContext context) {
+    // 결과 페이지 진입 시 TTS 재생
+    final ttsKey = _getTtsKey(themeId, success);
+    // themeId를 넘겨서 AudioHelper가 해당 단계 폴더를 찾도록 유도
+    AudioHelper.playAudio(ttsKey, isTts: true, themeId: themeId);
+
     final imagePath = success
         ? "assets/img/contents/gameListen/level1/theme_${themeId}_clear.png"
         : "assets/img/contents/gameListen/level1/theme_fail.png";
@@ -107,18 +117,20 @@ class Level1ResultPage extends StatelessWidget {
               onPressed: () {
                 FruitState.instance.clear(); // ✅ 이전 세션 초기화
 
-                Navigator.of(context).pushAndRemoveUntil( //changed-start
+                Navigator.of(context).pushAndRemoveUntil(
+                  //changed-start
                   PageRouteBuilder(
                     pageBuilder: (context, animation, secondaryAnimation) =>
                         Level1Flow(
-                          childId: ChildState.instance.childId ?? '',
-                        ),
+                      childId: ChildState.instance.childId ?? '',
+                    ),
                     transitionsBuilder:
                         (context, animation, secondaryAnimation, child) {
                       return FadeTransition(opacity: animation, child: child);
                     },
-                    transitionDuration: const Duration(milliseconds: 450), //changed-end
-                  ), 
+                    transitionDuration:
+                        const Duration(milliseconds: 450), //changed-end
+                  ),
                   (route) => false,
                 );
               },

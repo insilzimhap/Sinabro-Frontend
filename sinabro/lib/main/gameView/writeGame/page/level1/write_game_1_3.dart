@@ -1598,4 +1598,3 @@ class _MaskClippedStrokePainter extends CustomPainter {
       old.strokeColor != strokeColor ||
       old.strokeWidth != strokeWidth;
 }
-

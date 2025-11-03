@@ -6,9 +6,9 @@
  * ----------------------------------------------------------------
  */
 
-
 // lib/main/studyView/gameListen/page/level1/intro_page.dart
 import 'package:flutter/material.dart';
+import 'package:sinabro/main/gameView/listenGame/controller/audio_helper.dart';
 
 class Level1IntroPage extends StatefulWidget {
   final VoidCallback? onNext;
@@ -28,18 +28,42 @@ class _Level1IntroPageState extends State<Level1IntroPage>
       'name': '양지',
       'text': '안녕하세요! 저는 양지라고 해요',
       'image': 'assets/img/contents/gameListen/level1/yangji_story_1.png',
+      'ttsKey': 'intro_1',
     },
     {
       'name': '양지',
       'text': '내일 마법 시험이 있는데 성공을 못해요',
       'image': 'assets/img/contents/gameListen/level1/yangji_story_2.png',
+      'ttsKey': 'intro_2',
     },
     {
       'name': '양지',
       'text': '저를 좀 도와주세요!',
       'image': 'assets/img/contents/gameListen/level1/yangji_story_2.png',
+      'ttsKey': 'intro_3',
     },
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    // 💡 페이지 진입 시 첫 번째 TTS 재생
+    _playTts();
+  }
+
+  // 💡 다음 스텝으로 이동 시 TTS 재생
+  void _playTts() {
+    final key = dialogues[_step]['ttsKey'];
+    if (key != null) {
+      AudioHelper.playAudio(key, isTts: true);
+    }
+  }
+
+  @override
+  void dispose() {
+    AudioHelper.stopAudio(); // 💡 페이지 나갈 때 오디오 중지
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -133,6 +157,7 @@ class _Level1IntroPageState extends State<Level1IntroPage>
                         key: const ValueKey('next'),
                         onPressed: () {
                           setState(() => _step++);
+                          _playTts(); // TTS 재생
                         },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFFFFE27A),
@@ -163,4 +188,3 @@ class _Level1IntroPageState extends State<Level1IntroPage>
     );
   }
 }
-  

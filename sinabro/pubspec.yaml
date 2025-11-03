@@ -57,6 +57,8 @@ flutter:
     - assets/img/contents/stickerBook/stickers/
 
     - assets/img/contents/gameListen/
+    - assets/img/contents/gameListen/tutorial/
+    - assets/img/contents/gameListen/chapter/
     - assets/img/contents/gameListen/level1/
     - assets/img/contents/gameListen/level1/answer/
     - assets/img/contents/gameListen/level1/theme/
@@ -72,7 +74,6 @@ flutter:
 
     - assets/img/contents/gameWrite/
     - assets/img/contents/gameWrite/chapter/
-    
     - assets/img/contents/studyListen/
     - assets/img/contents/studyListen/level1/
     - assets/img/contents/studyListen/level1/colors/
@@ -86,6 +87,8 @@ flutter:
     - assets/img/contents/studyListen/level3/main_topic/
     - assets/img/contents/studyListen/level3/story/
     - assets/img/contents/studyWrite/
+    - assets/img/contents/stickerBook/
+    - assets/img/contents/stickerBook/stickers/
     - assets/img/icon/
     - assets/img/icon/popup/
     - assets/img/leveltest/
