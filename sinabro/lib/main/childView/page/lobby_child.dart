@@ -4,11 +4,18 @@ import 'package:http/http.dart' as http;
 import 'package:sinabro/main/gameView/writeGame/page/write_game_main.dart';
 import 'dart:convert';
 
-// ✅ 학습 페이지 import
+// 학습 페이지 import
 import 'package:sinabro/main/studyView/listenStudy/page/listen_study_apple.dart';
 import 'package:sinabro/main/studyView/writeStudy/page/main_apple_tree.dart';
 
-// ✅ 한 곳에서 서버 주소 관리 (추가)
+// 게임 페이지 import 
+import 'package:sinabro/main/gameView/listenGame/chapter_page.dart';
+import 'package:sinabro/main/gameView/writeGame/chapter_page.dart';
+
+// 도감 페이지 import 
+import 'package:sinabro/main/childView/page/sticker_Book.dart';
+
+// 한 곳에서 서버 주소 관리 (추가)
 import 'package:sinabro/config.dart';
 
 class LobbyChildScreen extends StatefulWidget {
@@ -202,7 +209,17 @@ class _LobbyChildScreenState extends State<LobbyChildScreen> {
                               ),
                             ),
                             const SizedBox(width: 18),
-                            _pillButton(label: '도감', onTap: () {}),
+                            _pillButton(
+                              label: '도감',
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => const StickerBookPage(),
+                                  ),
+                                );
+                              },
+                            ),
                           ],
                         ),
                         const SizedBox(height: 28),
@@ -313,7 +330,7 @@ class _LobbyChildScreenState extends State<LobbyChildScreen> {
                                               context,
                                               MaterialPageRoute(
                                                 builder: (_) =>
-                                                    WriteGameMainPage(
+                                                GameWriteChapterScreen(
                                                   childId: widget.childId,
                                                 ),
                                               ),
@@ -321,7 +338,15 @@ class _LobbyChildScreenState extends State<LobbyChildScreen> {
                                           }),
                                           const SizedBox(width: kColsGap),
                                           _bigAction('듣기 게임', () {
-                                            // TODO
+                                            Navigator.push(
+                                              context,
+                                              MaterialPageRoute(
+                                                builder: (_) =>
+                                                    GameListenChapterScreen(
+                                                  childId: widget.childId,
+                                                ),
+                                              ),
+                                            );
                                           }),
                                         ],
                                       ),

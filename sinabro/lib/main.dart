@@ -18,7 +18,6 @@ import 'package:sinabro/main/studyView/listenStudy/page/listen_study_apple.dart'
 // ✅ JWT 자동부착 클라이언트 (2번 파일에서 가져옴)
 import 'package:sinabro/common/auth_client.dart';
 
-
 /// 앱 시작점 (⭐️ 1번과 2번 파일의 main 함수를 합침)
 Future<void> main() async {
   // 1) ⭐️ 플러터 엔진-플랫폼 채널 준비 (2번 파일에서 가져옴)
@@ -110,6 +109,7 @@ class MyApp extends StatelessWidget {
                   isGold is bool &&
                   childId is String &&
                   fruitId is String) { // ⭐️ [수정] 네(HEAD) 브랜치 코드 유지 (fruitId String 체크)
+
                 // ColorEntryPage 생성 및 반환
                 return MaterialPageRoute(
                   builder: (_) => ColorEntryPage(
@@ -168,3 +168,4 @@ class MyApp extends StatelessWidget {
     ); // MaterialApp 끝
   } // build 끝
 } // MyApp 끝
+
