@@ -1,6 +1,6 @@
 // lib/main/gameView/tree_progress_loader.dart
 
-import 'package:sinabro/main/gameView/writeGame/api/child_game_api.dart';
+import 'package:sinabro/main/gameView/common/api/child_game_api.dart';
 import 'package:sinabro/main/gameView/tree_progress.dart';
 
 /// 🌳 TreeProgressLoader

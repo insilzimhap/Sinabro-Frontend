@@ -13,8 +13,8 @@ import 'package:flutter/material.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:sinabro/main/gameView/listenGame/model/listen_game_content.dart';
 
-import 'package:sinabro/main/gameView/writeGame/api/child_game_api.dart';
-import 'package:sinabro/main/gameView/writeGame/api/fruit_state.dart';
+import 'package:sinabro/main/gameView/common/api/child_game_api.dart';
+import 'package:sinabro/main/gameView/common/api/fruit_state.dart';
 
 class ListenGamePage extends StatefulWidget {
   final List<ListenGameContent> gameData;

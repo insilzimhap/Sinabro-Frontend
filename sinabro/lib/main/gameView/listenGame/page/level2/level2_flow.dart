@@ -19,7 +19,7 @@ import 'package:sinabro/main/gameView/listenGame/page/level2/level2_result.dart'
 import 'package:sinabro/main/gameView/listenGame/data/level2_data.dart';
 import 'package:sinabro/main/gameView/common/layout/listen_game_transition.dart';
 
-import 'package:sinabro/main/gameView/writeGame/api/child_state.dart';
+import 'package:sinabro/main/gameView/common/api/child_state.dart';
 
 class Level2Flow extends StatefulWidget {
   final String childId;

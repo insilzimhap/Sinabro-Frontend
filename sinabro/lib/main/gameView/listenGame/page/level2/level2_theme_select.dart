@@ -15,8 +15,8 @@
 import 'package:flutter/material.dart';
 
 // 🔹 공통 상태/API import (Level1과 동일 구조)
-import 'package:sinabro/main/gameView/writeGame/api/fruit_state.dart';
-import 'package:sinabro/main/gameView/writeGame/api/child_game_api.dart';
+import 'package:sinabro/main/gameView/common/api/fruit_state.dart';
+import 'package:sinabro/main/gameView/common/api/child_game_api.dart';
 
 import 'package:sinabro/main/gameView/tree_progress.dart';
 import 'package:sinabro/main/gameView/tree_progress_loader.dart';

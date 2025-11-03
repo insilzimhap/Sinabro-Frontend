@@ -9,8 +9,8 @@
 import 'package:flutter/material.dart';
 //changed-start
 import 'package:sinabro/main/gameView/listenGame/page/level2/level2_flow.dart';
-import 'package:sinabro/main/gameView/writeGame/api/child_state.dart';
-import 'package:sinabro/main/gameView/writeGame/api/fruit_state.dart';
+import 'package:sinabro/main/gameView/common/api/child_state.dart';
+import 'package:sinabro/main/gameView/common/api/fruit_state.dart';
 
 //changed-end
 class Level2ResultPage extends StatelessWidget {

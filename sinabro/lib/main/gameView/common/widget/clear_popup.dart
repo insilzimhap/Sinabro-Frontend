@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:sinabro/main/gameView/listenGame/page/level1/level1_theme_select.dart';
 import 'package:sinabro/main/gameView/listenGame/page/level2/level2_theme_select.dart';
 import 'package:sinabro/main/gameView/listenGame/page/level3/level3_theme_select.dart';
-import 'package:sinabro/main/gameView/writeGame/api/child_state.dart';
+import 'package:sinabro/main/gameView/common/api/child_state.dart';
 
 /// 🎉 일반 클리어 팝업
 /// - 5초 후 현재 레벨의 테마 선택 페이지로 자동 이동
