@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:sinabro/main/gameView/listenGame/controller/audio_helper.dart'; // ✅ 추가
 
 /// 듣기 게임 화면 전환 페이지
 /// - 귀여운 일러스트 + 안내 텍스트
@@ -34,9 +35,13 @@ class _ListenGameTransitionState extends State<ListenGameTransition>
       CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
     );
 
+    // 💡 로딩 TTS 재생
+    AudioHelper.playAudio('loading', isTts: true);
+
     // 일정 시간 뒤 다음 페이지로 이동
     Future.delayed(widget.duration, () {
       if (mounted) {
+        AudioHelper.stopAudio(); // ✅ 페이지 전환 전 오디오 중지
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (_) => widget.nextPage),
@@ -48,6 +53,7 @@ class _ListenGameTransitionState extends State<ListenGameTransition>
   @override
   void dispose() {
     _controller.dispose();
+    AudioHelper.stopAudio(); // ✅ dispose 시 오디오 중지
     super.dispose();
   }
 
