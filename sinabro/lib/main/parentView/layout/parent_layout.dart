@@ -25,7 +25,7 @@ import 'package:sinabro/main/parentView/widget/translated_text.dart';
 class ParentLayout extends StatefulWidget {
   /// 현재 활성 메뉴 이름 (사이드바 하이라이트용)
   /// '공지사항' | '마이페이지' | '자녀페이지' | '문의사항' | '설정'
-  final String activeMenu;
+  final String activeMenu; // ⭐️ 참고: 이 값은 'koreanTitle'과 일치해야 함
 
   /// 실제 본문 위젯
   final Widget content;
@@ -49,10 +49,27 @@ class _ParentLayoutState extends State<ParentLayout> {
 
   void _toggleSidebar() => setState(() => _collapsed = !_collapsed);
 
+
+    // 1. ✅ initState 추가: 초기화 로직을 이곳으로 이동합니다.
+    @override
+    void initState() {
+      super.initState();
+      // 위젯이 완전히 빌드된 후 (다음 프레임에) 안전하게 실행되도록 예약합니다.
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        final userId = widget.parentUserId;
+        if (userId != null && userId.isNotEmpty && mounted) {
+          // listen: false 로 context를 통해 Provider에 접근합니다.
+          // Provider를 통해 TranslationService 인스턴스를 가져와 호출합니다.
+          Provider.of<TranslationService>(context, listen: false)
+              .initialize(userId);
+        }
+      });
+    }
+
   @override
   Widget build(BuildContext context) {
     final green = Colors.green.shade200;
-
+    
     // Scaffold를 직접 반환합니다.
     return Scaffold(
       appBar: AppBar(
@@ -60,7 +77,8 @@ class _ParentLayoutState extends State<ParentLayout> {
         elevation: 0,
         iconTheme: const IconThemeData(color: Colors.black),
         title: const TranslatedText(
-          "SINABRO Parents' Page",
+          // ⭐️ 첫 번째 코드의 AppBar Title 사용
+          "SINABRO Parents' Page", 
           style: TextStyle(color: Colors.black),
         ),
         leading: Row(
@@ -85,12 +103,14 @@ class _ParentLayoutState extends State<ParentLayout> {
       // Consumer 위젯으로 body를 감싸서 TranslationService의 상태를 감지합니다.
       body: Consumer<TranslationService>(
         builder: (context, translationService, child) {
-          // 위젯이 빌드될 때 초기화 함수를 한번만 안전하게 호출합니다.
-          final userId = widget.parentUserId;
-          if (userId != null && userId.isNotEmpty) {
-            // isInitialized 플래그를 사용하여 중복 호출 방지 (다음 단계에서 추가할 예정)
-            translationService.initialize(userId);
-          }
+          // // 위젯이 빌드될 때 초기화 함수를 한번만 안전하게 호출합니다.
+          // final userId = widget.parentUserId;
+          // if (userId != null && userId.isNotEmpty) {
+          //   // isInitialized 플래그를 사용하여 중복 호출 방지
+          //   // ⭐️ (참고) translationService.initialize(userId);
+          //   // ⭐️ (수정) translation_service.dart의 최신 코드는 isInitialized 체크를 알아서 함
+          //   translationService.initialize(userId);
+          // }
 
           // 언어 설정을 불러오는 동안 로딩 화면을 보여줍니다.
           if (translationService.isLoading) {
@@ -176,10 +196,11 @@ class _MenuList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // ⭐️ [수정] 첫 번째 코드(_MenuItem 정의) 사용
     final items = <_MenuItem>[
       _MenuItem(
-        title: 'announcement',
-        koreanTitle: '공지사항',
+        title: 'announcement', // ⭐️ 번역 키 (영어)
+        koreanTitle: '공지사항', // ⭐️ 한글 (툴팁 및 activeMenu 비교용)
         icon: Icons.campaign_outlined,
         destination: NoticePage(parentUserId: parentUserId),
       ),
@@ -222,16 +243,18 @@ class _MenuList extends StatelessWidget {
       itemCount: items.length,
       itemBuilder: (_, i) {
         final it = items[i];
-        final isActive = it.koreanTitle == activeMenu;
+        // ⭐️ [수정] activeMenu 비교 대상을 'title'이 아닌 'koreanTitle'로 함
+        final isActive = it.koreanTitle == activeMenu; 
         return _MenuTile(item: it, collapsed: collapsed, isActive: isActive);
       },
     );
   }
 }
 
+// ⭐️ [수정] 첫 번째 코드(_MenuItem 정의) 사용
 class _MenuItem {
-  final String title;
-  final String koreanTitle;
+  final String title;       // ⭐️ 번역 키 (영어)
+  final String koreanTitle; // ⭐️ 한글 (툴팁 및 activeMenu 비교용)
   final IconData icon;
   final Widget destination;
 
@@ -312,8 +335,8 @@ class _MenuTile extends StatelessWidget {
                     color: isActive ? activeColor.withOpacity(0.08) : null,
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: TranslatedText(
-                    item.title,
+                  child: TranslatedText( // ⭐️ [수정] 번역 위젯 사용
+                    item.title, // ⭐️ 영어 키(title)를 넘겨서 번역
                     style: TextStyle(
                       fontSize: 15,
                       fontWeight: isActive ? FontWeight.w700 : FontWeight.w400,
@@ -327,7 +350,8 @@ class _MenuTile extends StatelessWidget {
         ),
       ),
     );
-
+    
+    // ⭐️ [수정] 툴팁에는 한글(koreanTitle) 사용
     return collapsed ? Tooltip(message: item.koreanTitle, child: tile) : tile;
   }
 }

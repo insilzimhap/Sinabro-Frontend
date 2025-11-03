@@ -62,9 +62,11 @@ class _CandyWritePageState extends State<CandyWritePage>
   final List<String> _guides = const [_guide1, _guide2, _guide3];
   final List<double> _guideScale = const [0.80, 0.68, 0.80];
 
-  // ⭐️ [수정] HEAD와 sub의 변수들 병합
-  final AudioPlayer _audioPlayer = AudioPlayer(); // sub 브랜치 오디오
-  DateTime? _startTime; // HEAD 브랜치 학습 시작 시간
+  // 오디오 플레이어 인스턴스
+  final AudioPlayer _audioPlayer = AudioPlayer();
+
+  // 학습 시작 시간을 기록할 변수 추가
+  DateTime? _startTime;
 
   int _stage = 0;
   _Phase _phase = _Phase.intro;
@@ -78,7 +80,7 @@ class _CandyWritePageState extends State<CandyWritePage>
     duration: const Duration(milliseconds: 1400),
   );
 
-  // ✅ API 호출 함수 (HEAD 브랜치)
+  // ✅ API 호출 함수 추가
   Future<void> _uploadStudyWritingResult() async {
     // 실제 이 학습에 해당하는 정확한 fruit_id로 바꿔주세요!
     const String fruitIdForThisStudy = 'FR_WR_004';
@@ -119,7 +121,7 @@ class _CandyWritePageState extends State<CandyWritePage>
     }
   }
 
-  // ------------------ 오디오 (sub 브랜치) ------------------
+  // ------------------ 오디오 ------------------
   @override
   void initState() {
     super.initState();
@@ -164,7 +166,7 @@ class _CandyWritePageState extends State<CandyWritePage>
       await _playAudio(_audioDone);
       if (!mounted) return;
 
-      // 오디오가 끝난 후 3초간 대기 (5초 -> 3초로 줄어있었음)
+      // 오디오가 끝난 후 5초간 대기
       await Future.delayed(const Duration(seconds: 3));
       if (!mounted) return;
     }
@@ -221,12 +223,11 @@ class _CandyWritePageState extends State<CandyWritePage>
         builder: (context, c) {
           final size = Size(c.maxWidth, c.maxHeight);
           final side = min(size.width, size.height) * 0.75;
-          
-          // ⭐️ [수정] 중복된 코드 제거, 여기서 한 번만 시간 기록
-          // ⭐ 첫 번째 스테이지(_stage == 0)의 그리기 단계(_phase == _Phase.draw)일 때 딱 한 번만 시간 기록
-          if (_phase == _Phase.draw && _stage == 0 && _startTime == null) {
+
+          // ✅ 학습 시작 시점(_Phase.draw)에 시간 기록
+          // ⭐ 첫 번째 스테이지 시작 시에만 기록
+          if (_phase == _Phase.draw && _startTime == null) {
             _startTime = DateTime.now();
-            debugPrint('✅ 학습 시작 시간 기록: $_startTime');
           }
 
           return Stack(
@@ -334,7 +335,7 @@ class _CandyWritePageState extends State<CandyWritePage>
                       guideOpacity: 0.38,
                       sizeScale: _guideScale[
                           _stage], // ✅ 스테이지별 축소율 적용 (예: [0.80, 0.68, 0.80])
-                      targetCoverage: 0.50, // ✅ 50% 이상 채우기 (80% -> 50%로 완화됨)
+                      targetCoverage: 0.50, // ✅ 80% 이상 채우기
                       snapRadiusPx: 30,
                       stampRadiusPx: 9,
                       sampleStridePx: 4,
@@ -510,13 +511,13 @@ class _CandyWritePageState extends State<CandyWritePage>
       },
     );
   }
-
 }
 
 /* ─────────────────────────────────────────────────────────────────────────────
    CandyGuideLayer (완화판)
-   ... (이하 CandyGuideLayer, _MaskClippedStrokePainter, _FinishBanner, _EatBanner 코드는
-        충돌이 없었으므로 네 원본 그대로 두면 돼. 수정할 거 없음.)
+   - 루프 클로즈(시작점 근처로 복귀) OR 끝 밴드(end band) 도달 중 하나만 만족해도 OK
+   - 커버리지 그레이스 적용 (targetCoverage * 0.90)
+   - 가이드 주축(가로/세로) 자동 감지 후 밴드/슬랙 판정
    ─────────────────────────────────────────────────────────────────────────────*/
 class CandyGuideLayer extends StatefulWidget {
   final String guideAsset;
@@ -566,29 +567,43 @@ class CandyGuideLayer extends StatefulWidget {
 }
 
 class _CandyGuideLayerState extends State<CandyGuideLayer> {
-  // ... (CandyGuideLayer의 모든 내부 변수와 함수들)
-  // ... (수정할 거 없음)
   ui.Image? _maskImg;
   Uint8List? _rgba;
   int _gw = 0, _gh = 0;
+
+  // 시작/마지막 포인트(마스크 좌표)
   Offset? _firstMaskPt;
   Offset? _lastMaskPt;
+
+  // 가이드 사각/스케일
   late Rect _guideRect;
   late double _mx, _my;
+
+  // 격자 & 커버리지
   late int _gridW, _gridH, _stride;
   late List<bool> _coveredGrid;
   int _totalSamples = 0, _coveredSamples = 0;
+
+  // 한 번의 획
   final List<Offset> _stroke = [];
+
+  // 사이즈 캐시
   Size? _lastSize;
+
+  // ── 끝점 완화 판정용: 엣지/주축 ──
   int _minGXEdge = 0, _maxGXEdge = 0;
   int _minGYEdge = 0, _maxGYEdge = 0;
-  bool _useHorizontal = true; 
-  static const double _kEndBandPct = 0.12;
-  static const double _kOrthoSlackPct = 0.70;
-  static const double _kCoverageGrace = 0.90; 
+  bool _useHorizontal = true; // true=가로형(좌↔우), false=세로형(상↔하)
+
+  // 튜닝 상수
+  static const double _kEndBandPct = 0.12; // 주축 끝 밴드 폭
+  static const double _kOrthoSlackPct = 0.70; // 직교축 슬랙
+  static const double _kCoverageGrace = 0.90; // 커버리지 그레이스 (예: 0.5*0.9=0.45)
+
   bool get _ready => _maskImg != null && _rgba != null;
   double get _coverage =>
       _totalSamples == 0 ? 0.0 : _coveredSamples / _totalSamples;
+
   void _resetAttempt() {
     _stroke.clear();
     _coveredGrid = List<bool>.filled(_gridW * _gridH, false);
@@ -598,28 +613,165 @@ class _CandyGuideLayerState extends State<CandyGuideLayer> {
     widget.onProgress(0.0);
     setState(() {});
   }
+
   Future<void> _loadMaskForSize(Size size) async {
-    // ...
+    // 중앙 배치 + 비율 스케일
+    final w = size.width * widget.sizeScale;
+    final h = size.height * widget.sizeScale;
+    _guideRect = Rect.fromCenter(
+      center: Offset(size.width / 2, size.height / 2),
+      width: w,
+      height: h,
+    );
+
+    final raw = await rootBundle.load(widget.guideAsset);
+    final codec = await ui.instantiateImageCodec(
+      raw.buffer.asUint8List(),
+      targetWidth: _guideRect.width.toInt().clamp(1, 4096),
+      targetHeight: _guideRect.height.toInt().clamp(1, 4096),
+    );
+    final frame = await codec.getNextFrame();
+    final img = frame.image;
+    final byteData = await img.toByteData(format: ui.ImageByteFormat.rawRgba);
+
+    if (!mounted) return;
+    _maskImg = img;
+    _rgba = byteData!.buffer.asUint8List();
+    _gw = img.width;
+    _gh = img.height;
+
+    _mx = _gw / _guideRect.width;
+    _my = _gh / _guideRect.height;
+
+    // 격자
+    _stride = widget.sampleStridePx.clamp(2, 16);
+    _gridW = (_gw + _stride - 1) ~/ _stride;
+    _gridH = (_gh + _stride - 1) ~/ _stride;
+    _coveredGrid = List<bool>.filled(_gridW * _gridH, false);
+
+    // 총 샘플 + 엣지/주축
+    _totalSamples = 0;
+    int minGX = 1 << 30, maxGX = -1;
+    int minGY = 1 << 30, maxGY = -1;
+
+    for (int gy = 0; gy < _gridH; gy++) {
+      for (int gx = 0; gx < _gridW; gx++) {
+        if (_alphaOnAtGrid(gx, gy)) {
+          _totalSamples++;
+          if (gx < minGX) minGX = gx;
+          if (gx > maxGX) maxGX = gx;
+          if (gy < minGY) minGY = gy;
+          if (gy > maxGY) maxGY = gy;
+        }
+      }
+    }
+    _minGXEdge = minGX < 0 ? 0 : minGX;
+    _maxGXEdge = maxGX < 0 ? _gridW - 1 : maxGX;
+    _minGYEdge = minGY < 0 ? 0 : minGY;
+    _maxGYEdge = maxGY < 0 ? _gridH - 1 : maxGY;
+
+    final spanX = (_maxGXEdge - _minGXEdge).abs();
+    final spanY = (_maxGYEdge - _minGYEdge).abs();
+    _useHorizontal = spanX >= spanY; // 가로형/세로형 자동 판단
+
+    _coveredSamples = 0;
+    _lastMaskPt = null;
+    _stroke.clear();
+
+    _lastSize = size;
+    setState(() {});
   }
+
   bool _alphaOnAtGrid(int gx, int gy) {
-    // ...
-    return false; // 예시
+    final x = (gx * _stride).clamp(0, _gw - 1);
+    final y = (gy * _stride).clamp(0, _gh - 1);
+    final a = _rgba![(y * _gw + x) * 4 + 3];
+    return a > 32;
   }
+
+  // 화면↔마스크
   Offset _toMask(Offset screenPt) => Offset(
         (screenPt.dx - _guideRect.left) * _mx,
         (screenPt.dy - _guideRect.top) * _my,
       );
+
   double _distanceToRect(Offset p, Rect r) {
-    // ...
-    return 0.0; // 예시
+    final dx = (p.dx < r.left)
+        ? (r.left - p.dx)
+        : (p.dx > r.right)
+            ? (p.dx - r.right)
+            : 0.0;
+    final dy = (p.dy < r.top)
+        ? (r.top - p.dy)
+        : (p.dy > r.bottom)
+            ? (p.dy - r.bottom)
+            : 0.0;
+    return sqrt(dx * dx + dy * dy);
   }
+
+  // 가장 가까운 가이드 픽셀로 스냅
   Offset? _nearestMaskPoint(Offset rawScreen) {
-    // ...
-    return null; // 예시
+    if (_distanceToRect(rawScreen, _guideRect) > widget.snapRadiusPx)
+      return null;
+
+    final local = Offset(
+      (rawScreen.dx - _guideRect.left).clamp(0.0, _guideRect.width),
+      (rawScreen.dy - _guideRect.top).clamp(0.0, _guideRect.height),
+    );
+    final m = Offset(local.dx * _mx, local.dy * _my);
+
+    final rMask = max(1, (widget.snapRadiusPx * _mx).ceil());
+    double bestD2 = 1e12;
+    Offset? best;
+    final cx = m.dx.round(), cy = m.dy.round();
+
+    for (int dy = -rMask; dy <= rMask; dy++) {
+      final y = cy + dy;
+      if (y < 0 || y >= _gh) continue;
+      for (int dx = -rMask; dx <= rMask; dx++) {
+        final x = cx + dx;
+        if (x < 0 || x >= _gw) continue;
+        final a = _rgba![(y * _gw + x) * 4 + 3];
+        if (a <= 32) continue;
+        final d2 = (dx * dx + dy * dy).toDouble();
+        if (d2 < bestD2) {
+          bestD2 = d2;
+          best = Offset(x.toDouble(), y.toDouble());
+        }
+      }
+    }
+    if (best == null) return null;
+    if (sqrt(bestD2) > widget.snapRadiusPx * _mx) return null;
+
+    // 마스크→스크린
+    return Offset(
+      _guideRect.left + best.dx / _mx,
+      _guideRect.top + best.dy / _my,
+    );
   }
+
+  // 커버리지 도장
   void _stampAtMaskGrid(Offset maskPt) {
-    // ...
+    final cx = (maskPt.dx / _stride).round();
+    final cy = (maskPt.dy / _stride).round();
+    final rGrid = max(1, (widget.stampRadiusPx / _stride).ceil());
+
+    for (int gy = cy - rGrid; gy <= cy + rGrid; gy++) {
+      if (gy < 0 || gy >= _gridH) continue;
+      for (int gx = cx - rGrid; gx <= cx + rGrid; gx++) {
+        if (gx < 0 || gx >= _gridW) continue;
+        if ((gx - cx) * (gx - cx) + (gy - cy) * (gy - cy) > rGrid * rGrid)
+          continue;
+
+        final idx = gy * _gridW + gx;
+        if (!_coveredGrid[idx] && _alphaOnAtGrid(gx, gy)) {
+          _coveredGrid[idx] = true;
+          _coveredSamples++;
+        }
+      }
+    }
   }
+
   void _updateProgress(Offset maskPt) {
     widget.onProgress(_coverage);
     _lastMaskPt = maskPt;
@@ -627,25 +779,148 @@ class _CandyGuideLayerState extends State<CandyGuideLayer> {
 
   @override
   Widget build(BuildContext context) {
-    // ... (CandyGuideLayer의 build 함수)
     return LayoutBuilder(
       builder: (_, cons) {
-        // ...
+        final size = Size(cons.maxWidth, cons.maxHeight);
+
+        if (_lastSize == null ||
+            _lastSize!.width != size.width ||
+            _lastSize!.height != size.height ||
+            _maskImg == null) {
+          _loadMaskForSize(size); // 비동기 로드
+        }
+
         if (!_ready) return const SizedBox.shrink();
+
         return Stack(
           children: [
-            // ... (가이드)
-            // ... (제스처 + 스트로크)
+            // 가이드
+            Positioned.fromRect(
+              rect: _guideRect,
+              child: Opacity(
+                opacity: widget.guideOpacity,
+                child: RawImage(image: _maskImg, fit: BoxFit.fill),
+              ),
+            ),
+
+            // 제스처 + 스트로크
             Positioned.fill(
               child: GestureDetector(
                 onPanStart: (d) {
-                  // ...
+                  _resetAttempt(); // 한 획만 인정
+                  final snapped = _nearestMaskPoint(d.localPosition);
+                  if (snapped == null) {
+                    widget.onFail?.call();
+                    return;
+                  }
+                  final m = _toMask(snapped);
+                  _firstMaskPt = m;
+
+                  _stroke.add(snapped);
+                  _stampAtMaskGrid(m);
+                  _updateProgress(m);
+                  setState(() {});
                 },
                 onPanUpdate: (d) {
-                  // ...
+                  final snapped = _nearestMaskPoint(d.localPosition);
+                  if (snapped == null) return;
+                  if (_stroke.isEmpty ||
+                      (_stroke.last - snapped).distance >= 2.0) {
+                    _stroke.add(snapped);
+                    final m = _toMask(snapped);
+                    _stampAtMaskGrid(m);
+                    _updateProgress(m);
+                    setState(() {});
+                  }
                 },
                 onPanEnd: (_) {
-                  // ... (onDone, onFail 호출 로직)
+                  final covNeed =
+                      (widget.targetCoverage * _kCoverageGrace).clamp(0.0, 1.0);
+                  final cov = _coverage;
+
+                  bool passByLoop = false;
+                  bool passByBand = false;
+
+                  // 1) 루프 클로즈(시작점 근처로 복귀)
+                  if (widget.requireLoopClosure &&
+                      _firstMaskPt != null &&
+                      _lastMaskPt != null) {
+                    final loopThreshGrid =
+                        (widget.loopCloseThreshPx * _mx) / _stride * 1.20;
+                    final gFirst = Offset(
+                      _firstMaskPt!.dx / _stride,
+                      _firstMaskPt!.dy / _stride,
+                    );
+                    final gLast = Offset(
+                      _lastMaskPt!.dx / _stride,
+                      _lastMaskPt!.dy / _stride,
+                    );
+                    passByLoop = (gLast - gFirst).distance <= loopThreshGrid;
+                  }
+
+                  // 2) 끝 밴드(end band) 도달 (가로/세로 자동)
+                  if (_lastMaskPt != null) {
+                    final gm = Offset(
+                      _lastMaskPt!.dx / _stride,
+                      _lastMaskPt!.dy / _stride,
+                    );
+
+                    if (_useHorizontal) {
+                      final bandGX = (_gridW * _kEndBandPct).ceil().clamp(
+                            1,
+                            _gridW,
+                          );
+                      final leftBandMaxX = (_minGXEdge + bandGX).clamp(
+                        0,
+                        _gridW - 1,
+                      );
+                      final rightBandMinX = (_maxGXEdge - bandGX).clamp(
+                        0,
+                        _gridW - 1,
+                      );
+
+                      final ySlack = (_gridH * _kOrthoSlackPct * 0.5).ceil();
+                      final centerY = _gridH / 2.0;
+
+                      final inLeftBand = gm.dx <= leftBandMaxX;
+                      final inRightBand = gm.dx >= rightBandMinX;
+                      final inYSlack = (gm.dy - centerY).abs() <= ySlack;
+
+                      passByBand = (inLeftBand || inRightBand) && inYSlack;
+                    } else {
+                      final bandGY = (_gridH * _kEndBandPct).ceil().clamp(
+                            1,
+                            _gridH,
+                          );
+                      final topBandMaxY = (_minGYEdge + bandGY).clamp(
+                        0,
+                        _gridH - 1,
+                      );
+                      final bottomBandMinY = (_maxGYEdge - bandGY).clamp(
+                        0,
+                        _gridH - 1,
+                      );
+
+                      final xSlack = (_gridW * _kOrthoSlackPct * 0.5).ceil();
+                      final centerX = _gridW / 2.0;
+
+                      final inTopBand = gm.dy <= topBandMaxY;
+                      final inBottomBand = gm.dy >= bottomBandMinY;
+                      final inXSlack = (gm.dx - centerX).abs() <= xSlack;
+
+                      passByBand = (inTopBand || inBottomBand) && inXSlack;
+                    }
+                  }
+
+                  final success =
+                      (cov >= covNeed) && (passByLoop || passByBand);
+
+                  if (success) {
+                    widget.onDone();
+                  } else {
+                    _resetAttempt();
+                    widget.onFail?.call();
+                  }
                 },
                 onPanCancel: () {
                   _resetAttempt();
@@ -654,8 +929,13 @@ class _CandyGuideLayerState extends State<CandyGuideLayer> {
                 child: CustomPaint(
                   painter: _MaskClippedStrokePainter(
                     stroke: _stroke,
-                    maskImage: _maskImg!,
-                    maskSrcRect: Rect.fromLTWH(0, 0, _gw.toDouble(), _gh.toDouble()),
+                    maskImage: _maskImg!, // _ready 보장
+                    maskSrcRect: Rect.fromLTWH(
+                      0,
+                      0,
+                      _gw.toDouble(),
+                      _gh.toDouble(),
+                    ),
                     maskDstRect: _guideRect,
                     strokeColor: widget.strokeColor,
                     strokeWidth: max(
@@ -673,9 +953,10 @@ class _CandyGuideLayerState extends State<CandyGuideLayer> {
   }
 }
 
+/* ── Painter: 마스크(dstIn)로 가이드 밖을 자르며 스트로크만 보이게 ── */
 class _MaskClippedStrokePainter extends CustomPainter {
-  // ... (수정할 거 없음)
   final List<Offset> stroke;
+
   final ui.Image maskImage;
   final Rect maskSrcRect;
   final Rect maskDstRect;
@@ -693,27 +974,116 @@ class _MaskClippedStrokePainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    // ...
+    if (stroke.length < 2) return;
+
+    // 1) 경로
+    final path = Path()..moveTo(stroke.first.dx, stroke.first.dy);
+    for (int i = 1; i < stroke.length; i++) {
+      path.lineTo(stroke[i].dx, stroke[i].dy);
+    }
+
+    // 2) 레이어 시작(가이드 영역만)
+    canvas.saveLayer(maskDstRect, Paint());
+
+    // 3) 스트로크
+    final p = Paint()
+      ..color = strokeColor
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round
+      ..strokeWidth = strokeWidth;
+    canvas.drawPath(path, p);
+
+    // 4) 가이드 알파로 클립(dstIn)
+    canvas.drawImageRect(
+      maskImage,
+      maskSrcRect,
+      maskDstRect,
+      Paint()..blendMode = BlendMode.dstIn,
+    );
+
+    // 5) 레이어 종료
+    canvas.restore();
   }
 
   @override
-  bool shouldRepaint(covariant _MaskClippedStrokePainter old) => false; // 예시
+  bool shouldRepaint(covariant _MaskClippedStrokePainter old) =>
+      old.stroke != stroke ||
+      old.maskImage != maskImage ||
+      old.maskSrcRect != maskSrcRect ||
+      old.maskDstRect != maskDstRect ||
+      old.strokeColor != strokeColor ||
+      old.strokeWidth != strokeWidth;
 }
 
+/* ───────── 배너들 ───────── */
 class _FinishBanner extends StatelessWidget {
   const _FinishBanner();
+
   @override
   Widget build(BuildContext context) {
-    // ...
-    return Container(); // 예시
+    const text = '완성되었어요~!';
+    return Positioned(
+      left: 0,
+      right: 0,
+      bottom: 28 + MediaQuery.of(context).padding.bottom,
+      child: Center(
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          decoration: BoxDecoration(
+            color: Colors.black.withOpacity(0.25),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: const Text(
+            text,
+            style: TextStyle(
+              fontSize: 26,
+              fontWeight: FontWeight.w900,
+              color: Colors.white,
+              shadows: [
+                Shadow(
+                  color: Colors.black26,
+                  offset: Offset(0, 2),
+                  blurRadius: 6,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }
 
 class _EatBanner extends StatelessWidget {
   const _EatBanner();
+
   @override
   Widget build(BuildContext context) {
-    // ...
-    return Container(); // 예시
+    const text = '맛있게 먹어봐요~!';
+    return Center(
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        decoration: BoxDecoration(
+          color: Colors.black.withOpacity(0.25),
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: const Text(
+          text,
+          style: TextStyle(
+            fontSize: 26,
+            fontWeight: FontWeight.w900,
+            color: Colors.white,
+            shadows: [
+              Shadow(
+                color: Colors.black26,
+                offset: Offset(0, 2),
+                blurRadius: 6,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }

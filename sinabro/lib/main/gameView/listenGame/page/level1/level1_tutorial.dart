@@ -1,12 +1,17 @@
-// lib/main/gameView/common/listenGame/page/level1/level1_tutorial.dart
+/*
+ * ----------------------------------------------------------------
+ * [듣기 학습 - 레벨 1 튜토리얼 화면]
+ *  - 듣기 게임 시작 전 조작 및 설명 안내 튜토리얼
+ *  - 레벨 1의 1번째 테마에서만 실행됨
+ *  - 마지막 단계 완료 시 onTutorialEnd 콜백 실행 (게임으로 이동)
+ * ----------------------------------------------------------------
+ */
+
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:sinabro/main/gameView/common/layout/listen_game_layout.dart';
-import 'package:sinabro/main/gameView/common/layout/listen_game_transition.dart';
-import 'package:sinabro/main/gameView/listenGame/page/level1/level1_theme_select.dart';
 
 class Level1TutorialPage extends StatefulWidget {
-  //(수정) - 콜백 함수를 저장할 변수 추가
   final VoidCallback? onTutorialEnd;
 
   const Level1TutorialPage({super.key, this.onTutorialEnd});
@@ -28,7 +33,7 @@ class _Level1TutorialPageState extends State<Level1TutorialPage>
     "무엇인지 들어볼까요?", // 🔊 사운드 버튼만 동작
     "빨간색을 찾고있네요! 보기를 눌러주세요!", // 🔴 카드만 동작
     "이런식으로 하다보면 연습이 될 것 같아요!", // 자동 진행
-    "바로 해볼까요? 잘 부탁드려요!", // 자동 진행 후 transition
+    "바로 해볼까요? 잘 부탁드려요!", // 자동 진행 후 게임으로 이동
   ];
 
   @override
@@ -38,7 +43,6 @@ class _Level1TutorialPageState extends State<Level1TutorialPage>
       vsync: this,
       duration: const Duration(seconds: 1),
     )..repeat(reverse: true);
-
     _startAutoTimerIfNeeded();
   }
 
@@ -56,23 +60,18 @@ class _Level1TutorialPageState extends State<Level1TutorialPage>
       });
       _startAutoTimerIfNeeded();
     } else {
-      // 마지막 단계 → 전환 페이지 → 테마 선택
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (_) => const ListenGameTransition(
-            nextPage: Level1ThemeSelectPage(),
-            duration: Duration(seconds: 3),
-          ),
-        ),
-      );
+      // ✅ 마지막 단계 → onTutorialEnd 콜백 실행 (게임 화면으로 전환)
+      if (widget.onTutorialEnd != null) {
+        widget.onTutorialEnd!();
+      } else {
+        Navigator.pop(context);
+      }
     }
   }
 
   void _startAutoTimerIfNeeded() {
     _autoTimer?.cancel();
 
-    // 인트로(0~2) + 튜토리얼 후반(5,6) → 7초 후 자동 진행
     if (step <= 2 || step == 5 || step == 6) {
       _autoTimer = Timer(const Duration(seconds: 7), () {
         if (mounted) _nextStep();
@@ -113,15 +112,12 @@ class _Level1TutorialPageState extends State<Level1TutorialPage>
           ],
           onPlayAudio: () {
             if (_isSoundStep) {
-              // 🔊 추후 오디오 재생 코드 삽입
               debugPrint("🔊 오디오 재생 실행 (추후 추가 예정)");
               _nextStep();
             }
           },
         ),
-
-        // ── 손가락 안내 PNG ─────────────────────────────
-        if (_isSoundStep) // 스피커 가리킴
+        if (_isSoundStep)
           Positioned(
             top: 280,
             left: MediaQuery.of(context).size.width / 2 - 40,
@@ -136,7 +132,7 @@ class _Level1TutorialPageState extends State<Level1TutorialPage>
               ),
             ),
           ),
-        if (_isRedCardStep) // 빨강 카드 가리킴
+        if (_isRedCardStep)
           Positioned(
             bottom: 120,
             left: 40,

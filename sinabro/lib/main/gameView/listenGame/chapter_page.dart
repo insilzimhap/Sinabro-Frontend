@@ -1,0 +1,227 @@
+/*
+ * ------------------------------------------------------------------------------
+ * [듣기 게임 - 챕터 선택 페이지]
+ * ------------------------------------------------------------------------------
+ */
+import 'package:flutter/material.dart';
+import 'package:sinabro/main/gameView/tree_progress.dart';
+import 'package:sinabro/main/gameView/tree_progress_loader.dart';
+import 'package:sinabro/main/gameView/tree_fruit_renderer.dart';
+
+// 각 레벨의 Flow
+import 'package:sinabro/main/gameView/listenGame/page/level1/level1_flow.dart';
+import 'package:sinabro/main/gameView/listenGame/page/level2/level2_flow.dart';
+import 'package:sinabro/main/gameView/listenGame/page/level3/level3_flow.dart';
+
+// 각 레벨 인트로
+import 'package:sinabro/main/gameView/listenGame/page/level1/level1_intro_page.dart';
+import 'package:sinabro/main/gameView/listenGame/page/level2/level2_intro_page.dart';
+import 'package:sinabro/main/gameView/listenGame/page/level3/level3_intro_page.dart';
+
+
+class GameListenChapterScreen extends StatefulWidget {
+  final String childId; // ✅ childId 필드 추가
+
+  const GameListenChapterScreen({
+    super.key,
+    required this.childId, // ✅ 생성자에 required 추가
+  });
+
+  @override
+  State<GameListenChapterScreen> createState() =>
+      _GameListenChapterScreenState();
+}
+
+class _GameListenChapterScreenState extends State<GameListenChapterScreen>
+    with SingleTickerProviderStateMixin {
+  bool _isVisible = true;
+  Offset _charPosition = const Offset(60, 520);
+  late AnimationController _controller;
+
+  late Future<TreeProgress> _progressFuture; // ✅ 진행도 Future 추가
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 400),
+    )..forward();
+
+    // ✅ 듣기게임 진행도 로드
+    _progressFuture = TreeProgressLoader.load('listening_game');
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  Future<void> _moveCharacterTo(Offset target, Widget nextPage) async {
+    await _controller.reverse(from: 1);
+    setState(() => _isVisible = false);
+    await Future.delayed(const Duration(milliseconds: 200));
+    setState(() => _charPosition = target);
+    await Future.delayed(const Duration(milliseconds: 200));
+    setState(() => _isVisible = true);
+    await _controller.forward(from: 0);
+    await Future.delayed(const Duration(milliseconds: 300));
+
+    if (mounted) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => nextPage),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final size = MediaQuery.of(context).size;
+
+    return Scaffold(
+      backgroundColor: const Color(0xFFFFF7E9),
+      body: FutureBuilder<TreeProgress>(
+        future: _progressFuture,
+        builder: (context, snapshot) {
+          if (!snapshot.hasData) {
+            return const Center(child: CircularProgressIndicator());
+          }
+
+          final progress = snapshot.data!;
+          progress.debugPrintStatus(); // 필요 시 디버깅용
+          return Stack(
+            children: [
+              // ────────────────────────────────
+              // 🏝️ 챕터 1 (나무1=ST007)
+              _buildChapterIcon(
+                context,
+                size,
+                stageId: 'ST007', // ✅ 추가
+
+                left: size.width * 0.08,
+                top: size.height * 0.28,
+                activeImage: 'assets/img/contents/gameListen/chapter/level1.png',
+                lockedImage:
+                    'assets/img/contents/gameListen/chapter/level1_deactivation.png',
+                targetOffset: Offset(size.width * 0.18, size.height * 0.58),
+                nextPage: Level1IntroPage(
+                  onNext: () => Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => Level1Flow(childId: widget.childId,),
+                    ),
+                  ),
+                ),
+                progress: progress,
+              ),
+
+              // 🏝️ 챕터 2 (나무2=ST008)
+              _buildChapterIcon(
+                context,
+                size,
+                stageId: 'ST008', // ✅ 추가
+                left: size.width * 0.38,
+                top: size.height * 0.28,
+
+                activeImage: 'assets/img/contents/gameListen/chapter/level2.png',
+                lockedImage:
+                    'assets/img/contents/gameListen/chapter/level2_deactivation.png',
+
+                targetOffset: Offset(size.width * 0.48, size.height * 0.58),
+                nextPage: Level2IntroPage(
+                  onNext: () => Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => Level2Flow(childId: widget.childId,),
+                      ), 
+                  ),
+                ),
+                progress: progress,
+              ),
+
+              // 🏝️ 챕터 3 (나무3=ST009)
+              _buildChapterIcon(
+                context,
+                size,
+                stageId: 'ST009', // ✅ 추가
+
+                right: size.width * 0.08,
+                top: size.height * 0.28,
+                activeImage: 'assets/img/contents/gameListen/chapter/level3.png',
+                lockedImage:
+                    'assets/img/contents/gameListen/chapter/level3_deactivation.png',
+                targetOffset: Offset(size.width * 0.78, size.height * 0.58),
+                nextPage: Level3IntroPage(
+                  onNext: () => Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => Level3Flow(childId: widget.childId,),
+                      ),
+                  ),
+                ),
+                progress: progress,
+              ),
+
+              // 🐣 캐릭터
+              AnimatedPositioned(
+                duration: const Duration(milliseconds: 600),
+                left: _charPosition.dx,
+                top: _charPosition.dy,
+                child: AnimatedOpacity(
+                  opacity: _isVisible ? 1 : 0,
+                  duration: const Duration(milliseconds: 300),
+                  child: ScaleTransition(
+                    scale: Tween<double>(begin: 0.0, end: 1.0).animate(
+                      CurvedAnimation(
+                        parent: _controller,
+                        curve: Curves.easeOutBack,
+                      ),
+                    ),
+                    child: Image.asset(
+                      'assets/img/pageMain/tosoom.png',
+                      width: size.width * 0.13,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildChapterIcon(
+    BuildContext context,
+    Size size, {
+    double? left,
+    double? right,
+    required double top,
+    required String activeImage,
+    required String lockedImage, // ✅  추가
+    required Offset targetOffset,
+    required Widget nextPage,
+    required TreeProgress progress, // ✅ 진행도 추가
+    required String stageId, // ✅ stageId 추가
+  }) {
+    return Positioned(
+      left: left,
+      right: right,
+      top: top,
+      // 🔹 잠금/해금 상태에 따라 이미지 렌더링
+      child: buildStageTree(
+        stageId: stageId,
+        progress: progress,
+        activeImage: activeImage,
+        lockedImage: lockedImage,
+        onTap: (_) => _moveCharacterTo(targetOffset, nextPage),
+      ),
+      // child: GestureDetector(
+      //   onTap: () => _moveCharacterTo(targetOffset, nextPage),
+      //   child: Image.asset(image, width: size.width * 0.25),
+      // ),
+    );
+  }
+}

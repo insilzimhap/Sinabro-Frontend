@@ -350,37 +350,39 @@ class _FaqPageState extends State<FaqPage> {
         borderRadius: BorderRadius.circular(12),
         side: const BorderSide(color: Color(0xFFE0E0E0)),
       ),
-      child: ExpansionPanelList.radio(
-        elevation: 0,
-        expandIconColor: Colors.grey[700],
-        animationDuration: const Duration(milliseconds: 200),
-        children: _rows.map((row) { // ⭐️ items -> _rows
-          return ExpansionPanelRadio(
-            value: row.id, // ⭐️ item.id -> row.id
-            canTapOnHeader: true,
-            headerBuilder: (context, isExpanded) => _rowHeader(row), // ⭐️ item -> row
-            // ⭐️ [수정] sub 브랜치: 상세 내용 비동기 로드
-            body: FutureBuilder<InquiryDetail?>(
-              future: _loadDetail(row.id),
-              builder: (context, snap) {
-                if (snap.connectionState == ConnectionState.waiting) {
-                  return const Padding(
-                    padding: EdgeInsets.all(20),
-                    child: Center(child: CircularProgressIndicator()),
-                  );
-                }
-                if (!snap.hasData) {
-                  return const Padding(
-                    padding: EdgeInsets.all(20),
-                    child: TranslatedText('상세를 불러올 수 없습니다.'), // ✨
-                  );
-                }
-                return _rowBody(row, snap.data!); // ⭐️ item -> row, detail
-              },
-            ),
-          );
-        }).toList(),
-      ),
+      child: SingleChildScrollView(
+        child: ExpansionPanelList.radio(
+          elevation: 0,
+          expandIconColor: Colors.grey[700],
+          animationDuration: const Duration(milliseconds: 200),
+          children: _rows.map((row) { // ⭐️ items -> _rows
+            return ExpansionPanelRadio(
+              value: row.id, // ⭐️ item.id -> row.id
+              canTapOnHeader: true,
+              headerBuilder: (context, isExpanded) => _rowHeader(row), // ⭐️ item -> row
+              // ⭐️ [수정] sub 브랜치: 상세 내용 비동기 로드
+              body: FutureBuilder<InquiryDetail?>(
+                future: _loadDetail(row.id),
+                builder: (context, snap) {
+                  if (snap.connectionState == ConnectionState.waiting) {
+                    return const Padding(
+                      padding: EdgeInsets.all(20),
+                      child: Center(child: CircularProgressIndicator()),
+                    );
+                  }
+                  if (!snap.hasData) {
+                    return const Padding(
+                      padding: EdgeInsets.all(20),
+                      child: TranslatedText('상세를 불러올 수 없습니다.'), // ✨
+                    );
+                  }
+                  return _rowBody(row, snap.data!); // ⭐️ item -> row, detail
+                },
+              ),
+            );
+          }).toList(),
+        ),
+        ),
     );
   }
 

@@ -15,7 +15,7 @@ import 'package:sinabro/main/parentView/widget/translated_text.dart'; // ✨
 class MyPage extends StatefulWidget {
   /// 사이드바를 동적으로 채우고, 상단 이름을 불러오려면 parentUserId를 넘겨주세요.
   final String? parentUserId;
-  const MyPage({super.key, this.parentUserId});
+  MyPage({super.key, this.parentUserId});
 
   @override
   State<MyPage> createState() => _MyPageState();
