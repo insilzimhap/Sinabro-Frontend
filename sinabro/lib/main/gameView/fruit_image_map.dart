@@ -63,47 +63,51 @@ final Map<String, FruitImageEntry> fruitImageMap = {
 
   // 쓰기 게임 레벨 1
   'FR_WG_001': const FruitImageEntry(
-    active: 'assets/img/contents/studyWrite/stage1/fruit_1.png',
-    inactive: 'assets/img/contents/studyWrite/stage1/fruit_1_deactivation.png',
+    active: 'assets/img/contents/gameWrite/write_game_1_1.png',
+    inactive: 'assets/img/contents/gameWrite/theme/write_game_1_1_deactivation.png',
   ),
   'FR_WG_002': const FruitImageEntry(
-    active: 'assets/img/contents/studyWrite/stage1/fruit_2.png',
-    inactive: 'assets/img/contents/studyWrite/stage1/fruit_2_deactivation.png',
+    active: 'assets/img/contents/gameWrite/write_game_1_2.png',
+    inactive: 'assets/img/contents/gameWrite/theme/write_game_1_2_deactivation.png',
   ),
   'FR_WG_003': const FruitImageEntry(
-    active: 'assets/img/contents/studyWrite/stage1/fruit_3.png',
-    inactive: 'assets/img/contents/studyWrite/stage1/fruit_3_deactivation.png',
+    active: 'assets/img/contents/gameWrite/write_game_1_3.png',
+    inactive: 'assets/img/contents/gameWrite/theme/write_game_1_3_deactivation.png',
   ),
   'FR_WG_004': const FruitImageEntry(
-    active: 'assets/img/contents/studyWrite/stage1/fruit_4.png',
-    inactive: 'assets/img/contents/studyWrite/stage1/fruit_4_deactivation.png',
+    active: 'assets/img/contents/gameWrite/write_game_1_4.png',
+    inactive: 'assets/img/contents/gameWrite/theme/write_game_1_4_deactivation.png',
   ),
 
   // 쓰기 게임 레벨 2
   'FR_WG_005': const FruitImageEntry(
-    active: 'assets/img/contents/studyWrite/stage1/fruit_1.png',
-    inactive: 'assets/img/contents/studyWrite/stage1/fruit_1_deactivation.png',
+    active: 'assets/img/contents/gameWrite/bag_left.png',
+    inactive: 'assets/img/contents/gameWrite/theme/bag_left_deactivation.png',
   ),
   'FR_WG_006': const FruitImageEntry(
-    active: 'assets/img/contents/studyWrite/stage1/fruit_2.png',
-    inactive: 'assets/img/contents/studyWrite/stage1/fruit_2_deactivation.png',
+    active: 'assets/img/contents/gameWrite/bag_right_top.png',
+    inactive: 'assets/img/contents/gameWrite/theme/bag_right_top__deactivation.png',
   ),
   'FR_WG_007': const FruitImageEntry(
-    active: 'assets/img/contents/studyWrite/stage1/fruit_3.png',
-    inactive: 'assets/img/contents/studyWrite/stage1/fruit_3_deactivation.png',
+    active: 'assets/img/contents/gameWrite/bag_right_bottom.png',
+    inactive: 'assets/img/contents/gameWrite/theme/bag_right_bottom_deactivation.png',
   ),
 
     // 쓰기 게임 레벨 3
   'FR_WG_008': const FruitImageEntry(
-    active: 'assets/img/contents/studyWrite/stage1/fruit_1.png',
-    inactive: 'assets/img/contents/studyWrite/stage1/fruit_1_deactivation.png',
+    active: 'assets/img/contents/gameWrite/write_game_3_cup_red.png',
+    inactive: 'assets/img/contents/gameWrite/theme/write_game_3_cup_deactivation.png',
   ),
   'FR_WG_009': const FruitImageEntry(
-    active: 'assets/img/contents/studyWrite/stage1/fruit_2.png',
-    inactive: 'assets/img/contents/studyWrite/stage1/fruit_2_deactivation.png',
+    active: 'assets/img/contents/gameWrite/write_game_3_cup_blue.png',
+    inactive: 'assets/img/contents/gameWrite/theme/write_game_3_cup_deactivation.png',
   ),
   'FR_WG_010': const FruitImageEntry(
-    active: 'assets/img/contents/studyWrite/stage1/fruit_3.png',
-    inactive: 'assets/img/contents/studyWrite/stage1/fruit_3_deactivation.png',
+    active: 'assets/img/contents/gameWrite/write_game_3_cup_yellow.png',
+    inactive: 'assets/img/contents/gameWrite/theme/write_game_3_cup_deactivation.png',
+  ),
+  'FR_WG_011': const FruitImageEntry(
+    active: 'assets/img/contents/gameWrite/write_game_3_cup_green.png',
+    inactive: 'assets/img/contents/gameWrite/theme/write_game_3_cup_deactivation.png',
   ),
 };

@@ -138,7 +138,7 @@ const _END_FAIL = '${_IMG_DIR}end_fail.png'; // 3번
 // const _CONS_AUD = 'assets/audio/gameWrite2/cons/';
 // const _VOW_AUD = 'assets/audio/gameWrite2/vowels/';
 
-enum _TargetType { consonant, vowel }
+enum _TargetType { consonant, vowel }  //타입 보내기
 
 class _Item {
   final String key; // 식별 키
@@ -501,8 +501,14 @@ class _WriteGameLevel2_3PageState extends State<WriteGameLevel2_3Page> {
   /// Selvy 후보셋을 현재 자음 하나로 고정
   Future<void> _applyCandidate() async {
     try {
+      final typeLabel =
+        current.type == _TargetType.consonant ? "consonant" : "vowel";
+        
+      debugPrint('[2-3] 현재 문제: ${current.char} → 인식 모드=$typeLabel');
       await SelvyRecognizer.setCandidateSet([current.char]);
-    } catch (_) {}
+    } catch (e) {
+    debugPrint('[2-3] Selvy 후보셋 설정 실패: $e');
+    } 
   }
 
   /// ---------------------------------------------------------------------------

@@ -11,6 +11,11 @@ import 'package:sinabro/main/gameView/writeGame/page/level1/write_game_1_4.dart'
 import 'package:sinabro/main/gameView/common/api/fruit_state.dart';
 import 'package:sinabro/main/gameView/common/api/child_game_api.dart';
 
+// 진행도
+import 'package:sinabro/main/gameView/tree_progress.dart';
+import 'package:sinabro/main/gameView/tree_progress_loader.dart';
+import 'package:sinabro/main/gameView/fruit_image_map.dart';
+
 class WriteGameMainPage extends StatefulWidget {
   const WriteGameMainPage({super.key, required this.childId});
   final String childId;
@@ -23,156 +28,165 @@ class WriteGameMainPage extends StatefulWidget {
 }
 
 class _WriteGameMainPageState extends State<WriteGameMainPage> {
+  late Future<TreeProgress> _progressFuture;
+
+  // ==== SIZE (그대로 유지) ====
+  static const double ladderW = 400, ladderH = 400;
+  static const double balloonW = 440, balloonH = 360;
+  static const double airplaneW = 420, airplaneH = 350;
+  static const double blockW = 460, blockH = 380;
+
+
+
+  // ==== 위치 (드래그 로그 기반) ====
+  double ladderLeft = 67.33, ladderTop = 0.0;
+  double balloonRight = 280.0, balloonTop = 2.0;
+  double airplaneLeft = 273.33, airplaneBottom = 0.67;
+  double blockRight = 28.0, blockBottom = 12.0;
+
+  @override
+  void initState() {
+    super.initState();
+    _progressFuture = TreeProgressLoader.load('writing_game');
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('write_game_1')),
       body: SafeArea(
-        child: LayoutBuilder(
-          builder: (context, c) {
-            return Stack(
-              children: [
-                // 사다리 (좌상) -> write_game_1_1.dart (FR_WG_001)
-                _ObjectTile(
-                  id: 'ladder',
-                  rect: const Rect.fromLTWH(40, 30, 180, 180),
-                  imageAsset:
-                      'assets/img/contents/gameWrite/write_game_1_1.png',
-                  onTap: () async {
-                    // fruitId + stageId 저장
-                    FruitState.instance
-                      ..setStage(WriteGameMainPage.stageId)
-                      ..setFruit('FR_WG_001');
 
-                    // start API 호출
-                    final resultId = await ChildGameApi.startWritingGame();
-                    if (resultId == null) {
-                      _showSnack('⚠️ 입장할 수 없는 열매입니다.');
-                      return;
-                    }
-                    // startAPI로 생성된 resultId를 저장해둠 → 다음 페이지에서 사용
-                    FruitState.instance.setResult(resultId);
+        child: FutureBuilder<TreeProgress>(
+          future: _progressFuture,
+          builder: (context, snapshot) {
+            if (!snapshot.hasData) {
+              return const Center(child: CircularProgressIndicator());
+            }
 
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) =>
-                            WriteGameLevel1Page(
-                              childId: widget.childId,
-                              resultId: resultId,
-                            ),
-                      ),
-                    );
-                  },
-                ),
+            final progress = snapshot.data!;
 
-                // 풍선 (우상) -> write_game_1_2.dart (FR_WG_002)
-                _ObjectTile(
-                  id: 'ballon',
-                  rect: Rect.fromLTWH(c.maxWidth - 240, 30, 220, 170),
-                  imageAsset:
-                      'assets/img/contents/gameWrite/write_game_1_2.png',
-                  onTap: () async {
-                    FruitState.instance
-                      ..setStage(WriteGameMainPage.stageId)
-                      ..setFruit('FR_WG_002');
+            return LayoutBuilder(
+              builder: (context, c) {
 
-                    final resultId = await ChildGameApi.startWritingGame();
-                    if (resultId == null) {
-                      _showSnack('⚠️ 입장할 수 없는 열매입니다.');
-                      return;
-                    }
+                Rect _lt(double left, double top, double w, double h) =>
+                  Rect.fromLTWH(left, top, w, h);
 
-                    FruitState.instance.setResult(resultId);
+                Rect _rt(double right, double top, double w, double h) =>
+                  Rect.fromLTWH(c.maxWidth - w - right, top, w, h);
 
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) =>
-                            WriteGameLevel1_2Page(
-                              childId: widget.childId,
-                              resultId: resultId,
-                            ),
-                      ),
-                    );
-                  },
-                ),
+                Rect _lb(double left, double bottom, double w, double h) =>
+                  Rect.fromLTWH(left, c.maxHeight - h - bottom, w, h);
 
-                // 바행기 (좌하) -> write_game_1_3.dart (FR_WG_003)
-                _ObjectTile(
-                  id: 'airplane1',
-                  rect: Rect.fromLTWH(30, c.maxHeight - 240, 220, 170),
-                  imageAsset:
-                      'assets/img/contents/gameWrite/write_game_1_3.png',
-                  onTap: () async {
-                    FruitState.instance
-                      ..setStage(WriteGameMainPage.stageId)
-                      ..setFruit('FR_WG_003');
+                Rect _rb(double right, double bottom, double w, double h) =>
+                  Rect.fromLTWH(
+                    c.maxWidth - w - right, c.maxHeight - h - bottom, w, h);
 
-                    final resultId = await ChildGameApi.startWritingGame();
-                    if (resultId == null) {
-                      _showSnack('⚠️ 입장할 수 없는 열매입니다.');
-                      return;
-                    }
 
-                    FruitState.instance.setResult(resultId);
+                return Stack(
+                  children: [
 
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) =>
-                            WriteGameLevel1_3Page(
-                              childId: widget.childId,
-                              resultId: resultId,
-                            ),
-                      ),
-                    );
-                  },
-                ),
+                    // 사다리 (좌상) -> write_game_1_1.dart (FR_WG_001)
+                    _ObjectTile(
+                      id: 'ladder',
+                      rect: _lt(ladderLeft, ladderTop, ladderW, ladderH),
+                      fruitId: 'FR_WG_001',
+                      isActive: progress.isFruitActive('FR_WG_001'),
+                      onTap: () async {
+                        if (!progress.isFruitActive('FR_WG_001')) {
+                          _showSnack('🔒 잠긴 테마입니다.');
+                          return;
+                        }
+                        await _startGame(context, 'FR_WG_001', WriteGameLevel1Page.new);
+                      },
+                    ),
 
-                // 블록 (우하) -> write_game_1_4.dart (FR_WG_004)
-                _ObjectTile(
-                  id: 'block',
-                  rect: Rect.fromLTWH(
-                    c.maxWidth - 260,
-                    c.maxHeight - 240,
-                    230,
-                    210,
-                  ),
-                  imageAsset:
-                      'assets/img/contents/gameWrite/write_game_1_4.png',
-                  onTap: () async {
-                    FruitState.instance
-                      ..setStage(WriteGameMainPage.stageId)
-                      ..setFruit('FR_WG_004');
+                    // 풍선 (우상) -> write_game_1_2.dart (FR_WG_002)
+                    _ObjectTile(
+                      id: 'ballon',
+                      rect: _rt(balloonRight, balloonTop, balloonW, balloonH),
+                      fruitId: 'FR_WG_002',
+                      isActive: progress.isFruitActive('FR_WG_002'),
+                      onTap: () async {
+                        if (!progress.isFruitActive('FR_WG_002')) {
+                          _showSnack('🔒 잠긴 테마입니다.');
+                          return;
+                        }
+                        await _startGame(context, 'FR_WG_002', WriteGameLevel1_2Page.new);
+                      },
+                    ),
 
-                    final resultId = await ChildGameApi.startWritingGame();
-                    if (resultId == null) {
-                      _showSnack('⚠️ 입장할 수 없는 열매입니다.');
-                      return;
-                    }
+                    // 바행기 (좌하) -> write_game_1_3.dart (FR_WG_003)
+                    _ObjectTile(
+                      id: 'airplane1',
+                      rect: _lb(airplaneLeft, airplaneBottom, airplaneW, airplaneH),
+                      fruitId: 'FR_WG_003',
+                      isActive: progress.isFruitActive('FR_WG_003'),
+                      onTap: () async {
+                        if (!progress.isFruitActive('FR_WG_003')) {
+                          _showSnack('🔒 잠긴 테마입니다.');
+                          return;
+                        }
+                        await _startGame(context, 'FR_WG_003', WriteGameLevel1_3Page.new);
+                      },
+                    ),
 
-                    FruitState.instance.setResult(resultId);
-
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) =>
-                            WriteGameLevel1_4Page(
-                              childId: widget.childId,
-                              resultId: resultId,
-                            ),
-                      ),
-                    );
-                  },
-                ),
-              ],
+                    // 블록 (우하) -> write_game_1_4.dart (FR_WG_004)
+                    _ObjectTile(
+                      id: 'block',
+                      rect: _rb(blockRight, blockBottom, blockW, blockH),
+                      fruitId: 'FR_WG_004',
+                      isActive: progress.isFruitActive('FR_WG_004'),
+                      onTap: () async {
+                        if (!progress.isFruitActive('FR_WG_004')) {
+                          _showSnack('🔒 잠긴 테마입니다.');
+                          return;
+                        }
+                        await _startGame(context, 'FR_WG_004', WriteGameLevel1_4Page.new);
+                      },
+                    ),
+                  ],
+                );
+              },
             );
           },
-        ),
+        ),//layout
       ),
     );
   }
+  /// ✅ 공통 Start 로직
+  Future<void> _startGame(
+    BuildContext context,
+    String fruitId,
+    Widget Function({required String childId, required String resultId}) pageBuilder,
+  ) async {
+    try {
+      FruitState.instance
+        ..setStage(WriteGameMainPage.stageId)
+        ..setFruit(fruitId);
+
+      final resultId = await ChildGameApi.startWritingGame();
+      if (resultId == null) {
+        _showSnack('⚠️ 입장할 수 없는 열매입니다.');
+        return;
+      }
+
+      FruitState.instance.setResult(resultId);
+
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => pageBuilder(
+            childId: widget.childId,
+            resultId: resultId,
+          ),
+        ),
+      );
+    } catch (e) {
+      debugPrint('⚠️ startWritingGame 실패: $e');
+      _showSnack('⚠️ 네트워크 오류가 발생했습니다.');
+    }
+  }
+
   // SnackBar 헬퍼
   void _showSnack(String msg) {
     ScaffoldMessenger.of(context).showSnackBar(
@@ -186,27 +200,41 @@ class _WriteGameMainPageState extends State<WriteGameMainPage> {
 }
 
 /// 오브젝트 이미지 하나
+/// ---------------------------------------------------------------------------
+/// 🎨 [개별 오브젝트 위젯]
+/// - 활성/비활성 상태에 따라 이미지 변경
+/// - 클릭 시 onTap 실행
+/// ---------------------------------------------------------------------------
 class _ObjectTile extends StatelessWidget {
   const _ObjectTile({
     required this.id,
     required this.rect,
-    required this.imageAsset,
+    required this.fruitId,
+    required this.isActive,
     required this.onTap,
   });
 
   final String id;
   final Rect rect;
-  final String imageAsset;
+  final String fruitId;
+  final bool isActive;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
+
+    final entry = fruitImageMap[fruitId];
+    if (entry == null) {
+      debugPrint('⚠️ 이미지 매핑 없음: $fruitId');
+      return const SizedBox.shrink();
+    }
+
     return Positioned.fromRect(
       rect: rect,
       child: GestureDetector(
-        onTap: onTap,
+        onTap: isActive ? onTap : null,
         child: Image.asset(
-          imageAsset,
+          isActive ? entry.active : entry.inactive,
           fit: BoxFit.contain,
           filterQuality: FilterQuality.medium,
         ),

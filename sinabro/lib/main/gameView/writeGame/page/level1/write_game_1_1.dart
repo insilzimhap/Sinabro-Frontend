@@ -3,7 +3,6 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:sinabro/main/gameView/writeGame/page/write_game_main.dart';
-import 'package:sinabro/main/gameView/common/api/write_game_api.dart';
 import 'package:audioplayers/audioplayers.dart';
 
 // 열매ID, 게임 api
