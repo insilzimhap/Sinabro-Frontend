@@ -88,7 +88,7 @@ class TranslationService extends ChangeNotifier {
       return _translationCache[sourceText]!;
     }
 
-    const apiKey = 'GOOGLE_API_KEY'; //Google API 키 값 넣는 곳
+    const apiKey = 'AIzaSyBRSdDSFargBqKLoxvib54hCi7DhIYvnN0'; //Google API 키 값 넣는 곳
 
     final url = Uri.parse(
         'https://translation.googleapis.com/language/translate/v2?key=$apiKey');

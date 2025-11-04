@@ -84,6 +84,9 @@ class AuthClient extends http.BaseClient {
     // ⭐️ [추가] Stage All API 경로도 permitAll 이었으니 추가 (선택)
     RegExp(r'^/api/app/child/[^/]+/stage/all$'),
 
+    // ⭐️ [임시 허용] 자녀 리포트 요약 API (progress-summary)
+    RegExp(r'^/api/app/child/[^/]+/progress-summary$'),
+
   ];
   // 👆 여기 리스트 수정 👆
 
