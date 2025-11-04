@@ -1,4 +1,4 @@
-// 레벨 1 열매 4 달고나(도형) 서버 연결 완료
+// 쓰기 학습 - 레벨1 <나무1(ST004)> / 열매 4(FR_WR_004) 달고나(도형) 서버 연결 완료
 // lib/main/studyView/writeStudy/page/level1/candy_write.dart
 import 'dart:math';
 import 'dart:typed_data';
@@ -11,6 +11,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:sinabro/main/studyView/writeStudy/page/main_apple_tree.dart';
 import 'package:audioplayers/audioplayers.dart'; // 오디오 패키지 import
+import 'package:sinabro/main/studyView/common/mixin/sticker_reward_handler.dart';
 
 /* ───────── assets ───────── */
 const _dir = 'assets/img/contents/studyWrite/';
@@ -190,14 +191,37 @@ class _CandyWritePageState extends State<CandyWritePage>
       });
       await Future.delayed(const Duration(seconds: 3));
       if (!mounted) return;
-      await _showRewardPopup();
+
+      await _showRewardPopup(); //사과 팝업
 
       // ✅ API 호출 함수 실행!
       await _uploadStudyWritingResult();
       if (!mounted) return;
+
+      // FR_WR_004 (열매 4)에 맞는 설정
+      const fruitId = 'FR_WR_004';
+      const stageKey = 'ST004'; // 쓰기 학습 레벨 1 (가정)
+      const newlyUnlockedIndex = 3; // FR_WR_004는 네 번째 열매일 것으로 가정 (인덱스 3)
+      
+      // 오디오 중지 (화면 전환 전)
+      await _audioPlayer.stop();
+      
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (_) => AppleGarden(childId: widget.childId)),
+        MaterialPageRoute(
+          builder: (_) => StickerRewardHandler(
+            childId: widget.childId,
+            fruitId: fruitId,
+            stageKey: stageKey,
+            newlyUnlockedIndex: newlyUnlockedIndex,
+            // ⚠️ 달고나(FR_WR_004)가 마지막 열매라면 isAllCleared를 true로 설정해야 합니다. 
+            // 현재는 가정상 false로 둡니다. 필요시 확인 후 수정하세요.
+            isAllCleared: false, 
+            onFinish: () {},
+            // 최종 목적지로 쓰기 학습 나무 페이지 전달
+            finalDestination: AppleGarden(childId: widget.childId),
+          ),
+        ),
       );
     }
   }

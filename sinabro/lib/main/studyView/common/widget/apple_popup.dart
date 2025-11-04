@@ -21,6 +21,8 @@ import 'package:flutter/material.dart';
 // 만약 AppConstants 파일을 사용한다면 그 파일을 import 하세요.
 // import 'package:sinabro/main/studyView/common/constants/app_constants.dart';
 import 'package:sinabro/main/studyView/listenStudy/page/listen_study_apple.dart'; // 임시 경로
+import 'package:sinabro/main/childView/data/sticker_image_map.dart'; // StickerImageEntry 사용
+
 
 /// 🍎 학습/게임 완료 시 표시되는 사과 팝업
 ///
@@ -33,14 +35,15 @@ Future<void> showApplePopup(BuildContext context,
   debugPrint('[ApplePopup] Showing popup for child: $childId, isGold: $isGold');
 
   // 비동기 팝업 표시 (showGeneralDialog 사용)
-  showGeneralDialog(
+  await showGeneralDialog(
     context: context,
     barrierDismissible: false, // 팝업 외부 탭해도 닫히지 않음
     barrierColor: Colors.black38, // 반투명 검정 배경
     transitionDuration: const Duration(milliseconds: 300), // 나타나는 애니메이션 속도
     pageBuilder: (context, animation, secondaryAnimation) {
-      // pageBuilder 자체는 사용하지 않으므로 빈 위젯 반환
-      return const SizedBox.shrink();
+      // 팝업 내용을 빌드. _ApplePopupContent가 타이머를 관리함.
+      return Center(
+          child: _ApplePopupContent(isFinal: isGold, childId: childId));
     },
     transitionBuilder: (context, animation, secondaryAnimation, child) {
       // 애니메이션 효과 (Fade + Scale)
@@ -49,36 +52,35 @@ Future<void> showApplePopup(BuildContext context,
 
       return FadeTransition(
         opacity: curved, // 부드럽게 나타남
-        child: ScaleTransition(
-          scale: curved, // 약간 커지면서 나타남
-          child: Center(
-            // 팝업 내용 위젯 (_ApplePopupContent)
-            child: _ApplePopupContent(
-                isFinal: isGold, childId: childId), // ✅ childId 전달
+          child: ScaleTransition(
+            scale: curved,
+            child: child,
           ),
-        ),
-      );
+        );
     },
   );
-
-  // 팝업 자동 닫기 (5초 후)
-  await Future.delayed(const Duration(seconds: 5));
-
-  // 팝업 닫기 (mounted 체크 추가)
-  if (context.mounted) {
-    // rootNavigator: true를 사용하여 앱 전체 context에서 팝업을 닫음
-    Navigator.of(context, rootNavigator: true).pop();
+  // 팝업이 닫힌 후에만 실행됨.
+  debugPrint('[ApplePopup] Closed → returning to caller');
   }
 
-  // 팝업 닫힌 후, 열매 선택 화면(ListenAppleSelect)으로 복귀
-  await Future.delayed(const Duration(milliseconds: 200)); // 자연스러운 전환 딜레이
-  if (context.mounted) {
-    // ✅ [수정] route.isFirst 대신 명시적인 routeName으로 변경
-    // ListenAppleSelect.routeName 또는 AppRouteNames.listenAppleSelect 사용
-    Navigator.popUntil(
-        context, ModalRoute.withName(ListenAppleSelect.routeName));
-  }
-}
+//   // 팝업 자동 닫기 (5초 후)
+//   await Future.delayed(const Duration(seconds: 5));
+
+//   // 팝업 닫기 (mounted 체크 추가)
+//   if (context.mounted) {
+//     // rootNavigator: true를 사용하여 앱 전체 context에서 팝업을 닫음
+//     Navigator.of(context, rootNavigator: true).pop();
+//   }
+
+//   // 팝업 닫힌 후, 열매 선택 화면(ListenAppleSelect)으로 복귀
+//   await Future.delayed(const Duration(milliseconds: 200)); // 자연스러운 전환 딜레이
+//   if (context.mounted) {
+//     // ✅ [수정] route.isFirst 대신 명시적인 routeName으로 변경
+//     // ListenAppleSelect.routeName 또는 AppRouteNames.listenAppleSelect 사용
+//     Navigator.popUntil(
+//         context, ModalRoute.withName(ListenAppleSelect.routeName));
+//   }
+// }
 
 /// 팝업 내용을 구성하는 내부 위젯
 class _ApplePopupContent extends StatefulWidget {
@@ -93,23 +95,27 @@ class _ApplePopupContent extends StatefulWidget {
 
 class _ApplePopupContentState extends State<_ApplePopupContent>
     with SingleTickerProviderStateMixin {
+      late final Timer _timer;
   // 황금 사과 반짝이 효과를 위한 애니메이션 컨트롤러 (현재는 사용 안 함)
   // late final AnimationController _shineController;
 
   @override
   void initState() {
     super.initState();
-    // 반짝이 효과 컨트롤러 초기화 (필요시 활성화)
-    // _shineController = AnimationController(
-    //   vsync: this,
-    //   duration: const Duration(seconds: 1),
-    // )..repeat(reverse: true);
+    // 5초 후 팝업 닫기 예약
+    _timer = Timer(const Duration(seconds: 5), () {
+      if (context.mounted) {
+        // 팝업을 닫으면 showGeneralDialog의 Future가 완료되고, ColorEntryPage의 await가 풀림.
+        Navigator.of(context).pop(); 
+      }
+    });
   }
 
   @override
   void dispose() {
     // 컨트롤러 해제
     // _shineController.dispose();
+    _timer.cancel();
     super.dispose();
   }
 

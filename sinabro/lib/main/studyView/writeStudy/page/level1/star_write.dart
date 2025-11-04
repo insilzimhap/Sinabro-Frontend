@@ -1,6 +1,6 @@
 // NEXT TODO : 별 이어그렸을 때 효과음 effect 넣기
 
-// 레벨 1 열매 1 별(직선) 서버 연결 완료
+// 쓰기 학습 - 레벨 1 <나무 1(ST004)>  /  열매 1(FR_WR_001) 별(직선) 서버 연결 완료
 // lib/main/studyView/writeStudy/page/level1/star_write.dart
 import 'dart:math';
 import 'package:flutter/material.dart';
@@ -8,11 +8,23 @@ import 'dart:convert'; // http 사용을 위해 추가
 import 'package:http/http.dart' as http; // http 사용을 위해 추가
 import 'package:sinabro/config.dart'; // baseUrl 사용을 위해 추가
 import 'package:audioplayers/audioplayers.dart'; // 오디오 패키지 import
+import 'package:sinabro/main/studyView/common/layout/get_sticker_page.dart';
+import 'package:sinabro/main/studyView/common/mixin/sticker_reward_handler.dart'; // ✅ Handler import 추가
+import 'package:sinabro/main/childView/page/sticker_book.dart';
+import 'package:sinabro/main/studyView/writeStudy/page/main_apple_tree.dart';
 
 /// 별-잇기: 인트로(별들을 이어봐요!) -> 플레이 -> 완료(배너/별들/보상)
 class ConstellationDrawPage extends StatefulWidget {
   final String childId;
-  const ConstellationDrawPage({super.key, required this.childId});
+  // final String fruitId;
+  // final Widget finalDestination;
+
+  const ConstellationDrawPage({
+    super.key, 
+    required this.childId,
+    // required this.fruitId,
+    // required this.finalDestination,
+    });
 
   @override
   State<ConstellationDrawPage> createState() => _ConstellationDrawPageState();
@@ -177,14 +189,44 @@ class _ConstellationDrawPageState extends State<ConstellationDrawPage> {
 
     await Future.delayed(const Duration(milliseconds: 1100));
     if (!mounted) return;
-    setState(() => _phase = _FlowPhase.reward); // 3) 보상 팝업
+    
+    setState(() => _phase = _FlowPhase.reward); // 3) 보상 팝업이아니라 사과엿다고?
+    // ✅ 팝업이 화면에 보일 충분한 시간을 줍니다 (예: 2초)
+    await Future.delayed(const Duration(seconds: 2)); // 팝업 유지 시간
+    if (!mounted) return;
+    
 
     // ⭐ API 호출! (팝업 표시 후, 화면 전환 전)
     await _uploadStudyWritingResult();
 
-    await Future.delayed(const Duration(seconds: 2)); // 자동 복귀
+    // ⭐ 2. 스티커 보상 페이지(StickerRewardHandler)로 전환 (무조건 이동)
     if (!mounted) return;
-    Navigator.of(context).maybePop();
+    // (FR_WR_001이므로 인덱스 0)
+    const fruitId = 'FR_WR_001';
+    const stageKey = 'ST004'; // 쓰기 학습 레벨 1 (가정)
+    const newlyUnlockedIndex = 0;
+
+    // 오디오 중지 (화면 전환 전)
+    await _audioPlayer.stop();
+
+    // await Future.delayed(const Duration(seconds: 2)); // 자동 복귀
+    // if (!mounted) return;
+    // Navigator.of(context).maybePop();
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+        builder: (_) => StickerRewardHandler(
+          childId: widget.childId,
+          fruitId: fruitId,
+          stageKey: stageKey,
+          newlyUnlockedIndex: newlyUnlockedIndex,
+          isAllCleared: false,
+          onFinish: () {},
+          // ✅ [핵심] 최종 목적지로 쓰기 학습 나무 페이지 전달
+          finalDestination: AppleGarden(childId: widget.childId),
+        ),
+      ),
+    );
   }
 
   // ------------------ 판정 ------------------
@@ -557,7 +599,7 @@ class _RewardPopup extends StatelessWidget {
             Image.asset(_appleImg, height: 72, fit: BoxFit.contain),
             const SizedBox(height: 14),
             const Text(
-              '이번 나무의 사과를 획득했어요!\n잠시 후 나무로 돌아가요~',
+              '이번 나무의 사과를 획득했어요!\n잠시 후 나무로 돌아가요~',  //여기는 사과 팝업이 이런식으로 따로 있어!!
               textAlign: TextAlign.center,
               style: TextStyle(
                 color: Color(0xFF5A4032),

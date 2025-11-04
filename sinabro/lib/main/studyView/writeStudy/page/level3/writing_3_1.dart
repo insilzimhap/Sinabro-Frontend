@@ -10,6 +10,7 @@ import 'package:http/http.dart' as http; // ⭐️ 1. http 패키지
 import 'dart:convert'; // ⭐️ 2. json 변환용
 import 'package:sinabro/config.dart'; // ⭐️ 3. baseUrl 사용
 import 'package:audioplayers/audioplayers.dart'; // 오디오 패키지 import 추가
+import 'package:sinabro/main/studyView/common/mixin/sticker_reward_handler.dart';
 
 const String kMainAppleTreeRoute = '/apple_garden';
 
@@ -198,6 +199,7 @@ class _Writing3_IntroPageState extends State<Writing3_IntroPage> {
     Future<void>(() async {
       await Future.delayed(const Duration(seconds: 3));
       if (!mounted) return;
+
       _replaceNamedOrFallback(
         context,
         Writing3_1Page.routeName,
@@ -965,6 +967,7 @@ class _Writing3_DonePageState extends State<Writing3_DonePage> {
       await Future.delayed(const Duration(seconds: 3));
       if (!mounted) return;
 
+      // 사과 팝업 표시
       await showDialog(
         context: context,
         barrierDismissible: false,
@@ -978,21 +981,33 @@ class _Writing3_DonePageState extends State<Writing3_DonePage> {
 
       if (!mounted) return;
 
+      // 2. 오디오 중지 (추가: 화면 전환 전 오디오 정리)
+      await _audioPlayer.stop();
+
+      // 3. ✅ [핵심 수정] StickerRewardHandler로 전환 (기존 코드 대체)
+      
+      // ⚠️ 이 Done 페이지는 레벨 3의 첫 열매(FR_WR_006) 완료를 의미한다고 가정
+      const fruitIdForThisLevel = 'FR_WR_009'; 
+      const stageKey = 'ST006'; // 레벨 3 스테이지 키 가정
+      const newlyUnlockedIndex = 0; // 레벨 3의 첫 번째 스티커 획득
+      
       final nav = Navigator.of(context, rootNavigator: true);
-      try {
-        nav.pushNamedAndRemoveUntil(
-          kMainAppleTreeRoute,
-          (_) => false,
-          arguments: {'childId': widget.childId},
-        );
-      } catch (_) {
-        nav.pushAndRemoveUntil(
-          MaterialPageRoute(
-            builder: (_) => AppleGarden(childId: widget.childId),
+      nav.pushAndRemoveUntil(
+        MaterialPageRoute(
+          builder: (_) => StickerRewardHandler(
+            childId: widget.childId,
+            fruitId: fruitIdForThisLevel, 
+            stageKey: stageKey,
+            newlyUnlockedIndex: newlyUnlockedIndex,
+            // 레벨 3 전체 완료는 아님
+            isAllCleared: false, 
+            onFinish: () {},
+            // 최종 목적지로 쓰기 학습 나무 페이지 전달
+            finalDestination: AppleGarden(childId: widget.childId),
           ),
-          (route) => false,
-        );
-      }
+        ),
+        (route) => false,
+      );
     });
   }
 

@@ -1,4 +1,4 @@
-// 레벨1 열매 3 비행기 그리기(곡선2) 서버 연결 완료
+// 쓰기 학습 - 레벨1 <나무1(ST004)> / 열매 3(FR_WR_003) 비행기 그리기(곡선2) 서버 연결 완료
 // lib/main/studyView/writeStudy/page/level1/plane_write.dart
 
 import 'dart:math';
@@ -11,6 +11,9 @@ import 'package:sinabro/config.dart'; // baseUrl 사용을 위해 추가
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart'; // rootBundle
 import 'package:audioplayers/audioplayers.dart'; // 오디오 패키지 import
+
+import 'package:sinabro/main/studyView/common/mixin/sticker_reward_handler.dart'; 
+import 'package:sinabro/main/studyView/writeStudy/page/main_apple_tree.dart';
 
 // 오디오 에셋 경로
 const _audioDir = 'audio/tts/studyWrite/level1/';
@@ -199,8 +202,32 @@ class _PlaneWritePageState extends State<PlaneWritePage> {
       // ⭐ API 호출! (팝업 후, 화면 전환 전)
       await _uploadStudyWritingResult();
 
+      // ✅ [핵심 수정] StickerRewardHandler로 전환 (보상 페이지)
       if (!mounted) return;
-      Navigator.of(context).maybePop(); // 임시로 pop 처리
+      
+      // FR_WR_003 (열매 3)에 맞는 설정
+      const fruitId = 'FR_WR_003';
+      const stageKey = 'ST004'; // 쓰기 학습 레벨 1 (가정)
+      const newlyUnlockedIndex = 2; // FR_WR_003은 세 번째 열매일 것으로 가정 (인덱스 2)
+      
+      // 오디오 중지 (화면 전환 전)
+      await _audioPlayer.stop();
+
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (_) => StickerRewardHandler(
+            childId: widget.childId,
+            fruitId: fruitId,
+            stageKey: stageKey,
+            newlyUnlockedIndex: newlyUnlockedIndex,
+            isAllCleared: false,
+            onFinish: () {},
+            // 최종 목적지로 쓰기 학습 나무 페이지 전달
+            finalDestination: AppleGarden(childId: widget.childId),
+          ),
+        ),
+      );
     }
   }
 

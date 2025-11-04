@@ -14,6 +14,10 @@ import 'package:sinabro/main/studyView/listenStudy/page/level1/animals/animal_re
 import 'package:sinabro/main/studyView/listenStudy/page/level1/animals/animal_story_page.dart';
 import 'package:sinabro/main/studyView/listenStudy/page/level1/animals/animal_outro_page.dart';
 
+
+import 'package:sinabro/main/studyView/common/mixin/sticker_reward_handler.dart'; // ✅ Handler import 추가!
+import 'package:sinabro/main/studyView/listenStudy/page/listen_study_apple.dart';
+
 enum _AnimalStudyPhase { intro, reveal, story, outro }
 
 class AnimalStudyEntry extends StatefulWidget {
@@ -94,7 +98,7 @@ class _AnimalStudyEntryState extends State<AnimalStudyEntry> {
   }
 
   // ✅ [수정] _onOutroCompleted 함수 시그니처 변경 (파라미터 제거)
-  void _onOutroCompleted() {
+  void _onOutroCompleted() async { //추가 
     if (!mounted) return;
     // 다음 동물이 있으면 다음 동물로, 없으면 완료 팝업
     if (_currentAnimalIndex < _groupData.animals.length - 1) {
@@ -109,7 +113,28 @@ class _AnimalStudyEntryState extends State<AnimalStudyEntry> {
       _completeStudy();
 
       // ✅ [수정] 파라미터 대신 widget.childId 사용
-      showApplePopup(context, isGold: widget.isGold, childId: widget.childId);
+      await showApplePopup(context, isGold: widget.isGold, childId: widget.childId);
+
+      if (!mounted) return;
+
+      // ⭐️ [수정] 3. 보상 획득 여부에 상관없이 무조건 StickerRewardHandler 호출
+      // 🚫 [주석 처리] 이전 로직: if (newlyAcquired) {
+      debugPrint('[AnimalStudyEntry] ✨ 보상 획득 로직 무조건 실행 (newlyAcquired 주석 처리됨)');
+
+      Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (_) => StickerRewardHandler(
+              childId: widget.childId,
+              stageKey: 'ST001', 
+              newlyUnlockedIndex: 3, 
+              fruitId: widget.fruitId, // ✅ 현재 열매 ID 전달
+              isAllCleared: false,
+              onFinish: () {},
+              finalDestination: ListenAppleSelect(childId: widget.childId),
+            ),
+          ),
+      );
     }
   }
 
@@ -141,6 +166,7 @@ class _AnimalStudyEntryState extends State<AnimalStudyEntry> {
       );
 
       if (response.statusCode == 200) {
+        
         debugPrint('[AnimalStudyEntry] 듣기 학습 완료 처리 성공 (fruitId: ${widget.fruitId})');
       } else {
         // 백엔드에서 오류가 발생한 경우

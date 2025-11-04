@@ -14,6 +14,9 @@ import 'package:sinabro/main/studyView/listenStudy/page/level1/colors/models/col
 import 'package:sinabro/main/studyView/listenStudy/page/level1/colors/color_lesson_host_page.dart';
 import 'package:sinabro/main/studyView/common/widget/apple_popup.dart';
 
+import 'package:sinabro/main/studyView/common/mixin/sticker_reward_handler.dart'; // ✅ StickerRewardHandler import 추가!
+import 'package:sinabro/main/studyView/listenStudy/page/listen_study_apple.dart';
+
 /// 색깔 학습 - 공통 인트로 페이지 ("짠! 오늘의 색깔 친구는~?")
 class ColorEntryPage extends StatefulWidget {
   final List<ColorLessonData> lessonsToShow;
@@ -125,7 +128,7 @@ class _ColorEntryPageState extends State<ColorEntryPage>
     }
   }
 
-  void _runLessonAtIndex(int index) {
+  void _runLessonAtIndex(int index) async {
     if (!mounted || index >= widget.lessonsToShow.length) {
       debugPrint("[Entry] All lessons completed. Popping EntryPage now.");
       debugPrint("==================================================");
@@ -133,8 +136,35 @@ class _ColorEntryPageState extends State<ColorEntryPage>
 
       // ⭐️ [수정] 1. API 호출
       _completeStudy(); 
-      // 2. 팝업 호출 (안전장치)
-      showApplePopup(context, isGold: widget.isGold, childId: widget.childId);
+
+      // ✅ 2. 팝업 호출 (await 유지. 팝업이 닫힐 때까지 정확히 대기)
+      //    showApplePopup이 Future를 반환해야 이 await가 풀립니다.
+      await showApplePopup(context, isGold: widget.isGold, childId: widget.childId);
+
+      debugPrint('[ColorEntryPage] 🍎 showApplePopup 완료됨');
+
+      if (!mounted) {
+        debugPrint('[ColorEntryPage] ❌ context.mounted = false (화면이 이미 pop됨)');
+        return;
+      }
+
+      // ✅ 3. 팝업 닫힌 후 보상 페이지로 이동 (Navigator.pushReplacement)
+      debugPrint('[ColorEntryPage] ✅ context 유효 → 보상 페이지로 이동 시작');
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (_) => StickerRewardHandler(
+            childId: widget.childId,
+            stageKey: 'ST001', // 듣기 학습 나무1
+            newlyUnlockedIndex: 0, 
+            fruitId: widget.fruitId, // ✅ fruitId 전달
+            isAllCleared: false,
+            onFinish: () {},
+            finalDestination: ListenAppleSelect(childId: widget.childId),
+          ),
+        ),
+      );
+
       return;
     }
 
@@ -158,9 +188,9 @@ class _ColorEntryPageState extends State<ColorEntryPage>
         ),
       ),
     )
-        .then((result) {
-      if (!mounted) return;
-      debugPrint(
+      .then((result) async {
+        if (!mounted) return;
+        debugPrint(
           '[Entry] <<< POP FROM HOST for ${lesson.name} with result=$result (type=${result.runtimeType})');
 
       if (result == true) {
@@ -178,7 +208,25 @@ class _ColorEntryPageState extends State<ColorEntryPage>
         // 1. API 호출
         _completeStudy(); 
         // 2. 팝업 호출
-        showApplePopup(context, isGold: widget.isGold, childId: widget.childId);
+        await showApplePopup(context, isGold: widget.isGold, childId: widget.childId);
+
+
+        // 3. 팝업 닫힌 후 보상 페이지로 이동
+        if (!mounted) return;
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (_) => StickerRewardHandler(
+              childId: widget.childId,
+              stageKey: 'ST001', 
+              newlyUnlockedIndex: 0, 
+              fruitId: widget.fruitId,
+              isAllCleared: false,
+              onFinish: () {},
+              finalDestination: ListenAppleSelect(childId: widget.childId),
+            ),
+          ),
+        );
 
       }else {
         // 중간에 뒤로가기로 종료

@@ -226,7 +226,9 @@ class _AppleGardenState extends State<AppleGarden> {
     if (index >= 0 && index <= 3) {
       switch (index) {
         case 0:
-          page = ConstellationDrawPage(childId: widget.childId); // FR_WR_001
+          page = ConstellationDrawPage(
+            childId: widget.childId
+            ); // FR_WR_001
           break;
         case 1:
           page = jam.JamSpreadFlowPage(childId: widget.childId); // FR_WR_002
