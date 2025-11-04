@@ -1,12 +1,38 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import 'package:sinabro/main/childView/page/lobby_child.dart'; // lobby_child.dart의 경로에 맞게 수정하세요
+import 'package:sinabro/main/childView/page/lobby_child.dart';
 import 'package:sinabro/config.dart';
-import 'package:flutter/foundation.dart'; // debugPrint
+import 'package:flutter/foundation.dart';
+
+// ──────────────────────────────
+// 로컬 에셋 매핑
+//   C001~C005 또는 한글명 → {rabbit,dog,bear,bird,cat}.png
+//   에셋 경로: assets/img/auth/{folder}.png
+const _idToFolder = <String, String>{
+  'C001': 'rabbit', // 토숨
+  'C002': 'dog', // 멍지
+  'C003': 'bear', // 곰재
+  'C004': 'cat', // 고냠
+  'C005': 'bird', // 오짱
+};
+const _nameToFolder = <String, String>{
+  '토숨': 'rabbit',
+  '멍지': 'dog',
+  '곰재': 'bear',
+  '오짱': 'bird',
+  '고냠': 'cat',
+};
+
+String? _localAssetOf(_CharacterItem c) {
+  final folder = _idToFolder[c.characterId] ?? _nameToFolder[c.characterName];
+  if (folder == null) return null;
+  return 'assets/img/auth/$folder.png';
+}
+// ──────────────────────────────
 
 class SelectCharacterPage extends StatefulWidget {
-  final String childId; // 반드시 로그인 시 받아와서 넘겨줘야 함!
+  final String childId;
   const SelectCharacterPage({super.key, required this.childId});
 
   @override
@@ -14,7 +40,6 @@ class SelectCharacterPage extends StatefulWidget {
 }
 
 class _SelectCharacterPageState extends State<SelectCharacterPage> {
-  // ✅ 서버에서 내려주는 캐릭터 목록
   late Future<List<_CharacterItem>> _futureCharacters;
 
   int selectedIndex = 0;
@@ -40,7 +65,9 @@ class _SelectCharacterPageState extends State<SelectCharacterPage> {
       }
       final raw = res.body;
       final list = jsonDecode(raw) as List<dynamic>;
-      final parsed = list.map((e) => _CharacterItem.fromJson(e as Map<String, dynamic>)).toList();
+      final parsed = list
+          .map((e) => _CharacterItem.fromJson(e as Map<String, dynamic>))
+          .toList();
       debugPrint('[CHAR] parsed ${parsed.length} items');
       return parsed;
     } catch (e, st) {
@@ -55,10 +82,10 @@ class _SelectCharacterPageState extends State<SelectCharacterPage> {
       _message = '';
     });
 
-    final url = '$baseUrl/api/character/selection'; // ✅ 프론트 경로 유지
+    final url = '$baseUrl/api/character/selection';
     final payload = {
       'childId': widget.childId,
-      'characterId': character.characterId, // ✅ 서버 ID를 그대로 전송
+      'characterId': character.characterId,
     };
 
     debugPrint('[CHAR] POST $url');
@@ -71,12 +98,12 @@ class _SelectCharacterPageState extends State<SelectCharacterPage> {
         body: jsonEncode(payload),
       );
 
-      debugPrint('[CHAR] POST /api/character/selection -> ${response.statusCode}');
+      debugPrint(
+          '[CHAR] POST /api/character/selection -> ${response.statusCode}');
       debugPrint('[CHAR] response body=${response.body}');
 
       if (response.statusCode == 200) {
         if (!mounted) return;
-        debugPrint('[CHAR] selection saved. go LobbyChild(childId=${widget.childId})');
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
@@ -104,7 +131,10 @@ class _SelectCharacterPageState extends State<SelectCharacterPage> {
   }
 
   void _showConfirmDialog(_CharacterItem character) {
-    debugPrint('[CHAR] confirm select ${character.characterId} / ${character.characterName}');
+    debugPrint(
+        '[CHAR] confirm select ${character.characterId} / ${character.characterName}');
+    final localAsset = _localAssetOf(character);
+
     showDialog(
       context: context,
       builder: (context) {
@@ -117,29 +147,33 @@ class _SelectCharacterPageState extends State<SelectCharacterPage> {
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // ✅ 이미지 표시: $baseUrl + imageUrl
-              if (character.imageUrl != null && character.imageUrl!.isNotEmpty)
+              // ✅ 로컬 에셋 우선, 없으면 서버 이미지, 둘 다 없으면 플레이스홀더
+              if (localAsset != null)
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: Image.asset(
+                    localAsset,
+                    width: 120,
+                    height: 120,
+                    fit: BoxFit.contain,
+                  ),
+                )
+              else if (character.imageUrl != null &&
+                  character.imageUrl!.isNotEmpty)
                 ClipRRect(
                   borderRadius: BorderRadius.circular(12),
                   child: Image.network(
                     '$baseUrl${character.imageUrl!}',
-                    width: 100,
-                    height: 100,
+                    width: 120,
+                    height: 120,
                     fit: BoxFit.cover,
                   ),
                 )
               else
-                Container(
-                  height: 100,
-                  width: 100,
-                  color: const Color(0xFFF7F0D3),
-                  child: Center(
-                    child: Text(
-                      '${character.characterName}\n이미지',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(fontSize: 16, color: Colors.grey[700]),
-                    ),
-                  ),
+                const CircleAvatar(
+                  radius: 60,
+                  backgroundColor: Color(0xFFE0E0E0),
+                  child: Icon(Icons.person, size: 48, color: Colors.white),
                 ),
               const SizedBox(height: 20),
               const Text(
@@ -159,7 +193,7 @@ class _SelectCharacterPageState extends State<SelectCharacterPage> {
                     ),
                     child: const Text('예'),
                     onPressed: () {
-                      Navigator.of(context).pop(); // 팝업 닫기
+                      Navigator.of(context).pop();
                       _saveCharacterSelection(character);
                     },
                   ),
@@ -171,9 +205,7 @@ class _SelectCharacterPageState extends State<SelectCharacterPage> {
                       ),
                     ),
                     child: const Text('아니오'),
-                    onPressed: () {
-                      Navigator.of(context).pop(); // 팝업만 닫기
-                    },
+                    onPressed: () => Navigator.of(context).pop(),
                   ),
                 ],
               ),
@@ -185,7 +217,8 @@ class _SelectCharacterPageState extends State<SelectCharacterPage> {
               if (_message.isNotEmpty)
                 Padding(
                   padding: const EdgeInsets.only(top: 12),
-                  child: Text(_message, style: const TextStyle(color: Colors.red)),
+                  child:
+                      Text(_message, style: const TextStyle(color: Colors.red)),
                 ),
             ],
           ),
@@ -240,55 +273,94 @@ class _SelectCharacterPageState extends State<SelectCharacterPage> {
                     itemBuilder: (context, index) {
                       final isSelected = index == selectedIndex;
                       final character = items[index];
+                      final localAsset = _localAssetOf(character);
+
                       return GestureDetector(
                         onTap: () => _showConfirmDialog(character),
                         child: AnimatedContainer(
-                          duration: const Duration(milliseconds: 300),
+                          duration: const Duration(milliseconds: 250),
                           margin: EdgeInsets.symmetric(
-                            horizontal: 10,
-                            vertical: isSelected ? 20 : 40,
+                            horizontal: 8,
+                            vertical: isSelected ? 16 : 28, // 여백 축소해 더 꽉 차 보이게
                           ),
                           decoration: BoxDecoration(
                             color: Colors.white,
-                            borderRadius: BorderRadius.circular(20),
+                            borderRadius: BorderRadius.circular(24),
                             boxShadow: [
                               if (isSelected)
                                 BoxShadow(
-                                  color: Colors.grey.withOpacity(0.5),
-                                  blurRadius: 10,
-                                  offset: const Offset(0, 5),
+                                  color: Colors.black.withOpacity(0.08),
+                                  blurRadius: 14,
+                                  offset: const Offset(0, 8),
                                 ),
                             ],
                           ),
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              if (character.imageUrl != null && character.imageUrl!.isNotEmpty)
-                                ClipRRect(
-                                  borderRadius: BorderRadius.circular(16),
-                                  child: Image.network(
-                                    '$baseUrl${character.imageUrl!}',
-                                    width: 120,
-                                    height: 120,
-                                    fit: BoxFit.cover,
-                                  ),
-                                )
-                              else
-                                const CircleAvatar(
-                                  radius: 60,
-                                  backgroundColor: Color(0xFFE0E0E0),
-                                  child: Icon(Icons.person, size: 48, color: Colors.white),
+                          child: LayoutBuilder(
+                            builder: (context, cons) {
+                              final localAsset = _localAssetOf(character);
+
+                              return Padding(
+                                padding:
+                                    const EdgeInsets.fromLTRB(20, 20, 20, 16),
+                                child: Column(
+                                  children: [
+                                    // ⬇️ 노란 패널이 카드의 남는 공간을 "전부" 차지하도록 Expanded
+                                    Expanded(
+                                      child: Container(
+                                        width: double.infinity,
+                                        decoration: BoxDecoration(
+                                          color: const Color(0xFFFFF0C9),
+                                          borderRadius:
+                                              BorderRadius.circular(18),
+                                          border: Border.all(
+                                            color: const Color(0xFFFFE07A),
+                                            width: 2,
+                                          ),
+                                        ),
+                                        child: Center(
+                                          // 이미지가 패널 영역을 최대한 활용하도록
+                                          child: Padding(
+                                            padding: const EdgeInsets.all(12),
+                                            child: localAsset != null
+                                                ? Image.asset(
+                                                    localAsset,
+                                                    width: double.infinity,
+                                                    height: double.infinity,
+                                                    fit: BoxFit
+                                                        .contain, // 비율 유지하며 최대
+                                                  )
+                                                : (character.imageUrl != null &&
+                                                        character.imageUrl!
+                                                            .isNotEmpty)
+                                                    ? Image.network(
+                                                        '$baseUrl${character.imageUrl!}',
+                                                        width: double.infinity,
+                                                        height: double.infinity,
+                                                        fit: BoxFit.contain,
+                                                      )
+                                                    : const Icon(Icons.person,
+                                                        size: 96,
+                                                        color:
+                                                            Color(0xFFBDBDBD)),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(height: 12),
+                                    Text(
+                                      character.characterName,
+                                      style: TextStyle(
+                                        fontSize: 22,
+                                        fontWeight: FontWeight.w700,
+                                        color: isSelected
+                                            ? Colors.brown
+                                            : Colors.grey,
+                                      ),
+                                    ),
+                                  ],
                                 ),
-                              const SizedBox(height: 12),
-                              Text(
-                                character.characterName,
-                                style: TextStyle(
-                                  fontSize: 24,
-                                  fontWeight: FontWeight.w600,
-                                  color: isSelected ? Colors.brown : Colors.grey,
-                                ),
-                              ),
-                            ],
+                              );
+                            },
                           ),
                         ),
                       );
@@ -298,7 +370,8 @@ class _SelectCharacterPageState extends State<SelectCharacterPage> {
                 if (_message.isNotEmpty)
                   Padding(
                     padding: const EdgeInsets.symmetric(vertical: 12),
-                    child: Text(_message, style: const TextStyle(color: Colors.red)),
+                    child: Text(_message,
+                        style: const TextStyle(color: Colors.red)),
                   ),
                 const SizedBox(height: 40),
               ],
@@ -310,7 +383,7 @@ class _SelectCharacterPageState extends State<SelectCharacterPage> {
   }
 }
 
-// ✅ 서버 응답 모델과 정확히 매칭
+// 서버 응답 모델
 class _CharacterItem {
   final String characterId;
   final String characterName;
@@ -326,7 +399,7 @@ class _CharacterItem {
     return _CharacterItem(
       characterId: json['characterId'] as String,
       characterName: json['characterName'] as String,
-      imageUrl: json['imageUrl'] as String?, // null 허용
+      imageUrl: json['imageUrl'] as String?,
     );
   }
 }
