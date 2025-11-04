@@ -3,6 +3,8 @@ import 'dart:math';
 import 'package:http/http.dart' as http;
 import 'package:sinabro/main/gameView/writeGame/page/write_game_main.dart';
 import 'dart:convert';
+import 'package:sinabro/main/auth/authChild/login_child.dart'; // ← 로그인 페이지 import 추가
+import 'package:shared_preferences/shared_preferences.dart'; // ← SharedPreferences import 추가
 
 // 학습 페이지 import
 import 'package:sinabro/main/studyView/listenStudy/page/listen_study_apple.dart';
@@ -10,10 +12,10 @@ import 'package:sinabro/main/studyView/writeStudy/page/main_apple_tree.dart';
 
 // 게임 페이지 import 
 import 'package:sinabro/main/gameView/listenGame/chapter_page.dart';
-import 'package:sinabro/main/gameView/writeGame/chapter_page.dart'; // ✅ [수정 안 함] 첫 번째 코드의 import 유지
+import 'package:sinabro/main/gameView/writeGame/chapter_page.dart'; // (원래 코드의 import 유지)
 
 // 도감 페이지 import 
-import 'package:sinabro/main/childView/page/sticker_Book.dart'; // ✅ [수정 안 함] 첫 번째 코드의 import 유지
+import 'package:sinabro/main/childView/page/sticker_Book.dart'; // (원래 코드의 import 유지)
 
 // 한 곳에서 서버 주소 관리 (추가)
 import 'package:sinabro/config.dart';
@@ -90,6 +92,29 @@ class _LobbyChildScreenState extends State<LobbyChildScreen> {
       }
     } catch (_) {
       setState(_resetInfo);
+    }
+  }
+
+  // ✅ [추가됨] 로그아웃 함수
+  Future<void> _logout() async {
+    // 1) 이 화면에서 들고 있던 서버값(닉네임/캐릭터/레벨 등) 리셋
+    setState(_resetInfo);
+
+    // 2) 로컬 저장소(프론트 쪽) 값 삭제
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('childId'); // 반드시
+    // 프로젝트에서 쓰는 게 있으면 같이 지워줘
+    await prefs.remove('jwt'); // 쓰는 중이면
+    await prefs.remove('parentId'); // 쓰는 중이면
+    // 전부 지우고 싶으면: await prefs.clear();
+
+    // 3) 로그인 화면으로 이동 (스택 모두 제거 → 뒤로가기 불가)
+    if (mounted) {
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (_) => const LoginChildScreen()),
+        (route) => false,
+      );
     }
   }
 
@@ -209,7 +234,7 @@ class _LobbyChildScreenState extends State<LobbyChildScreen> {
                               ),
                             ),
                             const SizedBox(width: 18),
-                            // ✅ [수정 안 함] 첫 번째 코드의 '도감' 버튼 로직 유지
+                            // (원래 코드의 '도감' 버튼 로직 유지)
                             _pillButton(
                               label: '도감',
                               onTap: () {
@@ -311,7 +336,7 @@ class _LobbyChildScreenState extends State<LobbyChildScreen> {
                                           }),
                                           const SizedBox(width: kColsGap),
                                           
-                                          // ✅ [수정됨] '듣기 학습' 부분만 두 번째 코드의 내용(주석 포함)으로 교체
+                                          // ('듣기 학습'은 pushNamed로 유지)
                                           _bigAction('듣기 학습', () {
                                             // ⭐️ [수정] MaterialPageRoute 대신 pushNamed 사용
                                             Navigator.pushNamed(
@@ -328,7 +353,7 @@ class _LobbyChildScreenState extends State<LobbyChildScreen> {
                                       const SizedBox(height: kRowsGap),
                                       Row(
                                         children: [
-                                          // ✅ [수정 안 함] 첫 번째 코드의 '쓰기 게임' 로직 유지 (GameWriteChapterScreen)
+                                          // (원래 코드의 '쓰기 게임' 로직 유지 - GameWriteChapterScreen)
                                           _bigAction('쓰기 게임', () {
                                             Navigator.push(
                                               context,
@@ -341,7 +366,7 @@ class _LobbyChildScreenState extends State<LobbyChildScreen> {
                                             );
                                           }),
                                           const SizedBox(width: kColsGap),
-                                          // ✅ [수정 안 함] 첫 번째 코드의 '듣기 게임' 로직 유지
+                                          // (원래 코드의 '듣기 게임' 로직 유지)
                                           _bigAction('듣기 게임', () {
                                             Navigator.push(
                                               context,
@@ -373,9 +398,7 @@ class _LobbyChildScreenState extends State<LobbyChildScreen> {
                     bottom: 28,
                     child: _pillButton(
                       label: '로그아웃',
-                      onTap: () {
-                        // TODO: 로그아웃 로직
-                      },
+                      onTap: _logout, // ✅ [수정됨] _logout 함수 연결
                       width: 140,
                       height: 56,
                     ),
