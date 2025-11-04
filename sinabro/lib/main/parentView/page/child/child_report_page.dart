@@ -1,10 +1,10 @@
-// lib/main/parentView/page/child/child_report_page.dart
 /*
  * 파일: lib/main/parentView/page/child/child_report_page.dart
  * 개요: 자녀의 학습 리포트 개요 화면. API 연동 및 언어팩 지원.
  * @ 채영: 자녀 이름, 나이, 레벨 등 띄울 수 있는 부분은 수정 해놓음.
  * @ 정화: AI 리포트 버튼 추가 및 진행 상황 요약 API 연동 (모델 수정 완료).
  * @ 연수 (Gemini 병합): 언어팩 지원 (TranslatedText 위젯 적용)
+ * @ Gemini: 2개 카드 -> 4개 카드(학습/게임, 쓰기/듣기 분리)로 UI 수정
  */
 
 import 'package:flutter/material.dart';
@@ -14,7 +14,7 @@ import 'dart:developer';
 import 'package:sinabro/common/auth_client.dart';
 import 'package:sinabro/config.dart';
 import 'package:sinabro/main/parentView/page/child/child_profile_edit.dart';
-import 'package:sinabro/main/parentView/page/child/child_AIreport_page.dart';
+import 'package:sinabro/main/parentView/page/child/child_AIreport_page.dart'; // ⭐️ AI 리포트 페이지 import
 import 'package:sinabro/main/parentView/widget/translated_text.dart'; // ✨
 
 // API 응답 데이터를 담을 모델 클래스 (V1)
@@ -195,19 +195,22 @@ class _ChildReportPageState extends State<ChildReportPage> {
           child: Center(
             child: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 1100),
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(16, 20, 16, 24),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    _headerBar(), // ✨
-                    const SizedBox(height: 16),
-                    _childHeadline(context, widget.childId, childName, childAge,
-                        level, progressToNext), // ✨
-                    const SizedBox(height: 18),
-                    _cardsArea(context, widget.childId, level, _progressSummary,
-                        _summaryErrorMessage), // ✨
-                  ],
+              // ⭐️ [수정] 4개 카드 스크롤되도록 SingleChildScrollView 추가
+              child: SingleChildScrollView(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 20, 16, 24),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      _headerBar(), // ✨
+                      const SizedBox(height: 16),
+                      _childHeadline(context, widget.childId, childName, childAge,
+                          level, progressToNext), // ✨
+                      const SizedBox(height: 18),
+                      // ⭐️ [수정] _cardsArea가 4개 카드를 반환함
+                      _cardsArea(context, _progressSummary, _summaryErrorMessage),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -355,8 +358,9 @@ class _ChildReportPageState extends State<ChildReportPage> {
                       color: Colors.black,
                     ),
                   ),
+                  // ⭐️ [수정] '학습 리포트' -> '게임 리포트' (네가 저번에 요청한 거)
                   const TranslatedText(
-                    '님의 학습 리포트',
+                    '님의 게임 리포트',
                     style: TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.w900,
@@ -398,9 +402,9 @@ class _ChildReportPageState extends State<ChildReportPage> {
     );
   }
 
-  // 좌측: 학습 / 우측: 게임 카드 (V1 + V2 병합)
-  Widget _cardsArea(BuildContext context, String childId, dynamic level,
-      ProgressSummary? summary, String? errorMessage) {
+  // ⭐️ [수정] 좌우 2개 -> 총 4개 카드로 변경
+  Widget _cardsArea(
+      BuildContext context, ProgressSummary? summary, String? errorMessage) {
     if (errorMessage != null) {
       return Center(
         child: Padding(
@@ -409,43 +413,45 @@ class _ChildReportPageState extends State<ChildReportPage> {
         ),
       );
     }
-
-    // V1의 API 응답 데이터 사용 로직
-    final progressLabelText = (summary == null)
-        ? "$level 레벨의 ?% 완료!"
-        : "$level 레벨의 ${(summary.progressToNextLevel * 100).toStringAsFixed(0)}% 완료!";
-    final studyRecentText =
-        summary?.writingStudyRecent ?? summary?.listeningStudyRecent ?? '기록 없음';
-    final studyBestText =
-        summary?.writingStudyBest ?? summary?.listeningStudyBest ?? '기록 없음';
-    final gameRecentText =
-        summary?.writingGameRecent ?? summary?.listeningGameRecent ?? '기록 없음';
-    final gameBestText =
-        summary?.writingGameBest ?? summary?.listeningGameBest ?? '기록 없음';
+    
+    // ⭐️ [추가] 4개의 카드를 리스트로 정의
+    final cards = [
+      // Card 1: 쓰기 학습
+      _statCard(
+        titleWidget: const TranslatedText('쓰기 학습'), // ✨
+        recent: summary?.writingStudyRecent ?? '기록 없음', // ⭐️ '쓰기 학습' 전용 데이터
+        best: summary?.writingStudyBest ?? '기록 없음', // ⭐️ '쓰기 학습' 전용 데이터
+      ),
+      // Card 2: 듣기 학습
+      _statCard(
+        titleWidget: const TranslatedText('듣기 학습'), // ✨
+        recent: summary?.listeningStudyRecent ?? '기록 없음', // ⭐️ '듣기 학습' 전용 데이터
+        best: summary?.listeningStudyBest ?? '기록 없음', // ⭐️ '듣기 학습' 전용 데이터
+      ),
+      // Card 3: 쓰기 게임
+      _statCard(
+        titleWidget: const TranslatedText('쓰기 게임'), // ✨
+        recent: summary?.writingGameRecent ?? '기록 없음', // ⭐️ '쓰기 게임' 전용 데이터
+        best: summary?.writingGameBest ?? '기록 없음', // ⭐️ '쓰기 게임' 전용 데이터
+      ),
+      // Card 4: 듣기 게임
+      _statCard(
+        titleWidget: const TranslatedText('듣기 게임'), // ✨
+        recent: summary?.listeningGameRecent ?? '기록 없음', // ⭐️ '듣기 게임' 전용 데이터
+        best: summary?.listeningGameBest ?? '기록 없음', // ⭐️ '듣기 게임' 전용 데이터
+      ),
+    ];
 
     return LayoutBuilder(
       builder: (_, c) {
         final isNarrow = c.maxWidth < 860;
-        final cards = [
-          _statCard(
-            titleWidget: const TranslatedText('학습'), // ✨ V2 방식 적용
-            progressLabel: progressLabelText,
-            recent: studyRecentText, // V1 데이터
-            best: studyBestText, // V1 데이터
-          ),
-          _statCard(
-            titleWidget: const TranslatedText('게임'), // ✨ V2 방식 적용
-            progressLabel: progressLabelText,
-            recent: gameRecentText, // V1 데이터
-            best: gameBestText, // V1 데이터
-          ),
-        ];
-
+        // ⭐️ Wrap 위젯이 4개의 카드를 알아서 2x2 또는 1x4로 배치
         return Wrap(
-          spacing: 16,
-          runSpacing: 16,
+          spacing: 16, // 좌우 간격
+          runSpacing: 16, // 상하 간격
           children: cards
               .map((w) => SizedBox(
+                    // 좁으면 1줄에 1개, 넓으면 1줄에 2개
                     width: isNarrow ? c.maxWidth : (c.maxWidth - 16) / 2,
                     child: w,
                   ))
@@ -455,10 +461,10 @@ class _ChildReportPageState extends State<ChildReportPage> {
     );
   }
 
-  // 학습/게임 기록 카드 위젯 (V1 + V2 병합)
+  // ⭐️ [수정] 학습/게임 기록 카드 위젯 (progressLabel 파라미터 삭제)
   Widget _statCard({
     required Widget titleWidget, // ✨ V2 방식 (String title -> Widget titleWidget)
-    required String progressLabel,
+    // required String progressLabel, // 👈 ⭐️ [삭제] 겹치는 정보라 삭제
     required String recent,
     required String best,
   }) {
@@ -492,14 +498,12 @@ class _ChildReportPageState extends State<ChildReportPage> {
                   ),
                 ),
                 const Spacer(),
-                Text(
-                  progressLabel,
-                  style: const TextStyle(color: Colors.black54, fontSize: 12),
-                ),
+                // ⭐️ [삭제] 겹치는 진행도 텍스트 삭제
               ],
             ),
             const SizedBox(height: 18),
-            const TranslatedText('최근 학습 기록',
+            // ⭐️ [수정] '학습' -> '최근' (공통 용어)
+            const TranslatedText('최근 기록',
                 style: TextStyle(color: Colors.black54)), // ✨
             const SizedBox(height: 6),
             Text(
@@ -509,9 +513,13 @@ class _ChildReportPageState extends State<ChildReportPage> {
                 fontWeight: FontWeight.w900,
                 color: Color(0xFF43A047),
               ),
+              // ⭐️ 글자 수 길어지면 ... 처리
+              overflow: TextOverflow.ellipsis,
+              maxLines: 1,
             ),
             const SizedBox(height: 14),
-            const TranslatedText('최고 학습 기록',
+            // ⭐️ [수정] '학습' -> '최고' (공통 용어)
+            const TranslatedText('최고 기록',
                 style: TextStyle(color: Colors.black54)), // ✨
             const SizedBox(height: 6),
             Text(
@@ -521,6 +529,9 @@ class _ChildReportPageState extends State<ChildReportPage> {
                 fontWeight: FontWeight.w900,
                 color: Color(0xFF43A047),
               ),
+              // ⭐️ 글자 수 길어지면 ... 처리
+              overflow: TextOverflow.ellipsis,
+              maxLines: 1,
             ),
           ],
         ),
