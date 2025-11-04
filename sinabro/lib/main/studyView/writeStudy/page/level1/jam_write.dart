@@ -1,6 +1,6 @@
 // NEXT TODO : 잼 바르고 완료 됐을 때 효과음
 
-// 레벨1 열매 2 잼 그리기(곡선) 서버 연결 완료
+// 쓰기 학습 - 레벨1 <나무1(ST004)> / 열매 2(FR_WR_002) 잼 그리기(곡선) 서버 연결 완료
 // lib/main/studyView/writeStudy/page/level1/jam_write.dart
 import 'dart:math';
 import 'dart:typed_data';
@@ -12,6 +12,9 @@ import 'package:sinabro/config.dart'; // baseUrl 사용을 위해 추가
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:audioplayers/audioplayers.dart'; // 오디오 패키지 import
+
+import 'package:sinabro/main/studyView/common/mixin/sticker_reward_handler.dart';
+import 'package:sinabro/main/studyView/writeStudy/page/main_apple_tree.dart';
 
 /* ───────── assets ───────── */
 const _dir = 'assets/img/contents/studyWrite/';
@@ -272,9 +275,41 @@ class _JamSpreadFlowPageState extends State<JamSpreadFlowPage>
       await Future.delayed(const Duration(seconds: 2));
       if (!mounted) return;
 
+      // ✅ [핵심 수정] 보상 시퀀스 시작 (사과 팝업 표시)
+      setState(() => _phase = _Phase.reward);
+      // 사과 팝업이 2초간 화면에 머무르도록 지연
+      await Future.delayed(const Duration(seconds: 2)); 
+      if (!mounted) return;
+
+
       // ✅ API 호출 추가! (팝업 후, 화면 전환 전)
       await _uploadStudyWritingResult();
-      Navigator.of(context).maybePop();
+
+      // ✅ StickerRewardHandler로 전환 (보상 페이지)
+      if (!mounted) return;
+      // FR_WR_002 (열매 2)에 맞는 설정
+      const fruitId = 'FR_WR_002';
+      const stageKey = 'ST004'; // 쓰기 학습 레벨 1 (가정)
+      const newlyUnlockedIndex = 1; // FR_WR_002는 두 번째 열매일 것으로 가정 (인덱스 1)
+      
+      // 오디오 중지 (화면 전환 전)
+      await _audioPlayer.stop();
+
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (_) => StickerRewardHandler(
+            childId: widget.childId,
+            fruitId: fruitId,
+            stageKey: stageKey,
+            newlyUnlockedIndex: newlyUnlockedIndex,
+            isAllCleared: false,
+            onFinish: () {},
+            // ✅ 최종 목적지로 쓰기 학습 나무 페이지 전달
+            finalDestination: AppleGarden(childId: widget.childId),
+          ),
+        ),
+      );
       return;
     }
 

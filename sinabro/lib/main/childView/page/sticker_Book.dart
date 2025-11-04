@@ -7,9 +7,16 @@
  */
 
 import 'package:flutter/material.dart';
+import 'package:sinabro/main/childView/data/sticker_progress.dart';
+import 'package:sinabro/main/childView/data/sticker_progress_loader.dart';
+import 'package:sinabro/main/childView/data/sticker_image_map.dart';
+import 'package:sinabro/main/childView/model/sticker_model.dart';
+import 'package:sinabro/main/childView/page/lobby_child.dart';
+
 
 class StickerBookPage extends StatefulWidget {
-  const StickerBookPage({super.key});
+  final String childId;
+  const StickerBookPage({super.key,required this.childId});
 
   @override
   State<StickerBookPage> createState() => _StickerBookPageState();
@@ -20,24 +27,8 @@ class _StickerBookPageState extends State<StickerBookPage>
   final String nickname = "(닉네임)";
   final List<String> levels = ["1", "2", "3"];
 
-  // 실제로는 백엔드에서 받아올 데이터로 대체하세요
-  final Map<String, List<bool>> stickerUnlocked = {
-    "listen1": [true, true, false, false, false],
-    "write1": [true, false, true, false, false],
-    "listen2": [true, false, false, false, false],
-    "write2": [false, false, false, false],
-    "listen3": [false, false, false, false],
-    "write3": [false, false, false, false],
-  };
-
-  final Map<String, int> stickerCount = {
-    "listen1": 5,
-    "write1": 4,
-    "listen2": 5,
-    "write2": 4,
-    "listen3": 4,
-    "write3": 4,
-  };
+  late Future<StickerProgress> _futureProgress;
+  StickerProgress? _progress;
 
   final Map<String, Map<int, Offset>> stickerPositions = {
     "listen1": {
@@ -84,16 +75,40 @@ class _StickerBookPageState extends State<StickerBookPage>
     },
   };
 
+  @override
+  void initState() {
+    super.initState();
+    _futureProgress = StickerProgressLoader.load(widget.childId);
+  }
+
+
   int currentIndex = 0;
 
   @override
   Widget build(BuildContext context) {
-    final leftKey = "listen${levels[currentIndex]}";
-    final rightKey = "write${levels[currentIndex]}";
+    final leftKey = "listen${levels[currentIndex]}"; //듣기 도감
+    final rightKey = "write${levels[currentIndex]}"; //쓰기 도감
 
     return Scaffold(
       backgroundColor: const Color(0xFFFDF2D0),
-      body: Center(
+      body: FutureBuilder<StickerProgress>(
+        future: _futureProgress,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          if (snapshot.hasError) {
+            return Center(child: Text('로드 실패: ${snapshot.error}'));
+          }
+
+          _progress = snapshot.data;
+          if (_progress == null) {
+            return const Center(child: Text('데이터를 불러올 수 없습니다.'));
+          }
+
+
+
+      return Center(
         child: Column(
           children: [
             const SizedBox(height: 80),
@@ -126,12 +141,38 @@ class _StickerBookPageState extends State<StickerBookPage>
             const SizedBox(height: 16),
           ],
         ),
+      );
+        },
       ),
     );
   }
 
+  /// ---------------------------------------------------------------------------
+  /// 🧩 도감 하나 렌더링 (예: listen1, write2 ...)
+  /// ---------------------------------------------------------------------------
   Widget _buildPage(String key) {
-    final stickerNum = stickerCount[key] ?? 0;
+    final dexId = key.startsWith("listen")
+        ? "DEX_LS_0${key.replaceAll(RegExp(r'listen'), '')}"
+        : "DEX_WR_0${key.replaceAll(RegExp(r'write'), '')}";
+
+     // 널 안전하게 로컬 리스트로 받아서 sort
+    final List<Sticker> stickers = _progress?.allStickers.values
+            .where((s) => s.dexId == dexId)
+            .toList() ??
+        [];
+    stickers.sort((a, b) => a.sequenceInDex.compareTo(b.sequenceInDex));
+
+    if (stickers.isEmpty) {
+      return Container(
+        width: 410,
+        height: 450,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Center(child: Text("데이터 없음 ($dexId)")),
+      );
+    }
 
     return Container(
       width: 410,
@@ -144,26 +185,36 @@ class _StickerBookPageState extends State<StickerBookPage>
       child: Stack(
         children: [
           Positioned.fill(
-            child: Image.asset("assets/img/contents/stickerBook/$key.png", fit: BoxFit.cover),
+            child: Image.asset(
+              "assets/img/contents/stickerBook/$key.png",
+              fit: BoxFit.cover,
+            ),
           ),
-          for (int i = 0; i < stickerNum; i++) _buildSticker(key, i),
+          for (int i = 0; i < stickers.length; i++)
+            _buildSticker(key, stickers[i], i),
         ],
       ),
     );
   }
 
-  Widget _buildSticker(String key, int index) {
-    final unlocked = stickerUnlocked[key]?[index] ?? false;
-    final offset = stickerPositions[key]?[index] ?? const Offset(0, 0);
-    final base = "assets/img/contents/stickerBook/stickers";
-    final stickerPath = unlocked
-        ? "$base/$key${index + 1}.png"
-        : "$base/${key}${index + 1}_deactivation.png";
+  /// ---------------------------------------------------------------------------
+  /// 🧷 스티커 활성/비활성 표시
+  /// ---------------------------------------------------------------------------
+  Widget _buildSticker(String key, Sticker sticker, int index) {
+    final entry = stickerImageMap[sticker.stickerId];
+    if (entry == null) {
+      debugPrint('⚠️ 이미지 매핑 없음: ${sticker.stickerId}');
+      return const SizedBox.shrink();
+    }
 
+    final offset = stickerPositions[key]?[index] ?? const Offset(0, 0);
     return Positioned(
       left: offset.dx,
       top: offset.dy,
-      child: Image.asset(stickerPath, width: 50),
+      child: Image.asset(
+        sticker.isObtained ? entry.active : entry.inactive,
+        width: 50,
+      ),
     );
   }
 

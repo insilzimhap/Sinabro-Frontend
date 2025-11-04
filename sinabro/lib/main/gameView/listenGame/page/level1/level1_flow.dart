@@ -59,7 +59,7 @@ class Level1Flow extends StatefulWidget {
   const Level1Flow({
     super.key,
     required this.childId, // ✅ 생성자 수정
-    });
+  });
 
   @override
   State<Level1Flow> createState() => _Level1FlowState();
@@ -67,24 +67,22 @@ class Level1Flow extends StatefulWidget {
 
 class _Level1FlowState extends State<Level1Flow> {
   bool _tutorialDone = false; // 튜토리얼 1회만 실행되도록 제어
-  
 
-	// 🎯 테마(열매)가 선택되었을 때 호출됨
+  // 🎯 테마(열매)가 선택되었을 때 호출됨
   void _onThemeSelected(BuildContext context, int themeIndex) {
-  
-	  //테마 번호(index)에 맞춰 문제 5개 세트 가져오기
+    //테마 번호(index)에 맞춰 문제 5개 세트 가져오기
     final startIndex = themeIndex * 5;
     final selectedSet = level1GameData.sublist(startIndex, startIndex + 5);
 
-		// 게임 완료 후 결과 페이지로 이동
+    // 게임 완료 후 결과 페이지로 이동
     void goToResultPage(int correctCount) {
-      final success = correctCount >= 3;  // 정답 3개 이상이면 "성공" 처리
+      final success = correctCount >= 3; // 정답 3개 이상이면 "성공" 처리
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
           builder: (_) => Level1ResultPage(
             themeId: themeIndex + 1,
-            success: success,       // ✅ 결과 페이지에 성공여부 전달
+            success: success, // ✅ 결과 페이지에 성공여부 전달
           ),
         ),
       );
@@ -97,7 +95,7 @@ class _Level1FlowState extends State<Level1Flow> {
         context,
         MaterialPageRoute(
           builder: (_) => Level1TutorialPage(
-          // 튜토리얼이 끝나면 setState로 완료 표시 후 게임으로 이동
+            // 튜토리얼이 끝나면 setState로 완료 표시 후 게임으로 이동
             onTutorialEnd: () {
               setState(() => _tutorialDone = true);
               // 튜토리얼 → 전환 화면 → 1-1 게임
@@ -107,7 +105,7 @@ class _Level1FlowState extends State<Level1Flow> {
                   builder: (_) => ListenGameTransition(
                     // 게임 전환 애니메이션 → 실제 게임 화면으로 이동
                     nextPage: ListenGamePage(
-	                    // 문제 세트 전달
+                      // 문제 세트 전달
                       gameData: selectedSet,
                       // 게임 종료 시 결과 페이지로 이동
                       onFinished: goToResultPage, // 요기 좀 달라 (결과 전달)
@@ -127,9 +125,9 @@ class _Level1FlowState extends State<Level1Flow> {
         context,
         MaterialPageRoute(
           builder: (_) => ListenGameTransition(
-          // 전환 애니메이션 후 게임 시작
+            // 전환 애니메이션 후 게임 시작
             nextPage: ListenGamePage(
-	            // 선택된 테마 문제 5개
+              // 선택된 테마 문제 5개
               gameData: selectedSet,
               onFinished: goToResultPage,
               //여기도 달러 onFinished: (correctCount) => goToResultPage(correctCount),
