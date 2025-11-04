@@ -415,4 +415,42 @@ class ChildGameApi {
   //changed-end ✅ 활성화/비활성(트리 진행도) 관련 API 추가
 
 
+
+  //------------------ 자녀 로비/챕터 화면용 (캐릭터) 정보 조회 ------------------------//
+  static const _infoBase = '$baseUrl/api/child'; 
+
+  /// - `nickname`, `level`, **`characterId`** (C001 등) 반환
+  static Future<Map<String, dynamic>?> fetchChildCharacterInfo() async {
+    final childId = ChildState.instance.childId;
+    if (childId == null) {
+      print('[ChildGameApi][fetchChildInfo] ❌ childId 없음');
+      return null;
+    }
+
+    // 💡 서버의 /api/child/info 엔드포인트 사용
+    final uri = Uri.parse('$_infoBase/info') 
+        .replace(queryParameters: {'childId': childId});
+    print('[ChildGameApi][fetchChildInfo] 요청 → $uri');
+
+    try {
+      final resp = await http
+          .get(uri, headers: {'Accept': 'application/json'})
+          .timeout(const Duration(seconds: 8));
+
+      if (resp.statusCode == 200) {
+        final data = jsonDecode(resp.body);
+        print('[ChildGameApi][fetchChildInfo] ✅ 조회 성공');
+        // 결과 예시: {"nickname": "이븐이푸니", "level": 2, "characterId": "C003"}
+        return data as Map<String, dynamic>;
+      } else if (resp.statusCode == 400) {
+        print('[ChildGameApi][fetchChildInfo] ❌ 존재하지 않는 childId (400)');
+      } else {
+        print('[ChildGameApi][fetchChildInfo] ⚠️ 상태코드=${resp.statusCode}');
+      }
+    } catch (e) {
+      print('[ChildGameApi][fetchChildInfo] 예외: $e');
+    }
+    return null;
+  }
+
 }
