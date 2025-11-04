@@ -8,11 +8,11 @@ import 'dart:convert';
 import 'package:sinabro/main/studyView/listenStudy/page/listen_study_apple.dart';
 import 'package:sinabro/main/studyView/writeStudy/page/main_apple_tree.dart';
 
-// 게임 페이지 import 
+// 게임 페이지 import
 import 'package:sinabro/main/gameView/listenGame/chapter_page.dart';
 import 'package:sinabro/main/gameView/writeGame/chapter_page.dart'; // ✅ [수정 안 함] 첫 번째 코드의 import 유지
 
-// 도감 페이지 import 
+// 도감 페이지 import
 import 'package:sinabro/main/childView/page/sticker_Book.dart'; // ✅ [수정 안 함] 첫 번째 코드의 import 유지
 
 // 한 곳에서 서버 주소 관리 (추가)
@@ -217,7 +217,8 @@ class _LobbyChildScreenState extends State<LobbyChildScreen> {
                                   context,
                                   MaterialPageRoute(
                                     builder: (_) => StickerBookPage(
-                                      childId: widget.childId, // ✅ childId 전달 추가
+                                      childId:
+                                          widget.childId, // ✅ childId 전달 추가
                                     ),
                                   ),
                                 );
@@ -312,19 +313,20 @@ class _LobbyChildScreenState extends State<LobbyChildScreen> {
                                             );
                                           }),
                                           const SizedBox(width: kColsGap),
-                                          
+
                                           // ✅ [수정됨] '듣기 학습' 부분만 두 번째 코드의 내용(주석 포함)으로 교체
                                           _bigAction('듣기 학습', () {
                                             // ⭐️ [수정] MaterialPageRoute 대신 pushNamed 사용
                                             Navigator.pushNamed(
                                               context,
-                                              ListenAppleSelect.routeName, // ⭐️ '/listen-apple-select' 이름표 사용
-                                              arguments: { // ⭐️ main.dart의 onGenerateRoute가 받을 수 있게 arguments로 전달
+                                              ListenAppleSelect
+                                                  .routeName, // ⭐️ '/listen-apple-select' 이름표 사용
+                                              arguments: {
+                                                // ⭐️ main.dart의 onGenerateRoute가 받을 수 있게 arguments로 전달
                                                 'childId': widget.childId
                                               },
                                             );
                                           }),
-
                                         ],
                                       ),
                                       const SizedBox(height: kRowsGap),

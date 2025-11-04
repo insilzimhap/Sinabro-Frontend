@@ -581,36 +581,26 @@ class _SignUpPageState extends State<SignUpPage> {
 
   // 하단: 가입하기 애니메이션 박스
   Widget _animationBox(Color cardColor) {
-    return Card(
-      color: const Color(0xFFBDBDBD),
-      elevation: 1,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: SizedBox(
-        height: 180,
-        width: double.infinity,
-        child: Center(
-          child: _isLoading
-              ? const CircularProgressIndicator()
-              : ElevatedButton(
-                  onPressed: _registerUser,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFFFC5C5),
-                    foregroundColor: Colors.brown[800],
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 28,
-                      vertical: 14,
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  child: const Text(
-                    '가입하기 애니메이션(자리)',
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                ),
-        ),
-      ),
+    return LayoutBuilder(
+      builder: (context, c) {
+        final w = c.maxWidth; // 오른쪽 패널의 가용 폭
+        final h = w / 2; // ★ 비율을 낮춰 세로를 두툼하게(2.6~3.0 사이 취향)
+        return InkWell(
+          onTap: _registerUser,
+          borderRadius: BorderRadius.circular(16),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(16),
+            child: SizedBox(
+              width: double.infinity,
+              height: h, // 가로 꽉 + 세로 충분
+              child: Image.asset(
+                'assets/img/auth/Frame 10.png',
+                fit: BoxFit.cover, // 여백 없이 꽉
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 }
