@@ -52,6 +52,11 @@ flutter:
     - assets/img/contents/gameWrite/theme/
     - assets/img/auth/
     - assets/img/character/
+    - assets/img/character/gomjae/
+    - assets/img/character/gonyam/
+    - assets/img/character/meongji/
+    - assets/img/character/ojjang/
+    - assets/img/character/tosoon/
     - assets/img/logo/
     - assets/img/contents/stickerBook/
     - assets/img/contents/stickerBook/stickers/
