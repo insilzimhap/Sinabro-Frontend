@@ -78,7 +78,7 @@ class _ParentLayoutState extends State<ParentLayout> {
         iconTheme: const IconThemeData(color: Colors.black),
         title: const TranslatedText(
           // ⭐️ 첫 번째 코드의 AppBar Title 사용
-          "SINABRO Parents' Page", 
+          "SINABRO 부모용 페이지", 
           style: TextStyle(color: Colors.black),
         ),
         leading: Row(
@@ -104,13 +104,13 @@ class _ParentLayoutState extends State<ParentLayout> {
       body: Consumer<TranslationService>(
         builder: (context, translationService, child) {
           // // 위젯이 빌드될 때 초기화 함수를 한번만 안전하게 호출합니다.
-          // final userId = widget.parentUserId;
-          // if (userId != null && userId.isNotEmpty) {
+          final userId = widget.parentUserId;
+          if (userId != null && userId.isNotEmpty) {
           //   // isInitialized 플래그를 사용하여 중복 호출 방지
           //   // ⭐️ (참고) translationService.initialize(userId);
           //   // ⭐️ (수정) translation_service.dart의 최신 코드는 isInitialized 체크를 알아서 함
-          //   translationService.initialize(userId);
-          // }
+            translationService.initialize(userId);
+          }
 
           // 언어 설정을 불러오는 동안 로딩 화면을 보여줍니다.
           if (translationService.isLoading) {
@@ -199,20 +199,20 @@ class _MenuList extends StatelessWidget {
     // ⭐️ [수정] 첫 번째 코드(_MenuItem 정의) 사용
     final items = <_MenuItem>[
       _MenuItem(
-        title: 'announcement', // ⭐️ 번역 키 (영어)
-        koreanTitle: '공지사항', // ⭐️ 한글 (툴팁 및 activeMenu 비교용)
+        title: '공지사항', // ⭐️ 번역 키 (영어)
+        //koreanTitle: '공지사항', // ⭐️ 한글 (툴팁 및 activeMenu 비교용)
         icon: Icons.campaign_outlined,
         destination: NoticePage(parentUserId: parentUserId),
       ),
       _MenuItem(
-        title: 'My Page',
-        koreanTitle: '마이페이지',
+        title: '마이페이지',
+        //koreanTitle: '마이페이지',
         icon: Icons.account_circle_outlined,
         destination: MyPage(parentUserId: parentUserId),
       ),
       _MenuItem(
-        title: "Children's Page",
-        koreanTitle: '자녀페이지',
+        title: "자녀페이지",
+        //koreanTitle: '자녀페이지',
         icon: Icons.family_restroom_outlined,
         destination: ChildrenPage(
           parentUserId: parentUserId ?? '',
@@ -220,14 +220,14 @@ class _MenuList extends StatelessWidget {
         ),
       ),
       _MenuItem(
-        title: 'inquiry',
-        koreanTitle: '문의사항',
+        title: '문의사항',
+        //koreanTitle: '문의사항',
         icon: Icons.mail_outline,
         destination: FaqPage(parentUserId: parentUserId),
       ),
       _MenuItem(
-        title: 'setting',
-        koreanTitle: '설정',
+        title: '설정',
+        //koreanTitle: '설정',
         icon: Icons.settings_outlined,
         destination: psettings.SettingsPage(
           parentUserId: parentUserId,
@@ -244,7 +244,8 @@ class _MenuList extends StatelessWidget {
       itemBuilder: (_, i) {
         final it = items[i];
         // ⭐️ [수정] activeMenu 비교 대상을 'title'이 아닌 'koreanTitle'로 함
-        final isActive = it.koreanTitle == activeMenu; 
+        //final isActive = it.koreanTitle == activeMenu; 
+        final isActive = it.title == activeMenu;
         return _MenuTile(item: it, collapsed: collapsed, isActive: isActive);
       },
     );
@@ -254,13 +255,13 @@ class _MenuList extends StatelessWidget {
 // ⭐️ [수정] 첫 번째 코드(_MenuItem 정의) 사용
 class _MenuItem {
   final String title;       // ⭐️ 번역 키 (영어)
-  final String koreanTitle; // ⭐️ 한글 (툴팁 및 activeMenu 비교용)
+  //final String koreanTitle; // ⭐️ 한글 (툴팁 및 activeMenu 비교용)
   final IconData icon;
   final Widget destination;
 
   const _MenuItem({
     required this.title,
-    required this.koreanTitle,
+    //required this.koreanTitle,
     required this.icon,
     required this.destination,
   });
@@ -352,6 +353,7 @@ class _MenuTile extends StatelessWidget {
     );
     
     // ⭐️ [수정] 툴팁에는 한글(koreanTitle) 사용
-    return collapsed ? Tooltip(message: item.koreanTitle, child: tile) : tile;
+    //return collapsed ? Tooltip(message: item.koreanTitle, child: tile) : tile;
+    return collapsed ? Tooltip(message: item.title, child: tile) : tile;
   }
 }

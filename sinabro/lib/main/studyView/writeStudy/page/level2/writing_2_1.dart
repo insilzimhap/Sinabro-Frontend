@@ -1,5 +1,5 @@
 // lib/main/studyView/writeStud/page/level2/writing_2_1.dart
-// 레벨 2 열매 1 자음/쌍자음 서버 연결 완료
+// 쓰기 학습 - 레벨2 <나무2(ST005)> / 열매 1(FR_WR_005) 자음/쌍자음 서버 연결 완료
 
 import 'package:flutter/material.dart';
 import 'package:sinabro/main/studyView/writeStudy/page/main_apple_tree.dart';
@@ -12,6 +12,8 @@ import 'package:http/http.dart' as http; // ⭐️ http 패키지
 import 'dart:convert'; // ⭐️ json 변환용
 import 'package:sinabro/config.dart'; // ⭐️ baseUrl 사용
 import 'package:audioplayers/audioplayers.dart'; // 오디오 패키지 import
+import 'package:sinabro/main/studyView/common/mixin/sticker_reward_handler.dart';
+
 
 // 인트로 이미지
 const _twin1 = 'assets/img/contents/studyWrite/twin1.png';
@@ -1006,12 +1008,35 @@ class _Writing21PageState extends State<Writing21Page> {
       },
     );
 
-    Timer(const Duration(seconds: 2), () {
-      if (!mounted) return;
+    // ⭐️ [수정된 로직] 2초 후 팝업 닫고 StickerRewardHandler로 전환
+    Timer(const Duration(seconds: 2), () async {
+      // 1. 팝업 닫기 (기존 로직 유지)
       Navigator.of(context, rootNavigator: true).pop();
+      
+      // 2. 오디오 중지 (추가: 화면 전환 전 오디오 정리)
+      await _audioPlayer.stop();
+
+      // 3. StickerRewardHandler로 이동 (AppleGarden으로 직접 가는 대신)
+      // FR_WR_005 (열매 1)에 맞는 설정
+      const stageKey = 'ST005'; // 쓰기 학습 레벨 2
+      const newlyUnlockedIndex = 0; // 이 학습이 레벨 2의 첫 번째 열매이므로 인덱스 0으로 가정
+
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (_) => AppleGarden(childId: widget.childId)),
+        MaterialPageRoute(
+          builder: (_) => StickerRewardHandler(
+            childId: widget.childId,
+            fruitId: widget.fruitId, // 현재 학습의 fruitId 사용
+            stageKey: stageKey,
+            newlyUnlockedIndex: newlyUnlockedIndex,
+            // ⚠️ 쌍자음 학습은 여러 레슨으로 구성되어 있으므로, 
+            // 현재 fruitId가 이 레벨의 마지막이 아니라면 isAllCleared는 false입니다.
+            isAllCleared: false, 
+            onFinish: () {},
+            // StickerRewardHandler 완료 후 최종 목적지
+            finalDestination: AppleGarden(childId: widget.childId),
+          ),
+        ),
       );
     });
   }

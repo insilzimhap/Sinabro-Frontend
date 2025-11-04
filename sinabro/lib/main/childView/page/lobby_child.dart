@@ -216,7 +216,9 @@ class _LobbyChildScreenState extends State<LobbyChildScreen> {
                                 Navigator.push(
                                   context,
                                   MaterialPageRoute(
-                                    builder: (_) => const StickerBookPage(),
+                                    builder: (_) => StickerBookPage(
+                                      childId: widget.childId, // ✅ childId 전달 추가
+                                    ),
                                   ),
                                 );
                               },

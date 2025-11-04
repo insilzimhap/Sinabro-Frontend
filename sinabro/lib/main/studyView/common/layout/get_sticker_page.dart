@@ -3,17 +3,23 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:sinabro/main/childView/page/sticker_book.dart';
 import 'package:sinabro/main/childView/page/lobby_child.dart';
+import 'package:sinabro/main/childView/data/sticker_image_map.dart';
 
 class GetStickerPage extends StatefulWidget {
   final String stageKey;
   final int index;
   final VoidCallback onComplete;
 
+  final String childId; 
+  final String fruitId;
+
   const GetStickerPage({
     super.key,
     required this.stageKey,
     required this.index,
     required this.onComplete,
+    required this.childId,   // ✅ 필수 추가
+    required this.fruitId,  // ✅ 필수 추가
   });
 
   @override
@@ -31,7 +37,7 @@ class _GetStickerPageState extends State<GetStickerPage>
   bool _showSticker = false;
   bool _showButtons = false;
 
-  String get stickerName => '${widget.stageKey}${widget.index + 1}';
+  //String get stickerName => '${widget.stageKey}${widget.index + 1}';
 
   @override
   void initState() {
@@ -91,12 +97,24 @@ class _GetStickerPageState extends State<GetStickerPage>
     super.dispose();
   }
 
+  /// 🔑 fruitId (FR_LS_001)를 StickerKey (ST_LS_001)로 변환
+  String _convertFruitToStickerKey(String fruitId) {
+    if (!fruitId.startsWith('FR_')) return fruitId;
+    return fruitId.replaceFirst('FR_', 'ST_');
+  }
+
   @override
   Widget build(BuildContext context) {
-    final darkImage =
-        'assets/img/contents/stickerBook/stickers/${stickerName}_deactivation.png';
-    final stickerImage =
-        'assets/img/contents/stickerBook/stickers/${stickerName}.png';
+    // 1. fruitId를 StickerKey로 변환 (FR_LS_001 -> ST_LS_001)
+    final stickerKey = _convertFruitToStickerKey(widget.fruitId);
+    // 2. stickerImageMap에서 경로 찾기
+    final StickerImageEntry? entry = stickerImageMap[stickerKey];
+
+    // 3. 이미지 경로 설정 (매핑 실패 시 default 경로 사용)
+    final darkImage = entry?.inactive ??
+        'assets/img/contents/stickerBook/stickers/default_dark.png';
+    final stickerImage = entry?.active ??
+        'assets/img/contents/stickerBook/stickers/default.png';
 
     return Scaffold(
       backgroundColor: const Color(0xFFFFF8E7),
@@ -175,7 +193,7 @@ class _GetStickerPageState extends State<GetStickerPage>
               opacity: _fadeController,
               child: Center(
                 child: Image.asset(
-                  stickerImage,
+                  stickerImage, //매핑된 활성 이미지 사용
                   width: 300,
                   height: 300,
                   fit: BoxFit.contain,
@@ -204,17 +222,13 @@ class _GetStickerPageState extends State<GetStickerPage>
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
+                      //홈으로 이동 버튼(chilId전달)
                       ElevatedButton(
                         onPressed: () {
-                          Navigator.pushReplacement(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => const LobbyChildScreen(
-                                childId: 'test_child_id',
-                              ),
-                            ),
-                          );
+                          // onComplete() 호출 시 StickerRewardHandler가 로비로 이동 처리 -> 나무로 수정
+                          widget.onComplete(); 
                         },
+
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFFB46A32),
                           padding: const EdgeInsets.symmetric(
@@ -224,21 +238,26 @@ class _GetStickerPageState extends State<GetStickerPage>
                           ),
                         ),
                         child: const Text(
-                          '🏠 홈으로',
+                          '🌳 나무로',
+                          //'🏠 홈으로',
                           style: TextStyle(fontSize: 18, color: Colors.white),
                         ),
                       ),
                       const SizedBox(width: 20),
+                      // 도감으로 이동 버튼 (childId 전달)
                       ScaleTransition(
                         scale: _pulseController,
                         child: ElevatedButton(
                           onPressed: () {
+                            // 도감으로 이동 후 onComplete 호출
                             Navigator.pushReplacement(
                               context,
                               MaterialPageRoute(
-                                builder: (_) => const StickerBookPage(),
+                                builder: (_) => StickerBookPage(
+                                  childId: widget.childId,
+                                ),
                               ),
-                            );
+                            ).then((_) => widget.onComplete()); // 이동 후 콜백 호출
                           },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: const Color(0xFFFFA726),
