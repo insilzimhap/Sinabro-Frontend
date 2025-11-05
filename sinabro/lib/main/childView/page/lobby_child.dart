@@ -256,12 +256,13 @@ class _LobbyChildScreenState extends State<LobbyChildScreen> {
                                   children: [
                                     Container(
                                       height: kLeftCardHeight,
+                                      // 회색 박스 제거!
                                       decoration: BoxDecoration(
-                                        color: _charCard,
+                                        color: Colors
+                                            .transparent, // 또는 _bg 로 배경색과 동일하게
                                         borderRadius: BorderRadius.circular(16),
                                       ),
                                       alignment: Alignment.center,
-                                      // ⬇️ 여기! 캐릭터 이미지를 꽉 차게 표시 (로컬 에셋 우선)
                                       child: _characterAssetPath != null
                                           ? Padding(
                                               padding: const EdgeInsets.all(12),
@@ -270,11 +271,7 @@ class _LobbyChildScreenState extends State<LobbyChildScreen> {
                                                 fit: BoxFit.contain,
                                               ),
                                             )
-                                          : const Icon(
-                                              Icons.person,
-                                              size: 96,
-                                              color: Color(0xFFBDBDBD),
-                                            ),
+                                          : const SizedBox(), // 플레이스홀더도 없애고 싶다면 SizedBox()
                                     ),
                                     const SizedBox(height: 16),
                                     Text(
