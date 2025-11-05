@@ -1,22 +1,20 @@
 import 'package:flutter/material.dart';
 import 'dart:math';
 import 'package:http/http.dart' as http;
-import 'package:sinabro/main/gameView/writeGame/page/write_game_main.dart';
 import 'dart:convert';
+import 'package:flutter/services.dart' show rootBundle; // ⬅️ AssetManifest 확인용
+import 'package:sinabro/config.dart';
 
-// 학습 페이지 import
+// 학습 페이지
 import 'package:sinabro/main/studyView/listenStudy/page/listen_study_apple.dart';
 import 'package:sinabro/main/studyView/writeStudy/page/main_apple_tree.dart';
 
-// 게임 페이지 import 
+// 게임 페이지
 import 'package:sinabro/main/gameView/listenGame/chapter_page.dart';
-import 'package:sinabro/main/gameView/writeGame/chapter_page.dart'; // ✅ [수정 안 함] 첫 번째 코드의 import 유지
+import 'package:sinabro/main/gameView/writeGame/chapter_page.dart';
 
-// 도감 페이지 import 
-import 'package:sinabro/main/childView/page/sticker_Book.dart'; // ✅ [수정 안 함] 첫 번째 코드의 import 유지
-
-// 한 곳에서 서버 주소 관리 (추가)
-import 'package:sinabro/config.dart';
+// 도감 페이지
+import 'package:sinabro/main/childView/page/sticker_Book.dart';
 
 class LobbyChildScreen extends StatefulWidget {
   final String childId;
@@ -32,22 +30,34 @@ class _LobbyChildScreenState extends State<LobbyChildScreen> {
   String level = '';
   bool _isLoading = true;
 
-  final Map<String, String> characterNameMap = {
-    'C001': '토끔',
+  // ✅ 서버 characterId → 한글 이름
+  final Map<String, String> _characterNameMap = const {
+    'C001': '토숨',
     'C002': '멍지',
     'C003': '곰재',
-    'C004': '고냥',
-    'C005': '오쟁',
+    'C004': '고냠',
+    'C005': '오짱',
   };
 
-  final List<String> messages = [
+  // ✅ 서버 characterId → 폴더명
+  final Map<String, String> _idToFolder = const {
+    'C001': 'tosoon',
+    'C002': 'meongji',
+    'C003': 'gomjae',
+    'C004': 'gonyam',
+    'C005': 'ojjang',
+  };
+
+  // 로컬에서 찾아낸 표시용 에셋 경로 (예: assets/img/character/ojjang/clear.png)
+  String? _characterAssetPath;
+
+  final List<String> messages = const [
     "오늘도 멋진 하루야!",
     "실수해도 괜찮아!",
     "할 수 있어, 넌 최고야!",
     "조금씩 함께 해보자!",
     "너라면 잘할 수 있어!",
   ];
-
   late String currentMessage;
 
   // 🎨 팔레트 & 공통 스타일
@@ -56,14 +66,14 @@ class _LobbyChildScreenState extends State<LobbyChildScreen> {
   static const _accent = Color(0xFFFFD24D); // 포커스/테두리
   static const _panel = Color(0xFFFFF2B3); // 버튼 패널
   static const _charCard = Color(0xFFEDEAE0); // 캐릭터 카드
-  static const _textMain = Color(0xFF7B5E4A); // 본문 텍스트(브라운)
+  static const _textMain = Color(0xFF7B5E4A); // 본문 텍스트
 
   // 🔧 레이아웃 상수
   static const double kLeftCardHeight = 360; // 좌측 캐릭터 카드 높이
-  static const double kButtonsRowHeight = 360; // 우측 영역 높이
-  static const double kButtonHeight = 170; // 각 버튼 세로 고정
-  static const double kRowsGap = 20; // 두 줄 사이 간격
-  static const double kColsGap = 24; // 좌/우 버튼 사이 간격
+  static const double kButtonsRowHeight = 360;
+  static const double kButtonHeight = 170;
+  static const double kRowsGap = 20;
+  static const double kColsGap = 24;
 
   @override
   void initState() {
@@ -72,39 +82,58 @@ class _LobbyChildScreenState extends State<LobbyChildScreen> {
     _setRandomMessage();
   }
 
+  /// AssetManifest.json 에서 존재하는 첫 번째 에셋을 찾아준다.
+  Future<String?> _resolveCharacterAsset(String folder) async {
+    // 지원 확장자들
+    const exts = ['png', 'webp', 'jpg', 'jpeg'];
+    final manifest = await rootBundle.loadString('AssetManifest.json');
+    for (final ext in exts) {
+      final path = 'assets/img/character/$folder/clear.$ext';
+      if (manifest.contains(path)) return path;
+    }
+    return null;
+  }
+
   Future<void> _fetchChildInfo() async {
     final url = '$baseUrl/api/child/info?childId=${widget.childId}';
     try {
-      final response = await http.get(Uri.parse(url));
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
+      final resp = await http.get(Uri.parse(url));
+      if (resp.statusCode == 200) {
+        final data = json.decode(resp.body);
+        final String? characterId = data['characterId'];
+        final String folder = _idToFolder[characterId] ?? '';
+
+        final localAsset =
+            folder.isNotEmpty ? await _resolveCharacterAsset(folder) : null;
+
         setState(() {
           nickname = data['nickname'] ?? '';
-          final characterId = data['characterId'];
-          characterName = characterNameMap[characterId] ?? '';
+          characterName = _characterNameMap[characterId] ?? '';
           level = (data['level'] ?? '').toString();
+          _characterAssetPath = localAsset; // ⬅️ 로컬 에셋 경로 저장
           _isLoading = false;
         });
       } else {
-        setState(_resetInfo);
+        _resetInfo();
       }
     } catch (_) {
-      setState(_resetInfo);
+      _resetInfo();
     }
   }
 
   void _resetInfo() {
-    nickname = '';
-    characterName = '';
-    level = '';
-    _isLoading = false;
+    setState(() {
+      nickname = '';
+      characterName = '';
+      level = '';
+      _characterAssetPath = null;
+      _isLoading = false;
+    });
   }
 
   void _setRandomMessage() {
     final random = Random();
-    setState(() {
-      currentMessage = messages[random.nextInt(messages.length)];
-    });
+    currentMessage = messages[random.nextInt(messages.length)];
   }
 
   @override
@@ -138,22 +167,16 @@ class _LobbyChildScreenState extends State<LobbyChildScreen> {
                                     child: Container(
                                       height: 64,
                                       padding: const EdgeInsets.symmetric(
-                                        horizontal: 18,
-                                      ),
+                                          horizontal: 18),
                                       decoration: BoxDecoration(
                                         color: Colors.white,
-                                        borderRadius: BorderRadius.circular(
-                                          18,
-                                        ),
+                                        borderRadius: BorderRadius.circular(18),
                                         border: Border.all(
-                                          color: _accent,
-                                          width: 3,
-                                        ),
+                                            color: _accent, width: 3),
                                         boxShadow: [
                                           BoxShadow(
-                                            color: Colors.black.withOpacity(
-                                              0.05,
-                                            ),
+                                            color:
+                                                Colors.black.withOpacity(0.05),
                                             blurRadius: 8,
                                             offset: const Offset(0, 2),
                                           ),
@@ -175,19 +198,14 @@ class _LobbyChildScreenState extends State<LobbyChildScreen> {
                                     left: 10,
                                     child: Container(
                                       padding: const EdgeInsets.symmetric(
-                                        horizontal: 16,
-                                        vertical: 8,
-                                      ),
+                                          horizontal: 16, vertical: 8),
                                       decoration: BoxDecoration(
                                         color: _chip,
-                                        borderRadius: BorderRadius.circular(
-                                          20,
-                                        ),
+                                        borderRadius: BorderRadius.circular(20),
                                         boxShadow: [
                                           BoxShadow(
-                                            color: Colors.black.withOpacity(
-                                              0.06,
-                                            ),
+                                            color:
+                                                Colors.black.withOpacity(0.06),
                                             blurRadius: 6,
                                             offset: const Offset(0, 1),
                                           ),
@@ -209,7 +227,6 @@ class _LobbyChildScreenState extends State<LobbyChildScreen> {
                               ),
                             ),
                             const SizedBox(width: 18),
-                            // ✅ [수정 안 함] 첫 번째 코드의 '도감' 버튼 로직 유지
                             _pillButton(
                               label: '도감',
                               onTap: () {
@@ -217,8 +234,7 @@ class _LobbyChildScreenState extends State<LobbyChildScreen> {
                                   context,
                                   MaterialPageRoute(
                                     builder: (_) => StickerBookPage(
-                                      childId: widget.childId, // ✅ childId 전달 추가
-                                    ),
+                                        childId: widget.childId),
                                   ),
                                 );
                               },
@@ -240,23 +256,22 @@ class _LobbyChildScreenState extends State<LobbyChildScreen> {
                                   children: [
                                     Container(
                                       height: kLeftCardHeight,
+                                      // 회색 박스 제거!
                                       decoration: BoxDecoration(
-                                        color: _charCard,
-                                        borderRadius: BorderRadius.circular(
-                                          16,
-                                        ),
+                                        color: Colors
+                                            .transparent, // 또는 _bg 로 배경색과 동일하게
+                                        borderRadius: BorderRadius.circular(16),
                                       ),
-                                      alignment: Alignment.center, //여기에 캐릭터 이미지
-                                      child: Text(
-                                        characterName.isNotEmpty
-                                            ? characterName
-                                            : '캐릭터',
-                                        style: const TextStyle(
-                                          color: Color(0xFF7D7D7D),
-                                          fontSize: 18,
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                      ),
+                                      alignment: Alignment.center,
+                                      child: _characterAssetPath != null
+                                          ? Padding(
+                                              padding: const EdgeInsets.all(12),
+                                              child: Image.asset(
+                                                _characterAssetPath!,
+                                                fit: BoxFit.contain,
+                                              ),
+                                            )
+                                          : const SizedBox(), // 플레이스홀더도 없애고 싶다면 SizedBox()
                                     ),
                                     const SizedBox(height: 16),
                                     Text(
@@ -312,25 +327,20 @@ class _LobbyChildScreenState extends State<LobbyChildScreen> {
                                             );
                                           }),
                                           const SizedBox(width: kColsGap),
-                                          
-                                          // ✅ [수정됨] '듣기 학습' 부분만 두 번째 코드의 내용(주석 포함)으로 교체
                                           _bigAction('듣기 학습', () {
-                                            // ⭐️ [수정] MaterialPageRoute 대신 pushNamed 사용
                                             Navigator.pushNamed(
                                               context,
-                                              ListenAppleSelect.routeName, // ⭐️ '/listen-apple-select' 이름표 사용
-                                              arguments: { // ⭐️ main.dart의 onGenerateRoute가 받을 수 있게 arguments로 전달
+                                              ListenAppleSelect.routeName,
+                                              arguments: {
                                                 'childId': widget.childId
                                               },
                                             );
                                           }),
-
                                         ],
                                       ),
                                       const SizedBox(height: kRowsGap),
                                       Row(
                                         children: [
-                                          // ✅ [수정 안 함] 첫 번째 코드의 '쓰기 게임' 로직 유지 (GameWriteChapterScreen)
                                           _bigAction('쓰기 게임', () {
                                             Navigator.push(
                                               context,
@@ -343,7 +353,6 @@ class _LobbyChildScreenState extends State<LobbyChildScreen> {
                                             );
                                           }),
                                           const SizedBox(width: kColsGap),
-                                          // ✅ [수정 안 함] 첫 번째 코드의 '듣기 게임' 로직 유지
                                           _bigAction('듣기 게임', () {
                                             Navigator.push(
                                               context,

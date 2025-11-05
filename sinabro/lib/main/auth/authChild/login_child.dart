@@ -1,21 +1,21 @@
 /**
  * @file lib/main/auth/authChild/login_child.dart
- * 역할: 자녀 로그인 (permitAll). 
- *      JWT/AuthClient 전혀 사용하지 않음.
+ * 역할: 자녀 로그인 (permitAll).
+ *      ✅ 개발 편의: AppBar에 "미리보기"를 추가해 로그인 없이 캐릭터 선택 화면으로 이동 가능
  *      ✅ 로그인 성공 → /api/child/info 로 캐릭터 선택 여부 확인
  *          - characterId 존재 → 자녀 로비로
  *          - characterId 없음(null/빈문자) → 레벨테스트로
- *      ❌ 로그인 실패(401) 또는 정보조회 실패(네트워크/서버오류)는 이동하지 않고 에러 표시
- * @ 채영: JWT+api 연결 완료
+ *      ❌ 로그인 실패(401) 또는 정보조회 실패 → 이동하지 않고 에러 표시
  */
-///
 
+import 'package:flutter/foundation.dart' show kReleaseMode; // ← 배포시 미리보기 숨김
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
 import 'package:sinabro/main/childView/page/lobby_child.dart';
 import 'package:sinabro/main/childView/page/level_test_page.dart';
+import 'package:sinabro/main/childView/page/select_character.dart'; // ← 캐릭터 선택 화면
 import 'package:sinabro/config.dart';
 import 'package:sinabro/main/gameView/common/api/child_state.dart';
 
@@ -50,13 +50,13 @@ class _LoginChildScreenState extends State<LoginChildScreen> {
     final uri = Uri.parse('$baseUrl/api/child/info')
         .replace(queryParameters: {'childId': childId});
     try {
-      // 로그
       // ignore: avoid_print
       print('[login_child] 자녀정보 조회 시작 childId=$childId');
 
-      final resp = await http.get(uri, headers: const {
-        'Accept': 'application/json'
-      }).timeout(const Duration(seconds: 8));
+      final resp = await http.get(
+        uri,
+        headers: const {'Accept': 'application/json'},
+      ).timeout(const Duration(seconds: 8));
 
       if (resp.statusCode != 200) {
         // ignore: avoid_print
@@ -100,7 +100,6 @@ class _LoginChildScreenState extends State<LoginChildScreen> {
     final inputChildId = _idController.text.trim();
     final inputPw = _pwController.text.trim();
 
-    // 로그
     // ignore: avoid_print
     print('[login_child] 로그인 시도 childId=$inputChildId');
 
@@ -142,9 +141,10 @@ class _LoginChildScreenState extends State<LoginChildScreen> {
         childId = childId.trim();
 
         // ✅ 로그인 성공 로그
+        // ignore: avoid_print
         print('[login_child] 로그인 성공 childId=$childId');
 
-        // ✅ 🔥 전역 상태에 childId 저장
+        // ✅ 전역 상태에 childId 저장
         ChildState.instance.setChild(childId);
 
         // (중요) 여기서만 캐릭터 여부 확인/분기. 실패시 이동하지 않음.
@@ -181,7 +181,6 @@ class _LoginChildScreenState extends State<LoginChildScreen> {
           );
         }
       } else if (response.statusCode == 401) {
-        // 로그인 실패
         if (!mounted) return;
         setState(() {
           _message = '로그인 실패: 아이디 또는 비밀번호를 확인해 주세요. (401)';
@@ -220,7 +219,34 @@ class _LoginChildScreenState extends State<LoginChildScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(backgroundColor: const Color(0xFFFEF8E7), elevation: 0),
+      appBar: AppBar(
+        backgroundColor: const Color(0xFFFEF8E7),
+        elevation: 0,
+        actions: [
+          // 🔧 개발용 "미리보기" 버튼 (릴리스에서 자동 숨김)
+          if (!kReleaseMode)
+            TextButton(
+              onPressed: () {
+                // DEV_PREVIEW로 진입 → select_character.dart
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const SelectCharacterPage(
+                      childId: 'DEV_PREVIEW',
+                    ),
+                  ),
+                );
+              },
+              child: const Text(
+                '미리보기',
+                style: TextStyle(
+                  color: Color(0xFF5A4032),
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+        ],
+      ),
       backgroundColor: const Color(0xFFFEF8E7),
       body: Column(
         children: [
@@ -320,6 +346,32 @@ class _LoginChildScreenState extends State<LoginChildScreen> {
                         ),
                       ],
                     ),
+                    const SizedBox(height: 8),
+                    // 🔧 로그인 폼 하단에도 미리보기 버튼(선택): AppBar 버튼이 불편하면 사용
+                    if (!kReleaseMode)
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: TextButton(
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => const SelectCharacterPage(
+                                  childId: 'DEV_PREVIEW',
+                                ),
+                              ),
+                            );
+                          },
+                          child: const Text(
+                            '캐릭터 선택(미리보기)',
+                            style: TextStyle(
+                              color: Color(0xFF5A4032),
+                              fontWeight: FontWeight.bold,
+                              decoration: TextDecoration.underline,
+                            ),
+                          ),
+                        ),
+                      ),
                   ],
                 ),
               ),
