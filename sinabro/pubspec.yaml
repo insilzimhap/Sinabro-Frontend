@@ -12,19 +12,19 @@ dependencies:
     sdk: flutter
 
   # --- 공통 의존성 ---
+  shared_preferences: ^2.3.2
   kakao_flutter_sdk_user: ^1.3.1
   kakao_flutter_sdk_auth: ^1.3.1
   google_sign_in: ^6.3.0
   cupertino_icons: ^1.0.8
   file_picker: ^10.1.9
-  shared_preferences: ^2.1.1
   audioplayers: ^5.2.0
   provider: ^6.1.1
   http: ^1.1.0
   just_audio: ^0.9.36
   audio_session: ^0.1.21
-  googleapis_auth: ^1.6.0 # 구글 번역 api 
-  html_unescape: ^2.0.0 # 특수문자를 안전하게 전달
+  googleapis_auth: ^1.6.0     # 구글 번역 API
+  html_unescape: ^2.0.0       # 특수문자 안전 변환
 
 dev_dependencies:
   flutter_lints: ^5.0.0
@@ -35,30 +35,30 @@ flutter:
   uses-material-design: true
 
   fonts:
-  - family: Inter
-    fonts:
-      - asset: assets/font/Inter-Light.ttf
-        weight: 300
-      - asset: assets/font/Inter-Medium.ttf
-        weight: 500
-      - asset: assets/font/Inter-Bold.ttf
-        weight: 700
+    - family: Inter
+      fonts:
+        - asset: assets/font/Inter-Light.ttf
+          weight: 300
+        - asset: assets/font/Inter-Medium.ttf
+          weight: 500
+        - asset: assets/font/Inter-Bold.ttf
+          weight: 700
 
   assets:
-    # --- 공통 Img ---
-    - assets/audio/tts/
-    - assets/img/contents/gameWrite/end_succes.png
-    - assets/img/contents/gameWrite/theme/write_game_3_cup_deactivation.png
-    - assets/img/contents/gameWrite/theme/
+    # ✅ 스모크 테스트: 캐릭터 clear 파일을 '명시적으로' 포함
+    - assets/img/character/tosoon/clear.png
+    - assets/img/character/meongji/clear.png
+    - assets/img/character/gomjae/clear.png
+    - assets/img/character/gonyam/clear.png
+    - assets/img/character/ojjang/clear.png
+
+    # (아래는 기존 디렉터리 등록들 유지)
     - assets/img/auth/
     - assets/img/character/
     - assets/img/logo/
     - assets/img/contents/stickerBook/
     - assets/img/contents/stickerBook/stickers/
-
     - assets/img/contents/gameListen/
-    - assets/img/contents/gameListen/tutorial/
-    - assets/img/contents/gameListen/chapter/
     - assets/img/contents/gameListen/level1/
     - assets/img/contents/gameListen/level1/answer/
     - assets/img/contents/gameListen/level1/theme/
@@ -71,7 +71,6 @@ flutter:
     - assets/img/contents/gameListen/level3/theme/
     - assets/img/contents/gameListen/tutorial/
     - assets/img/contents/gameListen/chapter/
-
     - assets/img/contents/gameWrite/
     - assets/img/contents/gameWrite/chapter/
     - assets/img/contents/studyListen/
@@ -87,14 +86,11 @@ flutter:
     - assets/img/contents/studyListen/level3/main_topic/
     - assets/img/contents/studyListen/level3/story/
     - assets/img/contents/studyWrite/
-    - assets/img/contents/stickerBook/
-    - assets/img/contents/stickerBook/stickers/
     - assets/img/icon/
     - assets/img/icon/popup/
     - assets/img/leveltest/
     - assets/img/pageMain/
     - assets/img/pageSetting/
-
     - assets/audio/bgm/
     - assets/audio/effect/
     - assets/audio/tts/levelTest/
