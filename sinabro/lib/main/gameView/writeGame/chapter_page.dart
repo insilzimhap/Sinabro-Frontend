@@ -32,7 +32,7 @@ class _GameWriteChapterScreenState extends State<GameWriteChapterScreen>
   // 💡 캐릭터 폴더명 상태 필드 추가 (기본값 설정)
   String _characterFolderName = defaultCharacter.folderName;
 
-  bool _isVisible = true;
+  bool _isVisible = false;
   Offset _charPosition = const Offset(60, 520);
   late AnimationController _controller;
 
@@ -89,20 +89,26 @@ class _GameWriteChapterScreenState extends State<GameWriteChapterScreen>
   }
 
   Future<void> _moveCharacterTo(Offset target, Widget nextPage) async {
-    await _controller.reverse(from: 1);
-    setState(() => _isVisible = false);
-    await Future.delayed(const Duration(milliseconds: 200));
-    setState(() => _charPosition = target);
-    await Future.delayed(const Duration(milliseconds: 200));
-    setState(() => _isVisible = true);
-    await _controller.forward(from: 0);
-    await Future.delayed(const Duration(milliseconds: 300));
+    // 이동 시작 전에 캐릭터를 보이도록
+    if (!_isVisible) {
+      setState(() => _isVisible = true);
+      await Future.delayed(const Duration(milliseconds: 50)); 
 
-    if (mounted) {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (context) => nextPage),
-      );
+      await _controller.reverse(from: 1);
+
+      setState(() => _charPosition = target);
+
+      await _controller.forward(from: 0);
+      await Future.delayed(const Duration(milliseconds: 300));
+
+      setState(() => _isVisible = false);
+
+      if (mounted) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => nextPage),
+        );
+      }
     }
   }
 
@@ -129,11 +135,11 @@ class _GameWriteChapterScreenState extends State<GameWriteChapterScreen>
               // 🏝️ 챕터 섬 1 (나무1=ST010)
               Positioned(
                 left: size.width * 0.08,
-                top: size.height * 0.28,
+                top: size.height * 0.18,
                 child: GestureDetector(
                   onTap: progress.isStageUnlocked('ST010')
                     ? () => _moveCharacterTo(
-                    Offset(size.width * 0.18, size.height * 0.58),
+                    Offset(size.width * 0.18, size.height * 0.35),
                     WriteGameMainPage(childId: widget.childId),
                     ) 
                     : null, // 🔒 잠긴 상태면 터치 비활성화
@@ -149,11 +155,11 @@ class _GameWriteChapterScreenState extends State<GameWriteChapterScreen>
               // 🏝️ 챕터 섬 2 (나무2=ST011)
               Positioned(
                 left: size.width * 0.38,
-                top: size.height * 0.28,
+                top: size.height * 0.38,
                 child: GestureDetector(
                   onTap: progress.isStageUnlocked('ST011')
                     ? () => _moveCharacterTo(
-                      Offset(size.width * 0.48, size.height * 0.58),
+                      Offset(size.width * 0.48, size.height * 0.4),
                       WriteGameMain2Page(childId: widget.childId),
                     )
                     : null,
@@ -173,7 +179,7 @@ class _GameWriteChapterScreenState extends State<GameWriteChapterScreen>
                 child: GestureDetector(
                   onTap: progress.isStageUnlocked('ST012')
                     ? () => _moveCharacterTo(
-                        Offset(size.width * 0.78, size.height * 0.58),
+                        Offset(size.width * 0.78, size.height * 0.35),
                         WriteGameMain3Page(childId: widget.childId),
                       )
                     : null,

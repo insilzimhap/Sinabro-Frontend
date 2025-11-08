@@ -32,46 +32,42 @@ class _StickerBookPageState extends State<StickerBookPage>
 
   final Map<String, Map<int, Offset>> stickerPositions = {
     "listen1": {
-      0: Offset(40, 90),
-      1: Offset(120, 100),
-      2: Offset(210, 160),
-      3: Offset(60, 220),
-      4: Offset(180, 260)
+      0: Offset(80, 130),
+      1: Offset(260, 120),
+      2: Offset(380, 120),
+      3: Offset(60, 475),
+      4: Offset(390, 475)
     },
     "write1": {
-      0: Offset(50, 120),
-      1: Offset(130, 160),
-      2: Offset(200, 190),
-      3: Offset(80, 230),
-      4: Offset(160, 260)
+      0: Offset(60, 60),
+      1: Offset(280, 160),
+      2: Offset(50, 480),
+      3: Offset(320, 400)
     },
     "listen2": {
-      0: Offset(40, 90),
-      1: Offset(120, 100),
-      2: Offset(210, 160),
-      3: Offset(60, 220),
-      4: Offset(180, 260)
+      0: Offset(60, 380),
+      1: Offset(180, 470),
+      2: Offset(260, 350),
+      3: Offset(40, 190),
+      4: Offset(450, 360)
     },
     "write2": {
-      0: Offset(50, 120),
-      1: Offset(130, 160),
-      2: Offset(200, 190),
-      3: Offset(80, 230),
-      4: Offset(160, 260)
+      0: Offset(214, 100),
+      1: Offset(206, 150),
+      2: Offset(210, 250),
+      3: Offset(210, 320),
     },
     "listen3": {
-      0: Offset(40, 90),
-      1: Offset(120, 100),
-      2: Offset(210, 160),
-      3: Offset(60, 220),
-      4: Offset(180, 260)
+      0: Offset(50, 200),
+      1: Offset(350, 240),
+      2: Offset(200, 400),
+      3: Offset(470, 460),
     },
     "write3": {
-      0: Offset(50, 120),
-      1: Offset(130, 160),
-      2: Offset(200, 190),
-      3: Offset(80, 230),
-      4: Offset(160, 260)
+      0: Offset(50, 280),
+      1: Offset(200, 280),
+      2: Offset(350, 315),
+      3: Offset(480, 310),
     },
   };
 
@@ -115,7 +111,7 @@ class _StickerBookPageState extends State<StickerBookPage>
             Text(
               "$nickname님의 학습도감",
               style: const TextStyle(
-                fontSize: 42,
+                fontSize: 82,
                 fontWeight: FontWeight.bold,
                 color: Colors.brown,
               ),
@@ -175,8 +171,8 @@ class _StickerBookPageState extends State<StickerBookPage>
     }
 
     return Container(
-      width: 410,
-      height: 450,
+      width: 615,
+      height: 675,
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
@@ -190,7 +186,7 @@ class _StickerBookPageState extends State<StickerBookPage>
               fit: BoxFit.cover,
             ),
           ),
-          for (int i = 0; i < stickers.length; i++)
+          for (int i = stickers.length - 1; i >= 0; i--)
             _buildSticker(key, stickers[i], i),
         ],
       ),
@@ -213,7 +209,7 @@ class _StickerBookPageState extends State<StickerBookPage>
       top: offset.dy,
       child: Image.asset(
         sticker.isObtained ? entry.active : entry.inactive,
-        width: 50,
+        height: 200,
       ),
     );
   }

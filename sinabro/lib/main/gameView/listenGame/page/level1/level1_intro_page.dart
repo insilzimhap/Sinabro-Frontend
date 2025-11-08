@@ -96,7 +96,7 @@ class _Level1IntroPageState extends State<Level1IntroPage>
                 child: Container(
                   key: ValueKey(current['text']),
                   padding:
-                      const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                      const EdgeInsets.symmetric(vertical: 80, horizontal: 280),
                   decoration: BoxDecoration(
                     color: const Color(0xFFFFF3E0),
                     borderRadius: BorderRadius.circular(16),
@@ -106,7 +106,7 @@ class _Level1IntroPageState extends State<Level1IntroPage>
                     children: [
                       Container(
                         padding: const EdgeInsets.symmetric(
-                            vertical: 2, horizontal: 8),
+                            vertical: 30, horizontal: 70),
                         decoration: BoxDecoration(
                           color: const Color(0xFFFFC067),
                           borderRadius: BorderRadius.circular(8),

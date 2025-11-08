@@ -43,7 +43,7 @@ class _GameListenChapterScreenState extends State<GameListenChapterScreen>
     // 💡 캐릭터 폴더명 상태 필드 추가 (기본값 설정)
   String _characterFolderName = defaultCharacter.folderName;
 
-  bool _isVisible = true;
+  bool _isVisible = false;
   Offset _charPosition = const Offset(60, 520);
   late AnimationController _controller;
 
@@ -96,22 +96,29 @@ class _GameListenChapterScreenState extends State<GameListenChapterScreen>
   }
 
   Future<void> _moveCharacterTo(Offset target, Widget nextPage) async {
-    await _controller.reverse(from: 1);
-    setState(() => _isVisible = false);
-    await Future.delayed(const Duration(milliseconds: 200));
-    setState(() => _charPosition = target);
-    await Future.delayed(const Duration(milliseconds: 200));
-    setState(() => _isVisible = true);
-    await _controller.forward(from: 0);
-    await Future.delayed(const Duration(milliseconds: 300));
+    // 이동 시작 전에 캐릭터를 보이도록
+    if (!_isVisible) {
+      setState(() => _isVisible = true);
+      await Future.delayed(const Duration(milliseconds: 50)); 
 
-    if (mounted) {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (context) => nextPage),
-      );
+      await _controller.reverse(from: 1);
+
+      setState(() => _charPosition = target);
+
+      await _controller.forward(from: 0);
+      await Future.delayed(const Duration(milliseconds: 300));
+
+      setState(() => _isVisible = false);
+
+      if (mounted) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => nextPage),
+        );
+      }
     }
   }
+
 
   @override
   Widget build(BuildContext context) {
@@ -138,11 +145,11 @@ class _GameListenChapterScreenState extends State<GameListenChapterScreen>
                 stageId: 'ST007', // ✅ 추가
 
                 left: size.width * 0.08,
-                top: size.height * 0.28,
+                top: size.height * 0.18,
                 activeImage: 'assets/img/contents/gameListen/chapter/level1.png',
                 lockedImage:
                     'assets/img/contents/gameListen/chapter/level1_deactivation.png',
-                targetOffset: Offset(size.width * 0.18, size.height * 0.58),
+                targetOffset: Offset(size.width * 0.21, size.height * 0.33),
                 nextPage: Level1IntroPage(
                   onNext: () => Navigator.pushReplacement(
                     context,
@@ -160,13 +167,13 @@ class _GameListenChapterScreenState extends State<GameListenChapterScreen>
                 size,
                 stageId: 'ST008', // ✅ 추가
                 left: size.width * 0.38,
-                top: size.height * 0.28,
+                top: size.height * 0.18,
 
                 activeImage: 'assets/img/contents/gameListen/chapter/level2.png',
                 lockedImage:
                     'assets/img/contents/gameListen/chapter/level2_deactivation.png',
 
-                targetOffset: Offset(size.width * 0.48, size.height * 0.58),
+                targetOffset: Offset(size.width * 0.41, size.height * 0.36),
                 nextPage: Level2IntroPage(
                   onNext: () => Navigator.pushReplacement(
                     context,
@@ -189,7 +196,7 @@ class _GameListenChapterScreenState extends State<GameListenChapterScreen>
                 activeImage: 'assets/img/contents/gameListen/chapter/level3.png',
                 lockedImage:
                     'assets/img/contents/gameListen/chapter/level3_deactivation.png',
-                targetOffset: Offset(size.width * 0.78, size.height * 0.58),
+                targetOffset: Offset(size.width * 0.78, size.height * 0.38),
                 nextPage: Level3IntroPage(
                   onNext: () => Navigator.pushReplacement(
                     context,
@@ -220,7 +227,7 @@ class _GameListenChapterScreenState extends State<GameListenChapterScreen>
                       // 💡 로드된 폴더명을 사용하여 경로 구성. 
                       // 로딩 중에는 기본값(default_char) 사용
                       'assets/img/pageMain/$_characterFolderName.png',
-                      width: size.width * 0.13,
+                      width: size.width * 0.12,
                     ),
                   ),
                 ),
@@ -245,22 +252,20 @@ class _GameListenChapterScreenState extends State<GameListenChapterScreen>
     required TreeProgress progress, // ✅ 진행도 추가
     required String stageId, // ✅ stageId 추가
   }) {
-    return Positioned(
+      return Positioned(
       left: left,
       right: right,
       top: top,
-      // 🔹 잠금/해금 상태에 따라 이미지 렌더링
-      child: buildStageTree(
-        stageId: stageId,
-        progress: progress,
-        activeImage: activeImage,
-        lockedImage: lockedImage,
-        onTap: (_) => _moveCharacterTo(targetOffset, nextPage),
+      child: SizedBox(
+        width: size.width * 0.23, // ← 아이콘 크기 조절 (기존보다 큼)
+        child: buildStageTree(
+          stageId: stageId,
+          progress: progress,
+          activeImage: activeImage,
+          lockedImage: lockedImage,
+          onTap: (_) => _moveCharacterTo(targetOffset, nextPage),
+        ),
       ),
-      // child: GestureDetector(
-      //   onTap: () => _moveCharacterTo(targetOffset, nextPage),
-      //   child: Image.asset(image, width: size.width * 0.25),
-      // ),
     );
   }
 }
