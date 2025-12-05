@@ -181,7 +181,7 @@
 # 📄 프로젝트 문서
 
 - 🎞 **최종 발표 PPT**  
-  👉 [최종발표_PPT](./시나브로_최종본.pdf)
+  👉 [최종발표_PPT](./시나브로_최종본.pdf)
 
 - 🎨 **Figma**  
   👉 [인실짐합 Figma 바로가기](https://www.figma.com/design/X243XO41NYDwC0B6wtYjln/%EC%9D%B8%EC%8B%A4%EC%A7%90%ED%95%A9-%EC%B5%9C%EC%A2%85?node-id=155-23&p=f)
