@@ -1,156 +1,200 @@
 <p align="center">
-  <img src="sinabro/assets/img/icon/sinabro.png" alt="시나브로 따뜻한 마을 풍경" width="25%"/>
+  <img src="sinabro/assets/img/icon/시나브로.png" width="100%" alt="시나브로 로고"/>
 </p>
 
-<h1 align="center">📚 시나브로: 아이들의 마음에 스며드는 AI 한글 학습 </h1>
-<p align="center"><i>“모르는 사이에 조금씩, 조금씩”</i></p>
+<h1 align="center">📚 시나브로: 아이들의 마음에 스며드는 AI 한글 학습</h1>
+<p align="center"><i>“모르는 사이에 조금씩, 조금씩 자라는 우리 아이”</i></p>
 
 ---
 
-## 🎬 시연 영상
+## 🌱 1. 개발 배경
 
 <p align="center">
-  <a href="https://youtu.be/KzE0-ie4p6A?si=d79fc-_oeu9bHrUl" target="_blank">
-    <img src="https://img.youtube.com/vi/KzE0-ie4p6A/0.jpg" alt="시나브로 시연 영상 썸네일" width="70%"/><br>
-    <b>👉 유튜브에서 시연 영상 보기</b>
-  </a>
+  <img src="sinabro/assets/img/icon/개발배경.png" width="100%"/>
 </p>
 
----
+1. 유아기의 언어 지체는 학습 부진과 사회적 소외를 초래할 수 있으나, 기존 교육은 학령기에 집중되어 있습니다.
 
-## 📝 프로젝트 소개
-
-**시나브로**는 아이들이 자연스럽고 즐겁게 한글을 익힐 수 있도록,  
-AI와 함께 학습, 게임, 그리고 따뜻한 상호작용을 담은 한국어 학습 플랫폼입니다.  
-다문화 가정, 한글이 낯선 아이 누구나, 웃으며 성장할 수 있도록 만들었습니다.
+2. 즉각적인 피드백 부족, 개인차 반영 어려움 등으로 유아 학습 효과가 낮아지는 현실이 존재합니다.
 
 ---
 
-## 🎨 기획 배경과 필요성
+## 🧒 2. 레벨 테스트
+<p align="center">
+  <img src="sinabro/assets/img/icon/레벨테스트.png" width="100%"/>
+</p>
 
-- **한글, 모두의 시작**  
-  96%의 부모님이 초등 입학 전 한글 교육이 꼭 필요하다고 느낍니다.
-- **다문화 가정의 어려움**  
-  26.8%의 부모님이 자녀 한글 교육에 어려움을 겪고 있습니다.
-- **기존 서비스의 한계**  
-  반복적인 학습, 일방적인 콘텐츠로는 아이들의 흥미를 오래 지키기 어렵습니다.
+   
+---
 
-<sub>자료: KOSIS 전국다문화가족실태조사(2021)</sub>
+## 🎧 3. 학습 & 게임 기능
+
+### 🎧 3-1. 듣기 학습
+<p align="center">
+  <img src="sinabro/assets/img/icon/듣기학습.png" width="100%"/>
+</p>
+
+- 선행 연구 기반 생활형 콘텐츠  
+- 동화 형식 구성  
+- 자연스러운 어휘 습득 유도
+
+### ✏️ 3-2. 쓰기 학습
+<p align="center">
+  <img src="sinabro/assets/img/icon/쓰기학습.png" width="100%"/>
+</p>
+
+- 필기 인식 AI 기술이 실시간으로 정답 여부 판별
+  
+---
+
+### 🎮 3-3. 듣기 게임
+<p align="center">
+  <img src="sinabro/assets/img/icon/듣기게임.png" width="100%"/>
+</p>
+
+- 청각 ↔ 시각 매칭 카드 선택 게임  
+- TTS로 친숙한 학습 분위기 제공
+
+### 🎮 3-4. 쓰기 게임
+<p align="center">
+  <img src="sinabro/assets/img/icon/쓰기게임.png" width="100%"/>
+</p>
+
+- 청각 ↔ 시각 ↔ 촉각매칭 활동
+- 성공/실패 판별 및 학습 리포트 연동
 
 ---
 
-## 🎈 주요 기능
+### ⭐ 3-5. 보상 및 도감 시스템
+<p align="center">
+  <img src="sinabro/assets/img/icon/보상.png" width="100%"/>
+</p>
 
-- **의성어・의태어로 배우는 한글**  
-  일상생활 속 소리를 따라가며, 함께 한글을 익혀요.
-- **AI 한글쓰기**  
-  GPT와 Serlvy Pen SDK가 쓰기연습을 함께 해줍니다.
-- **게임형 한글 놀이**  
-  단어 맞추기, 받아쓰기 미니게임으로 한글을 즐겁게 배워요.
-
----
-
-## 🧸 서비스 구성
-
-| 서비스              | 설명                                                                |
-|---------------------|---------------------------------------------------------------------|
-| 의성어・의태어 학습  | 일상생활 속 의성어・의태어를 듣고, 쓰며 자연스럽게 아이가 학습할 수 있도록 도와줘요. |
-| AI 받아쓰기         | 쓰기 인식과 실시간 피드백으로, 아이의 한글 실력을 차근차근 키워요.             |
-| 게임형 학습         | 어휘, 문장, 음절 등 다양한 미니게임으로 자연스럽게 실력 업!                   |
+- 스티커 획득  
+- 테마별 도감 수집  
+- 학습 동기 강화  
 
 ---
 
-## 👨‍👩‍👧 부모님과 함께하는 성장
-
-- **맞춤형 학습 관리**  
-  아이의 학습 진행을 확인하고, 칭찬 스티커와 출석 체크로 동기부여를 해요.
-- **콘텐츠 직접 제작**  
-  우리 아이에게 꼭 맞는 학습 자료를 부모님이 직접 만들어 줄 수 있어요.
-
----
-
-## 🛠️ 기술 스택
-
-<div align="center">
-
-| Frontend        | Backend      | Database | AI                        | Cloud |
-|-----------------|-------------|----------|---------------------------|-------|
-| HTML, Flutter   | Spring Boot | MySQL    | GPT, Serlvy Pen SDK       | AWS RDS |
-
-</div>
-
----
-
-## 📂 폴더 구조
-
-```
-📦 lib/
- ┣ 📂main/
- ┃ ┣ 📂auth/              # 🔐 로그인/회원가입 관련 (자녀/부모)
- ┃ ┣ 📂childView/         # 🧒 자녀 전용 화면
- ┃ ┣ 📂gameView/          # 🎮 듣기/쓰기 게임 화면
- ┃ ┣ 📂mainView/          # 🏠 앱 시작 화면
- ┃ ┣ 📂parentView/        # 👨‍👩‍👧 부모 전용 화면
- ┃ ┗ 📂studyView/         # 📚 듣기/쓰기 학습 화면
- ┗ 📜main.dart            # 앱 시작점
- ```
----
-
-## 📎 프로젝트 설계도
+## 👨‍👩‍👧 4. 부모 페이지
 
 <p align="center">
-  <img src="sinabro/assets/img/icon/project.png" alt="시나브로 프로젝트 설계도" width="80%"/>
+  <img src="sinabro/assets/img/icon/부모페이지.png" width="100%"/>
+</p>
+
+- 다국어 UI 지원  
+- 자녀 관리  
+- 학습 현황 실시간 조회  
+- AI 기반 상세 리포트 제공
+
+---
+
+## AI 기술 (GPT / Translate / Pen SDK)
+
+### 🤖 1. GPT-4o-mini: AI 학습 리포트
+<p align="center">
+  <img src="sinabro/assets/img/icon/지피티.png" width="100%"/>
+</p>
+
+#### 1-1.부모 화면 
+<p align="center">
+  <img src="sinabro/assets/img/icon/지피티상세.png" width="100%"/>
 </p>
 
 ---
-## 🗂️ ERD 구조
+
+### 🌍 2. Google Translate API
+<p align="center">
+  <img src="sinabro/assets/img/icon/구글번역.png" width="100%"/>
+</p>
+
+- 보호자 언어 설정 기반 자동 번역  
+- 학습 화면 및 리포트 다국어 표시  
+
+---
+
+### ✍️ 3. Selvy Pen SDK
+<p align="center">
+  <img src="sinabro/assets/img/icon/셀비펜.png" width="100%"/>
+</p>
+
+- 필기 스트로크 기반 인식  
+- Native(Android)에서 인식 → Flutter로 전달  
+- 실시간 성공/실패 판단
+
+---
+
+## Architecture
 
 <p align="center">
-  <img src="sinabro/assets/img/icon/erd1.png" alt="Sinabro ERD 1" width="32%"/>
-  <img src="sinabro/assets/img/icon/erd2.png" alt="Sinabro ERD 2" width="32%"/>
-  <img src="sinabro/assets/img/icon/erd3.png" alt="Sinabro ERD 3" width="32%"/>
+  <img src="sinabro/assets/img/icon/아키텍처.png" width="100%"/>
 </p>
 
+세 가지 기술(GPT · Translate · Pen SDK)을 연결하여  
+**아이 학습 → 평가 → 피드백 → AI 리포트**  
+이 모두 자동화된 선순환 구조 완성.
+
+---
+
+## ERD
 <p align="center">
-  <sub>ERD 구조도: Sinabro의 데이터베이스 설계</sub>
+  <img src="sinabro/assets/img/icon/erd.png" width="100%"/>
 </p>
 
 ---
 
-## 📅 개발 일정
+# 🛠 기술 스택
 
-- **3~4월**: 프로젝트 기획, 역할 분담, 요구사항 분석
-- **4~5월**: UI/DB 설계
-- **5~8월**: 프론트엔드/백엔드 개발, 데이터베이스 구축, 연동
-- **9~11월**: 오류 검증, 최종 문서 작성, 주간 회의 및 공유
-
----
-
-## 🌷 기대 효과
-
-1. **아이들의 자신감 성장**  
-   한글이 어렵지 않다는 경험을 통해, 아이들이 스스로를 더 사랑하게 됩니다.
-2. **부모님과의 소중한 추억**  
-   함께 목소리를 녹음하고, 게임을 하며 가족의 유대가 깊어집니다.
-3. **모두를 위한 한글 교육**  
-   다양한 환경의 아이들이 차별 없이 한글을 배울 수 있습니다.
-
----
-
-## 🤗 팀원
-
-| 이름     | 역할             | 담당 업무         |
-|----------|------------------|------------------|
-| 김세란   | 팀장, 프론트엔드 | 프론트엔드 개발  |
-| 문채영   | 백엔드           | 백엔드 개발      |
-| 박성민   | 프론트엔드       | 프론트엔드 개발  |
-| 심정화   | 백엔드           | 백엔드 개발      |
-| 조연수   | 백엔드           | 백엔드 개발, 발표|
-
----
-
-<p align="center"><b>시나브로와 함께, 아이들의 마음에 한글이 따뜻하게 스며듭니다.</b></p>
-
-<p align="center">
-  <img src="https://img.shields.io/badge/문의-GitHub%20Issues-ffb347?style=flat-square"/>
+### **Frontend**
+<p>
+  <img src="https://img.shields.io/badge/Flutter-02569B?style=for-the-badge&logo=Flutter&logoColor=white"/>
+  <img src="https://img.shields.io/badge/Dart-0175C2?style=for-the-badge&logo=Dart&logoColor=white"/>
+  <img src="https://img.shields.io/badge/Android_Native-3DDC84?style=for-the-badge&logo=Android&logoColor=white"/>
 </p>
+
+### **Backend**
+<p>
+  <img src="https://img.shields.io/badge/Spring_Boot-6DB33F?style=for-the-badge&logo=SpringBoot&logoColor=white"/>
+  <img src="https://img.shields.io/badge/MySQL-4479A1?style=for-the-badge&logo=MySQL&logoColor=white"/>
+</p>
+
+### **AI**
+<p>
+  <img src="https://img.shields.io/badge/OpenAI_GPT_API-412991?style=for-the-badge&logo=OpenAI&logoColor=white"/>
+  <img src="https://img.shields.io/badge/Selvy_Pen_SDK-000000?style=for-the-badge"/>
+</p>
+
+### **Infra**
+<p>
+  <img src="https://img.shields.io/badge/AWS_RDS-527FFF?style=for-the-badge&logo=AmazonAWS&logoColor=white"/>
+</p>
+
+### **Other**
+<p>
+  <img src="https://img.shields.io/badge/Swagger-85EA2D?style=for-the-badge&logo=Swagger&logoColor=black"/>
+  <img src="https://img.shields.io/badge/Figma-F24E1E?style=for-the-badge&logo=Figma&logoColor=white"/>
+  <img src="https://img.shields.io/badge/GitHub_Actions-2088FF?style=for-the-badge&logo=GitHubActions&logoColor=white"/>
+</p>
+
+---
+
+# 📄 프로젝트 문서
+
+- 🎞 **최종 발표 PPT**  
+  👉 [최종발표_PPT](sinabro/assets/file/시나브로_최종본.pptx)
+
+- 🎨 **Figma**  
+  👉 [인실짐합 Figma 바로가기](https://www.figma.com/design/X243XO41NYDwC0B6wtYjln/%EC%9D%B8%EC%8B%A4%EC%A7%90%ED%95%A9-%EC%B5%9C%EC%A2%85?node-id=155-23&p=f)
+
+- 📘 **포스터**  
+  👉 [2025_컴퓨터소프트웨어공학과_경진대회_포스터](sinabro/assets/file/2025_경진대회_포스터발표양식_인실짐합_컴퓨터소프트웨어공학과.pdf)
+
+- 📘 **졸업 논문**  
+  👉 [논문 다운로드](https://YOUR_LINK_HERE)
+
+---
+
+
+
+
+
